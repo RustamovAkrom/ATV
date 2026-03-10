@@ -274,3 +274,384 @@ Keyingi bosqichlarda quyidagilar amalga oshiriladi:
 * tizim funksiyalarini kengaytirish
 
 ---
+
+# 6. Foydalanuvchi rollari va vakolatlari (User Roles Matrix)
+
+Tizimda foydalanuvchilar turli rollarga ega bo‘lishi mumkin. Har bir rol tizimdagi ma’lumotlarga turli darajada kirish huquqiga ega.
+
+Quyida asosiy rollar va ularning vazifalari keltirilgan.
+
+### Super Administrator
+
+Vazifalari:
+
+* tizimni to‘liq boshqarish
+* barcha foydalanuvchilarni boshqarish
+* barcha hududlar ma’lumotlarini ko‘rish
+* tizim sozlamalarini o‘zgartirish
+
+---
+
+### Respublika Analitigi
+
+Vazifalari:
+
+* barcha hududlar bo‘yicha statistik ma’lumotlarni ko‘rish
+* analitik hisobotlarni tayyorlash
+* texnik vositalar bo‘yicha prognozlarni ko‘rish
+
+Bu foydalanuvchi odatda **faqat analitika bilan ishlaydi**, lekin ma’lumotlarni o‘zgartirmaydi.
+
+---
+
+### Viloyat Boshqaruvchisi
+
+Vazifalari:
+
+* o‘z viloyati bo‘yicha ma’lumotlarni ko‘rish
+* texnik vositalar taqsimotini nazorat qilish
+* hisobotlarni ko‘rib chiqish
+
+---
+
+### Viloyat Operatori
+
+Vazifalari:
+
+* yangi texnik vositalarni tizimga kiritish
+* ta’mir ma’lumotlarini qo‘shish
+* texnik vositalarni boshqa bo‘linmalarga o‘tkazish
+
+Bu foydalanuvchi **faqat o‘z hududi doirasida ishlaydi**.
+
+---
+
+### Auditor
+
+Vazifalari:
+
+* tizimdagi o‘zgarishlarni tekshirish
+* audit loglarni ko‘rish
+* moliyaviy ma’lumotlarni tahlil qilish
+
+Auditor odatda **ma’lumotlarni o‘zgartirmaydi, faqat tekshiradi**.
+
+---
+
+# 7. Ma’lumotlar oqimi (Data Flow)
+
+Tizimdagi ma’lumotlar quyidagi jarayonlar orqali shakllanadi.
+
+---
+
+### 1. Texnik vositani ro‘yxatga olish
+
+Jarayon:
+
+1. Operator yangi texnik vositani tizimga kiritadi
+2. Texnik vositaga inventar raqami beriladi
+3. Texnik vosita hudud va bo‘linmaga biriktiriladi
+4. Texnik vosita monitoring jarayoniga qo‘shiladi
+
+Natijada texnik vosita **markaziy reyestrga kiritiladi**.
+
+---
+
+### 2. Texnik nosozlikni qayd etish
+
+Jarayon:
+
+1. Operator texnik nosozlik haqida yozuv yaratadi
+2. Tizim ta’mir yozuvini yaratadi
+3. Ta’mir jarayonida ishlatilgan ehtiyot qismlar kiritiladi
+4. Ta’mir xarajatlari hisobga olinadi
+
+Bu ma’lumotlar keyinchalik **analitika va xarajat tahlili uchun ishlatiladi**.
+
+---
+
+### 3. Texnik vositani boshqa hududga o‘tkazish
+
+Jarayon:
+
+1. Operator texnik vosita ko‘chirish so‘rovini yaratadi
+2. tizim eski va yangi joylashuvni qayd qiladi
+3. transfer tarixi saqlanadi
+
+Natijada tizim har doim **texnik vositaning qayerda ekanligini aniq ko‘rsatadi**.
+
+---
+
+### 4. Analitik hisobot yaratish
+
+Jarayon:
+
+1. tizim mavjud ma’lumotlarni tahlil qiladi
+2. texnik vositalarning yoshi hisoblanadi
+3. nosozliklar statistikasi olinadi
+4. prognozlar shakllantiriladi
+
+Natijada rahbariyat uchun **strategik hisobotlar tayyorlanadi**.
+
+---
+
+# 8. Asosiy tizim jarayonlari (Use Cases)
+
+Quyida tizimda eng ko‘p ishlatiladigan jarayonlar keltirilgan.
+
+---
+
+### Use Case 1 — Yangi texnik vosita qo‘shish
+
+Ishtirokchi: Viloyat operatori
+
+Jarayon:
+
+* foydalanuvchi tizimga kiradi
+* yangi texnik vosita formasi ochiladi
+* texnik ma’lumotlar kiritiladi
+* texnik vosita saqlanadi
+
+Natija: texnik vosita tizimga qo‘shiladi.
+
+---
+
+### Use Case 2 — Ta’mir yozuvini yaratish
+
+Ishtirokchi: Operator
+
+Jarayon:
+
+* texnik vosita tanlanadi
+* nosozlik tavsifi kiritiladi
+* ta’mir sanasi belgilanadi
+* ehtiyot qismlar kiritiladi
+
+Natija: ta’mir tarixi yangilanadi.
+
+---
+
+### Use Case 3 — Texnik vosita holatini kuzatish
+
+Ishtirokchi: Analitik yoki boshqaruvchi
+
+Jarayon:
+
+* tizim texnik vositalar ro‘yxatini ko‘rsatadi
+* filtr orqali hudud yoki xizmat tanlanadi
+* texnik vositalarning holati ko‘riladi
+
+Natija: rahbariyat texnik vositalar holatini nazorat qiladi.
+
+---
+
+### Use Case 4 — Prognoz hisobotini olish
+
+Ishtirokchi: Respublika analitigi
+
+Jarayon:
+
+* tizim analitik modulini ishga tushiradi
+* texnik vositalar statistikasi tahlil qilinadi
+* kelajak ehtiyojlari hisoblanadi
+
+Natija: 1–3–5 yillik prognoz shakllanadi.
+
+---
+
+# 9. Xavfsizlik va nazorat
+
+Tizimda ma’lumotlar xavfsizligini ta’minlash uchun quyidagi mexanizmlar ishlatiladi:
+
+* role-based access control (RBAC)
+* foydalanuvchi sessiyalarini nazorat qilish
+* audit log
+* ma’lumotlar o‘zgarish tarixini saqlash
+
+Bu mexanizmlar tizimdagi ma’lumotlarning **xavfsizligi va shaffofligini ta’minlaydi**.
+
+---
+
+# 11. Tizim Arxitekturasi (System Architecture)
+
+ATV platformasi zamonaviy **ko‘p qatlamli (multi-layer) arxitektura** asosida ishlab chiqiladi. Bunday arxitektura tizimni kengaytirish, xavfsizlikni ta’minlash va katta hajmdagi ma’lumotlar bilan ishlash imkonini beradi.
+
+Tizim quyidagi asosiy komponentlardan tashkil topadi:
+
+* Foydalanuvchi interfeysi (Frontend)
+* Backend server
+* Ma’lumotlar bazasi
+* Analitika moduli
+* Monitoring va log tizimi
+* Integratsiya API
+
+Bu komponentlar o‘zaro API orqali bog‘langan holda ishlaydi.
+
+---
+
+# 11.1 Frontend (Foydalanuvchi interfeysi)
+
+Frontend foydalanuvchilar tizim bilan ishlaydigan asosiy qism hisoblanadi.
+
+Frontend orqali foydalanuvchilar quyidagi amallarni bajaradilar:
+
+* texnik vositalarni ro‘yxatga olish
+* texnik vositalar ro‘yxatini ko‘rish
+* ta’mir yozuvlarini kiritish
+* analitik hisobotlarni ko‘rish
+* prognoz natijalarini tahlil qilish
+
+Frontend quyidagi qurilmalarda ishlashi mumkin:
+
+* kompyuter
+* planshet
+* mobil telefon
+
+Frontend odatda zamonaviy web texnologiyalar yordamida ishlab chiqiladi.
+
+Masalan:
+
+* React
+* Vue
+* yoki boshqa zamonaviy web framework
+
+---
+
+# 11.2 Backend (Server qismi)
+
+Backend tizimning asosiy logikasini bajaradi.
+
+Backend quyidagi vazifalarni bajaradi:
+
+* foydalanuvchi autentifikatsiyasi
+* ma’lumotlarni qayta ishlash
+* biznes logikani boshqarish
+* ma’lumotlarni saqlash va o‘qish
+* API orqali frontend bilan aloqa qilish
+
+Backend server REST API yoki GraphQL orqali ishlashi mumkin.
+
+Backend quyidagi texnologiyalar asosida ishlab chiqilishi mumkin:
+
+* FastAPI
+* Python
+* Docker konteynerlari
+
+Backend server **markaziy data markazda joylashadi**.
+
+---
+
+# 11.3 Ma’lumotlar bazasi (Database)
+
+Tizim barcha ma’lumotlarni markaziy ma’lumotlar bazasida saqlaydi.
+
+Ma’lumotlar bazasida quyidagi ma’lumotlar saqlanadi:
+
+* foydalanuvchilar
+* hududlar
+* bo‘linmalar
+* texnik vositalar
+* ta’mir yozuvlari
+* moliyaviy xarajatlar
+* prognoz ma’lumotlari
+
+Ma’lumotlar bazasi yuqori ishonchlilikka ega bo‘lishi kerak.
+
+Ko‘pincha quyidagi tizimlar ishlatiladi:
+
+* PostgreSQL
+* yoki boshqa enterprise darajadagi DBMS
+
+Ma’lumotlar bazasi muntazam ravishda **zaxira nusxa (backup)** qilinadi.
+
+---
+
+# 11.4 Analitika moduli
+
+Analitika moduli tizimdagi ma’lumotlarni tahlil qiladi.
+
+U quyidagi vazifalarni bajaradi:
+
+* texnik vositalar statistikasi
+* eskirish darajasi hisoblash
+* nosozliklar statistikasi
+* xarajatlar tahlili
+
+Analitika moduli rahbariyat uchun **qaror qabul qilishga yordam beradigan ma’lumotlarni taqdim etadi**.
+
+---
+
+# 11.5 Prognozlash moduli
+
+Prognozlash moduli kelajakdagi texnik ehtiyojlarni hisoblash uchun ishlatiladi.
+
+Prognoz quyidagi ma’lumotlarga asoslanadi:
+
+* texnik vositalarning yoshi
+* xizmat muddati
+* nosozliklar statistikasi
+* hududdagi ish yuklamasi
+
+Natijada tizim quyidagi prognozlarni yaratadi:
+
+* 1 yillik ehtiyoj
+* 3 yillik reja
+* 5 yillik strategik prognoz
+
+---
+
+# 11.6 Monitoring va log tizimi
+
+Tizim ishlash jarayonida barcha muhim hodisalarni qayd qiladi.
+
+Monitoring tizimi quyidagilarni nazorat qiladi:
+
+* server ishlash holati
+* tizim yuklanishi
+* xatoliklar
+* API so‘rovlari
+
+Log tizimi esa quyidagi ma’lumotlarni saqlaydi:
+
+* foydalanuvchi harakatlari
+* tizim xatoliklari
+* audit yozuvlari
+
+Bu tizimlar platformaning **barqaror ishlashini ta’minlaydi**.
+
+---
+
+# 11.7 Integratsiya imkoniyatlari
+
+ATV platformasi boshqa davlat axborot tizimlari bilan integratsiya qilinishi mumkin.
+
+Integratsiya quyidagi texnologiyalar orqali amalga oshiriladi:
+
+* REST API
+* JSON formatidagi ma’lumot almashinuvi
+
+Bu orqali tizim boshqa platformalar bilan ma’lumot almashishi mumkin.
+
+Masalan:
+
+* kadrlar tizimi
+* moliyaviy tizim
+* davlat statistik tizimlari
+
+---
+
+# 11.8 Tizim joylashuvi (Deployment)
+
+Tizim markaziy server infratuzilmasida joylashtiriladi.
+
+Arxitektura quyidagicha ishlaydi:
+
+Foydalanuvchi → Frontend → Backend API → Database
+
+Bunday arxitektura:
+
+* xavfsiz
+* kengaytiriladigan
+* katta hajmdagi ma’lumotlar bilan ishlashga mos
+
+bo‘lib hisoblanadi.
