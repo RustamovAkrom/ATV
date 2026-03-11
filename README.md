@@ -1,5 +1,7 @@
 # ATV Texnik Vositalar Hisobga Olish Platformasi
 ![diagram](/Diagram.png)
+https://drawdb.vercel.app/editor?shareId=323cc0c8bbed81299ce512ea4219f28f
+
 ### Ma’lumotlar Modeli va Tizim Arxitekturasi Tavsifi
 
 Versiya 1.0
