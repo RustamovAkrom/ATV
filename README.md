@@ -1,5 +1,5 @@
 # ATV Texnik Vositalar Hisobga Olish Platformasi
-
+![diagram](/Diagram.png)
 ### Ma’lumotlar Modeli va Tizim Arxitekturasi Tavsifi
 
 Versiya 1.0
