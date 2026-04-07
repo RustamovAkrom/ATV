@@ -1,5 +1,6 @@
 # ATV PLATFORMASI DATABASE DOKLADI
-[database.sql](/database.sql)
+ - [database.sql](/database.sql)
+ - [drawDB](https://drawdb.vercel.app/editor?shareId=59b2556000df75fced032f31d52b5ed6)
 ## 1. Platformaning asosiy vazifasi
 
 Bu baza ATV platformasi uchun yaratilgan va uning vazifasi:
