@@ -181,3 +181,12 @@ Project 1 oy ichida bosqichma-bosqich ishlab chiqiladi:
 Platformaning asosiy maqsadi:
 
 > texnik vositalarni boshqarishni avtomatlashtirish va rahbariyatga faktlarga asoslangan qaror qabul qilish imkonini berish
+
+
+## Additional instructuions
+ + Instructions about API endpoints
+    - [API_SPEC](/docs/API_SPEC/)
+ + Instructions about completed Tasks
+    - [TASKS](/docs/TASKS.MD)
+ + Instructions about database structure
+    - [ATV_PLATFORMASI_DOKLADI](/docs/ATV_PLATFORMASI_DATABASE_DOKLADI.MD)
