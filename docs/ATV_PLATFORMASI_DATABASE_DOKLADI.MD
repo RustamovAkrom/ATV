@@ -343,7 +343,3 @@ Agar backend yozayotganda bu schema’ni boshda ushlash qiyin bo‘lsa, shuni yo
 * **Expense** → qancha ketdi
 * **Forecast** → keyin nima kerak bo‘ladi
 * **Audit** → kim nima qildi
-
----
-
-Agar xohlasang, keyingi xabarda men shu dokladni **rasmiy hujjat formatida** yozib beraman: sarlavha, kirish, maqsad, jadval bo‘limlari, xulosa va rahbariyatga taqdim etishga tayyor variant ko‘rinishida.
