@@ -1,34 +1,26 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- ATV platform uchun optimallashtirilgan relational schema
--- Maqsad: texnika reyestri, sklad, assembly/parts, tarix, audit va RBAC
-
--- =========================================================
--- 1) Xavfsizlik va huquqlar
--- =========================================================
 -- Rollar jadvali - bu jadvalga tizimdagi rollar (masalan, superadmin, admin, moderator, analyst va hokazo) haqida ma'lumot saqlanadi. Har bir rol o'ziga xos nomga ega bo'ladi va bu nom rolning qaysi turga tegishli ekanligini ko'rsatadi. Bu jadval orqali rollarni boshqarish, tahlil qilish va hisobotlar tayyorlash mumkin bo'ladi.
 CREATE TABLE IF NOT EXISTS roles (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) NOT NULL UNIQUE,         -- Rol nomi: superadmin, admin, moderator, analyst
-    description TEXT,                          -- Rol izohi
-    PRIMARY KEY (id)
+    description TEXT                           -- Rol izohi
 );
 
 -- Permissionlar jadvali - bu jadvalga tizimdagi barcha mumkin bo'lgan huquqlar (permissions) saqlanadi. Har bir permission o'ziga xos kodga ega bo'ladi va bu kod tizimdagi aniq bir harakat yoki resursga ruxsat berishni ifodalaydi. Masalan, permission kodi "assets.read" bo'lsa, bu rolga ega foydalanuvchilar texnika reyestrini o'qish huquqiga ega bo'lishadi. Bu jadval orqali rollarga kerakli huquqlarni tayinlash va boshqarish mumkin bo'ladi.
 CREATE TABLE IF NOT EXISTS permissions (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     code VARCHAR(150) NOT NULL UNIQUE,         -- Permission kodi: assets.read, analytics.view va hokazo
     name VARCHAR(255),                         -- Odam o'qiydigan nom
     description TEXT,                          -- Batafsil izoh
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (id)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Qaysi rolga qaysi permission berilganligini ko'rsatadi. Bu jadval orqali rollarga kerakli huquqlarni tayinlash va boshqarish mumkin bo'ladi.
 CREATE TABLE IF NOT EXISTS role_permissions (
     role_id UUID NOT NULL,                     -- Qaysi rolga beriladi
     permission_id UUID NOT NULL,               -- Qaysi permission beriladi
-    granted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    granted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(), -- Qachon berilgan
     PRIMARY KEY (role_id, permission_id)
 );
 
@@ -40,12 +32,9 @@ CREATE TABLE IF NOT EXISTS user_statuses (
     PRIMARY KEY (code)
 );
 
--- =========================================================
--- 2) Hududiy tuzilma va xizmatlar
--- =========================================================
 -- Hududlar jadvali - bu jadvalga tizimdagi hududlar (masalan, respublika, viloyat, tuman, bo'linma va hokazo) haqida ma'lumot saqlanadi. Har bir hudud o'ziga xos nomga ega bo'ladi va bu nom hududning qaysi turga tegishli ekanligini ko'rsatadi. Bu jadval orqali hududlarni boshqarish, tahlil qilish va hisobotlar tayyorlash mumkin bo'ladi.
 CREATE TABLE IF NOT EXISTS regions (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,                -- Hudud nomi
     code VARCHAR(50) UNIQUE,                   -- Qisqa kod
     level SMALLINT,                            -- 1-respublika, 2-viloyat, 3-tuman, 4-bo'linma
@@ -54,19 +43,17 @@ CREATE TABLE IF NOT EXISTS regions (
     longitude DOUBLE PRECISION,                -- Markaz koordinatalari
     geojson JSONB,                             -- Aniq hudud shakli uchun
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (id)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Xizmatlar jadvali - bu jadvalga tizimdagi xizmatlar (masalan, IT, transport, kommunal va hokazo) haqida ma'lumot saqlanadi. Har bir xizmat o'ziga xos nomga ega bo'ladi va bu nom xizmatning qaysi turga tegishli ekanligini ko'rsatadi. Bu jadval orqali xizmatlarni boshqarish, tahlil qilish va hisobotlar tayyorlash mumkin bo'ladi.
 CREATE TABLE IF NOT EXISTS services (
-    id UUID,
-    name VARCHAR(255) NOT NULL UNIQUE,         -- Xizmat nomi
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL UNIQUE,         -- Xizmat nomi masalan, IT, transport, kommunal va hokazo
     code VARCHAR(50) UNIQUE,                   -- Xizmat kodi
     description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (id)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Qaysi hududda qaysi xizmatlar mavjudligini ko'rsatadi. Bu jadval orqali foydalanuvchilarga hudud va xizmatlarga asoslangan ruxsatlarni boshqarish mumkin bo'ladi.
@@ -76,24 +63,12 @@ CREATE TABLE IF NOT EXISTS region_services (
     PRIMARY KEY (region_id, service_id)
 );
 
--- Foydalanuvchining qo'shimcha ko'rish doirasi.
--- Bu jadval admin/analyst uchun bir nechta hudud yoki xizmatga ruxsat berishda foydali.
-CREATE TABLE IF NOT EXISTS user_scopes (
-    id UUID,
-    user_id UUID NOT NULL,
-    region_id UUID,
-    service_id UUID,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (id),
-    UNIQUE (user_id, region_id, service_id)
-);
-
 -- =========================================================
 -- 3) Foydalanuvchilar
 -- =========================================================
 -- Bu jadvalga tizim foydalanuvchilari haqida batafsil ma'lumot saqlanadi. Har bir foydalanuvchi o'ziga xos identifikator, login, parol, ismi, familiyasi, emaili, telefoni, roli, statusi va boshqa muhim atributlarga ega bo'ladi. Bu jadval orqali foydalanuvchilarni boshqarish, ularning huquqlarini belgilash va tizimga kirishlarini nazorat qilish mumkin bo'ladi.
 CREATE TABLE IF NOT EXISTS users (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     login VARCHAR(100) NOT NULL UNIQUE,        -- Tizimga kirish logini
     password_hash VARCHAR(255) NOT NULL,       -- Xeshlangan parol
     first_name VARCHAR(100),                    -- Ism
@@ -104,14 +79,29 @@ CREATE TABLE IF NOT EXISTS users (
     status_code VARCHAR(50),                   -- Foydalanuvchi statusi
     assigned_region_id UUID,                   -- Asosiy hudud
     assigned_service_id UUID,                  -- Asosiy xizmat
+    rank_id UUID,                            -- Lavozim
+    position VARCHAR(255),                     -- Lavozim nomi (rank bilan birga ishlatiladi)
+    badge_number VARCHAR(50) UNIQUE,              -- xizmat badge raqami ID
+    passport_number VARCHAR(50) UNIQUE,            -- Pasport seriyasi va raqami
+    hired_at DATE,                             -- Ishga qabul qilingan sana
+    dismissed_at DATE,                          -- Ishdan bo'shatilgan sana
     last_login TIMESTAMP WITH TIME ZONE,       -- Oxirgi kirish vaqti
     last_password_change TIMESTAMP WITH TIME ZONE,
     failed_login_attempts INTEGER DEFAULT 0,
     is_two_factor_enabled BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    version INTEGER DEFAULT 1,                 -- Optimistic locking uchun
-    PRIMARY KEY (id)
+    version INTEGER DEFAULT 1                 -- Optimistic locking uchun
+);
+
+CREATE TABLE IF NOT EXISTS ranks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    name VARCHAR(100) NOT NULL UNIQUE,         -- Lavozim nomi
+    code VARCHAR(50) UNIQUE,                   -- Lavozim kodi
+    level SMALLINT,                            -- Lavozim darajasi (1-5 gacha, 1 - eng yuqori)
+    description TEXT,                          -- Lavozim izohi
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- =========================================================
@@ -119,29 +109,27 @@ CREATE TABLE IF NOT EXISTS users (
 -- =========================================================
 -- Asset kategoriyalari - bu jadvalga tizimdagi texnikalarning kategoriyalari saqlanadi. Har bir kategoriya o'ziga xos nomga ega bo'ladi va bu nom texnikaning qaysi turga tegishli ekanligini ko'rsatadi. Masalan, asset kategoriyalari "kompyuter", "server", "kamera" yoki "printer" bo'lishi mumkin. Bu jadval orqali texnikalarni kategoriyalarga ajratish, tahlil qilish va hisobotlar tayyorlash mumkin bo'ladi.
 CREATE TABLE IF NOT EXISTS asset_categories (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(150) NOT NULL,                -- Kategoriya nomi: kompyuter, server, kamera va hokazo
     code VARCHAR(50) UNIQUE,                   -- Ichki kod
     parent_id UUID,                            -- Kategoriya ierarxiyasi
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (id)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Ishlab chiqaruvchilar jadvali - bu jadvalga har bir ishlab chiqaruvchi haqida batafsil ma'lumot saqlanadi. Har bir ishlab chiqaruvchi o'ziga xos identifikator, nomi, mamlakati, veb-sayti va boshqa muhim atributlarga ega bo'ladi. Bu jadval orqali ishlab chiqaruvchilarni boshqarish, ularning mahsulotlarini tahlil qilish va ta'minot zanjirini optimallashtirish mumkin bo'ladi.
 CREATE TABLE IF NOT EXISTS manufacturers (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(150) NOT NULL UNIQUE,         -- Ishlab chiqaruvchi nomi
     country VARCHAR(100),                      -- Mamlakat
     website VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (id)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Har bir model qaysi kategoriyaga va ishlab chiqaruvchiga tegishli ekanligini ko'rsatadi. Shuningdek, normativ xizmat muddati va kafolat muddati kabi atributlar ham mavjud bo'ladi. Bu jadval orqali assetlarni standartlashtirish, tahlil qilish va prognoz qilish mumkin bo'ladi.
 CREATE TABLE IF NOT EXISTS asset_models (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(150) NOT NULL,                -- Model nomi
     manufacturer_id UUID NOT NULL,             -- Ishlab chiqaruvchi
     category_id UUID NOT NULL,                 -- Kategoriya
@@ -149,13 +137,25 @@ CREATE TABLE IF NOT EXISTS asset_models (
     warranty_months INTEGER,                   -- Kafolat muddati
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (id),
     UNIQUE (name, manufacturer_id)
 );
 
--- =========================================================
--- 5) Statuslar va lookup jadvallar
--- =========================================================
+-- Hujjatlar jadvali - bu jadvalga tizimdagi hujjatlar (masalan, transfer akti, komissiya akti, ta'mir akti, hisobdan chiqarish akti va hokazo) saqlanadi. Har bir hujjat o'ziga xos identifikator, raqami, turi, kim tomonidan yaratilganligi, kim tomonidan im
+CREATE TABLE IF NOT EXISTS documents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    document_number VARCHAR(100) NOT NULL UNIQUE,
+    document_type VARCHAR(50) NOT NULL, -- TRANSFER_ACT / COMMISSION_ACT / REPAIR_ACT / WRITE_OFF_ACT
+
+    created_by UUID,
+    signed_by UUID,
+
+    file_url VARCHAR(2048),
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Asset statuslari - bu jadvalga tizimdagi texnikalarning hozirgi holatini ko'rsatadigan statuslar saqlanadi. Har bir status o'ziga xos kodga ega bo'ladi va bu kod texnikaning hozirgi holatini aniqlash uchun ishlatiladi. Masalan, asset statuslari "active" (faol), "in_stock" (zahirada), "broken" (nosoz) yoki "retired" (hisobdan chiqarilgan) bo'lishi mumkin. Bu jadval orqali texnikalarning holatini boshqarish, tahlil qilish va hisobotlar tayyorlash mumkin bo'ladi.
 CREATE TABLE IF NOT EXISTS asset_statuses (
     code VARCHAR(50),
@@ -177,7 +177,7 @@ CREATE TABLE IF NOT EXISTS repair_statuses (
     code VARCHAR(50),
     name VARCHAR(100) NOT NULL,                -- reported / in_progress / done / canceled
     description TEXT,
-    sort_order INTEGER DEFAULT 100,
+    sort_order INTEGER DEFAULT 100,  -- Statuslarni tartibga solish uchun
     is_active BOOLEAN DEFAULT true,
     PRIMARY KEY (code)
 );
@@ -200,32 +200,40 @@ CREATE TABLE IF NOT EXISTS task_statuses (
     PRIMARY KEY (code)
 );
 
--- =========================================================
--- 6) Sklad (warehouse) va parts
--- =========================================================
 -- Ombor jadvali - bu jadvalga har bir ombor haqida batafsil ma'lumot saqlanadi. Har bir ombor o'ziga xos identifikator, kodi, nomi, joylashuvi, mas'ul xodimi va boshqa muhim atributlarga ega bo'ladi. Bu jadval orqali omborlarni boshqarish, ularning holatini kuzatish va tahlil qilish mumkin bo'ladi.
 CREATE TABLE IF NOT EXISTS warehouses (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     code VARCHAR(50) UNIQUE,                   -- Ombor kodi
     name VARCHAR(255) NOT NULL,                -- Ombor nomi
     region_id UUID,                            -- Qaysi hududdagi ombor
     manager_user_id UUID,                      -- Mas'ul xodim
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (id)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Ombor hujjatlari jadvali - bu jadvalga omborga kirim yoki chiqim harakati bilan bog'liq hujjatlar saqlanadi. Har bir hujjat o'ziga xos identifikator, kodi, turi (kirim yoki chiqim), qaysi ombor bilan bog'liq ekanligi, kim tomonidan yaratilganligi va boshqa muhim atributlarga ega bo'ladi. Bu jadval orqali ombor harakatlarini boshqarish, ularning holatini kuzatish va tahlil qilish mumkin bo'ladi.
+CREATE TABLE IF NOT EXISTS warehouse_documents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    document_id UUID NOT NULL,
+
+    warehouse_id UUID NOT NULL,
+    type VARCHAR(10) NOT NULL, -- IN / OUT
+
+    created_by UUID NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Qismlar jadvali - bu jadvalga har bir qism (part) haqida batafsil ma'lumot saqlanadi. Har bir qism o'ziga xos identifikator, nomi, ishlab chiqaruvchisi, o'lchov birligi va boshqa muhim atributlarga ega bo'ladi. Bu jadval orqali qismlarni boshqarish, ularning holatini kuzatish va tahlil qilish mumkin bo'ladi.
 CREATE TABLE IF NOT EXISTS parts (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     part_number VARCHAR(100) UNIQUE,           -- Qism kodi/part number
     name VARCHAR(255) NOT NULL,                -- Qism nomi
     manufacturer_id UUID,                      -- Qism ishlab chiqaruvchisi
     unit VARCHAR(30) DEFAULT 'pcs',            -- O'lchov birligi
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (id)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Ombordagi qismlar qoldig'i.
@@ -242,7 +250,7 @@ CREATE TABLE IF NOT EXISTS warehouse_part_stock (
 -- Omborga kirim/chiqim harakati:
 -- movement_type = IN yoki OUT
 CREATE TABLE IF NOT EXISTS warehouse_part_movements (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     warehouse_id UUID NOT NULL,
     part_id UUID NOT NULL,
     movement_type VARCHAR(10) NOT NULL,         -- IN / OUT
@@ -251,8 +259,7 @@ CREATE TABLE IF NOT EXISTS warehouse_part_movements (
     reference_id UUID,                          -- Bog'langan obyekt ID
     moved_by UUID,                              -- Kim amalga oshirdi
     moved_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    note TEXT,
-    PRIMARY KEY (id)
+    note TEXT
 );
 
 -- =========================================================
@@ -260,7 +267,7 @@ CREATE TABLE IF NOT EXISTS warehouse_part_movements (
 -- =========================================================
 -- Bu jadvalga har bir texnika (asset) haqida batafsil ma'lumot saqlanadi. Har bir asset o'ziga xos identifikator, modeli, joylashuvi, holati, xarid sanasi, kafolat muddati va boshqa muhim atributlarga ega bo'ladi. Bu jadval orqali assetlarni boshqarish, ularning holatini kuzatish va tahlil qilish mumkin bo'ladi.
 CREATE TABLE IF NOT EXISTS assets (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     asset_tag VARCHAR(255) UNIQUE,              -- Inventar raqami
     serial_number VARCHAR(255) UNIQUE,          -- Seriya raqami
     model_id UUID NOT NULL,                     -- Model
@@ -286,28 +293,26 @@ CREATE TABLE IF NOT EXISTS assets (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     deleted_at TIMESTAMP WITH TIME ZONE,
     deleted_by UUID,
-    version INTEGER DEFAULT 1,
-    PRIMARY KEY (id)
+    version INTEGER DEFAULT 1
 );
 
 -- Asset holati tarixini saqlash.
 -- Bu analitika va prognoz uchun juda muhim.
 CREATE TABLE IF NOT EXISTS asset_state_history (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     asset_id UUID NOT NULL,
     status_code VARCHAR(50),
     lifecycle_stage_code VARCHAR(50),
     condition_percent INTEGER,
     note TEXT,
     changed_by UUID,
-    changed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (id)
+    changed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Assetning harakat tarixi:
 -- Ombordan bo'limga, bo'limdan boshqa hududga, xizmatdan omborga va hokazo.
 CREATE TABLE IF NOT EXISTS asset_transfers (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     asset_id UUID NOT NULL,
     from_region_id UUID,
     to_region_id UUID,
@@ -317,8 +322,7 @@ CREATE TABLE IF NOT EXISTS asset_transfers (
     to_warehouse_id UUID,
     transferred_by UUID,
     transferred_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    note TEXT,
-    PRIMARY KEY (id)
+    note TEXT
 );
 
 -- =========================================================
@@ -335,12 +339,26 @@ CREATE TABLE IF NOT EXISTS asset_parts (
     PRIMARY KEY (asset_id, part_id)
 );
 
--- =========================================================
--- 9) Ta'mirlash
--- =========================================================
+-- Assetning qaysi hududda va qaysi xizmatda ishlatilayotganini ko'rsatadi. Bu jadval orqali assetlarni joylashuv va xizmatga asoslangan boshqarish, tahlil qilish va hisobotlar tayyorlash mumkin bo'ladi.
+CREATE TABLE IF NOT EXISTS asset_assignments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    asset_id UUID NOT NULL,
+
+    region_id UUID NOT NULL,
+    service_id UUID NOT NULL,
+
+    assigned_by UUID,
+    assigned_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    unassigned_at TIMESTAMP WITH TIME ZONE,
+
+    note TEXT
+);
+
 -- Ta'mirlar jadvali - bu jadvalga har bir ta'mir operatsiyasi haqida batafsil ma'lumot saqlanadi. Har bir ta'mir qaysi texnikaga tegishli ekanligini, ta'mirni kim xabar qilganini, kimga topshirilganini, kim bajarganini, ta'mir holatini, ta'mir sanasini, ta'mir xarajatlarini va boshqa muhim ma'lumotlarni o'z ichiga oladi. Bu jadval orqali ta'mir jarayonini tahlil qilish, samaradorlikni oshirish va xarajatlarni boshqarish mumkin bo'ladi.
 CREATE TABLE IF NOT EXISTS repairs (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     asset_id UUID NOT NULL,  -- Qaysi texnikaga ta'mir qilinmoqda
     reported_by UUID, -- Ta'mirni kim xabar qilgan
     assigned_to UUID,  -- Ta'mirni kimga topshirilgan
@@ -355,38 +373,32 @@ CREATE TABLE IF NOT EXISTS repairs (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     deleted_at TIMESTAMP WITH TIME ZONE,
-    deleted_by UUID,
-    PRIMARY KEY (id)
+    deleted_by UUID
 );
 -- Ta'mirda ishlatilgan qismlar va ularning xarajatlarini saqlash. Bu ta'mir xarajatlarini tahlil qilish va qaysi qismlar eng ko'p ishlatilayotganini aniqlash uchun muhimdir.
 CREATE TABLE IF NOT EXISTS repair_parts (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     repair_id UUID NOT NULL,
     part_id UUID NOT NULL,
     quantity INTEGER NOT NULL DEFAULT 1,
     cost NUMERIC(18,2) DEFAULT 0,
     created_by UUID,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (id)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Ta'mir holati o'zgarish tarixini saqlash. Bu ta'mir jarayonini tahlil qilish va samaradorlikni oshirish uchun muhimdir.
 CREATE TABLE IF NOT EXISTS repair_status_history (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     repair_id UUID NOT NULL,
     old_status VARCHAR(50),
     new_status VARCHAR(50),
     changed_by UUID,
-    changed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (id)
+    changed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- =========================================================
--- 10) Xarajatlar va forecast
--- =========================================================
 -- Xarajatlar jadvali - bu jadvalga har bir ta'mir, transfer yoki boshqa operatsiyalar bilan bog'liq bo'lgan xarajatlar saqlanadi. Har bir xarajat qaysi assetga, ta'mirga, hududga va xizmatga tegishli ekanligini ko'rsatadi. Bu jadval orqali umumiy xarajatlarni tahlil qilish, eng ko'p xarajat qilinadigan hududlar yoki xizmatlarni aniqlash va kelgusi xarajatlarni prognoz qilish mumkin bo'ladi.
 CREATE TABLE IF NOT EXISTS expenses (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     asset_id UUID,
     repair_id UUID,
     region_id UUID,
@@ -398,23 +410,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     created_by UUID,
     occurred_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    file_url VARCHAR(2048),
-    PRIMARY KEY (id)
-);
-
--- Forecast jadvali - bu jadvalga har bir hudud, xizmat va texnika kategoriyasi uchun kelgusi yillardagi ehtiyoj va xarajatlar bo'yicha prognozlar saqlanadi. Bu jadval analitik va rejalashtirish uchun juda muhimdir.
-CREATE TABLE IF NOT EXISTS forecasts (
-    id UUID,
-    region_id UUID,
-    service_id UUID,
-    asset_category_id UUID,
-    forecast_year INTEGER NOT NULL,
-    demand_estimate INTEGER NOT NULL,           -- Taxmin qilingan ehtiyoj soni
-    method VARCHAR(100),                        -- Statistik yoki AI usuli
-    confidence NUMERIC(5,2),                    -- Ishonchlilik foizi
-    created_by UUID,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (id)
+    file_url VARCHAR(2048)
 );
 
 -- =========================================================
@@ -422,7 +418,7 @@ CREATE TABLE IF NOT EXISTS forecasts (
 -- =========================================================
 -- Tasks jadvali - bu jadvalga texnika bilan bog'liq bo'lgan yoki bo'lmagan, lekin tizim ichidagi muhim vazifalar (masalan, ta'mir qilish, tekshirish, yangilash va hokazo) saqlanadi. Har bir vazifa qaysi assetga tegishli ekanligini va uning hozirgi holatini ko'rsatadi.
 CREATE TABLE IF NOT EXISTS tasks (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     asset_id UUID,
     title VARCHAR(250) NOT NULL,                -- Vazifa sarlavhasi
     description TEXT,
@@ -431,20 +427,18 @@ CREATE TABLE IF NOT EXISTS tasks (
     due_date TIMESTAMP WITH TIME ZONE,
     created_by UUID,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (id)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Notifications jadvali - bu jadval tizimdagi muhim voqealar (masalan, asset nosozligi, ta'mir holati o'zgarishi, yangi vazifa tayinlanishi va hokazo) haqida foydalanuvchilarga xabar yuborish uchun ishlatiladi. Har bir xabar qaysi obyektga tegishli ekanligini va kimlarga yuborilganligini ko'rsatadi.
 CREATE TABLE IF NOT EXISTS notifications (
-    id UUID,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title VARCHAR(255),                         -- Xabar sarlavhasi
     message TEXT NOT NULL,                      -- Xabar matni
     entity_type VARCHAR(100),                   -- Qaysi obyektga tegishli
     entity_id UUID,                             -- O'sha obyekt ID
     created_by UUID,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (id)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Notification recipients jadvali - bu jadvalga har bir xabar kimlarga yuborilganligi va ularning o'qilganligi haqida ma'lumot saqlanadi. Bu orqali foydalanuvchilar o'zlariga yuborilgan xabarlarni ko'rishlari va boshqarishlari mumkin bo'ladi.
@@ -484,22 +478,6 @@ CREATE TABLE IF NOT EXISTS attachments (
     PRIMARY KEY (id)
 );
 
--- =========================================================
--- 12) Tashkiliy tadbirlar
--- =========================================================
--- Bu jadval texnika bilan bog'liq bo'lmagan, lekin tashkilot ichidagi muhim tadbirlar, yig'ilishlar, tekshiruvlar va boshqalar uchun ishlatiladi.
-CREATE TABLE IF NOT EXISTS calendar_events (
-    id UUID,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    start_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    end_at TIMESTAMP WITH TIME ZONE,
-    location VARCHAR(255),
-    created_by UUID,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (id)
-);
-
 -- Analitik snapshotlar jadvali - bu jadval har oy yoki har chorakda texnika holati, xarajatlar va boshqa ko'rsatkichlarning umumiy ko'rinishini saqlash uchun ishlatiladi.
 -- Bu jadval analitik so'rovlarni tezlashtirish va vaqt o'tishi bilan tendensiyalarni kuzatish uchun foydalidir.
 CREATE TABLE analytics_snapshots (
@@ -510,10 +488,10 @@ CREATE TABLE analytics_snapshots (
     region_id UUID,
     service_id UUID,
 
-    total_assets INTEGER,
-    active_assets INTEGER,
-    broken_assets INTEGER,
-    in_repair_assets INTEGER,
+    total_assets INTEGER, -- Umumiy assetlar soni
+    active_assets INTEGER, -- Faol assetlar soni
+    broken_assets INTEGER, -- Nosoz assetlar soni
+    in_repair_assets INTEGER, -- Ta'mirda bo'lgan assetlar soni
 
     total_expenses NUMERIC(18,2),
 
@@ -522,10 +500,49 @@ CREATE TABLE analytics_snapshots (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- =========================================================
--- 13) Indekslar
--- =========================================================
+-- Assetga ta'mir yoki transfer uchun ruxsat so'rovlarini saqlash. Bu jadval orqali assetga ta'mir yoki transfer qilishdan oldin ruxsat olish jarayonini boshqarish mumkin bo'ladi.
+CREATE TABLE IF NOT EXISTS requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
+    created_by UUID NOT NULL, -- Ruxsat so'rovini kim yaratgan
+    region_id UUID NOT NULL, -- Qaysi hududga tegishli
+    service_id UUID NOT NULL, -- Qaysi xizmatga tegishli
+
+    status VARCHAR(50) DEFAULT 'pending', -- pending / approved / rejected
+
+    approved_by UUID, -- Ruxsat bergan foydalanuvchi
+    approved_at TIMESTAMP WITH TIME ZONE, -- Ruxsat berilgan vaqt
+
+    comment TEXT, -- Ruxsat berish yoki rad etish uchun izoh
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Request itemlar jadvali - bu jadvalga har bir ruxsat so'roviga tegishli bo'lgan itemlar saqlanadi. Har bir item qaysi asset modeliga tegishli ekanligini va necha dona kerakligini ko'rsatadi. Bu jadval orqali ruxsat so'rovlarini batafsil boshqarish va tahlil qilish mumkin bo'ladi.
+CREATE TABLE IF NOT EXISTS request_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    request_id UUID NOT NULL,
+    asset_model_id UUID NOT NULL,
+
+    quantity INTEGER NOT NULL DEFAULT 1, -- Nechta asset kerak
+    note TEXT
+);
+-- Assetga ta'mir yoki transfer qilish uchun ruxsat berilgan holatlarni saqlash. Bu jadval orqali assetga ta'mir yoki transfer qilish jarayonini boshqarish va tahlil qilish mumkin bo'ladi.
+CREATE TABLE IF NOT EXISTS asset_commissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    asset_id UUID NOT NULL,
+    document_id UUID NOT NULL,
+
+    commissioned_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(), -- Ta'mir yoki transfer qachon amalga oshirilgan
+
+    note TEXT
+);
+-- =========================================================
+-- Indekslar
+-- =========================================================
 CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id);
 CREATE INDEX IF NOT EXISTS idx_users_status_code ON users(status_code);
 CREATE INDEX IF NOT EXISTS idx_users_assigned_region_id ON users(assigned_region_id);
@@ -566,7 +583,6 @@ CREATE INDEX IF NOT EXISTS idx_expenses_repair_id ON expenses(repair_id);
 CREATE INDEX IF NOT EXISTS idx_expenses_region_id ON expenses(region_id);
 CREATE INDEX IF NOT EXISTS idx_expenses_service_id ON expenses(service_id);
 CREATE INDEX IF NOT EXISTS idx_expenses_type_code ON expenses(expense_type_code);
-CREATE INDEX IF NOT EXISTS idx_forecasts_lookup ON forecasts(region_id, service_id, asset_category_id, forecast_year);
 
 CREATE INDEX IF NOT EXISTS idx_tasks_asset_id ON tasks(asset_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_status_code ON tasks(status_code);
@@ -580,9 +596,8 @@ CREATE INDEX IF NOT EXISTS idx_analytics_snapshots_region ON analytics_snapshots
 CREATE INDEX IF NOT EXISTS idx_analytics_snapshots_service ON analytics_snapshots(service_id);
 CREATE INDEX IF NOT EXISTS idx_analytics_snapshots_date ON analytics_snapshots(snapshot_date);
 -- =========================================================
--- 14) Foreign keys
+-- Foreign keys
 -- =========================================================
-
 ALTER TABLE role_permissions
     ADD CONSTRAINT fk_role_permissions_role
     FOREIGN KEY (role_id) REFERENCES roles(id)
@@ -612,21 +627,6 @@ ALTER TABLE users
     ADD CONSTRAINT fk_users_service
     FOREIGN KEY (assigned_service_id) REFERENCES services(id)
     ON UPDATE CASCADE ON DELETE SET NULL;
-
-ALTER TABLE user_scopes
-    ADD CONSTRAINT fk_user_scopes_user
-    FOREIGN KEY (user_id) REFERENCES users(id)
-    ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE user_scopes
-    ADD CONSTRAINT fk_user_scopes_region
-    FOREIGN KEY (region_id) REFERENCES regions(id)
-    ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE user_scopes
-    ADD CONSTRAINT fk_user_scopes_service
-    FOREIGN KEY (service_id) REFERENCES services(id)
-    ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE regions
     ADD CONSTRAINT fk_regions_parent
@@ -918,26 +918,6 @@ ALTER TABLE expenses
     FOREIGN KEY (created_by) REFERENCES users(id)
     ON UPDATE CASCADE ON DELETE SET NULL;
 
-ALTER TABLE forecasts
-    ADD CONSTRAINT fk_forecasts_region
-    FOREIGN KEY (region_id) REFERENCES regions(id)
-    ON UPDATE CASCADE ON DELETE SET NULL;
-
-ALTER TABLE forecasts
-    ADD CONSTRAINT fk_forecasts_service
-    FOREIGN KEY (service_id) REFERENCES services(id)
-    ON UPDATE CASCADE ON DELETE SET NULL;
-
-ALTER TABLE forecasts
-    ADD CONSTRAINT fk_forecasts_category
-    FOREIGN KEY (asset_category_id) REFERENCES asset_categories(id)
-    ON UPDATE CASCADE ON DELETE SET NULL;
-
-ALTER TABLE forecasts
-    ADD CONSTRAINT fk_forecasts_created_by
-    FOREIGN KEY (created_by) REFERENCES users(id)
-    ON UPDATE CASCADE ON DELETE SET NULL;
-
 ALTER TABLE tasks
     ADD CONSTRAINT fk_tasks_asset
     FOREIGN KEY (asset_id) REFERENCES assets(id)
@@ -983,11 +963,6 @@ ALTER TABLE attachments
     FOREIGN KEY (created_by) REFERENCES users(id)
     ON UPDATE CASCADE ON DELETE SET NULL;
 
-ALTER TABLE calendar_events
-    ADD CONSTRAINT fk_calendar_events_created_by
-    FOREIGN KEY (created_by) REFERENCES users(id)
-    ON UPDATE CASCADE ON DELETE SET NULL;
-
 ALTER TABLE analytics_snapshots
     ADD CONSTRAINT fk_analytics_snapshots_region
     FOREIGN KEY (region_id) REFERENCES regions(id)
@@ -997,3 +972,41 @@ ALTER TABLE analytics_snapshots
     ADD CONSTRAINT fk_analytics_snapshots_service
     FOREIGN KEY (service_id) REFERENCES services(id)
     ON UPDATE CASCADE ON DELETE SET NULL;
+
+ALTER TABLE requests
+    ADD CONSTRAINT fk_requests_created_by
+    FOREIGN KEY (created_by) REFERENCES users(id)
+    ON UPDATE CASCADE ON DELETE SET NULL;
+
+ALTER TABLE requests
+    ADD CONSTRAINT fk_requests_region
+    FOREIGN KEY (region_id) REFERENCES regions(id)
+    ON UPDATE CASCADE ON DELETE SET NULL;
+
+ALTER TABLE requests
+    ADD CONSTRAINT fk_requests_service
+    FOREIGN KEY (service_id) REFERENCES services(id)
+    ON UPDATE CASCADE ON DELETE SET NULL;
+
+ALTER TABLE requests
+    ADD CONSTRAINT fk_requests_approved_by
+    FOREIGN KEY (approved_by) REFERENCES users(id)
+    ON UPDATE CASCADE ON DELETE SET NULL;
+
+ALTER TABLE request_items
+    ADD CONSTRAINT fk_request_items_request
+    FOREIGN KEY (request_id) REFERENCES requests(id)
+    ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE request_items
+    ADD CONSTRAINT fk_request_items_model
+    FOREIGN KEY (asset_model_id) REFERENCES asset_models(id)
+    ON UPDATE CASCADE ON DELETE SET NULL;
+
+ALTER TABLE documents
+    ADD CONSTRAINT fk_documents_created_by
+    FOREIGN KEY (created_by) REFERENCES users(id);
+
+ALTER TABLE documents
+    ADD CONSTRAINT fk_documents_signed_by
+    FOREIGN KEY (signed_by) REFERENCES users(id);

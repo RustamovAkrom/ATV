@@ -1,5 +1,7 @@
 # ATV Platform Backend
 ![](/assets/analytics_dashboard.jpg)
+
+# REQUEST → DOCUMENT → WAREHOUSE → ASSET → COMMISSION → ASSIGNMENT → REPAIR → HISTORY
 ## 📌 Overview
 
 ATV (Axborot-Texnika Vositalari) platformasi — bu davlat tashkilotlarida texnik vositalarni **markazlashgan holda boshqarish, monitoring qilish va tahlil qilish** uchun ishlab chiqilayotgan backend tizim.
