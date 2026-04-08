@@ -1,239 +1,203 @@
-# ATV Backend: 1 Oylik Aniq Delivery Plan
+# ATV Backend Delivery Plan (Manager Version)
 
-- Start date: 2026-04-08
-- Target handover date: 2026-05-08
-- Duration: 4 hafta (20 ish kuni)
-- Goal: productionga tayyor, testlangan, dokumentatsiyali backend MVP
+## 1. Executive Summary
 
-## 1) Scope Freeze (nima topshiramiz)
+Project: ATV Platform Backend
+Timeline: 30 calendar days (2026-04-08 -> 2026-05-08)
+Delivery Target: Production-ready MVP backend with core operational flows.
 
-P0 (majburiy, 1 oyda bitishi shart):
+Business Outcome:
+- Yagona texnika reyestri va asset lifecycle boshqaruvi
+- Ombor/parts/repair jarayonlarini to'liq nazorat
+- Ruxsat (request) va hujjatlashtirish oqimini avtomatlashtirish
+- Auditga tayyor operatsion tizim
+
+Success Criteria (top-level):
+- P0 scope 100% delivered
+- Critical flowlar (Auth, Asset, Warehouse, Repair, Request/Document) end-to-end working
+- API test suite passes
+- Handover documentation complete
+
+## 2. Scope and Priorities
+
+P0 (Must-have, contractual delivery scope):
 - Auth + RBAC
 - Users, Regions, Services
-- Asset catalog (categories, manufacturers, models, classes)
-- Assets lifecycle (create/update/state/history/transfer/assignment)
-- Warehouse (warehouses, parts, stock, movements)
-- Repairs (repair flow, repair_parts, repair_status_history)
+- Asset Catalog + Assets Lifecycle
+- Warehouse + Stock + Movements
+- Repairs + Repair Parts + Repair History
 - Expenses
-- Request -> Approval -> Document -> Commission asosiy oqimi
+- Request -> Approval -> Document -> Commission flow
 - Audit logs
 - Basic notifications
-- Swagger/OpenAPI to'liq va testlar
+- OpenAPI/Swagger + test coverage baseline
 
-P1 (faqat vaqt qolsa):
-- Forecast algoritmning kengaytmasi
-- Advanced analytics dashboard endpoints
-- Background jobs (Celery/Redis)
+P1 (Time-permitting):
+- Advanced analytics
+- Forecast enhancements
+- Background jobs (Redis/Celery)
 
-## 2) Definition of Done (DoD)
+Out of scope for Month-1:
+- Complex BI dashboards
+- Full event-driven microservices refactor
+- Multi-tenant split architecture
 
-Har modul DONE bo'lishi uchun:
-- CRUD/flow endpointlar ishlaydi
-- request/response schema yozilgan
-- service/repository layer ajratilgan
-- migration bor
-- unit + integration test bor
-- permission check qo'yilgan
-- audit event yoziladi
-- API_SPEC hujjati yangilangan
+## 3. Delivery Milestones (Dates and Outputs)
 
-## 3) Milestone va Deadline
+### M1 — Foundation Complete (Due: 2026-04-14)
+Deliverables:
+- FastAPI base architecture
+- DB setup + Alembic migrations
+- Auth endpoints (login/refresh)
+- RBAC permission checks
+- Users module CRUD
 
-- M1 (2026-04-14): Foundation + Auth + RBAC + Users
-- M2 (2026-04-21): Assets domain to'liq
-- M3 (2026-04-28): Warehouse + Repairs + Expenses
-- M4 (2026-05-05): Request/Document flow + Audit + Notifications + Analytics basic
-- Final (2026-05-08): Stabilization, bugfix, release handover
+Exit Criteria:
+- `/health` works
+- Auth flow validated
+- Permission denied scenarios return 403
+- Initial CI checks green
 
-## 4) Haftalar bo'yicha aniq ish rejasi
+### M2 — Asset Domain Complete (Due: 2026-04-21)
+Deliverables:
+- Reference entities CRUD (categories/manufacturers/models/classes)
+- Assets CRUD + filtering
+- Asset state history, transfer, assignment logic
+- Passport and class history APIs
 
-## WEEK 1 (2026-04-08 -> 2026-04-14): Foundation, Auth, RBAC, Users
+Exit Criteria:
+- Asset create/update/transfer lifecycle fully testable
+- State and assignment history stored correctly
 
-W1-01 Project bootstrap
-- Task: FastAPI app skeleton, env config, settings, logging, exception handler
-- Output: `app/` structure, `.env.example`, start command
-- Acceptance: app localda run bo'ladi, `/health` 200
+### M3 — Operations Core Complete (Due: 2026-04-28)
+Deliverables:
+- Warehouse CRUD + parts CRUD
+- Stock engine + movement transactions (IN/OUT)
+- Repairs flow + repair parts integration
+- Expenses module
 
-W1-02 Database foundation
-- Task: async SQLAlchemy, session, base model, Alembic init
-- Output: first migration + migration workflow guide
-- Acceptance: `upgrade head` muvaffaqiyatli
+Exit Criteria:
+- Stock cannot become negative
+- Repair completion updates cost and related records correctly
 
-W1-03 Auth
-- Task: password hashing, JWT access/refresh, login/refresh/logout
-- Output: `/auth/*` endpointlar
-- Acceptance: login -> token -> protected endpoint chain ishlaydi
+### M4 — Governance & Final Integration (Due: 2026-05-05)
+Deliverables:
+- Request approval pipeline
+- Document/signature/file/commission flow
+- Audit middleware enabled
+- Notifications basic
+- Analytics basic endpoints
 
-W1-04 RBAC
-- Task: roles/permissions loading, `require_permission()` dependency
-- Output: permission-based access control
-- Acceptance: ruxsatsiz user 403 oladi
+Exit Criteria:
+- Request -> Approval -> Document flow works end-to-end
+- Audit logs generated on write operations
 
-W1-05 Users
-- Task: users CRUD, pagination/filter, soft-delete
-- Output: `/users` endpointlari
-- Acceptance: create/read/update/delete flow testdan o'tadi
+### Final Handover (Due: 2026-05-08)
+Deliverables:
+- Stabilized release candidate
+- Regression test report
+- Updated docs + runbook
+- Known limitations list
 
-W1-06 Quality gate
-- Task: lint/format/test pipeline
-- Output: CI config (minimum lint + tests)
-- Acceptance: PR check green
+Exit Criteria:
+- Smoke test checklist 100% pass
+- Migration up/down validated
 
-## WEEK 2 (2026-04-15 -> 2026-04-21): Assets Core
+## 4. Weekly Work Plan (Execution Level)
 
-W2-01 Reference entities
-- Task: categories/manufacturers/models/classes CRUD
-- Output: reference endpoints + migrations
-- Acceptance: unique/check/fk validatsiya ishlaydi
+## Week 1: Foundation + Security + Users
+- Project bootstrap, environment, logging, exception handling
+- Async DB session, migrations
+- JWT auth and token lifecycle
+- RBAC dependency + role/permission integration
+- Users CRUD + pagination + soft delete
 
-W2-02 Assets CRUD
-- Task: create/get list/get by id/update/soft-delete
-- Output: filterlar (`region/service/status/search`)
-- Acceptance: list endpointda pagination + filter ishlaydi
+## Week 2: Assets Domain
+- Reference dictionaries (category/manufacturer/model/class)
+- Assets CRUD + filters
+- Asset state/lifecycle logic
+- Transfer + assignment flow
+- Passport APIs
 
-W2-03 Asset lifecycle logic
-- Task: status/lifecycle update, condition update, state history write
-- Output: `asset_state_history` avtomatik logikasi
-- Acceptance: har status update tarixda aks etadi
+## Week 3: Warehouse + Repairs + Expenses
+- Warehouses and parts modules
+- Stock and movement transaction engine
+- Repairs lifecycle and repair parts
+- Expenses linkage (asset/repair)
 
-W2-04 Transfer/Assignment flow
-- Task: `asset_transfers` + `asset_assignments` full workflow
-- Output: assign/unassign/transfer endpointlar
-- Acceptance: transfer paytida assignment to'g'ri yopilib-yangilanadi
+## Week 4: Integration + Audit + Release
+- Request approvals and statuses
+- Document signatures and files
+- Commission workflow
+- Audit + notifications + analytics basic
+- Performance tuning + regression + release prep
 
-W2-05 Passport va class history
-- Task: asset_passport, passport_items, passport_movements, class_history CRUD
-- Output: passport API
-- Acceptance: assetga 1:1 passport constraint saqlanadi
+## 5. Definition of Done (Module-Level)
 
-W2-06 Security/validation gate
-- Task: business validations
-- Output: clear error contract
-- Acceptance: noto'g'ri transfer/status holatlari 4xx qaytaradi
+Each module is DONE only if:
+- API endpointlar complete and documented
+- Request/response schemas implemented
+- Service layer logic separated from routers
+- Migration scripts included
+- Unit + integration tests added
+- RBAC checks applied
+- Audit event emitted for write actions
+- API spec updated
 
-## WEEK 3 (2026-04-22 -> 2026-04-28): Warehouse, Repairs, Expenses
+## 6. Quality Gates and KPI
 
-W3-01 Warehouses + parts
-- Task: warehouse CRUD, parts CRUD
-- Output: `/warehouses`, `/parts`
-- Acceptance: FK + status checks to'g'ri
+Technical KPI:
+- Unit/integration tests for all P0 flows
+- Service-layer coverage target: >= 70%
+- Zero blocker/critical defects at release
+- Migration reliability: up/down success on clean DB
 
-W3-02 Stock engine
-- Task: `warehouse_part_stock` update service
-- Output: stock calculate/update
-- Acceptance: stock manfiyga tushmaydi
+Operational KPI:
+- Milestones delivered on planned date
+- No unresolved P0 blockers by week close
+- Critical path tasks completed before next milestone
 
-W3-03 Movements
-- Task: IN/OUT movement transaction
-- Output: atomic movement service
-- Acceptance: movement yozuvi va stock update bitta transactionda
+## 7. Risk Register and Mitigation
 
-W3-04 Repairs core
-- Task: create/assign/status/complete repair
-- Output: `/repairs/*`
-- Acceptance: active repair qoidalari ishlaydi
+Risk 1: Schema vs migration mismatch
+- Mitigation: migration freeze policy at end of Week 1
 
-W3-05 Repair parts integration
-- Task: repair_parts qo'shish + warehouse deduct + total_cost update
-- Output: integrated repair flow
-- Acceptance: repair complete bo'lganda cost to'g'ri hisoblanadi
+Risk 2: Request/Document flow complexity
+- Mitigation: isolate and integrate in Week 4 with dedicated buffer
 
-W3-06 Expenses
-- Task: expense create/list, asset/repair bog'lash
-- Output: `/expenses`
-- Acceptance: expense_type + amount validations ishlaydi
+Risk 3: Warehouse/Repair transaction bugs
+- Mitigation: atomic transaction tests + negative stock checks
 
-## WEEK 4 (2026-04-29 -> 2026-05-08): Flow Integration, Audit, Test, Release
+Risk 4: Scope creep in analytics
+- Mitigation: strict P0/P1 split, defer advanced analytics
 
-W4-01 Request workflow
-- Task: requests + items + approvals + status_history
-- Output: approval pipeline endpointlari
-- Acceptance: multi-step approval flow end-to-end ishlaydi
+## 8. Reporting Cadence (for Project Manager)
 
-W4-02 Documents + signatures + files + commission
-- Task: documents lifecycle, signatures, file versioning, asset_commissions
-- Output: `/documents/*` + related endpoints
-- Acceptance: draft -> pending_sign -> signed holatlari ishlaydi
+Daily update (short):
+- Yesterday done
+- Today plan
+- Blockers
 
-W4-03 Audit middleware
-- Task: write operationlar uchun audit event
-- Output: audit middleware/service
-- Acceptance: CRUD actionlar `audit_logs`ga yoziladi
+Weekly report (formal):
+- Milestone progress %
+- Completed deliverables
+- Risks/issues and decision needs
+- Next week plan
 
-W4-04 Notifications basic
-- Task: create notification + recipients + read flag
-- Output: `/notifications` APIs
-- Acceptance: user unread list oladi
+## 9. Tracking Format
 
-W4-05 Analytics basic
-- Task: KPI endpointlar (`assets by status`, `repairs stats`, `expenses summary`)
-- Output: `/analytics/*` basic
-- Acceptance: 3 asosiy KPI endpoint ishlaydi
+Template:
+`[ID] | Module | Task | Owner | ETA(h) | Start | End | Status | Blocker | Note`
 
-W4-06 Performance hardening
-- Task: query profiling, index migration, N+1 fix
-- Output: db tuning migration
-- Acceptance: top endpointlar response vaqti barqaror
+Example:
+`[W2-04] | Assets | Transfer + Assignment flow | BE-1 | 10h | 2026-04-17 | 2026-04-18 | in_progress | none | history logging done`
 
-W4-07 Release readiness
-- Task: regression tests, bugfix sprint, release notes, handover docs
-- Output: v1.0 release candidate
-- Acceptance: smoke test checklist 100% green
+## 10. Final Acceptance Checklist (Manager Sign-off)
 
-## 5) Daily Execution Rules (majburiy)
-
-- Har kuni 2 ta blok:
-- Build block (feature implement)
-- Verify block (test + bugfix + docs)
-
-- Har task uchun:
-- Ticket ID (masalan `W2-04`)
-- Owner
-- ETA (soatda)
-- Status (`todo/in_progress/review/done`)
-
-- Har kechqurun:
-- Daily changelog
-- Risk log yangilash
-- Ertangi top-3 priority
-
-## 6) Test Plan (minimum)
-
-- Unit tests: service layer critical logic
-- Integration tests: auth, assets transfer, stock movement, repair complete, request approval
-- API smoke tests: barcha P0 modul endpointlari
-- Negative tests: permissions, validation, not-found, conflict
-
-Target:
-- Coverage minimum 70% service layer
-- P0 flowlar uchun 100% smoke pass
-
-## 7) Risk Register va Buffer
-
-Asosiy risklar:
-- Schema drift (`database.sql` vs migrations)
-- Request/document flow complexity
-- Warehouse-repair transaction buglar
-- Time sink: analytics/forecast scope creep
-
-Mitigation:
-- Week 1 oxirida migration freeze policy
-- Har hafta juma kuni integration checkpoint
-- Week 4da 3 kunlik bugfix-only buffer
-
-## 8) Final Handover Checklist (2026-05-08)
-
-- P0 endpointlar production configda ishlaydi
-- Migrations clean (up/down test)
-- API docs yangilangan
-- README runbook bor
-- Test report biriktirilgan
-- Known limitations ro'yxati berilgan
-- Release tag va changelog tayyor
-
-## 9) Task Tracking Template
-
-`[W?-??] | Modul | Task | Owner | ETA | Start | End | Status | Blocker | Notes`
-
-Misol:
-`[W2-04] | Assets | Transfer + Assignment flow | BE-1 | 10h | 2026-04-17 | 2026-04-18 | in_progress | none | transfer close/open fixed`
+- P0 scope fully delivered
+- Core business flows demo passed
+- API documentation complete
+- Test report attached
+- Deployment runbook attached
+- Known limitations approved
+- Release tag and changelog prepared

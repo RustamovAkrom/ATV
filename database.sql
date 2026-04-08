@@ -130,21 +130,16 @@ CREATE TABLE IF NOT EXISTS asset_models (
 -- Hujjatlar jadvali - bu jadvalga tizimdagi hujjatlar (masalan, transfer akti, komissiya akti, ta'mir akti, hisobdan chiqarish akti va hokazo) saqlanadi. Har bir hujjat o'ziga xos identifikator, raqami, turi, kim tomonidan yaratilganligi, kim tomonidan im
 CREATE TABLE IF NOT EXISTS documents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
     document_number VARCHAR(100) NOT NULL UNIQUE,
     document_type VARCHAR(50) NOT NULL, -- TRANSFER_ACT / COMMISSION_ACT / REPAIR_ACT / WRITE_OFF_ACT
-
     request_id UUID, -- request oqimi bilan bog'lash uchun
     created_by UUID NOT NULL,
     signed_by UUID, -- backward compatibility: asosiy imzolovchi (ko'p imzolar document_signatures da)
     signed_at TIMESTAMP WITH TIME ZONE,
     status VARCHAR(50) NOT NULL DEFAULT 'draft', -- draft / pending_sign / signed / cancelled
-
     entity_type VARCHAR(100), -- Qaysi obyektga tegishli masalan: asset, repair, expense va hokazo
     entity_id UUID,                             -- O'sha obyekt ID
-
     file_url VARCHAR(2048), -- legacy maydon: to'liq versiyalash uchun document_files ishlatiladi
-
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     CHECK (status IN ('draft', 'pending_sign', 'signed', 'cancelled')),

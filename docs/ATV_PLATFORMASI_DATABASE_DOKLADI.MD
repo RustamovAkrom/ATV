@@ -1,181 +1,248 @@
-# ATV PLATFORMASI DATABASE DOKLADI (AKTUAL)
-- Source: [database.sql](../database.sql)
-- Holat: ushbu hujjat `database.sql` dagi amaldagi modelga mos
+# ATV Platformasi Database Report (Manager Version)
 
-## 1) Qisqa maqsad
-ATV platformasi sxemasi quyidagilarni qamrab oladi:
-- RBAC va foydalanuvchilar
-- Region/service tashkiliy modeli
-- Asset katalogi va klassifikatsiya
-- Sklad, parts, movementlar
-- Asset lifecycle (state, transfer, assignment)
-- Repair, expense, task, notification
-- Request -> approval -> document -> commission oqimi
-- Audit va attachments
-- Analytics snapshotlar
+## 1. Executive Summary
 
-## 2) Asosiy biznes oqim
+Document purpose:
+- ATV platforma backendi uchun database modelni biznes va texnik nuqtai nazardan aniq tushuntirish.
+
+Current status:
+- Schema core business flowni qamrab oladi.
+- Asosiy modullar bo'yicha to'liq ma'lumotlar modeli mavjud.
+- Productionga chiqishdan oldin bir nechta texnik mustahkamlash ishlari tavsiya etiladi.
+
+Business value:
+- Asset lifecycle bo'yicha to'liq nazorat
+- Warehouse va repair jarayonlarining izchil hisobi
+- Request/approval/document flow orqali boshqaruv shaffofligi
+- Audit-ready arxitektura
+
+## 2. Database Scope (Nimani qamrab oladi)
+
+Schema quyidagi domenlarni yopadi:
+- Security: roles, permissions, users
+- Organization: regions, services
+- Asset catalog: categories, manufacturers, models, classes
+- Asset operations: assets, state history, transfers, assignments, passports
+- Warehouse: warehouses, parts, stock, movements
+- Repairs: repairs, repair parts, repair status history, vendors
+- Finance: expenses
+- Workflow: requests, approvals, documents, signatures, commissions
+- Governance: audit logs, notifications, attachments
+- Analytics: snapshot KPI table
+
+## 3. Core Business Data Flow
+
+Primary flow:
 `request -> approvals -> document -> commission -> assignment/transfer -> repair -> expense -> analytics`
 
-Qo'llab-quvvatlovchi oqimlar:
-- `users -> roles -> permissions`
-- `warehouses -> parts -> stock/movements`
-- `audit_logs`, `attachments`
+Supporting flows:
+- Access control: `users -> roles -> permissions`
+- Inventory control: `warehouses -> parts -> stock/movements`
+- Compliance trace: `audit_logs`, `attachments`
 
-## 3) Modul kesimida jadvallar
+## 4. Domain-by-Domain Structure
 
-### A. RBAC va Security
-- `roles`: tizim rollari
-- `permissions`: granular huquqlar
-- `role_permissions`: role-permission M:N
-- `user_statuses`: user status lug'ati
+## 4.1 Security & Access
 
-### B. Tashkiliy struktura
-- `regions`: hududlar daraxti (`parent_id`)
-- `services`: xizmat yo'nalishlari
-- `region_services`: region-service M:N
+Tables:
+- `roles`
+- `permissions`
+- `role_permissions`
+- `users`
+- `user_statuses`
+- `ranks`
 
-### C. Users
-- `users`: login, profil, role/status/region/service/rank, xavfsizlik atributlari
-- `ranks`: lavozim/daraja spravochnigi
+What this gives the business:
+- Markazlashgan ruxsat boshqaruvi
+- Har bir endpointni permission bilan himoyalash imkoniyati
+- User lifecycle monitoring (status, login metadata, 2FA flags)
 
-### D. Asset katalogi
-- `asset_categories`: ierarxik kategoriyalar
-- `manufacturers`: ishlab chiqaruvchilar
-- `asset_models`: model + manufacturer + category + life/warranty
-- `asset_classes`: asset klass kodi
-- `asset_class_history`: asset klassi tarixi
+## 4.2 Organization Model
 
-### E. Hujjatlar va imzolash
-- `documents`: hujjat header'i (status, type, request/entity bog'lanishlar)
-- `document_signatures`: ko'p imzolovchi jarayon
-- `document_files`: hujjat fayllari versiyalari
-- `warehouse_documents`: ombor kirim/chiqim hujjat bog'lanishi
+Tables:
+- `regions` (hierarchical)
+- `services`
+- `region_services`
 
-### F. Sklad va parts
-- `warehouses`: omborlar
-- `parts`: ehtiyot qismlar katalogi
-- `warehouse_part_stock`: joriy qoldiq
-- `warehouse_part_movements`: IN/OUT tarix
+What this gives the business:
+- Region/service kesimida operatsion tahlil
+- Asset va xarajatlarni tashkilot strukturasiga bog'lash
 
-### G. Asset lifecycle
-- `assets`: asosiy asset registri
-- `asset_state_history`: status/lifecycle/condition tarixi
-- `asset_transfers`: region/service/warehouse transfer tarixi
-- `asset_assignments`: region/service/user ga biriktirish tarixi
-- `asset_parts`: asset tarkibidagi parts
-- `asset_passports`: asset pasporti (1:1)
-- `asset_passport_items`: pasport tarkibi
-- `asset_passport_movements`: pasport harakati
+## 4.3 Asset Catalog and Identity
 
-### H. Repairs va vendors
-- `vendors`: tashqi servis/vendorlar
-- `repairs`: ta'mir kartasi
-- `repair_parts`: ta'mirda ishlatilgan qismlar
-- `repair_status_history`: ta'mir status tarixi
+Tables:
+- `asset_categories`
+- `manufacturers`
+- `asset_models`
+- `asset_classes`
+- `asset_class_history`
 
-### I. Finance va Ops
-- `expenses`: xarajatlar
-- `tasks`: operatsion vazifalar
-- `notifications`: tizim xabarlari
-- `notification_recipients`: kimga yuborilgan/o'qilgan
+What this gives the business:
+- Yagona klassifikatsiya
+- Model asosida normativ analysis (lifetime, warranty)
+- Klass o'zgarishi tarixini saqlash
 
-### J. Request workflow
-- `requests`: asosiy so'rov (type/status/step)
-- `request_items`: so'rov itemlari
-- `request_approvals`: bosqichma-bosqich tasdiqlash
-- `request_status_history`: so'rov status tarixi
-- `asset_commissions`: hujjat asosida commission fakti
+## 4.4 Asset Lifecycle Operations
 
-### K. Audit va analytics
-- `audit_logs`: harakatlar izi
-- `attachments`: universal biriktirma fayllar
-- `analytics_snapshots`: periodik KPI agregatlar
+Tables:
+- `assets`
+- `asset_state_history`
+- `asset_transfers`
+- `asset_assignments`
+- `asset_parts`
+- `asset_passports`
+- `asset_passport_items`
+- `asset_passport_movements`
 
-## 4) Muhim FK bog'lanishlar
-- `users.role_id -> roles.id`
-- `users.status_code -> user_statuses.code`
-- `users.assigned_region_id -> regions.id`
-- `users.assigned_service_id -> services.id`
-- `users.rank_id -> ranks.id`
+What this gives the business:
+- Har bir assetning joriy holati + to'liq tarixi
+- Ko'chirish va biriktirishni auditga mos yuritish
+- Texnik pasport va tarkibiy elementlarni boshqarish
 
-- `asset_models.manufacturer_id -> manufacturers.id`
-- `asset_models.category_id -> asset_categories.id`
-- `assets.model_id -> asset_models.id`
-- `assets.class_code -> asset_classes.code`
+## 4.5 Warehouse & Inventory
 
-- `assets.region_id -> regions.id`
-- `assets.service_id -> services.id`
-- `assets.current_warehouse_id -> warehouses.id`
+Tables:
+- `warehouses`
+- `parts`
+- `warehouse_part_stock`
+- `warehouse_part_movements`
+- `warehouse_documents`
 
-- `repairs.asset_id -> assets.id`
-- `repairs.vendor_id -> vendors.id`
-- `repair_parts.repair_id -> repairs.id`
-- `repair_parts.part_id -> parts.id`
+What this gives the business:
+- Real-time stock visibility
+- IN/OUT harakatlarning transaction historysi
+- Ombor operatsiyalarini hujjat bilan bog'lash
 
-- `requests.created_by -> users.id`
-- `request_items.request_id -> requests.id`
-- `request_approvals.request_id -> requests.id`
-- `documents.request_id -> requests.id`
+## 4.6 Repairs and External Vendors
 
-- `document_signatures.document_id -> documents.id`
-- `document_files.document_id -> documents.id`
-- `asset_commissions.document_id -> documents.id`
+Tables:
+- `vendors`
+- `repairs`
+- `repair_parts`
+- `repair_status_history`
 
-## 5) Integrity qoidalari (schema ichida bor)
-- Positive/zero checks:
-- `quantity > 0` (movements, repair_parts, request_items)
-- `amount > 0` (expenses)
-- `condition_percent` 0..100
-- `failure_count`, `usage_intensity`, `total_cost`, `downtime_hours` >= 0
+What this gives the business:
+- Ta'mir jarayonini boshidan oxirigacha kuzatish
+- Ichki/tashqi repair xarajatlarini ajratish
+- Ishlatilgan qismlar bo'yicha cost traceability
 
+## 4.7 Finance and Operations
+
+Tables:
+- `expenses`
+- `tasks`
+- `notifications`
+- `notification_recipients`
+
+What this gives the business:
+- Asset/repairga bog'langan xarajat hisobi
+- Operatsion task management
+- Targeted system notifications
+
+## 4.8 Approval and Documentation Workflow
+
+Tables:
+- `requests`
+- `request_items`
+- `request_approvals`
+- `request_status_history`
+- `documents`
+- `document_signatures`
+- `document_files`
+- `asset_commissions`
+
+What this gives the business:
+- Bosqichma-bosqich tasdiqlash
+- Hujjat va imzo lifecycle
+- Commission eventlarni hujjat asosida rasmiylashtirish
+
+## 4.9 Audit and Analytics
+
+Tables:
+- `audit_logs`
+- `attachments`
+- `analytics_snapshots`
+
+What this gives the business:
+- Compliance uchun harakat izi
+- Universal fayl biriktirish
+- Rahbariyat uchun agregat KPI snapshotlari
+
+## 5. Data Integrity Controls (Already Implemented)
+
+Implemented controls:
+- FK constraints across core flows
 - Business checks:
-- `asset_transfers` da kamida bitta yo'nalish o'zgarishi shart
-- `asset_assignments.unassigned_at >= assigned_at`
-- `documents.status` qat'iy qiymatlar bilan cheklangan
-- `requests.status/request_type/current_step` tekshiruvlari bor
-- `status='approved'` bo'lsa `approved_by` va `approved_at` majburiy
-- `document_signatures.signature_type` faqat `EDS/PDF`
+- status va type qiymatlarining cheklanishi
+- positive/non-negative numeric checks
+- vaqt oralig'i checks (`unassigned_at >= assigned_at`)
+- approval consistency checks (`approved` bo'lsa approver/date majburiy)
+- Uniqueness rules:
+- document number
+- request item combination
+- document signature uniqueness
+- document file version uniqueness
+- commission pair uniqueness
 
-- Uniqueness:
-- `documents.document_number`
-- `request_items(request_id, asset_model_id)`
-- `asset_commissions(asset_id, document_id)`
-- `document_signatures(document_id, signer_id)`
-- `document_files(document_id, version)`
-- `warehouse_documents(document_id, warehouse_id)`
+Manager implication:
+- Data quality manual nazoratga kamroq bog'liq bo'ladi
+- Process compliance avtomatik cheklovlar orqali ushlanadi
 
-## 6) Hozirgi modeldagi e'tibor talab qiladigan nuqtalar
-1. `asset_class_history.id` da `get_random_uuid()` yozilgan; odatda `pgcrypto` bilan `gen_random_uuid()` ishlaydi.
-2. `asset_passports`, `asset_passport_items`, `asset_passport_movements`, `asset_class_history`, `vendors` jadvallarida `IF NOT EXISTS` yo'q.
-3. Passport/history blokida FKlar to'liq berilmagan (orphan data xavfi bor).
-4. Schema ichida index bloklari yo'q; katta hajmda query performance pasayadi.
-5. `TIMESTAMP` va `TIMESTAMP WITH TIME ZONE` aralash ishlatilgan; bir xil standart tavsiya etiladi.
+## 6. Current Gaps / Risks (Important)
 
-## 7) Tavsiya etilgan amaliy ishlash tartibi
-- Transfer:
-- `asset_transfers` ga yozish
-- old assignment ni yopish (`unassigned_at`)
-- yangi assignment ochish
-- kerak bo'lsa `documents` + `warehouse_documents`
+Risk 1: Index layer yo'q
+- Impact: katta data hajmida endpointlar sekinlashadi
+- Priority: High
 
-- Request approval:
-- `requests` yaratish
-- `request_items` to'ldirish
-- `request_approvals` bosqichlarini yuritish
-- finalni `request_status_history` ga loglash
+Risk 2: `asset_class_history.id` default function mismatch (`get_random_uuid`)
+- Impact: migration/runtime xatolik ehtimoli
+- Priority: High
 
-- Document signing:
-- `documents` (`draft`) yaratish
-- `document_signatures` bilan marshrut
-- `document_files` ga versiyalar
-- yakunda `documents.status = signed`
+Risk 3: Ba'zi yangi jadvallar `IF NOT EXISTS`siz yaratilgan
+- Impact: re-deploy paytida migration collision
+- Priority: Medium
 
-- Repair lifecycle:
-- `repairs` ochish (`reported`)
-- status o'zgarishlarini `repair_status_history` ga yozish
-- parts sarfini `repair_parts` da yuritish
-- xarajatni `expenses` ga tushirish
+Risk 4: Passport/history blokida FKlar to'liq emas
+- Impact: orphan data paydo bo'lish xavfi
+- Priority: High
 
-## 8) Yakuniy xulosa
-Amaldagi schema biznes oqimni to'liq qamrab oladi va request/document/repair zanjiri yaxshi ajratilgan. Production oldidan indexlar, passport blokining FKlari, UUID funksiyasi va timezone standartlashuvi albatta mustahkamlanishi kerak.
+Risk 5: `TIMESTAMP` vs `TIMESTAMP WITH TIME ZONE` aralash
+- Impact: vaqt zonasi bo'yicha noaniqlik
+- Priority: Medium
+
+## 7. Recommended Hardening Plan (Before Production)
+
+Priority-1 (must do):
+- Missing index strategy qo'shish
+- UUID default functionni `gen_random_uuid()`ga standartlash
+- Passport/history jadvallariga FKlarni to'liq qo'yish
+- `IF NOT EXISTS` consistency
+
+Priority-2 (strongly recommended):
+- Timezone policy standardization (`TIMESTAMP WITH TIME ZONE`)
+- Archival/retention policy for audit and history tables
+
+Priority-3 (optimization):
+- Analytics snapshot generation job
+- Performance profiling for top read endpoints
+
+## 8. Decision Points for Project Manager
+
+Need PM approval on:
+- Production release faqat Priority-1 tugagandan keyin
+- P1 analytics/forecast ishlarini month-2ga o'tkazish
+- Data governance policy (audit retention, backup cadence)
+
+## 9. Final Assessment
+
+Overall assessment: `Good core model, production-ready after hardening`.
+
+Summary:
+- Business processlar to'g'ri modellangan.
+- Workflow and compliance layer mavjud.
+- Texnik jihatdan 4-5 ta aniq mustahkamlash vazifasi bajarilsa, release xavfi keskin kamayadi.
+
+## 10. Reference
+
+- Main schema: [database.sql](../database.sql)
+- Delivery plan: [TASKS.MD](./TASKS.MD)
