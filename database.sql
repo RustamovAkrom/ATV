@@ -106,6 +106,7 @@ CREATE TABLE IF NOT EXISTS asset_categories (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
 -- Ishlab chiqaruvchilar jadvali - bu jadvalga har bir ishlab chiqaruvchi haqida batafsil ma'lumot saqlanadi. Har bir ishlab chiqaruvchi o'ziga xos identifikator, nomi, mamlakati, veb-sayti va boshqa muhim atributlarga ega bo'ladi. Bu jadval orqali ishlab chiqaruvchilarni boshqarish, ularning mahsulotlarini tahlil qilish va ta'minot zanjirini optimallashtirish mumkin bo'ladi.
 CREATE TABLE IF NOT EXISTS manufacturers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -115,6 +116,7 @@ CREATE TABLE IF NOT EXISTS manufacturers (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
 -- Har bir model qaysi kategoriyaga va ishlab chiqaruvchiga tegishli ekanligini ko'rsatadi. Shuningdek, normativ xizmat muddati va kafolat muddati kabi atributlar ham mavjud bo'ladi. Bu jadval orqali assetlarni standartlashtirish, tahlil qilish va prognoz qilish mumkin bo'ladi.
 CREATE TABLE IF NOT EXISTS asset_models (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

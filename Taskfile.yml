@@ -1,0 +1,53 @@
+version: "3"
+
+vars:
+  RUNNER:
+    sh: 'echo {{ .RUNNER | default "uv run --no-sync"}} '
+  SOURCES: src tests
+  SOURCES_ROOT: src
+
+tasks:
+  default:
+    cmd: task --list
+
+  db-up:
+    desc: Initialize Database (PostgreSQL)
+    cmds:
+      - docker compose up -d --wait postgres
+
+  db-revision:
+    desc: Generate new migration
+    cmds:
+      - task: db-up
+      - "{{.RUNNER}} alembic -c src/alembic.ini revision --autogenerate -m '{{.MSG}}"
+
+  db-migrate:
+    desc: Apply database migrations
+    cmds:
+      - task: db-up
+      - "{{.RUNNER}} alembic -c src/alembic.ini upgrade head"
+
+  init:
+    desc: Initialize project
+    env:
+      ENV: local
+    cmds:
+      - "uv sync"
+      - task: db-up
+      - task: db-migrate
+
+  run:
+    desc: run backend locally (dev mode)
+    env:
+      PYTHONPATH: src
+      ENV: local
+    cmds:
+      - task: init
+      - "{{.RUNNER}} fastapi dev src/dev.py"
+
+  prod:
+    desc: Run production stack
+    cmds:
+      - docker compose up -d --build
+      - docker compose ps
+      - docker compose up

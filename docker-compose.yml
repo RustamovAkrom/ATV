@@ -1,0 +1,92 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: deployments/compose/backend/Dockerfile
+    env_file:
+      - .env
+    environment:
+      ENV: ${ENV:-dev}
+      # Inside Docker Compose we use service name "postgres"
+      # instead of localhost to connect to database
+      # POSTGRES_HOST: postgres
+      # POSTGRES_PORT: 5432
+    restart: always
+    volumes:
+      - ./src:/app
+    ports:
+      - ${PORT:-8001}:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+    # Resource limits (optional but recomended in production)
+    mem_limit: 1g
+    cpus: 2
+
+    # Helthcheck endpoint
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/healthcheck\")'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+#      redis:
+#        condition: service_healthy
+#      rabbitmq:
+#        condition: service_healthy
+    networks:
+      - backend_network
+    tmpfs:
+      - /tmp
+
+  postgres:
+    image: postgres:16
+    env_file:
+      - .env
+    restart: always
+    ports:
+    - "33432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend_network
+
+  postgres-test:
+    image: postgres:16-alpine
+    # ports:
+    #   - "25439:5432"
+    env_file:
+      - .env.test
+    networks:
+      - backend_network
+    restart: "no"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pg_data:
+    driver: local
+
+networks:
+  backend_network:
+    driver: bridge

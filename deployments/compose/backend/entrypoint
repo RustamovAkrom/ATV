@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# if any of the commands in your code fails for any reason, the entire script fails
+set -o errexit
+# fail exit if one of your pipe command fails
+set -o pipefail
+# exits if any of your variables is not set
+set -o nounset
+
+postgres_ready() {
+    if ! pg_isready -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER}; then
+        return 1
+    fi
+    return 0
+}
+
+POSTGRES_TIMEOUT=${POSTGRES_TIMEOUT:-30}
+POSTGRES_ATTEMPTS=0
+
+until postgres_ready || [ $POSTGRES_ATTEMPTS -ge $POSTGRES_TIMEOUT ]; do
+    >&2 echo "Waiting for PostgreSQL... ($POSTGRES_ATTEMPTS/$POSTGRES_TIMEOUT)"
+    sleep 1
+    POSTGRES_ATTEMPTS=$((POSTGRES_ATTEMPTS + 1))
+done
+
+if ! postgres_ready; then
+    >&2 echo "PostgreSQL did not become available!"
+    exit 1
+fi
+
+>&2 echo 'PostgreSQL is available'
+
+exec "$@"

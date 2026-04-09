@@ -1,7 +1,9 @@
 ### Python template
-old_compose/
+
+deploy/
 .idea/
 .vscode/
+.git/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -62,8 +64,8 @@ cover/
 # Django stuff:
 *.log
 local_settings.py
-*.sqlite3
-*.sqlite3-journal
+db.sqlite3
+db.sqlite3-journal
 
 # Flask stuff:
 instance/
@@ -110,10 +112,6 @@ celerybeat.pid
 
 # Environments
 .env
-.env.*
-!.env.example
-!.env.ci
-!.env.test
 .venv
 env/
 venv/
