@@ -1,13 +1,12 @@
 import os
 from functools import cache
 from typing import Literal
-
-from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
 from pathlib import Path
-from dotenv import load_dotenv
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
 from yarl import URL
 
-load_dotenv()
 
 ENV_FILE_PATH = (
     {
@@ -33,7 +32,7 @@ class Settings(BaseSettings):
 
     # App core
     APP_TITLE: str = "TTM"
-    APP_NAME: str = "fastapibackend"
+    APP_NAME: str = "fastapi-backend"
     APP_VERSION: str = "1.0.0"
     APP_DESCRIPTION: str = "..."
     APP_HOST: str = "127.0.0.1"
@@ -45,7 +44,15 @@ class Settings(BaseSettings):
 
     DEBUG: bool = True
     SECRET_KEY: str
-    SERVICE_NAME: str = "fastapi-backend"
+
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def validate_secret(cls, v: str):
+        if len(v) < 32:
+            raise ValueError("SECRET_KEY must be at least 32 charecters")
+        return v
+
+    SERVICE_NAME: str = "iib-backend"
 
     # PostgreSQL
     POSTGRES_HOST: str
@@ -56,10 +63,19 @@ class Settings(BaseSettings):
     POSTGRES_ECHO: bool = True
 
     # JWT
-    # JWT_SECRET_KEY: str
-    # JWT_ALGORITHM: str = "HS256"
-    # ACCESS_TOKEN_EXPIRES_MINUTES: int = 15
-    # REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ISSUER: str = "iib-backend"
+    JWT_AUDIENCE: str = "iib-client"
+    # SlowAPI
+    RATE_LIMIT_STORAGE_URL: str = "memory://"
+    RATE_LIMIT_DEFAULT: str = "10/minute"
+    RATE_LIMIT_LOGIN: str = "10/minute"
+    RATE_LIMIT_TRUSTED_PROXIES: str = ""
+    # redis
+    USE_REDIS: bool = False
+    REDIS_URL: str
+    LOGIN_RATE_LIMIT_MAX_ATTEMPTS: int = 5
+    LOGIN_RATE_LIMIT_BLOCK_SECONDS: int = 15
 
     # Sentry
     SENTRY_DSN: str | None = None

@@ -49,7 +49,6 @@ def _verify_metrics_key(key: str = Header(default="")) -> None:
     Works ONLY if key configured.
     """
     settings = get_settings()
-    print(settings.PROMETHEUS_METRICS_KEY)
     # if key not set -> public endpoint (for Prometheus scraping)
     if not settings.PROMETHEUS_METRICS_KEY:
         return

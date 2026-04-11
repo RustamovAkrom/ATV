@@ -20,12 +20,7 @@ def get_db_engine() -> AsyncEngine:
 
 @cache
 def get_session_factory() -> async_sessionmaker[AsyncSession]:
-    engine = get_db_engine()
     return async_sessionmaker(
-        engine,
+        bind=get_db_engine(),
         expire_on_commit=False,
     )
-
-
-# for scripts files
-async_session = get_session_factory()

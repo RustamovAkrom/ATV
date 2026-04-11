@@ -26,20 +26,23 @@ def configure_logger() -> loguru.Logger:
     level = "DEBUG" if settings.DEBUG else "INFO"
 
     # STDOUT (MAIN)
-    logger.add(
-        sys.stdout,
-        level=level,
-        colorize=settings.DEBUG,
-        backtrace=settings.DEBUG,
-        diagnose=settings.DEBUG,
-        enqueue=True,  # important for async environments
-        format=(
+    common_kwargs = {
+        "level": level,
+        "colorize": settings.DEBUG,
+        "backtrace": settings.DEBUG,
+        "diagnose": settings.DEBUG,
+        "format": (
             "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
             "<level>{level}</level> | "
             "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> "
             "- <level>{message}</level>"
         ),
-    )
+    }
+    try:
+        logger.add(sys.stdout, enqueue=True, **common_kwargs)  # async-friendly
+    except PermissionError:
+        # Some restricted Windows environments cannot create multiprocessing queues.
+        logger.add(sys.stdout, enqueue=False, **common_kwargs)
 
     # OPTIONAL FILE LOGGING
     log_path: str | None = getattr(settings, "LOG_PATH", None)

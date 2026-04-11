@@ -19,7 +19,7 @@ tasks:
     desc: Generate new migration
     cmds:
       - task: db-up
-      - "{{.RUNNER}} alembic -c src/alembic.ini revision --autogenerate -m '{{.MSG}}"
+      - "{{.RUNNER}} alembic -c src/alembic.ini revision --autogenerate -m '{{.MSG}}'"
 
   db-migrate:
     desc: Apply database migrations
@@ -27,6 +27,9 @@ tasks:
       - task: db-up
       - "{{.RUNNER}} alembic -c src/alembic.ini upgrade head"
 
+  db-shell:
+    desc: SQL database shell (Docker)
+    cmd: docker compose exec postgres sh -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
   init:
     desc: Initialize project
     env:
