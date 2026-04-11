@@ -54,3 +54,10 @@ tasks:
       - docker compose up -d --build
       - docker compose ps
       - docker compose up
+
+  create-admin:
+    desc: Create admin
+    env:
+      PYTHONPATH: SRC
+    cmd: "{{.RUNNER}} python -m scripts.cli admin"
+

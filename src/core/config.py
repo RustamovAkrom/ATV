@@ -66,6 +66,9 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_ISSUER: str = "iib-backend"
     JWT_AUDIENCE: str = "iib-client"
+    JWT_ACCESS_TOKEN_EXPIRES_MINUTES: int = 15
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
     # SlowAPI
     RATE_LIMIT_STORAGE_URL: str = "memory://"
     RATE_LIMIT_DEFAULT: str = "10/minute"
