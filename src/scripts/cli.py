@@ -1,33 +1,24 @@
 # src/scripts/cli.py
 
-import sys
+import typer
+from scripts.runner import run
 
-from scripts.db import run
-from scripts.seed_permissions import seed_permissions
-from scripts.seed_roles import seed_roles
-from scripts.create_admin import create_admin
+app = typer.Typer()
 
 
-COMMANDS = {
-    "permissions": seed_permissions,
-    "roles": seed_roles,
-    "admin": create_admin,
-}
+@app.command()
+def bootstrap():
+    """🔥 Initialize system (roles + permissions)"""
+    from scripts.bootstrap.roles import seed_roles_permissions
+    run(seed_roles_permissions)
 
 
-def main():
-    if len(sys.argv) < 2:
-        print("Usage: cli [permissions|roles|admin]")
-        exit(1)
-
-    cmd = sys.argv[1]
-
-    if cmd not in COMMANDS:
-        print("Unknown command")
-        exit(1)
-
-    run(COMMANDS[cmd])
+@app.command()
+def create_superadmin():
+    """🔥 Create superadmin"""
+    from scripts.users.create_superadmin import create_superadmin
+    run(create_superadmin)
 
 
 if __name__ == "__main__":
-    main()
+    app()

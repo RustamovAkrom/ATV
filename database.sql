@@ -264,9 +264,11 @@ CREATE TABLE IF NOT EXISTS assets (
     current_warehouse_id UUID,                  -- Agar omborda tursa, qaysi omborda
     purchase_date DATE,                         -- Xarid sanasi
     commission_date DATE,                       -- Ishga tushirilgan sana
+
     warranty_end DATE,                          -- Kafolat tugash sanasi
     purchase_cost NUMERIC(18,2),                -- Xarid narxi
     status_code VARCHAR(50),                    -- Joriy status
+
     last_repair_date DATE,                      -- Oxirgi ta'mir sanasi
     failure_count INTEGER DEFAULT 0,            -- Nosozliklar soni
     usage_intensity INTEGER DEFAULT 0,          -- Foydalanish intensivligi (masalan, soat yoki kilometr)

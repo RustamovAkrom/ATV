@@ -14,9 +14,22 @@ tasks:
     desc: Initialize Database (PostgreSQL)
     cmds:
       - docker compose up -d --wait postgres
+  db-down:
+    desc: Stop DB
+    cmds:
+      - docker compose down
+
+  db-reset:
+    desc: Clean database (Danger)
+    env:
+      ENV: local
+    cmds:
+      - docker compose down -v
+      - task: db-up
+      - task: db-migrate
 
   db-revision:
-    desc: Generate new migration
+    desc: Create migration
     cmds:
       - task: db-up
       - "{{.RUNNER}} alembic -c src/alembic.ini revision --autogenerate -m '{{.MSG}}'"
@@ -30,6 +43,25 @@ tasks:
   db-shell:
     desc: SQL database shell (Docker)
     cmd: docker compose exec postgres sh -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+
+  redis-up:
+    desc: Start Redis
+    cmds:
+      - docker compose up -d --wait redis
+
+  bootstrap:
+    desc: Seed roles & permissions
+    env:
+      PYTHONPATH: src
+    cmds:
+      - "{{.RUNNER}} python -m scripts.cli bootstrap"
+
+  create-superadmin:
+    desc: Create superadmin user
+    env:
+      PYTHONPATH: src
+    cmd: "{{.RUNNER}} python -m scripts.cli create-superadmin"
+
   init:
     desc: Initialize project
     env:
@@ -38,6 +70,7 @@ tasks:
       - "uv sync"
       - task: db-up
       - task: db-migrate
+      - task: bootstrap
 
   run:
     desc: run backend locally (dev mode)
@@ -48,16 +81,24 @@ tasks:
       - task: init
       - "{{.RUNNER}} fastapi dev src/dev.py"
 
+  run-no-init:
+    desc: Run without init (faster dev loop)
+    env:
+      PYTHONPATH: src
+      ENV: local
+    cmds:
+      - "{{.RUNNER}} fastapi dev src/dev.py"
+
+  cleanup-tokens:
+    desc: Delete expired refresh tokens
+    env:
+      PYTHONPATH: src
+    cmds:
+      - "{{.RUNNER}} python -c 'from scripts.cleanup.tokens import run; run()'"
+
   prod:
     desc: Run production stack
     cmds:
       - docker compose up -d --build
       - docker compose ps
-      - docker compose up
-
-  create-admin:
-    desc: Create admin
-    env:
-      PYTHONPATH: SRC
-    cmd: "{{.RUNNER}} python -m scripts.cli admin"
-
+      - docker compose logs -f

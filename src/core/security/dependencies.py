@@ -8,6 +8,7 @@ from repositories.user_repo import UserRepository, get_user_repo
 from core.security.jwt import decode_token
 from core.exceptions.errors import InvalidToken, AuthenticationError
 from core.security.types import CurrentUser
+from core.security.blacklist import get_blacklist
 
 
 security = HTTPBearer(auto_error=False)
@@ -33,23 +34,24 @@ async def get_current_user(
     user_repo: UserRepository = Depends(get_user_repo),
 ) -> CurrentUser:
     try:
-        payload = await decode_token(token)
+        payload = await decode_token(token, expected_type="access")
 
-        if payload.get("type") != "access":
-            raise InvalidToken()
+        user_id: UUID = payload.get("sub")
+        jti: UUID = payload.get("jti")
 
-        user_id = payload.get("sub")
-        if not user_id:
-            raise InvalidToken()
+        blacklist = get_blacklist()
+        if await blacklist.contains(jti):
+            raise HTTPException(status_code=401, detail="Token revoked")
 
-        user = await user_repo.get_by_id(UUID(user_id))
+        user = await user_repo.get_by_id(user_id)
         if not user:
             raise InvalidToken()
 
         return {
-            "sub": str(user.id),
-            "jti": payload.get("jti"),
-            "type": payload.get("type"),
+            "sub": user.id,
+            "jti": jti,
+            "type": payload["type"],
+            "exp": payload["exp"],
             "role": user.role.name if user.role else None,
             "permissions": user.permissions,
         }

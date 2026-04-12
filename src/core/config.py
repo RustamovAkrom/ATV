@@ -74,11 +74,27 @@ class Settings(BaseSettings):
     RATE_LIMIT_DEFAULT: str = "10/minute"
     RATE_LIMIT_LOGIN: str = "10/minute"
     RATE_LIMIT_TRUSTED_PROXIES: str = ""
+
     # redis
     USE_REDIS: bool = False
     REDIS_URL: str
     LOGIN_RATE_LIMIT_MAX_ATTEMPTS: int = 5
     LOGIN_RATE_LIMIT_BLOCK_SECONDS: int = 15
+
+    # Celery
+    CELERY_BROKER_URL: str = "redis://redis:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://redis6379/1"
+    CELERY_TASK_SERIALIZER: str = "json"
+    CELERY_RESULT_SERIALIZER: str = "json"
+    CELERY_ACCEPT_CONTENT: list[str] = ["json"]
+    CELERY_TIMEZONE: str = "UTC"
+
+    # E-Mail
+    SMTP_FROM: str
+    SMTP_HOST: str
+    SMTP_PORT: str
+    SMTP_USER: str
+    SMTP_PASSWORD: str
 
     # Sentry
     SENTRY_DSN: str | None = None

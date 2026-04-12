@@ -3,6 +3,7 @@ from core.config import get_settings
 from core.lifespan import lifespan
 from core.observability.monitoring import router as monitoring_router
 from core.exceptions.handlers import register_exception_handlers
+from middlewares.audit import AuditMiddleware
 from api.router import router as api_router
 from core.slowapi import limiter, rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -23,6 +24,7 @@ def create_app() -> FastAPI:
 
     app.include_router(router=monitoring_router, tags=["Monitoring"])
     app.include_router(router=api_router)
+    app.add_middleware(AuditMiddleware)
     register_exception_handlers(app)
 
     return app

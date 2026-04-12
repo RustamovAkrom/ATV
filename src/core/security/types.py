@@ -1,9 +1,9 @@
 from typing import TypedDict
-
+from uuid import UUID
 
 class CurrentUser(TypedDict):
-    sub: str
-    jti: str | None
+    sub: UUID
+    jti: UUID | None
     type: str
     role: str | None
     permissions: list[str]

@@ -7,10 +7,6 @@ services:
       - .env
     environment:
       ENV: ${ENV:-dev}
-      # Inside Docker Compose we use service name "postgres"
-      # instead of localhost to connect to database
-      # POSTGRES_HOST: postgres
-      # POSTGRES_PORT: 5432
     restart: always
     volumes:
       - ./src:/app
@@ -21,8 +17,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-#      rabbitmq:
-#        condition: service_healthy
 
     security_opt:
       - no-new-privileges:true
@@ -93,6 +87,66 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - backend_network
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: deployments/compose/backend/Dockerfile
+    command: /start-celeryworker
+    env_file:
+      - .env
+    restart: always
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      # rabbitmq:
+      #   condition: service_healthy
+    networks:
+      - backend_network
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: deployments/compose/backend/Dockerfile
+    command: /start-celerybeat
+    env_file:
+      - .env
+    restart: always
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      # rabbitmq:
+      #   condition: service_healthy
+    networks:
+      - backend_network
+
+  celery_flower:
+    build:
+      context: .
+      dockerfile: deployments/compose/backend/Dockerfile
+    command: /start-flower
+    env_file:
+      - .env
+    restart: always
+    volumes:
+      - ./src:/app/src
+    ports:
+      - ${CELERY_FLOWER:-5555}:5555
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - backend_network
 

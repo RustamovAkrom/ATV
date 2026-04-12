@@ -5,8 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.models.users.user import User
-from db.models.users.role import Role
+from db.models.users import User, Role
 from db.dependencies import get_db_session
 
 
