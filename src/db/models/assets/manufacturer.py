@@ -1,8 +1,9 @@
-from typing import List, TYPE_CHECKING
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String
+from typing import TYPE_CHECKING, List
 
-from db.base import Base, UUIDMixing, TimestampMixin
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from db.base import Base, TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
     from .asset_model import AssetModel

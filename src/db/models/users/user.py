@@ -1,16 +1,15 @@
-from datetime import datetime, date
-from typing import Optional, TYPE_CHECKING
+from datetime import date, datetime
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, ForeignKey, Integer, Date, DateTime
 
-from db.base import Base, UUIDMixing, TimestampMixin, StatusMixin
+from db.base import Base, StatusMixin, TimestampMixin, UUIDMixing
 from db.models.enums import UserStatus
-from db.models.org.service import Service
-from db.models.org.region import Region
 from db.models.org.rank import Rank
-
+from db.models.org.region import Region
+from db.models.org.service import Service
 
 if TYPE_CHECKING:
     from .permission import Role

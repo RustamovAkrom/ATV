@@ -1,25 +1,24 @@
 from datetime import datetime, timedelta, timezone
-from typing import Any
-from uuid import uuid4, UUID
-
+from uuid import uuid4
 import jwt
 
 from core.config import get_settings
-from core.exceptions.errors import TokenExpired, InvalidToken
-
+from core.exceptions.errors import InvalidToken, TokenExpired
+from src.core.security.auth.types import TokenPayload
 
 settings = get_settings()
 
-def _base_payload(user_id: str, token_type: str) -> dict[str, Any]:
+
+def _base_payload(user_id: str, token_type: str):
     now = datetime.now(timezone.utc)
 
     return {
-        "sub": user_id,
+        "sub": str(user_id),
         "type": token_type,
         "jti": str(uuid4()),
         "iat": int(now.timestamp()),
         "iss": settings.JWT_ISSUER,
-        "aud": settings.JWT_AUDIENCE
+        "aud": settings.JWT_AUDIENCE,
     }
 
 
@@ -34,7 +33,7 @@ def create_access_token(user_id: str) -> str:
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
-def create_refresh_token(user_id: str) -> tuple[str, str]:
+def create_refresh_token(user_id: str):
     now = datetime.now(timezone.utc)
 
     payload = _base_payload(user_id, "refresh")
@@ -43,10 +42,10 @@ def create_refresh_token(user_id: str) -> tuple[str, str]:
     )
 
     token = jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
-    return token, payload['jti']
+    return token, payload["jti"]
 
 
-async def decode_token(token: str, expected_type: str | None = None) -> dict[str, Any]:
+async def decode_token(token: str, expected_type: str | None = None) -> TokenPayload:
     try:
         raw = jwt.decode(
             token,
@@ -56,18 +55,15 @@ async def decode_token(token: str, expected_type: str | None = None) -> dict[str
             issuer=settings.JWT_ISSUER,
         )
 
-        payload = {
-            "sub": UUID(raw["sub"]),
-            "jti": UUID(raw["jti"]),
-            "type": raw["type"],
-            "exp": raw.get("exp"),
-            "iat": raw.get("iat"),
-        }
+        if expected_type and raw.get("type") != expected_type:
+            raise InvalidToken()
 
-        if expected_type and payload["type"] != expected_type:
-            raise InvalidToken("Invalid token type")
-
-        return payload
+        return TokenPayload(
+            sub=raw["sub"],
+            jti=raw["jti"],
+            exp=raw["exp"],
+            type=raw["type"],
+        )
 
     except jwt.ExpiredSignatureError:
         raise TokenExpired()

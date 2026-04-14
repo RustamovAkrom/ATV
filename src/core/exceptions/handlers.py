@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
-
+from fastapi.encoders import jsonable_encoder
 from core.logger import configure_logger
 
 from .base import APIException
@@ -36,7 +36,6 @@ def register_exception_handlers(app: FastAPI) -> None:
             content=exc.to_dict(trace_id),
         )
 
-    # 🔴 Validation (Pydantic)
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError):
         trace_id = str(uuid.uuid4())
@@ -52,14 +51,14 @@ def register_exception_handlers(app: FastAPI) -> None:
 
         return JSONResponse(
             status_code=422,
-            content={
+            content=jsonable_encoder({   # ✅ ВАЖНО
                 "error": {
                     "code": "validation_error",
                     "message": "Invalid request data",
                     "details": exc.errors(),
                     "trace_id": trace_id,
                 }
-            },
+            }),
         )
 
     # 🔴 FastAPI HTTPException

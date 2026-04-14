@@ -1,7 +1,9 @@
 from typing import TYPE_CHECKING, Optional
+
+from sqlalchemy import Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, Text
-from db.base import Base, UUIDMixing, TimestampMixin
+
+from db.base import Base, TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
     from db.models.users.user import User

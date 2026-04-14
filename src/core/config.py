@@ -1,12 +1,11 @@
 import os
 from functools import cache
-from typing import Literal
 from pathlib import Path
+from typing import Literal
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from yarl import URL
-
 
 ENV_FILE_PATH = (
     {

@@ -1,12 +1,12 @@
 # src/db/models/warehouse/warehouse.py
 
-from typing import List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 from uuid import UUID
 
+from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, ForeignKey, Boolean
 
-from db.base import Base, UUIDMixing, TimestampMixin
+from db.base import Base, TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
     from db.models.assets.asset import Asset

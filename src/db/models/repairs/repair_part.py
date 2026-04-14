@@ -1,16 +1,16 @@
 # src/db/models/repairs/repair_part.py
 
-from typing import Optional, TYPE_CHECKING
 from decimal import Decimal
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
+from sqlalchemy import ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
-from sqlalchemy import ForeignKey, String, Numeric, Integer
 
 from db.base import Base, UUIDMixing
 
 if TYPE_CHECKING:
-    from .repair import Repair
+    pass
 
 
 class RepairPart(Base, UUIDMixing):

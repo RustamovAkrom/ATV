@@ -1,16 +1,15 @@
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Table, Column, ForeignKey, Text
+from sqlalchemy import Column, ForeignKey, String, Table, Text
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from db.base import Base, UUIDMixing, TimestampMixin
-
+from db.base import Base, TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
     from .user import User
 
-
+# MANY-TO-MANY TABLE
 role_permissions = Table(
     "role_permissions",
     Base.metadata,
@@ -21,8 +20,8 @@ role_permissions = Table(
 
 class Role(Base, UUIDMixing, TimestampMixin):
     __tablename__ = "roles"
-    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
-    code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     description: Mapped[str | None] = mapped_column(Text(), nullable=True)
 
     users: Mapped[List["User"]] = relationship("User", back_populates="role", lazy="selectin")
@@ -38,8 +37,8 @@ class Role(Base, UUIDMixing, TimestampMixin):
 
 class Permission(Base, UUIDMixing, TimestampMixin):
     __tablename__ = "permissions"
-    code: Mapped[str] = mapped_column(String(150), unique=True, nullable=False)
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
+    code: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)
     description: Mapped[str | None] = mapped_column(Text(), nullable=True)
     roles: Mapped[List["Role"]] = relationship(
         "Role",

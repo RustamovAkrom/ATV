@@ -1,1 +1,1 @@
-from .audit_log import * # noqa
+from .audit_log import *  # noqa

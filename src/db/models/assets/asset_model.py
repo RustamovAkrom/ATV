@@ -1,21 +1,17 @@
-from typing import Optional, List, TYPE_CHECKING
 from datetime import date
+from typing import TYPE_CHECKING, List, Optional
 from uuid import UUID
 
-from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
-from sqlalchemy import (
-    String,
-    ForeignKey,
-    Integer,
-    UniqueConstraint
-)
 from dateutil.relativedelta import relativedelta
-from db.base import Base, UUIDMixing, TimestampMixin
+from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
+
+from db.base import Base, TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
-    from .manufacturer import Manufacturer
-    from .asset_category import AssetCategory
     from .asset import Asset
+    from .asset_category import AssetCategory
+    from .manufacturer import Manufacturer
 
 
 class AssetModel(Base, UUIDMixing, TimestampMixin):

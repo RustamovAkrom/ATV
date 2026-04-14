@@ -4,14 +4,13 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey, DateTime
 
 from db.base import Base, UUIDMixing
 
 if TYPE_CHECKING:
-    from .document import Document
-    from db.models.users.user import User
+    pass
 
 
 class DocumentSignature(Base, UUIDMixing):

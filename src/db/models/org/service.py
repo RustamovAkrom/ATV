@@ -1,10 +1,13 @@
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+
+from sqlalchemy import UUID, Column, ForeignKey, String, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Text, Table, Column, UUID, ForeignKey
-from db.base import Base, UUIDMixing, TimestampMixin
+
+from db.base import Base, TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
     from db.models.users.user import User
+
     from .region import Region
 
 

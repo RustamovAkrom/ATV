@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
+from api.dependencies.security import get_security_service
+from core.config import get_settings
 from services.security_service import SecurityService
-from api.dependencies import get_security_service
-
 
 router = APIRouter(prefix="/security", tags=["Security"])
+settings = get_settings()
 
 class ForgotPasswordRequest(BaseModel):
     login: str
@@ -21,8 +22,8 @@ async def forgot_password(
     data: ForgotPasswordRequest,
     service: SecurityService = Depends(get_security_service),
 ):
-    token = await service.request_password_reset(data.login)
-    return {"token": token} # TODO: in production change
+    await service.request_password_reset(data.login)
+    return {"status": "ok"}
 
 
 @router.post("/reset-password")

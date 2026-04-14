@@ -1,23 +1,19 @@
 # src/db/models/documents/document.py
 
-from typing import Optional, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 from uuid import UUID
 
+from sqlalchemy import JSON
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import (
-    String,
-    ForeignKey,
-    Enum as SAEnum,
-    JSON
-)
 
-from db.base import Base, UUIDMixing, TimestampMixin
+from db.base import Base, TimestampMixin, UUIDMixing
 from db.models.enums import DocumentStatus
 
 if TYPE_CHECKING:
-    from db.models.users.user import User
-    from .document_file import DocumentFile
     from .document_approval import DocumentApproval
+    from .document_file import DocumentFile
     from .document_signature import DocumentSignature
 
 

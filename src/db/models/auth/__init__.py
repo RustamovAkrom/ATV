@@ -1,1 +1,1 @@
-from .password_reset import * # noqa
+from .password_reset import *  # noqa

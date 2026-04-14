@@ -1,8 +1,7 @@
 # src/core/security/blacklist.py
 
-from datetime import datetime, timezone
-from typing import Optional
 import time
+from datetime import datetime
 
 from core.config import get_settings
 
@@ -18,12 +17,12 @@ _memory_blacklist: dict[str, float] = {}
 
 class MemoryBlacklist:
     async def add(self, jti: str, exp: datetime):
-        _memory_blacklist[jti] = exp.timestamp()
+        _memory_blacklist[str(jti)] = exp.timestamp()
 
     async def contains(self, jti: str) -> bool:
         now = time.time()
 
-        exp = _memory_blacklist.get(jti)
+        exp = _memory_blacklist.get(str(jti))
         if not exp:
             return False
 
@@ -34,10 +33,7 @@ class MemoryBlacklist:
         return True
 
 
-# =========================
 # REDIS (PROD)
-# =========================
-
 class RedisBlacklist:
     def __init__(self, redis):
         self.redis = redis
@@ -47,19 +43,24 @@ class RedisBlacklist:
         if ttl <= 0:
             return
 
-        await self.redis.set(f"bl:{jti}", "1", ex=ttl)
+        await self.redis.set(f"bl:{str(jti)}", "1", ex=ttl)
 
     async def contains(self, jti: str) -> bool:
-        return await self.redis.exists(f"bl:{jti}") == 1
+        return await self.redis.exists(f"bl:{str(jti)}") == 1
 
 
-# =========================
-# FACTORY
-# =========================
+_blacklist = None
 
 def get_blacklist():
+    global _blacklist
+
+    if _blacklist:
+        return _blacklist
+
     if settings.USE_REDIS:
         from core.redis import redis_client
-        return RedisBlacklist(redis_client)
+        _blacklist = RedisBlacklist(redis_client)
+    else:
+        _blacklist = MemoryBlacklist()
 
-    return MemoryBlacklist()
+    return _blacklist

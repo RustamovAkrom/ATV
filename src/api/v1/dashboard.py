@@ -1,15 +1,26 @@
-from fastapi import APIRouter, Depends
-from core.security.permissions import require_any_role
-from core.security.dependencies import get_current_user
-from core.security.types import CurrentUser
+from fastapi import APIRouter, Depends, Request
 
+from core.security.rbac.guards import require_roles, require_permissions
+from db.models.enums import UserRole
+from src.core.security.auth.types import CurrentUser
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
-
-@router.get("/dashboard")
+@router.get("/")
 async def dashboard(
-    _=Depends(require_any_role(["admin", "manager"])),
-    current_user: CurrentUser = Depends(get_current_user),
-) -> dict[str, str]:
-    return {"message": f"Welcome {current_user}"}
+    user: CurrentUser = Depends(require_roles(UserRole.ADMIN)),
+):
+    return {
+        "message": f"Welcome {user.id}",
+        "role": user.role,
+    }
+
+
+@router.get("/analytics")
+async def analytics(
+    user: CurrentUser = Depends(require_permissions("assets.read")),
+):
+    return {
+        "message": f"Welcome to analytics dashboard {user.id}",
+        "ok": True
+    }

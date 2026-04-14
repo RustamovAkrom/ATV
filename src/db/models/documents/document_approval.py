@@ -1,18 +1,19 @@
 # src/db/models/documents/document_approval.py
 
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
+from sqlalchemy import DateTime
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import DateTime, Enum as SAEnum, ForeignKey, UniqueConstraint
 
 from db.base import Base, UUIDMixing
 from db.models.enums import ApprovalStatus
 
 if TYPE_CHECKING:
-    from .document import Document
-    from db.models.users.user import User
+    pass
 
 
 class DocumentApproval(Base, UUIDMixing):

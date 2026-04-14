@@ -1,1 +1,1 @@
-from .warehouse import * # noqa
+from .warehouse import *  # noqa

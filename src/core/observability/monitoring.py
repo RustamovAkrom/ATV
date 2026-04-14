@@ -6,8 +6,9 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel
 
-from core.observability.prometheus import REGISTRY  # IMPORTANT: use same registry!
 from core.config import get_settings
+from core.observability.prometheus import \
+    REGISTRY  # IMPORTANT: use same registry!
 
 router = APIRouter(tags=["Monitoring"])
 

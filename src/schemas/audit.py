@@ -1,8 +1,10 @@
 # src/schemas/audit.py
 
-from datetime import datetime
-from pydantic import BaseModel, ConfigDict
 import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict
+
 
 class AuditSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -14,5 +16,7 @@ class AuditSchema(BaseModel):
     user_id: str | None
     latency_ms: int
     ip: str | None
+    user_agent: str | None
     is_suspicious: bool
+    query: str | None
     created_at: datetime

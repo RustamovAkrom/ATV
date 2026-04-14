@@ -1,9 +1,10 @@
+from datetime import datetime, timezone
 from uuid import UUID
-from datetime import datetime
 
 from fastapi import Depends
-from sqlalchemy import select, update, delete
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from db.dependencies import get_db_session
 from db.models.refresh_token import RefreshToken
 
@@ -30,6 +31,14 @@ class AuthRepository:
             select(RefreshToken).where(RefreshToken.id == jti)
         )
         return result.scalar_one_or_none()
+
+    async def get_by_user(self, user_id: UUID) -> list[RefreshToken]:
+        result = await self.session.execute(
+            select(RefreshToken)
+            .where(RefreshToken.user_id == user_id)
+            .order_by(RefreshToken.created_at.desc())
+        )
+        return result.scalars().all()
 
     async def revoke(self, jti: UUID) -> None:
         """
@@ -60,12 +69,6 @@ class AuthRepository:
 
         result = await self.session.execute(
             delete(RefreshToken)
-            .where(RefreshToken.expires_at < datetime.utcnow())
+            .where(RefreshToken.expires_at < datetime.now(timezone.utc))
         )
         return result.rowcount or 0
-
-
-def get_auth_repo(
-    db: AsyncSession = Depends(get_db_session)
-) -> AuthRepository:
-    return AuthRepository(db)

@@ -1,25 +1,19 @@
 # src/db/models/repairs/repair.py
 
-from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING, List, Optional
 from uuid import UUID
 
+from sqlalchemy import DateTime
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy import ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
-from sqlalchemy import (
-    String,
-    ForeignKey,
-    DateTime,
-    Numeric,
-    Enum as SAEnum,
-)
 
-from db.base import Base, UUIDMixing, TimestampMixin
+from db.base import Base, TimestampMixin, UUIDMixing
 from db.models.enums import RepairStatus
 
 if TYPE_CHECKING:
-    from db.models.assets.asset import Asset
-    from db.models.users.user import User
     from .repair_part import RepairPart
 
 

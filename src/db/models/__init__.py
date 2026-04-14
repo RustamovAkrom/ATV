@@ -1,7 +1,7 @@
 # src/db/models/__init__.py
 
-import pkgutil
 import importlib
+import pkgutil
 from pathlib import Path
 
 _loaded = False  # 🔥 защита от повторной загрузки

@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from sqlalchemy import String, ForeignKey, JSON, Float
+from sqlalchemy import JSON, Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from db.base import Base, UUIDMixing, TimestampMixin
+from db.base import Base, TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
     from db.models.org.service import Service

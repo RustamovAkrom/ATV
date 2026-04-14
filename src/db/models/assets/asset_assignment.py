@@ -2,8 +2,8 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
+from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import DateTime, ForeignKey, UniqueConstraint
 
 from db.base import Base, UUIDMixing
 

@@ -1,16 +1,14 @@
-from uuid import UUID
 from datetime import datetime
+from uuid import UUID
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends
 
 from db.models.auth.password_reset import PasswordReset
-from db.dependencies import get_db_session
 
 
 class PasswordResetRepository:
-    def __init__(self, session: AsyncSession = Depends(get_db_session)):
+    def __init__(self, session: AsyncSession):
         self.session = session
 
     async def create(self, obj: PasswordReset):
@@ -35,9 +33,3 @@ class PasswordResetRepository:
             .where(PasswordReset.id == reset_id)
             .values(is_used=True)
         )
-
-
-def get_reset_repo(
-    db: AsyncSession = Depends(get_db_session),
-) -> PasswordResetRepository:
-    return PasswordResetRepository(db)

@@ -1,14 +1,14 @@
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
+from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey, DateTime, String
 
-from db.base import Base, UUIDMixing, TimestampMixin
+from db.base import Base, TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
-    from .asset import Asset
+    pass
 
 
 class AssetTransfer(Base, UUIDMixing, TimestampMixin):

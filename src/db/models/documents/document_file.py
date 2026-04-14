@@ -1,15 +1,15 @@
 # src/db/models/documents/document_file.py
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base, UUIDMixing
 
 if TYPE_CHECKING:
-    from .document import Document
+    pass
 
 
 class DocumentFile(Base, UUIDMixing):

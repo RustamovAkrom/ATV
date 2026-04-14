@@ -4,18 +4,14 @@ from typing import Any
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
+from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
+                                    async_sessionmaker, create_async_engine)
 
 from app import create_app
-from db.models import load_all_models
 from core.config import get_settings
 from db.base import Base
 from db.dependencies import get_db_session
+from db.models import load_all_models
 
 
 @pytest.fixture(scope="session")

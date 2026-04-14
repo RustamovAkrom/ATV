@@ -1,12 +1,13 @@
 from fastapi import FastAPI
+from slowapi.errors import RateLimitExceeded
+
+from api.router import router as api_router
 from core.config import get_settings
+from core.exceptions.handlers import register_exception_handlers
 from core.lifespan import lifespan
 from core.observability.monitoring import router as monitoring_router
-from core.exceptions.handlers import register_exception_handlers
-from middlewares.audit import AuditMiddleware
-from api.router import router as api_router
 from core.slowapi import limiter, rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
+from middlewares.audit import AuditMiddleware
 
 
 def create_app() -> FastAPI:

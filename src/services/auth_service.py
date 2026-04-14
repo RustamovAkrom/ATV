@@ -1,49 +1,34 @@
 from datetime import datetime, timedelta, timezone
-from typing import Any
 from uuid import UUID
+from fastapi import Request
 
-from repositories.auth_repo import AuthRepository
-from repositories.user_repo import UserRepository
-from db.models.refresh_token import RefreshToken
-from core.security.jwt import (
-    create_access_token,
-    create_refresh_token,
-    decode_token,
-)
-from core.security.passwords import verify_password
 from core.config import get_settings
+from core.exceptions.errors import AuthenticationError, InvalidToken
 from core.security.blacklist import get_blacklist
-from core.exceptions.errors import (
-    AuthenticationError,
-    InvalidToken,
-)
+from core.security.jwt import create_access_token, create_refresh_token, decode_token
+from core.security.passwords import verify_password
+from db.models.refresh_token import RefreshToken
+from repositories.user_repo import UserRepository
+from repositories.auth_repo import AuthRepository
 
 def utc_now():
     return datetime.now(timezone.utc)
 
+
 class AuthService:
-    def __init__(
-        self,
-        user_repo: UserRepository,
-        auth_repo: AuthRepository,
-    ):
+    def __init__(self, user_repo: UserRepository, auth_repo: AuthRepository):
         self.settings = get_settings()
         self.user_repo = user_repo
         self.auth_repo = auth_repo
 
-    # =========================
-    # LOGIN
-    # =========================
-    async def login(self, login: str, password: str) -> dict[str, str]:
-        user = await self.user_repo.get_by_login(login)
+    async def login(self, login: str, password: str, request: Request):
+        user = await self.user_repo.get_by_identity(login)
 
         if not user or not verify_password(password, user.password_hash):
             raise AuthenticationError()
 
         if not user.is_active:
             raise AuthenticationError()
-
-        user.last_login = utc_now()
 
         access = create_access_token(str(user.id))
         refresh, jti = create_refresh_token(str(user.id))
@@ -52,46 +37,26 @@ class AuthService:
             RefreshToken(
                 id=jti,
                 user_id=user.id,
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
                 expires_at=utc_now()
                 + timedelta(days=self.settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS),
             )
         )
 
-        return {
-            "access_token": access,
-            "refresh_token": refresh,
-        }
+        return {"access_token": access, "refresh_token": refresh}
 
-    # =========================
-    # REFRESH
-    # =========================
-    async def refresh(self, refresh_token: str) -> dict[str, str]:
-        payload = await decode_token(refresh_token, expected_type="refresh")
+    async def refresh(self, refresh_token: str):
+        payload = await decode_token(refresh_token, "refresh")
 
-        if payload.get("type") != "refresh":
+        token = await self.auth_repo.get_by_id(payload.jti)
+
+        if not token or token.is_revoked:
             raise InvalidToken()
 
-        jti = payload.get("jti")
-        user_id = payload.get("sub")
+        await self.auth_repo.revoke(payload.jti)
 
-        token = await self.auth_repo.get_by_id(jti)
-
-        if not token:
-            raise InvalidToken()
-
-        if token.is_revoked:
-            await self.auth_repo.revoke_all_by_user(token.user_id)
-            raise InvalidToken(detail="Token reuse detected")
-
-        if token.expires_at < utc_now():
-            raise InvalidToken()
-
-        # rotate token
-        await self.auth_repo.revoke(jti)
-
-        user = await self.user_repo.get_by_id(user_id)
-        if not user:
-            raise InvalidToken()
+        user = await self.user_repo.get_by_id(payload.sub)
 
         access = create_access_token(str(user.id))
         new_refresh, new_jti = create_refresh_token(str(user.id))
@@ -105,39 +70,21 @@ class AuthService:
             )
         )
 
-        return {
-            "access_token": access,
-            "refresh_token": new_refresh,
-        }
+        return {"access_token": access, "refresh_token": new_refresh}
 
-    # =========================
-    # LOGOUT
-    # =========================
-    async def logout(self, refresh_token: str, access_payload: dict[str, Any]) -> None:
-        blacklist = get_blacklist()
+    async def logout(self, request: Request, refresh_token: str):
+        payload = request.state.access_payload
 
-        jti = access_payload.get("jti")
-        exp = access_payload.get("exp")
+        await get_blacklist().add(
+            jti=payload.jti,
+            exp=datetime.fromtimestamp(payload.exp, tz=timezone.utc),
+        )
 
-        # 🔥 безопасная проверка
-        if jti and exp:
-            await blacklist.add(
-                jti=jti,
-                exp=datetime.fromtimestamp(exp, tz=timezone.utc),
-            )
+        try:
+            refresh_payload = await decode_token(refresh_token, "refresh")
+            await self.auth_repo.revoke(refresh_payload.jti)
+        except Exception:
+            pass  # logout всегда успешен
 
-        payload = await decode_token(refresh_token)
-
-        refresh_jti = payload.get("jti")
-        refresh_sub = payload.get("sub")
-
-        if access_payload.get("sub") != refresh_sub:
-            raise InvalidToken()
-
-        await self.auth_repo.revoke(refresh_jti)
-
-    # =========================
-    # LOGOUT ALL
-    # =========================
-    async def logout_all(self, user_id: UUID) -> None:
+    async def logout_all(self, user_id: UUID):
         await self.auth_repo.revoke_all_by_user(user_id)

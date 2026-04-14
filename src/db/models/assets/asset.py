@@ -1,33 +1,26 @@
 # src/db/models/assets/asset.py
 
-from typing import Optional, TYPE_CHECKING
 from datetime import date
 from decimal import Decimal
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
+from sqlalchemy import JSON, CheckConstraint, Date
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy import ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
-from sqlalchemy import (
-    ForeignKey,
-    Date,
-    Numeric,
-    String,
-    JSON,
-    Enum as SAEnum,
-    CheckConstraint,
-)
 
-from db.base import Base, UUIDMixing, TimestampMixin
+from db.base import Base, TimestampMixin, UUIDMixing
 from db.models.enums import AssetStatus, LifecycleStage
 
 if TYPE_CHECKING:
-    from db.models.users.user import User
+    from db.models.assets.asset_class import AssetClass
+    from db.models.assets.asset_model import AssetModel
     from db.models.org.region import Region
     from db.models.org.service import Service
-    from db.models.assets.asset_model import AssetModel
     from db.models.repairs.repair import Repair
+    from db.models.users.user import User
     from db.models.warehouse.warehouse import Warehouse
-    from db.models.assets.asset_category import AssetCategory
-    from db.models.assets.asset_class import AssetClass
 
 
 class Asset(Base, UUIDMixing, TimestampMixin):

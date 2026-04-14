@@ -1,17 +1,14 @@
 from datetime import datetime, timedelta
-from uuid import UUID
 
-from core.security.passwords import hash_password
-from core.security.reset_tokens import generate_token, hash_token
 from core.config import get_settings
-
-from repositories.user_repo import UserRepository
+from core.exceptions.errors import InvalidToken
+from core.security.passwords import hash_password
+from db.models.auth.password_reset import PasswordReset
 from repositories.auth_repo import AuthRepository
 from repositories.password_reset_repo import PasswordResetRepository
-
-from db.models.auth.password_reset import PasswordReset
-from core.exceptions.errors import InvalidToken
+from repositories.user_repo import UserRepository
 from tasks.email_task import send_password_reset_email
+from utils.reset_tokens import generate_token, hash_token
 
 
 class SecurityService:
@@ -26,11 +23,11 @@ class SecurityService:
         self.auth_repo = auth_repo
         self.reset_repo = reset_repo
 
-    async def request_password_reset(self, login: str) -> str:
+    async def request_password_reset(self, login: str) -> None:
         user = await self.user_repo.get_by_login(login)
 
         if not user:
-            return "ok"
+            return
 
         token = generate_token()
         token_hash = hash_token(token)
@@ -46,7 +43,6 @@ class SecurityService:
         # Send change url to email user
         send_password_reset_email.delay(user.email, token)
 
-        return token
 
     async def reset_password(self, token: str, new_password: str):
         token_hash = hash_token(token)

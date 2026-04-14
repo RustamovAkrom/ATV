@@ -1,10 +1,10 @@
 from datetime import datetime
 from uuid import UUID
 
+from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import DateTime, ForeignKey, Boolean, String
 
-from db.base import Base, UUIDMixin, TimestampMixin
+from db.base import Base, TimestampMixin, UUIDMixin
 
 
 class PasswordReset(Base, UUIDMixin, TimestampMixin):

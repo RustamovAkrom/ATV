@@ -2,9 +2,8 @@
 
 from celery import Celery
 
-from core.logger import configure_logger
 from core.config import get_settings
-
+from core.logger import configure_logger
 
 logger = configure_logger()
 settings = get_settings()
