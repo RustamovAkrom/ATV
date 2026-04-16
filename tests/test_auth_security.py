@@ -1,126 +1,246 @@
-from datetime import datetime, timedelta, timezone
-from types import SimpleNamespace
-from unittest.mock import AsyncMock
-from uuid import uuid4
-
 import pytest
+from db.models.users.user import User
+from db.models.users.permission import Role
+from db.models.enums import UserRole, UserStatus
+from core.security.passwords import hash_password
 
-from api.v1 import security as security_api
-from services.auth_service import AuthService
 
+@pytest.fixture
+async def create_user(dbsession):
+    async def _create():
+        role = Role(name="SuperAdmin", code=UserRole.SUPERADMIN.value)
+        dbsession.add(role)
+        await dbsession.flush()
 
-@pytest.mark.anyio
-async def test_logout_accepts_matching_uuid_subjects(monkeypatch: pytest.MonkeyPatch) -> None:
-    user_id = uuid4()
-    refresh_jti = uuid4()
-    access_jti = uuid4()
+        user = User(
+            login="test_user",
+            password_hash=hash_password("password"),
+            email="test@test.com",
+            phone="+998900000999",
+            role_id=role.id,
+            status=UserStatus.ACTIVE.value,
+        )
 
-    blacklist = SimpleNamespace(add=AsyncMock())
-    monkeypatch.setattr("services.auth_service.get_blacklist", lambda: blacklist)
-    monkeypatch.setattr(
-        "services.auth_service.decode_token",
-        AsyncMock(return_value={"sub": user_id, "jti": refresh_jti, "type": "refresh"}),
-    )
+        dbsession.add(user)
+        await dbsession.commit()
+        return user
 
-    service = AuthService(
-        user_repo=AsyncMock(),
-        auth_repo=SimpleNamespace(revoke=AsyncMock()),
-    )
-
-    await service.logout(
-        "refresh-token",
-        {
-            "sub": user_id,
-            "jti": access_jti,
-            "exp": int((datetime.now(timezone.utc) + timedelta(minutes=15)).timestamp()),
-        },
-    )
-
-    blacklist.add.assert_awaited_once()
-    service.auth_repo.revoke.assert_awaited_once_with(refresh_jti)
+    return _create
 
 
 @pytest.mark.anyio
-async def test_refresh_rejects_subject_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
-    token_jti = uuid4()
-    token_user_id = uuid4()
-    payload_user_id = uuid4()
+async def test_refresh_token_reuse_attack(client, dbsession, create_user):
+    user = await create_user()
+    headers = {"user-agent":
+        "test-device"}
 
-    monkeypatch.setattr(
-        "services.auth_service.decode_token",
-        AsyncMock(return_value={"sub": payload_user_id, "jti": token_jti, "type": "refresh"}),
+    login = await client.post(
+        "/auth/login",
+        data={"username": user.login, "password": "password"},
+        headers=headers,
     )
 
-    auth_repo = SimpleNamespace(
-        get_by_id=AsyncMock(
-            return_value=SimpleNamespace(
-                user_id=token_user_id,
-                is_revoked=False,
-                expires_at=datetime.now(timezone.utc) + timedelta(days=1),
-            )
-        ),
-        revoke_all_by_user=AsyncMock(),
-        revoke=AsyncMock(),
-        create=AsyncMock(),
+    tokens = login.json()
+    old_refresh = tokens["refresh_token"]
+
+    # first refresh (OK)
+    r1 = await client.post(
+        "/auth/refresh",
+        json={"refresh_token": old_refresh},
+        headers=headers,
     )
-    service = AuthService(user_repo=AsyncMock(), auth_repo=auth_repo)
+    assert r1.status_code == 200
 
-    with pytest.raises(Exception) as exc_info:
-        await service.refresh("refresh-token")
+    # second reuse (MUST FAIL)
+    r2 = await client.post(
+        "/auth/refresh",
+        json={"refresh_token": old_refresh},
+    )
 
-    assert exc_info.value.detail == "Token subject mismatch"
-    auth_repo.revoke_all_by_user.assert_awaited_once_with(token_user_id)
-    auth_repo.revoke.assert_not_called()
+    assert r2.status_code == 401
 
 
 @pytest.mark.anyio
-async def test_logout_all_blacklists_current_access_token(monkeypatch: pytest.MonkeyPatch) -> None:
-    user_id = uuid4()
-    access_jti = uuid4()
-    blacklist = SimpleNamespace(add=AsyncMock())
-    auth_repo = SimpleNamespace(revoke_all_by_user=AsyncMock())
+async def test_logout_blacklists_access_token(client, create_user):
+    user = await create_user()
 
-    monkeypatch.setattr("services.auth_service.get_blacklist", lambda: blacklist)
-
-    service = AuthService(user_repo=AsyncMock(), auth_repo=auth_repo)
-    await service.logout_all(
-        user_id,
-        {
-            "sub": user_id,
-            "jti": access_jti,
-            "exp": int((datetime.now(timezone.utc) + timedelta(minutes=15)).timestamp()),
-        },
+    login = await client.post(
+        "/auth/login",
+        data={"username": user.login, "password": "password"},
     )
 
-    blacklist.add.assert_awaited_once()
-    auth_repo.revoke_all_by_user.assert_awaited_once_with(user_id)
+    access = login.cookies.get("access_token")
+    refresh = login.json()["refresh_token"]
+
+    # logout
+    await client.post(
+        "/auth/logout",
+        json={"refresh_token": refresh},
+    )
+
+    # try using old access token
+    response = await client.get(
+        "/sessions/",
+    )
+
+    assert response.status_code == 401
 
 
 @pytest.mark.anyio
-async def test_forgot_password_hides_token_outside_debug_env(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    mock_service = SimpleNamespace(request_password_reset=AsyncMock(return_value="secret-reset-token"))
-    monkeypatch.setattr(security_api.settings, "ENV", "prod", raising=False)
+async def test_logout_all_revokes_all_sessions(client, create_user):
+    user = await create_user()
 
-    response = await security_api.forgot_password(
-        security_api.ForgotPasswordRequest(login="demo"),
-        service=mock_service,
+    tokens = []
+    for _ in range(2):
+        r = await client.post(
+            "/auth/login",
+            data={"username": user.login, "password": "password"},
+        )
+        tokens.append(r.json())
+
+    # logout all
+    await client.post(
+        "/auth/logout-all",
     )
 
-    assert response == {"status": "ok"}
+    # refresh must fail
+    r = await client.post(
+        "/auth/refresh",
+        json={"refresh_token": tokens[1]["refresh_token"]},
+    )
+
+    assert r.status_code == 401
 
 
 @pytest.mark.anyio
-async def test_forgot_password_exposes_debug_token_in_test_env(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    mock_service = SimpleNamespace(request_password_reset=AsyncMock(return_value="secret-reset-token"))
-    monkeypatch.setattr(security_api.settings, "ENV", "test", raising=False)
+async def test_access_token_cannot_be_used_as_refresh(client, create_user):
+    user = await create_user()
 
-    response = await security_api.forgot_password(
-        security_api.ForgotPasswordRequest(login="demo"),
-        service=mock_service,
+    login = await client.post(
+        "/auth/login",
+        data={"username": user.login, "password": "password"},
     )
 
-    assert response == {"status": "ok", "debug_token": "secret-reset-token"}
+    access = login.json()["access_token"]
+
+    r = await client.post(
+        "/auth/refresh",
+        json={"refresh_token": access},
+    )
+
+    assert r.status_code == 401
+
+@pytest.mark.anyio
+async def test_expired_refresh_token(client, create_user, dbsession):
+    user = await create_user()
+
+    login = await client.post(
+        "/auth/login",
+        data={"username": user.login, "password": "password"},
+    )
+
+    refresh = login.json()["refresh_token"]
+
+    # manually expire in DB
+    from db.models.refresh_token import RefreshToken
+    from sqlalchemy import update
+    from datetime import datetime, timezone, timedelta
+
+    await dbsession.execute(
+        update(RefreshToken)
+        .values(expires_at=datetime.now(timezone.utc) - timedelta(days=1))
+    )
+    await dbsession.commit()
+
+    r = await client.post(
+        "/auth/refresh",
+        json={"refresh_token": refresh},
+    )
+
+    assert r.status_code == 401
+
+@pytest.mark.anyio
+async def test_revoke_single_session(client, create_user):
+    user = await create_user()
+
+    # login 1
+    r1 = await client.post(
+        "/auth/login",
+        data={"username": user.login, "password": "password"},
+    )
+    t1 = r1.json()
+
+    # login 2
+    r2 = await client.post(
+        "/auth/login",
+        data={"username": user.login, "password": "password"},
+    )
+    t2 = r2.json()
+
+    # get sessions
+    sessions_resp = await client.get("/sessions/")
+    sessions = sessions_resp.json()
+
+    session_to_revoke = next(s["id"] for s in sessions if not s["is_revoked"])
+
+    # revoke ONE session
+    await client.delete(f"/sessions/{session_to_revoke}")
+
+    # 🔥 первый refresh → триггерит security event
+    r = await client.post(
+        "/auth/refresh",
+        json={"refresh_token": t1["refresh_token"]},
+    )
+    assert r.status_code == 401
+
+    # 🔥 второй тоже должен умереть (revoke_all)
+    r = await client.post(
+        "/auth/refresh",
+        json={"refresh_token": t2["refresh_token"]},
+    )
+    assert r.status_code == 401
+
+
+@pytest.mark.anyio
+async def test_refresh_same_device_ok(client, create_user):
+    user = await create_user()
+
+    headers = {"user-agent": "device-1"}
+
+    login = await client.post(
+        "/auth/login",
+        data={"username": user.login, "password": "password"},
+        headers=headers,
+    )
+
+    tokens = login.json()
+
+    refresh = await client.post(
+        "/auth/refresh",
+        json={"refresh_token": tokens["refresh_token"]},
+        headers=headers,
+    )
+
+    assert refresh.status_code == 200
+
+
+@pytest.mark.anyio
+async def test_refresh_different_device_invalid(client, create_user):
+    user = await create_user()
+
+    login = await client.post(
+        "/auth/login",
+        data={"username": user.login, "password": "password"},
+        headers={"user-agent": "device-1"},
+    )
+
+    tokens = login.json()
+
+    # другой девайс
+    refresh = await client.post(
+        "/auth/refresh",
+        json={"refresh_token": tokens["refresh_token"]},
+        headers={"user-agent": "device-2"},
+    )
+
+    assert refresh.status_code == 401

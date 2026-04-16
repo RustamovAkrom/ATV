@@ -28,6 +28,12 @@ class UserRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_by_login(self, login: str, include_inactive=False) -> User | None:
+        result = await self.session.execute(
+            self._base_query(include_inactive).where(User.login == login)
+        )
+        return result.scalar_one_or_none()
+
     async def get_by_identity(self, identity: str) -> User | None:
         result = await self.session.execute(
             self._base_query().where(
@@ -44,13 +50,13 @@ class UserRepository:
 
     async def exists_by_email(self, email: str) -> bool:
         result = await self.session.execute(
-            select(User.id).where(User.email == email)
+            select(User.id).where(User.email == email).limit(1)
         )
         return result.scalar_one_or_none() is not None
 
     async def exists_by_login(self, login: str) -> bool:
         result = await self.session.execute(
-            select(User.id).where(User.login == login)
+            select(User.id).where(User.login == login).limit(1)
         )
         return result.scalar_one_or_none() is not None
 

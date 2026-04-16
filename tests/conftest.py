@@ -4,26 +4,30 @@ from typing import Any
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
-                                    async_sessionmaker, create_async_engine)
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
 from app import create_app
 from core.config import get_settings
-from db.base import Base
 from db.dependencies import get_db_session
+from db.meta import meta
 from db.models import load_all_models
 
 
 @pytest.fixture(scope="session")
 async def _engine() -> AsyncGenerator[AsyncEngine, None]:
+    """
+    Create engine and databases.
+
+    :yield: new engine.
+    """
     settings = get_settings()
 
     load_all_models()
 
-    engine = create_async_engine(str(settings.postgres_url))
+    engine = create_async_engine(str(settings.postgres_async_url), echo=True)
 
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(meta.create_all)
 
     try:
         yield engine
@@ -35,6 +39,15 @@ async def _engine() -> AsyncGenerator[AsyncEngine, None]:
 async def dbsession(
     _engine: AsyncEngine,
 ) -> AsyncGenerator[AsyncSession, None]:
+    """
+    Get session to database.
+
+    Fixture that returns a SQLAlchemy session with a SAVEPOINT, and the rollback to it
+    after the test completes.
+
+    :param _engine: current engine.
+    :yields: async session.
+    """
     connection = await _engine.connect()
     trans = await connection.begin()
 
@@ -42,7 +55,6 @@ async def dbsession(
         connection,
         expire_on_commit=False,
     )
-
     session = session_maker()
 
     try:
@@ -57,13 +69,32 @@ async def dbsession(
 async def fastapi_app(
     dbsession: AsyncSession,
 ) -> FastAPI:
-    application = create_app()
-    application.dependency_overrides[get_db_session] = lambda: dbsession
-    return application
+    """
+    Fixture for creating FastAPI app.
+
+    :return: fastapi app with mocked dependencies.
+    """
+    app = create_app()
+
+    async def override_db():
+        yield dbsession
+
+    app.dependency_overrides[get_db_session] = override_db
+
+    app.user_middleware = [
+        m for m in app.user_middleware
+        if m.cls.__name__ != "AuditMiddleware"
+    ]
+    return app  # noqa: WPS331
 
 
 @pytest.fixture(scope="session")
 def anyio_backend() -> str:
+    """
+    Backend for anyio pytest plugin.
+
+    :return: backend name.
+    """
     return "asyncio"
 
 
@@ -72,7 +103,16 @@ async def client(
     fastapi_app: FastAPI,
     anyio_backend: Any,
 ) -> AsyncGenerator[AsyncClient, None]:
-    transport = ASGITransport(fastapi_app)
+    """
+    Fixture that creates client for requesting server.
+
+    :param fastapi_app: the application.
+    :yield: client for the app.
+    """
+    transport = ASGITransport(
+        app=fastapi_app,
+        raise_app_exceptions=True,
+    )
 
     async with AsyncClient(
         transport=transport,

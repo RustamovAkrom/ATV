@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request
 
 from core.security.rbac.guards import require_roles, require_permissions
 from db.models.enums import UserRole
-from src.core.security.auth.types import CurrentUser
+from core.security.auth.types import CurrentUser
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 

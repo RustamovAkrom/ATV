@@ -29,9 +29,15 @@ class RBACService:
         return await self.rbac_repo.create_role(role)
 
     async def update_role(self, role_id: UUID, data: dict):
+        role = await self.rbac_repo.get_role(role_id)
+        if not role:
+            raise InvalidToken()
         return await self.rbac_repo.update_role(role_id, data)
 
     async def delete_role(self, role_id: UUID):
+        role = await self.rbac_repo.get_role(role_id)
+        if not role:
+            raise InvalidToken()
         await self.rbac_repo.delete_role(role_id)
 
     # PERMISSIONS

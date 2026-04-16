@@ -10,9 +10,7 @@ from core.security.passwords import verify_password
 from db.models.refresh_token import RefreshToken
 from repositories.user_repo import UserRepository
 from repositories.auth_repo import AuthRepository
-
-def utc_now():
-    return datetime.now(timezone.utc)
+from utils.helpers import generate_device_id, utc_now
 
 
 class AuthService:
@@ -24,7 +22,10 @@ class AuthService:
     async def login(self, login: str, password: str, request: Request):
         user = await self.user_repo.get_by_identity(login)
 
-        if not user or not verify_password(password, user.password_hash):
+        if not user:
+            raise AuthenticationError()
+
+        if not verify_password(password, user.password_hash):
             raise AuthenticationError()
 
         if not user.is_active:
@@ -39,6 +40,7 @@ class AuthService:
                 user_id=user.id,
                 ip_address=request.client.host if request.client else None,
                 user_agent=request.headers.get("user-agent"),
+                device_id=generate_device_id(request),
                 expires_at=utc_now()
                 + timedelta(days=self.settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS),
             )
@@ -46,17 +48,40 @@ class AuthService:
 
         return {"access_token": access, "refresh_token": refresh}
 
-    async def refresh(self, refresh_token: str):
+    async def refresh(self, refresh_token: str, request: Request):
         payload = await decode_token(refresh_token, "refresh")
 
         token = await self.auth_repo.get_by_id(payload.jti)
 
-        if not token or token.is_revoked:
+        if not token:
             raise InvalidToken()
 
+        # reuse detection (security event)
+        if token.is_revoked:
+            await self.auth_repo.revoke_all_by_user(payload.sub)
+            raise InvalidToken("Token reuse detected")
+
+        # expired
+        if token.expires_at < utc_now():
+            raise InvalidToken()
+
+        current_ip = request.client.host if request.client else None
+        current_device = generate_device_id(request)
+
+        # DEVICE binding (new)
+        if token.device_id and token.device_id != current_device:
+            raise InvalidToken("Device mismatch detected")
+
+        # IP binding (optional but good)
+        if token.ip_address and token.ip_address != current_ip:
+            raise InvalidToken("IP mismatched")
+
+        # ROTATION
         await self.auth_repo.revoke(payload.jti)
 
         user = await self.user_repo.get_by_id(payload.sub)
+        if not user:
+            raise InvalidToken()
 
         access = create_access_token(str(user.id))
         new_refresh, new_jti = create_refresh_token(str(user.id))
@@ -65,6 +90,9 @@ class AuthService:
             RefreshToken(
                 id=new_jti,
                 user_id=user.id,
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+                device_id=current_device,
                 expires_at=utc_now()
                 + timedelta(days=self.settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS),
             )

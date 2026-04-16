@@ -62,8 +62,8 @@ services:
 
   postgres-test:
     image: postgres:16-alpine
-    # ports:
-    #   - "25439:5432"
+    ports:
+      - "25439:5432"
     env_file:
       - .env.test
     networks:
@@ -99,14 +99,12 @@ services:
       - .env
     restart: always
     volumes:
-      - ./src:/app/src
+      - ./src:/app
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-      # rabbitmq:
-      #   condition: service_healthy
     networks:
       - backend_network
 
@@ -119,14 +117,12 @@ services:
       - .env
     restart: always
     volumes:
-      - ./src:/app/src
+      - ./src:/app
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-      # rabbitmq:
-      #   condition: service_healthy
     networks:
       - backend_network
 
@@ -139,7 +135,7 @@ services:
       - .env
     restart: always
     volumes:
-      - ./src:/app/src
+      - ./src:/app
     ports:
       - ${CELERY_FLOWER:-5555}:5555
     depends_on:

@@ -1,11 +1,10 @@
 from uuid import UUID
 
-from fastapi import Depends
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.dependencies import get_db_session
 from db.models.refresh_token import RefreshToken
+from utils.helpers import utc_now
 
 
 class SessionRepository:
@@ -20,6 +19,19 @@ class SessionRepository:
         )
         return result.scalars().all()
 
+    async def get_active_sessions(self, user_id: UUID):
+        now = utc_now()
+
+        result = await self.session.execute(
+            select(RefreshToken)
+            .where(
+                RefreshToken.user_id == user_id,
+                RefreshToken.is_revoked == False,
+                RefreshToken.expires_at > now,
+            )
+        )
+        return result.scalars().all()
+
     async def get_by_id(self, session_id: UUID):
         result = await self.session.execute(
             select(RefreshToken)
@@ -30,13 +42,19 @@ class SessionRepository:
     async def revoke(self, session_id: UUID):
         await self.session.execute(
             update(RefreshToken)
-            .where(RefreshToken.id == session_id)
+            .where(
+                RefreshToken.id == session_id,
+                RefreshToken.is_revoked == False,
+            )
             .values(is_revoked=True)
         )
 
     async def revoke_all(self, user_id: UUID):
         await self.session.execute(
             update(RefreshToken)
-            .where(RefreshToken.user_id == user_id)
+            .where(
+                RefreshToken.user_id == user_id,
+                RefreshToken.is_revoked == False,
+            )
             .values(is_revoked=True)
         )

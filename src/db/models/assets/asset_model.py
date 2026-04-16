@@ -5,7 +5,7 @@ from uuid import UUID
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
-
+from db.models.enums import LifecycleStage
 from db.base import Base, TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
@@ -87,21 +87,25 @@ class AssetModel(Base, UUIDMixing, TimestampMixin):
         return purchase_date + relativedelta(months=self.warranty_months)
 
     def get_lifecycle_stage(self, purchase_date: date | None) -> str:
-        """
-        Определить стадию жизненного цикла
-        """
         if not purchase_date or not self.lifetime_years:
             return "unknown"
 
-        age = date.today().year - purchase_date.year
+        now = date.today()
+        delta = relativedelta(now, purchase_date)
 
-        if age < self.lifetime_years * 0.5:
-            return "new"
-        elif age < self.lifetime_years:
-            return "normal"
-        elif age < self.lifetime_years * 1.5:
-            return "old"
-        return "critical"
+        total_months = delta.years * 12 + delta.months
+        lifetime_months = self.lifetime_years * 12
+
+        ratio = total_months / self.lifetime_years
+
+        if ratio < 0.5:
+            return LifecycleStage.NEW.value
+        elif ratio < 1.0:
+            return LifecycleStage.NORMAL.value
+        elif ratio < 1.5:
+            return LifecycleStage.OLD.value
+        else:
+            return LifecycleStage.CRITICAL.value
 
     def is_out_of_warranty(self, purchase_date: date | None) -> bool:
         """

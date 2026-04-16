@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta, timezone
-from uuid import uuid4
+from uuid import uuid4, UUID
 import jwt
 
 from core.config import get_settings
 from core.exceptions.errors import InvalidToken, TokenExpired
-from src.core.security.auth.types import TokenPayload
+from core.security.auth.types import TokenPayload
 
 settings = get_settings()
 
@@ -59,8 +59,8 @@ async def decode_token(token: str, expected_type: str | None = None) -> TokenPay
             raise InvalidToken()
 
         return TokenPayload(
-            sub=raw["sub"],
-            jti=raw["jti"],
+            sub=UUID(raw["sub"]),
+            jti=UUID(raw["jti"]),
             exp=raw["exp"],
             type=raw["type"],
         )

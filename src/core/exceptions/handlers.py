@@ -1,5 +1,3 @@
-# src/core/exceptions/handlers.py
-
 import uuid
 
 from fastapi import FastAPI, Request
@@ -7,16 +5,24 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.encoders import jsonable_encoder
+from slowapi.errors import RateLimitExceeded
+from sqlalchemy.exc import IntegrityError
+from asyncpg.exceptions import ForeignKeyViolationError, UniqueViolationError
+from core.exceptions.errors import Conflict, ValidationError
+from core.slowapi import rate_limit_exceeded_handler
 from core.logger import configure_logger
 
 from .base import APIException
 from .errors import InternalError
 
 
-def register_exception_handlers(app: FastAPI) -> None:
+def configure_exception_handlers(app: FastAPI) -> None:
     logger = configure_logger()
 
-    # 🔴 APIException
+    # SlowAPI Exception Handler
+    app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
+    # APIException
     @app.exception_handler(APIException)
     async def api_exception_handler(request: Request, exc: APIException):
         trace_id = str(uuid.uuid4())
@@ -91,6 +97,26 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
 
         error = InternalError()
+
+        return JSONResponse(
+            status_code=error.status_code,
+            content=error.to_dict(trace_id),
+        )
+
+    @app.exception_handler(IntegrityError)
+    async def db_exception_handler(request: Request, exc: IntegrityError):
+        trace_id = str(uuid.uuid4())
+
+        orig = exc.orig
+
+        if isinstance(orig, UniqueViolationError):
+            error = Conflict(detail="Resource already exists")
+
+        elif isinstance(orig, ForeignKeyViolationError):
+            error = ValidationError(detail="Invalid reference")
+
+        else:
+            error = ValidationError(detail="Database error")
 
         return JSONResponse(
             status_code=error.status_code,

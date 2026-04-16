@@ -4,6 +4,7 @@ from uuid import UUID
 
 from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
 
 from db.base import Base, TimestampMixin, UUIDMixing
 
@@ -36,7 +37,7 @@ class AssetTransfer(Base, UUIDMixing, TimestampMixin):
     )
 
     transferred_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow
+        DateTime(timezone=True), server_default=func.now()
     )
 
     comment: Mapped[Optional[str]] = mapped_column(String(255))

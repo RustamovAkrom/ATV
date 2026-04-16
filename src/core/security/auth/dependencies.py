@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, Request
 
 from core.exceptions.errors import InvalidToken
 from core.security.blacklist import get_blacklist
@@ -16,13 +16,13 @@ async def get_token_payload(
 ):
     payload = await decode_token(token, expected_type="access")
 
-    # записываем в scope (для audit)
+    # write for audit
     request.scope["state"]["user_id"] = str(payload.sub)
     request.scope["state"]["access_payload"] = payload
 
     # blacklist check
     if await get_blacklist().contains(payload.jti):
-        raise HTTPException(status_code=401, detail="Token revoked")
+        raise InvalidToken()
 
     return payload
 

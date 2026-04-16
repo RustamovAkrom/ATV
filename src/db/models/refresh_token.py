@@ -4,6 +4,7 @@ from uuid import UUID
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
 
 from db.base import Base, UUIDMixing
 
@@ -26,6 +27,7 @@ class RefreshToken(Base, UUIDMixing):
         default=False,
         nullable=False,
     )
+    device_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -35,7 +37,7 @@ class RefreshToken(Base, UUIDMixing):
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
+        server_default=func.now(),
         nullable=False,
     )
 

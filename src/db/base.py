@@ -5,19 +5,18 @@ from typing import Any
 from sqlalchemy import DateTime, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, validates
+from sqlalchemy.sql import func
 
 from db.meta import meta
 
 
 class Base(DeclarativeBase):
-    """Base for all models."""
-
     metadata = meta
 
 
 class TimestampMixin:
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
 
 class IDMixin:
@@ -29,7 +28,7 @@ class UUIDMixin:
     id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
-        default=uuid.uuid4
+        default=uuid.uuid4,
     )
 
 
@@ -43,7 +42,10 @@ class StatusMixin:
     status: Mapped[str] = mapped_column(String(50), nullable=False)
 
     @validates("status")
-    def validate_status(self, key: str, value: str) -> str:
-        if value not in [e.value for e in self.STATUS_ENUM]:
+    def validate_status(self, value: str) -> str:
+        if self.STATUS_ENUM is None:
+            raise TypeError("STATUS_ENUM is not configured")
+        allowed = {e.value for e in self.STATUS_ENUM}
+        if value not in allowed:
             raise ValueError(f"Invalid status: {value}")
         return value

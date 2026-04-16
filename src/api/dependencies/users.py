@@ -5,7 +5,7 @@ from db.dependencies import get_db_session
 from repositories.auth_repo import AuthRepository
 from repositories.user_repo import UserRepository
 from services.user_service import UserService
-
+from .rbac import get_rbac_repo, RBACRepository
 
 def get_user_repo(
     db: AsyncSession = Depends(get_db_session)
@@ -14,6 +14,7 @@ def get_user_repo(
 
 
 def get_user_service(
-    user_repo: UserRepository = Depends(get_user_repo)
+    user_repo: UserRepository = Depends(get_user_repo),
+    rbac_repo: RBACRepository = Depends(get_rbac_repo)
 ) -> UserService:
-    return UserService(user_repo)
+    return UserService(user_repo, rbac_repo)

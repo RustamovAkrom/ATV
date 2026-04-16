@@ -9,7 +9,10 @@ class AuditRepository:
         self.session = session
 
     async def create(self, data: dict):
-        self.session.add(AuditLog(**data))
+        audit = AuditLog(**data)
+        self.session.add(audit)
+        await self.session.flush()
+        return audit
 
     async def list(self, limit: int, offset: int):
         result = await self.session.execute(

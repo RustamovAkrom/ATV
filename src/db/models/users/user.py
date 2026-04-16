@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from sqlalchemy import Date, DateTime, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from db.base import Base, StatusMixin, TimestampMixin, UUIDMixing
 from db.models.enums import UserStatus
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
     __tablename__ = "users"
     STATUS_ENUM = UserStatus
+
     login: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     first_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
@@ -44,6 +45,10 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
 
     version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
+    @validates
+    def validate_status(self, value):
+        return super().validate_status(value)
+
     # relationships
     role: Mapped["Role"] = relationship("Role", back_populates="users", lazy="selectin")
     region: Mapped["Region"] = relationship("Region", lazy="selectin")
@@ -67,12 +72,10 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
         return self.status == UserStatus.ACTIVE.value if self.status else False
 
     def soft_delete(self):
-        self.status = UserStatus.BLOCKED.value
+        self.status = UserStatus.ARCHIVED.value
 
     @property
     def permissions(self) -> list[str]:
-        if not self.role:
-            return []
-        return [p.code for p in self.role.permissions]
+        return [p.code for p in self.role.permissions] if self.role else []
 
     __mapper_args__ = {"version_id_col": version}

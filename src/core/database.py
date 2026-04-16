@@ -1,18 +1,19 @@
-from functools import cache
+from functools import lru_cache
 
-from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
-                                    async_sessionmaker, create_async_engine)
-
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine
+)
 from core.config import get_settings
-from db.models import load_all_models
 
-load_all_models()
-
-@cache
+@lru_cache
 def get_db_engine() -> AsyncEngine:
     settings = get_settings()
+
     return create_async_engine(
-        settings.postgres_url,
+        settings.postgres_async_url,
         echo=settings.POSTGRES_ECHO,
         pool_size=10,
         max_overflow=20,
@@ -21,7 +22,7 @@ def get_db_engine() -> AsyncEngine:
     )
 
 
-@cache
+@lru_cache
 def get_session_factory() -> async_sessionmaker[AsyncSession]:
     return async_sessionmaker(
         bind=get_db_engine(),

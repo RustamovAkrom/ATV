@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import select, update
@@ -22,7 +22,7 @@ class PasswordResetRepository:
             .where(
                 PasswordReset.token_hash == token_hash,
                 PasswordReset.is_used == False,
-                PasswordReset.expires_at > datetime.utcnow(),
+                PasswordReset.expires_at > datetime.now(timezone.utc),
             )
         )
         return result.scalar_one_or_none()

@@ -2,6 +2,7 @@ from uuid import UUID
 
 from core.exceptions.errors import InvalidToken, AuthenticationError
 from repositories.user_repo import UserRepository
+from repositories.rbac_repo import RBACRepository
 from db.models.users import User
 from schemas.users import UserCreate, UserUpdate, AdminUserUpdate
 from core.security.passwords import hash_password, verify_password
@@ -9,16 +10,17 @@ from db.models.enums import UserStatus
 
 
 class UserService:
-    def __init__(self, user_repo: UserRepository):
+    def __init__(self, user_repo: UserRepository, rbac_repo: RBACRepository):
         self.user_repo = user_repo
+        self.rbac_repo = rbac_repo
 
     async def get_all(self, limit: int, offset: int):
-        return await self.user_repo.get_iall(limit, offset)
+        return await self.user_repo.get_all(limit, offset)
 
     async def get(self, user_id: UUID):
         user = await self.user_repo.get_by_id(user_id, include_inactive=True)
         if not user:
-            raise InvalidToken()
+            raise InvalidToken("User not found")
         return user
 
     async def create(self, data: UserCreate):
@@ -27,6 +29,10 @@ class UserService:
 
         if await self.user_repo.exists_by_login(data.login):
             raise AuthenticationError("Login already exists")
+
+        role = await self.rbac_repo.get_role(data.role_id)
+        if not role:
+            raise AuthenticationError("Invalid role")
 
         user = User(
             login=data.login,
@@ -40,6 +46,10 @@ class UserService:
         return await self.user_repo.create(user)
 
     async def update(self, user_id: UUID, data: UserUpdate):
+        user = await self.user_repo.get_by_id(user_id)
+        if not user:
+            raise AuthenticationError("User not found")
+
         await self.user_repo.update(
             user_id,
             data.model_dump(exclude_unset=True),
@@ -47,6 +57,15 @@ class UserService:
         return await self.get(user_id)
 
     async def admin_update(self, user_id: UUID, data: AdminUserUpdate):
+        user = await self.user_repo.get_by_id(user_id, include_inactive=True)
+        if not user:
+            raise AuthenticationError("User not found")
+
+        if data.role_id:
+            role = await self.rbac_repo.get_role(data.role_id)
+            if not role:
+                raise AuthenticationError("Invalid role")
+
         await self.user_repo.update(
             user_id,
             data.model_dump(exclude_unset=True),
@@ -60,6 +79,9 @@ class UserService:
         new_password: str,
     ):
         user = await self.user_repo.get_by_id(user_id, include_inactive=True)
+
+        if not user:
+            raise AuthenticationError("User not found")
 
         if not verify_password(old_password, user.password_hash):
             raise AuthenticationError("Invalid password")

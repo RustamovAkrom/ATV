@@ -33,8 +33,12 @@ class RBACRepository:
 
     async def update_role(self, role_id: UUID, data: dict):
         role = await self.get_role(role_id)
+        if not role:
+            return None
+
         for k, v in data.items():
             setattr(role, k, v)
+
         return role
 
     async def delete_role(self, role_id: UUID):

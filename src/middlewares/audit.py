@@ -1,18 +1,22 @@
 # src/core/audit/middleware.py
 
-import asyncio
 import time
 import uuid
+import asyncio
 
 from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.requests import Request
-
-from services.audit_service import save_audit_log
+from core.config import get_settings
+from core.database import get_session_factory
+from tasks.audit_task import process_audit_log_task
+from repositories.audit_repo import AuditRepository
 
 
 class AuditMiddleware:
     def __init__(self, app: ASGIApp):
         self.app = app
+        self.settings = get_settings()
+
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
         if scope["type"] != "http":
             await self.app(scope, receive, send)
@@ -21,9 +25,10 @@ class AuditMiddleware:
         request = Request(scope, receive)
 
         start = time.perf_counter()
-        request_id = str(uuid.uuid4())
 
-        scope["state"]["request_id"] = request_id
+        request_id = scope.get("state", {}).get("request_id") or str(uuid.uuid4())
+        scope.setdefault("state", {})["request_id"] = request_id
+
         async def send_wrapper(message):
             if message["type"] == "http.response.start":
 
@@ -51,8 +56,24 @@ class AuditMiddleware:
                     "query": str(request.query_params),
                     "is_suspicious": message["status"] >= 500,
                 }
+                print("AUDIT task")
+                if self.settings.ENV == "prod":
+                    process_audit_log_task.delay(payload)
 
-                asyncio.create_task(save_audit_log(payload))
+                else:
+                    async def run():
+                        session_factory = get_session_factory()
+
+                        async with session_factory() as session:
+                            async with session.begin():
+                                repo = AuditRepository(session)
+                                await repo.create(payload)
+
+                    try:
+                        asyncio.create_task(run())
+                    except RuntimeError:
+                        # если нет loop (например sync контекст)
+                        asyncio.run(run())
 
             await send(message)
 

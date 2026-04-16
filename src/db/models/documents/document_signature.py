@@ -4,9 +4,9 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from sqlalchemy.sql import func
 from db.base import Base, UUIDMixing
 
 if TYPE_CHECKING:
@@ -27,7 +27,8 @@ class DocumentSignature(Base, UUIDMixing):
     )
 
     signed_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow
+        DateTime(timezone=True),
+        server_default=func.now()
     )
 
     document = relationship("Document", back_populates="signatures")

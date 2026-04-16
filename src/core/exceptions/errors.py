@@ -1,5 +1,3 @@
-# src/core/exceptions/errors.py
-
 from .base import APIException
 
 

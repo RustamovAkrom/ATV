@@ -3,9 +3,9 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, Integer, String, Text
+from sqlalchemy import Boolean, Integer, String, Text, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
-
+from sqlalchemy.sql import func
 from db.base import Base, UUIDMixing
 
 
@@ -28,4 +28,4 @@ class AuditLog(Base, UUIDMixing):
     query: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_suspicious: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)

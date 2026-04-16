@@ -1,5 +1,3 @@
-# src/core/exceptions/base.py
-
 from typing import Any
 
 

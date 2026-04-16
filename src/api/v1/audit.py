@@ -19,9 +19,5 @@ async def list_audit_logs(
     page: int = Query(0),
     db: AsyncSession = Depends(get_db_session),
 ):
-    """
-    List audit logs (SuperAdmin only)
-    """
-
     repo = AuditRepository(db)
     return await repo.list(limit=limit, offset=page * limit)

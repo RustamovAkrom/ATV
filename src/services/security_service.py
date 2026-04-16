@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from core.config import get_settings
 from core.exceptions.errors import InvalidToken
@@ -7,8 +7,11 @@ from db.models.auth.password_reset import PasswordReset
 from repositories.auth_repo import AuthRepository
 from repositories.password_reset_repo import PasswordResetRepository
 from repositories.user_repo import UserRepository
-from tasks.email_task import send_password_reset_email
+from tasks.email_task import send_password_reset_email_task
 from utils.reset_tokens import generate_token, hash_token
+
+def utc_now():
+    return datetime.now(timezone.utc)
 
 
 class SecurityService:
@@ -36,12 +39,12 @@ class SecurityService:
             PasswordReset(
                 user_id=user.id,
                 token_hash=token_hash,
-                expires_at=datetime.utcnow() + timedelta(minutes=30),
+                expires_at=utc_now() + timedelta(minutes=30),
             )
         )
 
         # Send change url to email user
-        send_password_reset_email.delay(user.email, token)
+        send_password_reset_email_task.delay(user.email, token)
 
 
     async def reset_password(self, token: str, new_password: str):

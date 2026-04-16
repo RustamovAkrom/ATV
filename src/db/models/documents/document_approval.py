@@ -8,7 +8,7 @@ from sqlalchemy import DateTime
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from sqlalchemy.sql import func
 from db.base import Base, UUIDMixing
 from db.models.enums import ApprovalStatus
 
@@ -37,7 +37,7 @@ class DocumentApproval(Base, UUIDMixing):
         default=ApprovalStatus.PENDING
     )
 
-    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     document = relationship("Document", back_populates="approvals")
     approver = relationship("User")
@@ -45,7 +45,7 @@ class DocumentApproval(Base, UUIDMixing):
     # business
     def approve(self):
         self.status = ApprovalStatus.APPROVED
-        self.approved_at = datetime.utcnow()
+        self.approved_at = func.now()
 
     def reject(self):
         self.status = ApprovalStatus.REJECTED

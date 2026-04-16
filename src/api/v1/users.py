@@ -36,7 +36,7 @@ async def update_me(
 async def change_password(
     data: ChangePasswordRequest,
     current_user: CurrentUser = Depends(get_current_user),
-    service: UserService = Depends(get_current_user),
+    service: UserService = Depends(get_user_service),
 ):
     await service.change_password(
         current_user.id,
@@ -53,7 +53,18 @@ async def list_users(
     limit: int = Query(20, le=100),
     page: int = Query(0),
 ):
-    return await service.get_all(limit, page * limit)
+    users = await service.get_all(limit, page * limit)
+    return [
+        UserOut(
+            id=u.id,
+            login=u.login,
+            email=u.email,
+            phone=u.phone,
+            role=u.role.code if u.role else None,
+            permissions=u.permissions,
+        )
+        for u in users
+    ]
 
 
 @router.post("/", response_model=UserOut)
@@ -62,7 +73,15 @@ async def create_user(
     _: CurrentUser = Depends(IsAdmin),
     service: UserService = Depends(get_user_service),
 ):
-    return await service.create(data)
+    user = await service.create(data)
+    return UserOut(
+        id=user.id,
+        login=user.login,
+        email=user.email,
+        phone=user.phone,
+        role=user.role.code,
+        permissions=user.permissions,
+    )
 
 
 @router.patch("/{user_id}", response_model=UserOut)
@@ -97,19 +116,6 @@ async def archive_user(
         raise HTTPException(400, "Cannot delete yourself")
 
     await service.archive(user_id)
-    return {"status": "archived"}
-
-
-@router.delete("/{user_id}")
-async def delete_user(
-    user_id: UUID,
-    current_user: CurrentUser = Depends(IsAdmin),
-    service: UserService = Depends(get_user_service),
-):
-    if user_id == current_user.id:
-        raise HTTPException(400, "Cannot delete yourself")
-
-    await service.delete(user_id)
     return {"status": "archived"}
 
 

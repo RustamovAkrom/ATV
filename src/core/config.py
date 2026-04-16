@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     SECRET_KEY: str
 
+    ALLOWED_HOSTS: list[str] = ["*"]
+    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
+
     @field_validator("SECRET_KEY")
     @classmethod
     def validate_secret(cls, v: str):
@@ -69,6 +72,7 @@ class Settings(BaseSettings):
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # SlowAPI
+    RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_STORAGE_URL: str = "memory://"
     RATE_LIMIT_DEFAULT: str = "10/minute"
     RATE_LIMIT_LOGIN: str = "10/minute"
@@ -82,7 +86,7 @@ class Settings(BaseSettings):
 
     # Celery
     CELERY_BROKER_URL: str = "redis://redis:6379/0"
-    CELERY_RESULT_BACKEND: str = "redis://redis6379/1"
+    CELERY_RESULT_BACKEND: str = "redis://redis:6379/1"
     CELERY_TASK_SERIALIZER: str = "json"
     CELERY_RESULT_SERIALIZER: str = "json"
     CELERY_ACCEPT_CONTENT: list[str] = ["json"]
@@ -102,7 +106,7 @@ class Settings(BaseSettings):
     PROMETHEUS_METRICS_KEY: str | None = None
 
     @property
-    def postgres_url(self) -> str:
+    def postgres_async_url(self) -> str:
         return str(
             URL.build(
                 scheme="postgresql+asyncpg",
@@ -114,6 +118,18 @@ class Settings(BaseSettings):
             )
         )
 
+    @property
+    def postgres_sync_url(self) -> str:
+        return str(
+            URL.build(
+                scheme="postgresql+psycopg",
+                host=self.POSTGRES_HOST,
+                port=self.POSTGRES_PORT,
+                user=self.POSTGRES_USER,
+                password=self.POSTGRES_PASSWORD,
+                path=f"/{self.POSTGRES_DB}",
+            )
+        )
 
 @cache
 def get_settings() -> Settings:

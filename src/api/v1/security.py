@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
 from api.dependencies.security import get_security_service
 from core.config import get_settings
+from core.slowapi import limiter
 from services.security_service import SecurityService
 
 router = APIRouter(prefix="/security", tags=["Security"])
@@ -18,7 +19,9 @@ class ResetPasswordRequest(BaseModel):
 
 
 @router.post("/forgot-password")
+@limiter.limit("3/minute")
 async def forgot_password(
+    request: Request,
     data: ForgotPasswordRequest,
     service: SecurityService = Depends(get_security_service),
 ):
@@ -27,7 +30,9 @@ async def forgot_password(
 
 
 @router.post("/reset-password")
+@limiter.limit("5/minute")
 async def reset_password(
+    request: Request,
     data: ResetPasswordRequest,
     service: SecurityService = Depends(get_security_service),
 ):

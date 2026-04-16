@@ -37,7 +37,7 @@ class Warehouse(Base, UUIDMixing, TimestampMixin):
         ForeignKey("services.id", ondelete="SET NULL"),
         nullable=True,
     )
-    manager_user_id: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"))
+    manager_user_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("users.id"), nullable=True)
 
     # ======================
     # FLAGS
@@ -60,10 +60,7 @@ class Warehouse(Base, UUIDMixing, TimestampMixin):
         lazy="selectin"
     )
     manager_user: Mapped[Optional["User"]] = relationship("User", lazy="selectin")
-    service: Mapped["Service"] = relationship(
-        "Service",
-        lazy="selectin"
-    )
+    service: Mapped[Optional["Service"]] = relationship("Service", lazy="selectin")
 
     # ======================
     # BUSINESS LOGIC

@@ -145,6 +145,9 @@ class Asset(Base, UUIDMixing, TimestampMixin):
         return self.status == AssetStatus.ACTIVE
 
     def mark_broken(self):
+        if self.status == AssetStatus.RETIRED:
+            raise ValueError("Cannot modify retired asset")
+
         self.status = AssetStatus.BROKEN
         self.failure_count += 1
 
@@ -154,12 +157,18 @@ class Asset(Base, UUIDMixing, TimestampMixin):
         self.region_id = None
 
     def assign_to_user(self, user_id: UUID):
+        if not user_id:
+            raise ValueError("Invalid user_id")
+
         self.responsible_user_id = user_id
 
     def can_be_transferred(self) -> bool:
-        return not self.is_transfer_locked
+        return not self.is_transfer_locked and self.status != AssetStatus.RETIRED
 
     def depreciate(self, percent: int):
+        if percent < 0:
+            raise ValueError("Percent must be >= 0")
+
         self.condition_percent = max(0, self.condition_percent - percent)
 
     def to_dict(self):

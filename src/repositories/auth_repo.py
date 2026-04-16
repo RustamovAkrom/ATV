@@ -10,7 +10,7 @@ from db.models.refresh_token import RefreshToken
 
 
 class AuthRepository:
-    def __init__(self, session: AsyncSession = Depends(get_db_session)):
+    def __init__(self, session: AsyncSession):
         self.session = session
 
     async def create(self, token: RefreshToken) -> RefreshToken:

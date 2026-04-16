@@ -49,7 +49,14 @@ class AssetCategory(Base, UUIDMixing, TimestampMixin):
     def get_full_path(self) -> list[str]:
         node = self
         path = []
+        visited = set()
+
         while node:
+            if node.id in visited:
+                raise ValueError("Cycle detected in AssetCategory tree")
+
+            visited.add(node.id)
             path.append(node.name)
             node = node.parent
+
         return list(reversed(path))

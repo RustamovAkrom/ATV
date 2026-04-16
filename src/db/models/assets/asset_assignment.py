@@ -2,8 +2,9 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, UniqueConstraint
+from sqlalchemy import ForeignKey, UniqueConstraint, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
 
 from db.base import Base, UUIDMixing
 
@@ -25,10 +26,11 @@ class AssetAssignment(Base, UUIDMixing):
     )
 
     assigned_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow
+        DateTime(timezone=True),
+        server_default=func.now()
     )
 
-    unassigned_at: Mapped[Optional[datetime]] = mapped_column()
+    unassigned_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
     # relationships
     asset = relationship("Asset", lazy="selectin")

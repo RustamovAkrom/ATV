@@ -12,4 +12,6 @@ class SessionOut(BaseModel):
     created_at: datetime
     expires_at: datetime
 
+    is_current: bool = False
+
     model_config = ConfigDict(from_attributes=True)

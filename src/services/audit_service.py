@@ -1,17 +1,28 @@
-# src/core/audit/service.py
-
-from core.database import get_session_factory
+from sqlalchemy.ext.asyncio import AsyncSession
+from tasks.audit_task import process_audit_log_task
 from repositories.audit_repo import AuditRepository
 
+class AuditService:
+    def __init__(self, audit_repo: AuditRepository):
+        self.audit_repo = audit_repo
 
-async def save_audit_log(data: dict):
-    session_factory = get_session_factory()
-
-    async with session_factory() as session:
-        repo = AuditRepository(session)
+    async def create_audit_log(self, data: dict) -> None:
+        audit = await self.audit_repo.create(data)
 
         try:
-            await repo.create(data)
-            await session.commit()
-        except Exception:
-            await session.rollback()
+            process_audit_log_task.delay(data={
+                "id": str(audit.id),
+                "method": audit.method,
+                "path": audit.path,
+                "status_code": audit.status_code,
+                "user_id": audit.user_id,
+                "request_id": audit.request_id,
+                "latency_ms": audit.latency_ms,
+                "ip": audit.ip,
+                "user_agent": audit.user_agent,
+                "query": audit.query,
+                "is_suspicious": audit.is_suspicious,
+            })
+
+        except Exception as e:
+            pass

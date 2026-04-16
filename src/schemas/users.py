@@ -1,7 +1,7 @@
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_serializer
 from uuid import UUID
 from typing import Optional, List
-
+from db.models.enums import UserRole
 
 
 class UserCreate(BaseModel):
@@ -37,7 +37,6 @@ class UserOut(BaseModel):
     login: str
     email: str
     phone: str
-    role: Optional[str]
+    role: str
     permissions: List[str]
-
     model_config = ConfigDict(from_attributes=True)
