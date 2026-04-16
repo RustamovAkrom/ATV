@@ -20,3 +20,4 @@ class TokenPayload(BaseModel):
     jti: UUID
     exp: int
     type: str
+    session_id: Optional[UUID] = None

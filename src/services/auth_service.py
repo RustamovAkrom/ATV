@@ -31,8 +31,8 @@ class AuthService:
         if not user.is_active:
             raise AuthenticationError()
 
-        access = create_access_token(str(user.id))
         refresh, jti = create_refresh_token(str(user.id))
+        access = create_access_token(str(user.id), str(jti))
 
         await self.auth_repo.create(
             RefreshToken(
@@ -83,8 +83,8 @@ class AuthService:
         if not user:
             raise InvalidToken()
 
-        access = create_access_token(str(user.id))
         new_refresh, new_jti = create_refresh_token(str(user.id))
+        access = create_access_token(str(user.id), str(new_jti))
 
         await self.auth_repo.create(
             RefreshToken(

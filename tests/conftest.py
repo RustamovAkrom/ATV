@@ -1,11 +1,17 @@
 from collections.abc import AsyncGenerator
 from typing import Any
-
+from uuid import uuid4
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
+from sqlalchemy import select
+
+from db.models.users.user import User
+from db.models.users.permission import Role
+from db.models.enums import UserRole, UserStatus
+from core.security.passwords import hash_password
 from app import create_app
 from core.config import get_settings
 from db.dependencies import get_db_session
@@ -119,3 +125,43 @@ async def client(
         base_url="http://test",
     ) as client:
         yield client
+
+
+
+@pytest.fixture
+async def create_user(dbsession):
+    async def _create(
+        login: str = "test_user",
+        password: str = "password",
+        email: str | None = None,
+        phone: str | None = None,
+    ):
+        role_result = await dbsession.execute(
+            select(Role).where(Role.code == UserRole.SUPERADMIN.value)
+        )
+        role = role_result.scalar_one_or_none()
+
+        if role is None:
+            role = Role(
+                name="SuperAdmin",
+                code=UserRole.SUPERADMIN.value,
+            )
+            dbsession.add(role)
+            await dbsession.flush()
+
+        suffix = uuid4().hex[:8]
+
+        user = User(
+            login=login,
+            password_hash=hash_password(password),
+            email=email or f"{login}_{suffix}@test.com",
+            phone=phone or f"+998900{suffix[:6]}",
+            role_id=role.id,
+            status=UserStatus.ACTIVE.value,
+        )
+
+        dbsession.add(user)
+        await dbsession.flush()
+        return user
+
+    return _create

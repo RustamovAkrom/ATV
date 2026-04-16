@@ -19,6 +19,7 @@ async def get_token_payload(
     # write for audit
     request.state.user_id = str(payload.sub)
     request.state.access_payload = payload
+    request.state.session_id = getattr(payload, "session_id", None)
 
     # blacklist check
     if await get_blacklist().contains(payload.jti):

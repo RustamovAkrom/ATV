@@ -27,13 +27,13 @@ async def revoke_session(
     current_user: CurrentUser = Depends(get_current_user),
     service: SessionService = Depends(get_session_service),
 ):
-    payload = getattr(request.state, "access_payload", None)
 
-    # fallback-safe
-    if payload and str(session_id) == payload.jti:
+    current_session_id = request.state.session_id
+
+    if str(session_id) == str(current_session_id):
         raise HTTPException(
             status_code=400,
-            detail="Cannot revoke current session"
+            detail="Cannot revoke current session",
         )
 
     await service.revoke_session(current_user.id, session_id)

@@ -22,13 +22,14 @@ def _base_payload(user_id: str, token_type: str):
     }
 
 
-def create_access_token(user_id: str) -> str:
+def create_access_token(user_id: str, session_id: str) -> str:
     now = datetime.now(timezone.utc)
 
     payload = _base_payload(user_id, "access")
     payload["exp"] = int(
         (now + timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRES_MINUTES)).timestamp()
     )
+    payload["session_id"] = session_id
 
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
