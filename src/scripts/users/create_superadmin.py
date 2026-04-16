@@ -9,7 +9,7 @@ from core.exceptions.errors import Conflict, InternalError
 from db.models.enums import UserRole, UserStatus
 from db.models.users.permission import Role
 from db.models.users.user import User
-from db.base import utc_now
+from utils.helpers import utc_now
 
 
 async def create_superadmin(db: AsyncSession):

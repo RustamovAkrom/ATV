@@ -1,44 +1,87 @@
 import pytest
-from db.models.users.user import User
-from db.models.users.permission import Role
-from db.models.enums import UserRole, UserStatus
+from datetime import datetime, timezone, timedelta
+from uuid import uuid4
+
+from sqlalchemy import select, update
+
+from core.security.jwt import decode_token
 from core.security.passwords import hash_password
+from db.models.enums import UserRole, UserStatus
+from db.models.refresh_token import RefreshToken
+from db.models.users.permission import Role
+from db.models.users.user import User
 
 
 @pytest.fixture
 async def create_user(dbsession):
-    async def _create():
-        role = Role(name="SuperAdmin", code=UserRole.SUPERADMIN.value)
-        dbsession.add(role)
-        await dbsession.flush()
+    async def _create(
+        login: str = "test_user",
+        password: str = "password",
+        email: str | None = None,
+        phone: str | None = None,
+    ):
+        role_result = await dbsession.execute(
+            select(Role).where(Role.code == UserRole.SUPERADMIN.value)
+        )
+        role = role_result.scalar_one_or_none()
+
+        if role is None:
+            role = Role(
+                name="SuperAdmin",
+                code=UserRole.SUPERADMIN.value,
+            )
+            dbsession.add(role)
+            await dbsession.flush()
+
+        suffix = uuid4().hex[:8]
 
         user = User(
-            login="test_user",
-            password_hash=hash_password("password"),
-            email="test@test.com",
-            phone="+998900000999",
+            login=login,
+            password_hash=hash_password(password),
+            email=email or f"{login}_{suffix}@test.com",
+            phone=phone or f"+998900{suffix[:6]}",
             role_id=role.id,
             status=UserStatus.ACTIVE.value,
         )
 
         dbsession.add(user)
-        await dbsession.commit()
+        await dbsession.flush()
         return user
 
     return _create
 
 
+async def login_user(
+    client,
+    username: str,
+    password: str = "password",
+    *,
+    user_agent: str | None = None,
+):
+    headers = {"user-agent": user_agent} if user_agent else None
+
+    response = await client.post(
+        "/auth/login",
+        data={"username": username, "password": password},
+        headers=headers,
+    )
+
+    assert response.status_code == 200, response.text
+    return response
+
+
 @pytest.mark.anyio
-async def test_refresh_token_reuse_attack(client, dbsession, create_user):
+async def test_refresh_token_reuse_attack(client, create_user):
     user = await create_user()
-    headers = {"user-agent":
-        "test-device"}
+
+    headers = {"user-agent": "test-device"}
 
     login = await client.post(
         "/auth/login",
         data={"username": user.login, "password": "password"},
         headers=headers,
     )
+    assert login.status_code == 200, login.text
 
     tokens = login.json()
     old_refresh = tokens["refresh_token"]
@@ -49,14 +92,14 @@ async def test_refresh_token_reuse_attack(client, dbsession, create_user):
         json={"refresh_token": old_refresh},
         headers=headers,
     )
-    assert r1.status_code == 200
+    assert r1.status_code == 200, r1.text
 
     # second reuse (MUST FAIL)
     r2 = await client.post(
         "/auth/refresh",
         json={"refresh_token": old_refresh},
+        headers=headers,
     )
-
     assert r2.status_code == 401
 
 
@@ -64,25 +107,26 @@ async def test_refresh_token_reuse_attack(client, dbsession, create_user):
 async def test_logout_blacklists_access_token(client, create_user):
     user = await create_user()
 
-    login = await client.post(
-        "/auth/login",
-        data={"username": user.login, "password": "password"},
-    )
+    login = await login_user(client, user.login, "password")
 
     access = login.cookies.get("access_token")
     refresh = login.json()["refresh_token"]
 
+    assert access is not None
+
+    client.cookies.set("access_token", access)
+
     # logout
-    await client.post(
+    logout_response = await client.post(
         "/auth/logout",
         json={"refresh_token": refresh},
     )
+    assert logout_response.status_code == 200, logout_response.text
 
-    # try using old access token
-    response = await client.get(
-        "/sessions/",
-    )
+    # re-set the same access token to verify blacklist, not "missing cookie"
+    client.cookies.set("access_token", access)
 
+    response = await client.get("/sessions/")
     assert response.status_code == 401
 
 
@@ -91,24 +135,32 @@ async def test_logout_all_revokes_all_sessions(client, create_user):
     user = await create_user()
 
     tokens = []
+    access_tokens = []
+
     for _ in range(2):
-        r = await client.post(
-            "/auth/login",
-            data={"username": user.login, "password": "password"},
-        )
+        r = await login_user(client, user.login, "password")
         tokens.append(r.json())
+        access_tokens.append(r.cookies.get("access_token"))
+
+    assert access_tokens[0] is not None
+    assert access_tokens[1] is not None
+
+    client.cookies.set("access_token", access_tokens[1])
 
     # logout all
-    await client.post(
-        "/auth/logout-all",
-    )
+    logout_all_response = await client.post("/auth/logout-all")
+    assert logout_all_response.status_code == 200, logout_all_response.text
 
-    # refresh must fail
+    r = await client.post(
+        "/auth/refresh",
+        json={"refresh_token": tokens[0]["refresh_token"]},
+    )
+    assert r.status_code == 401
+
     r = await client.post(
         "/auth/refresh",
         json={"refresh_token": tokens[1]["refresh_token"]},
     )
-
     assert r.status_code == 401
 
 
@@ -116,39 +168,28 @@ async def test_logout_all_revokes_all_sessions(client, create_user):
 async def test_access_token_cannot_be_used_as_refresh(client, create_user):
     user = await create_user()
 
-    login = await client.post(
-        "/auth/login",
-        data={"username": user.login, "password": "password"},
-    )
-
+    login = await login_user(client, user.login, "password")
     access = login.json()["access_token"]
 
     r = await client.post(
         "/auth/refresh",
         json={"refresh_token": access},
     )
-
     assert r.status_code == 401
+
 
 @pytest.mark.anyio
 async def test_expired_refresh_token(client, create_user, dbsession):
     user = await create_user()
 
-    login = await client.post(
-        "/auth/login",
-        data={"username": user.login, "password": "password"},
-    )
-
+    login = await login_user(client, user.login, "password")
     refresh = login.json()["refresh_token"]
 
     # manually expire in DB
-    from db.models.refresh_token import RefreshToken
-    from sqlalchemy import update
-    from datetime import datetime, timezone, timedelta
-
     await dbsession.execute(
-        update(RefreshToken)
-        .values(expires_at=datetime.now(timezone.utc) - timedelta(days=1))
+        update(RefreshToken).values(
+            expires_at=datetime.now(timezone.utc) - timedelta(days=1)
+        )
     )
     await dbsession.commit()
 
@@ -156,44 +197,46 @@ async def test_expired_refresh_token(client, create_user, dbsession):
         "/auth/refresh",
         json={"refresh_token": refresh},
     )
-
     assert r.status_code == 401
+
 
 @pytest.mark.anyio
 async def test_revoke_single_session(client, create_user):
     user = await create_user()
 
     # login 1
-    r1 = await client.post(
-        "/auth/login",
-        data={"username": user.login, "password": "password"},
-    )
+    r1 = await login_user(client, user.login, "password")
     t1 = r1.json()
+    access1 = r1.cookies.get("access_token")
+    assert access1 is not None
 
     # login 2
-    r2 = await client.post(
-        "/auth/login",
-        data={"username": user.login, "password": "password"},
-    )
+    r2 = await login_user(client, user.login, "password")
     t2 = r2.json()
 
-    # get sessions
-    sessions_resp = await client.get("/sessions/")
-    sessions = sessions_resp.json()
+    payload1 = await decode_token(t1["refresh_token"], "refresh")
+    session_id = payload1.jti
 
-    session_to_revoke = next(s["id"] for s in sessions if not s["is_revoked"])
+    client.cookies.set("access_token", access1)
+
+    sessions_resp = await client.get("/sessions/")
+    assert sessions_resp.status_code == 200, sessions_resp.text
+
+    sessions = sessions_resp.json()
+    assert any(s["id"] == str(session_id) for s in sessions)
 
     # revoke ONE session
-    await client.delete(f"/sessions/{session_to_revoke}")
+    revoke_resp = await client.delete(f"/sessions/{session_id}")
+    assert revoke_resp.status_code == 200, revoke_resp.text
 
-    # 🔥 первый refresh → триггерит security event
+    # refresh → should fail because revoked session triggers security response
     r = await client.post(
         "/auth/refresh",
         json={"refresh_token": t1["refresh_token"]},
     )
     assert r.status_code == 401
 
-    # 🔥 второй тоже должен умереть (revoke_all)
+    # second session should also be invalidated by the security policy
     r = await client.post(
         "/auth/refresh",
         json={"refresh_token": t2["refresh_token"]},
@@ -212,6 +255,7 @@ async def test_refresh_same_device_ok(client, create_user):
         data={"username": user.login, "password": "password"},
         headers=headers,
     )
+    assert login.status_code == 200, login.text
 
     tokens = login.json()
 
@@ -221,7 +265,7 @@ async def test_refresh_same_device_ok(client, create_user):
         headers=headers,
     )
 
-    assert refresh.status_code == 200
+    assert refresh.status_code == 200, refresh.text
 
 
 @pytest.mark.anyio
@@ -233,10 +277,11 @@ async def test_refresh_different_device_invalid(client, create_user):
         data={"username": user.login, "password": "password"},
         headers={"user-agent": "device-1"},
     )
+    assert login.status_code == 200, login.text
 
     tokens = login.json()
 
-    # другой девайс
+    # different device
     refresh = await client.post(
         "/auth/refresh",
         json={"refresh_token": tokens["refresh_token"]},

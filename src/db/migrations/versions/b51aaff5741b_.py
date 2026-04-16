@@ -1,17 +1,18 @@
 """
 
-Revision ID: f54a9056bf1a
+Revision ID: b51aaff5741b
 Revises: 
-Create Date: 2026-04-12 13:43:43.746452
+Create Date: 2026-04-17 00:52:55.347682
 
 """
 from typing import Sequence, Union
 
-import sqlalchemy as sa
 from alembic import op
+import sqlalchemy as sa
+
 
 # revision identifiers, used by Alembic.
-revision: str = 'f54a9056bf1a'
+revision: str = 'b51aaff5741b'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -25,8 +26,8 @@ def upgrade() -> None:
     sa.Column('code', sa.String(length=50), nullable=True),
     sa.Column('parent_id', sa.UUID(), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['parent_id'], ['asset_categories.id'], name=op.f('fk_asset_categories_parent_id_asset_categories'), ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_asset_categories'))
     )
@@ -36,8 +37,8 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=150), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_asset_classes')),
     sa.UniqueConstraint('code', name=op.f('uq_asset_classes_code'))
     )
@@ -49,11 +50,14 @@ def upgrade() -> None:
     sa.Column('request_id', sa.String(length=36), nullable=False),
     sa.Column('latency_ms', sa.Integer(), nullable=False),
     sa.Column('ip', sa.String(length=45), nullable=True),
+    sa.Column('user_agent', sa.String(length=255), nullable=True),
+    sa.Column('query', sa.Text(), nullable=True),
     sa.Column('is_suspicious', sa.Boolean(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_audit_logs'))
     )
+    op.create_index(op.f('ix_audit_logs_created_at'), 'audit_logs', ['created_at'], unique=False)
     op.create_index(op.f('ix_audit_logs_path'), 'audit_logs', ['path'], unique=False)
     op.create_index(op.f('ix_audit_logs_request_id'), 'audit_logs', ['request_id'], unique=False)
     op.create_index(op.f('ix_audit_logs_user_id'), 'audit_logs', ['user_id'], unique=False)
@@ -62,29 +66,30 @@ def upgrade() -> None:
     sa.Column('country', sa.String(length=100), nullable=True),
     sa.Column('website', sa.String(length=255), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_manufacturers'))
     )
     op.create_index(op.f('ix_manufacturers_name'), 'manufacturers', ['name'], unique=True)
     op.create_table('permissions',
-    sa.Column('code', sa.String(length=150), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
+    sa.Column('code', sa.String(length=50), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_permissions')),
-    sa.UniqueConstraint('code', name=op.f('uq_permissions_code'))
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_permissions'))
     )
+    op.create_index(op.f('ix_permissions_code'), 'permissions', ['code'], unique=True)
+    op.create_index(op.f('ix_permissions_name'), 'permissions', ['name'], unique=True)
     op.create_table('ranks',
     sa.Column('name', sa.String(length=100), nullable=False),
     sa.Column('code', sa.String(length=50), nullable=True),
     sa.Column('level', sa.Integer(), nullable=True),
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_ranks')),
     sa.UniqueConstraint('code', name=op.f('uq_ranks_code')),
     sa.UniqueConstraint('name', name=op.f('uq_ranks_name'))
@@ -96,28 +101,30 @@ def upgrade() -> None:
     sa.Column('longitude', sa.Float(), nullable=True),
     sa.Column('geojson', sa.JSON(), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['parent_id'], ['regions.id'], name=op.f('fk_regions_parent_id_regions'), ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_regions')),
     sa.UniqueConstraint('name', name=op.f('uq_regions_name'))
     )
     op.create_table('roles',
     sa.Column('name', sa.String(length=100), nullable=False),
+    sa.Column('code', sa.String(length=50), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_roles')),
-    sa.UniqueConstraint('name', name=op.f('uq_roles_name'))
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_roles'))
     )
+    op.create_index(op.f('ix_roles_code'), 'roles', ['code'], unique=True)
+    op.create_index(op.f('ix_roles_name'), 'roles', ['name'], unique=True)
     op.create_table('services',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('code', sa.String(length=50), nullable=True),
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_services')),
     sa.UniqueConstraint('code', name=op.f('uq_services_code')),
     sa.UniqueConstraint('name', name=op.f('uq_services_name'))
@@ -129,8 +136,8 @@ def upgrade() -> None:
     sa.Column('lifetime_years', sa.Integer(), nullable=True),
     sa.Column('warranty_months', sa.Integer(), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['category_id'], ['asset_categories.id'], name=op.f('fk_asset_models_category_id_asset_categories'), ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['manufacturer_id'], ['manufacturers.id'], name=op.f('fk_asset_models_manufacturer_id_manufacturers'), ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_asset_models')),
@@ -157,8 +164,8 @@ def upgrade() -> None:
     sa.Column('password_hash', sa.String(length=255), nullable=False),
     sa.Column('first_name', sa.String(length=100), nullable=True),
     sa.Column('last_name', sa.String(length=100), nullable=True),
-    sa.Column('email', sa.String(length=255), nullable=True),
-    sa.Column('phone', sa.String(length=20), nullable=True),
+    sa.Column('email', sa.String(length=255), nullable=False),
+    sa.Column('phone', sa.String(length=20), nullable=False),
     sa.Column('role_id', sa.UUID(), nullable=False),
     sa.Column('status', sa.String(length=50), nullable=False),
     sa.Column('assigned_region_id', sa.UUID(), nullable=True),
@@ -173,8 +180,8 @@ def upgrade() -> None:
     sa.Column('last_password_change', sa.DateTime(timezone=True), nullable=True),
     sa.Column('version', sa.Integer(), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['assigned_region_id'], ['regions.id'], name=op.f('fk_users_assigned_region_id_regions'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['assigned_service_id'], ['services.id'], name=op.f('fk_users_assigned_service_id_services'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['rank_id'], ['ranks.id'], name=op.f('fk_users_rank_id_ranks'), ondelete='SET NULL'),
@@ -193,33 +200,53 @@ def upgrade() -> None:
     sa.Column('status', sa.Enum('DRAFT', 'PENDING', 'APPROVED', 'REJECTED', name='documentstatus'), nullable=False),
     sa.Column('metadata', sa.JSON(), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['created_by_id'], ['users.id'], name=op.f('fk_documents_created_by_id_users')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_documents'))
     )
     op.create_index(op.f('ix_documents_created_by_id'), 'documents', ['created_by_id'], unique=False)
+    op.create_table('password_resets',
+    sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('token_hash', sa.String(length=255), nullable=False),
+    sa.Column('expires_at', sa.DateTime(), nullable=False),
+    sa.Column('is_used', sa.Boolean(), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_password_resets_user_id_users'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_password_resets'))
+    )
+    op.create_index(op.f('ix_password_resets_expires_at'), 'password_resets', ['expires_at'], unique=False)
+    op.create_index(op.f('ix_password_resets_user_id'), 'password_resets', ['user_id'], unique=False)
     op.create_table('refresh_tokens',
     sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('ip_address', sa.String(), nullable=True),
+    sa.Column('user_agent', sa.String(), nullable=True),
     sa.Column('is_revoked', sa.Boolean(), nullable=False),
-    sa.Column('expires_at', sa.DateTime(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('device_id', sa.String(length=255), nullable=True),
+    sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_refresh_tokens_user_id_users'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_refresh_tokens'))
     )
+    op.create_index('idx_refresh_user_active', 'refresh_tokens', ['user_id', 'is_revoked'], unique=False)
+    op.create_index(op.f('ix_refresh_tokens_expires_at'), 'refresh_tokens', ['expires_at'], unique=False)
     op.create_index(op.f('ix_refresh_tokens_user_id'), 'refresh_tokens', ['user_id'], unique=False)
     op.create_table('warehouses',
     sa.Column('name', sa.String(length=150), nullable=False),
     sa.Column('code', sa.String(length=50), nullable=True),
     sa.Column('region_id', sa.UUID(), nullable=False),
+    sa.Column('service_id', sa.UUID(), nullable=True),
     sa.Column('manager_user_id', sa.UUID(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['manager_user_id'], ['users.id'], name=op.f('fk_warehouses_manager_user_id_users')),
     sa.ForeignKeyConstraint(['region_id'], ['regions.id'], name=op.f('fk_warehouses_region_id_regions'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['service_id'], ['services.id'], name=op.f('fk_warehouses_service_id_services'), ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_warehouses')),
     sa.UniqueConstraint('code', name=op.f('uq_warehouses_code'))
     )
@@ -246,8 +273,8 @@ def upgrade() -> None:
     sa.Column('metadata', sa.JSON(), nullable=False),
     sa.Column('version', sa.Integer(), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint('condition_percent BETWEEN 0 AND 100', name=op.f('ck_assets_ck_assets_condition_percent')),
     sa.ForeignKeyConstraint(['class_id'], ['asset_classes.id'], name=op.f('fk_assets_class_id_asset_classes'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['current_warehouse_id'], ['warehouses.id'], name=op.f('fk_assets_current_warehouse_id_warehouses'), ondelete='SET NULL'),
@@ -269,7 +296,7 @@ def upgrade() -> None:
     sa.Column('document_id', sa.UUID(), nullable=False),
     sa.Column('approver_id', sa.UUID(), nullable=False),
     sa.Column('status', sa.Enum('PENDING', 'APPROVED', 'REJECTED', name='approvalstatus'), nullable=False),
-    sa.Column('approved_at', sa.DateTime(), nullable=True),
+    sa.Column('approved_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.ForeignKeyConstraint(['approver_id'], ['users.id'], name=op.f('fk_document_approvals_approver_id_users')),
     sa.ForeignKeyConstraint(['document_id'], ['documents.id'], name=op.f('fk_document_approvals_document_id_documents'), ondelete='CASCADE'),
@@ -292,7 +319,7 @@ def upgrade() -> None:
     op.create_table('document_signatures',
     sa.Column('document_id', sa.UUID(), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=False),
-    sa.Column('signed_at', sa.DateTime(), nullable=False),
+    sa.Column('signed_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.ForeignKeyConstraint(['document_id'], ['documents.id'], name=op.f('fk_document_signatures_document_id_documents'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_document_signatures_user_id_users')),
@@ -303,8 +330,8 @@ def upgrade() -> None:
     op.create_table('asset_assignments',
     sa.Column('asset_id', sa.UUID(), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=False),
-    sa.Column('assigned_at', sa.DateTime(), nullable=False),
-    sa.Column('unassigned_at', sa.DateTime(), nullable=True),
+    sa.Column('assigned_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('unassigned_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.ForeignKeyConstraint(['asset_id'], ['assets.id'], name=op.f('fk_asset_assignments_asset_id_assets'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_asset_assignments_user_id_users'), ondelete='CASCADE'),
@@ -319,11 +346,11 @@ def upgrade() -> None:
     sa.Column('to_warehouse_id', sa.UUID(), nullable=True),
     sa.Column('from_service_id', sa.UUID(), nullable=True),
     sa.Column('to_service_id', sa.UUID(), nullable=True),
-    sa.Column('transferred_at', sa.DateTime(), nullable=False),
+    sa.Column('transferred_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('comment', sa.String(length=255), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['asset_id'], ['assets.id'], name=op.f('fk_asset_transfers_asset_id_assets'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['from_service_id'], ['services.id'], name=op.f('fk_asset_transfers_from_service_id_services')),
     sa.ForeignKeyConstraint(['from_warehouse_id'], ['warehouses.id'], name=op.f('fk_asset_transfers_from_warehouse_id_warehouses')),
@@ -338,13 +365,13 @@ def upgrade() -> None:
     sa.Column('assigned_to_id', sa.UUID(), nullable=True),
     sa.Column('description', sa.String(length=500), nullable=True),
     sa.Column('status', sa.Enum('REPORTED', 'IN_PROGRESS', 'DONE', 'CANCELED', name='repairstatus'), nullable=False),
-    sa.Column('started_at', sa.DateTime(), nullable=True),
-    sa.Column('completed_at', sa.DateTime(), nullable=True),
+    sa.Column('started_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('completed_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('labor_cost', sa.Numeric(precision=18, scale=2), nullable=True),
     sa.Column('total_cost', sa.Numeric(precision=18, scale=2), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['asset_id'], ['assets.id'], name=op.f('fk_repairs_asset_id_assets'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['assigned_to_id'], ['users.id'], name=op.f('fk_repairs_assigned_to_id_users')),
     sa.ForeignKeyConstraint(['reported_by_id'], ['users.id'], name=op.f('fk_repairs_reported_by_id_users')),
@@ -355,10 +382,10 @@ def upgrade() -> None:
     op.create_index(op.f('ix_repairs_reported_by_id'), 'repairs', ['reported_by_id'], unique=False)
     op.create_table('repair_parts',
     sa.Column('repair_id', sa.UUID(), nullable=False),
-    sa.Column('name', sa.String(length=150), nullable=False),
+    sa.Column('part_name', sa.String(length=150), nullable=False),
     sa.Column('quantity', sa.Integer(), nullable=False),
-    sa.Column('unit_price', sa.Numeric(precision=18, scale=2), nullable=True),
-    sa.Column('total_price', sa.Numeric(precision=18, scale=2), nullable=True),
+    sa.Column('unit_price', sa.Numeric(precision=18, scale=2), nullable=False),
+    sa.Column('total_price', sa.Numeric(precision=18, scale=2), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.ForeignKeyConstraint(['repair_id'], ['repairs.id'], name=op.f('fk_repair_parts_repair_id_repairs'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_repair_parts'))
@@ -400,7 +427,12 @@ def downgrade() -> None:
     op.drop_table('assets')
     op.drop_table('warehouses')
     op.drop_index(op.f('ix_refresh_tokens_user_id'), table_name='refresh_tokens')
+    op.drop_index(op.f('ix_refresh_tokens_expires_at'), table_name='refresh_tokens')
+    op.drop_index('idx_refresh_user_active', table_name='refresh_tokens')
     op.drop_table('refresh_tokens')
+    op.drop_index(op.f('ix_password_resets_user_id'), table_name='password_resets')
+    op.drop_index(op.f('ix_password_resets_expires_at'), table_name='password_resets')
+    op.drop_table('password_resets')
     op.drop_index(op.f('ix_documents_created_by_id'), table_name='documents')
     op.drop_table('documents')
     op.drop_table('users')
@@ -410,15 +442,20 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_asset_models_category_id'), table_name='asset_models')
     op.drop_table('asset_models')
     op.drop_table('services')
+    op.drop_index(op.f('ix_roles_name'), table_name='roles')
+    op.drop_index(op.f('ix_roles_code'), table_name='roles')
     op.drop_table('roles')
     op.drop_table('regions')
     op.drop_table('ranks')
+    op.drop_index(op.f('ix_permissions_name'), table_name='permissions')
+    op.drop_index(op.f('ix_permissions_code'), table_name='permissions')
     op.drop_table('permissions')
     op.drop_index(op.f('ix_manufacturers_name'), table_name='manufacturers')
     op.drop_table('manufacturers')
     op.drop_index(op.f('ix_audit_logs_user_id'), table_name='audit_logs')
     op.drop_index(op.f('ix_audit_logs_request_id'), table_name='audit_logs')
     op.drop_index(op.f('ix_audit_logs_path'), table_name='audit_logs')
+    op.drop_index(op.f('ix_audit_logs_created_at'), table_name='audit_logs')
     op.drop_table('audit_logs')
     op.drop_table('asset_classes')
     op.drop_index(op.f('ix_asset_categories_code'), table_name='asset_categories')

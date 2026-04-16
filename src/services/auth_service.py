@@ -101,7 +101,10 @@ class AuthService:
         return {"access_token": access, "refresh_token": new_refresh}
 
     async def logout(self, request: Request, refresh_token: str):
-        payload = request.state.access_payload
+        payload = getattr(request.state, "access_payload", None)
+
+        if not payload:
+            raise InvalidToken("Missing access payload")
 
         await get_blacklist().add(
             jti=payload.jti,

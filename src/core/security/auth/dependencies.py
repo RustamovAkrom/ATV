@@ -17,8 +17,8 @@ async def get_token_payload(
     payload = await decode_token(token, expected_type="access")
 
     # write for audit
-    request.scope["state"]["user_id"] = str(payload.sub)
-    request.scope["state"]["access_payload"] = payload
+    request.state.user_id = str(payload.sub)
+    request.state.access_payload = payload
 
     # blacklist check
     if await get_blacklist().contains(payload.jti):

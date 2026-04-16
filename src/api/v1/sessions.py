@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from core.security.auth.dependencies import get_current_user
 from core.security.auth.types import CurrentUser
@@ -22,11 +22,22 @@ async def list_sessions(
 
 @router.delete("/{session_id}")
 async def revoke_session(
+    request: Request,
     session_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
     service: SessionService = Depends(get_session_service),
 ):
+    payload = getattr(request.state, "access_payload", None)
+
+    # fallback-safe
+    if payload and str(session_id) == payload.jti:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot revoke current session"
+        )
+
     await service.revoke_session(current_user.id, session_id)
+
     return {"status": "revoked"}
 
 
@@ -37,3 +48,11 @@ async def logout_all(
 ):
     await service.revoke_all(current_user.id)
     return {"status": "revoked_all"}
+
+
+@router.post("/cleanup")
+async def cleanup_sessions(
+    service: SessionService = Depends(get_session_service),
+):
+    deleted = await service.cleanup_expired()
+    return {"deleted": deleted}

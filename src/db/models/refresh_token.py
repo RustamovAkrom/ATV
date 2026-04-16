@@ -27,6 +27,7 @@ class RefreshToken(Base, UUIDMixing):
         default=False,
         nullable=False,
     )
+
     device_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     expires_at: Mapped[datetime] = mapped_column(
