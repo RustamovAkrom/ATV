@@ -27,9 +27,16 @@ def get_rate_limit_key(request: Request) -> str:
     return client_ip
 
 
+def get_rate_rate_limit_storage_url():
+    if settings.ENV == "prod":
+        return settings.RATE_LIMIT_STORAGE_URL
+    else:
+        return "memory://"
+
+
 limiter = Limiter(
     key_func=get_rate_limit_key,
-    storage_uri=settings.RATE_LIMIT_STORAGE_URL,
+    storage_uri=get_rate_rate_limit_storage_url(),
     enabled=settings.RATE_LIMIT_ENABLED,
 )
 

@@ -54,7 +54,6 @@ class Settings(BaseSettings):
             raise ValueError("SECRET_KEY must be at least 32 charecters")
         return v
 
-    SERVICE_NAME: str = "iib-backend"
 
     # PostgreSQL
     POSTGRES_HOST: str
@@ -103,6 +102,13 @@ class Settings(BaseSettings):
 
     # Prometheus
     PROMETHEUS_METRICS_KEY: str | None = None
+
+    # Logging
+    LOG_LEVEL: str = "INFO"
+    LOG_JSON: bool = False
+    LOG_INCLUDE_REQUEST_ID: bool = True
+    SERVICE_NAME: str = "iib-backend"
+
 
     @property
     def postgres_async_url(self) -> str:

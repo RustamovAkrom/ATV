@@ -29,6 +29,8 @@ class AuditMiddleware:
         request_id = scope.get("state", {}).get("request_id") or str(uuid.uuid4())
         scope.setdefault("state", {})["request_id"] = request_id
 
+        logger = scope.get("state", {}).get("logger")
+
         async def send_wrapper(message):
             if message["type"] == "http.response.start":
 
@@ -56,11 +58,16 @@ class AuditMiddleware:
                     "query": str(request.query_params),
                     "is_suspicious": message["status"] >= 500,
                 }
-                print("AUDIT task")
+
+                if logger:
+                    logger.info("audit_log_created", **payload)
+
                 if self.settings.ENV == "prod":
+                    print("[PROD] process audit log task")
                     process_audit_log_task.delay(payload)
 
                 else:
+                    print("[DEV] process audit log task without celery + redis!")
                     async def run():
                         session_factory = get_async_session_factory()
 
@@ -72,8 +79,7 @@ class AuditMiddleware:
                     try:
                         asyncio.create_task(run())
                     except RuntimeError as e:
-                        print("Runtime error: ", e)
-                        # если нет loop (например sync контекст)
+                        print("[DEV] Runtime error: ", e)
                         asyncio.run(run())
 
             await send(message)

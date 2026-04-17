@@ -28,7 +28,7 @@ class SecurityService:
         self.reset_repo = reset_repo
 
     async def request_password_reset(self, login: str) -> None:
-        user = await self.user_repo.get_by_login(login)
+        user = await self.user_repo.get_by_identity(login)
 
         if not user:
             return
@@ -47,15 +47,17 @@ class SecurityService:
                 expires_at=utc_now() + timedelta(minutes=30),
             )
         )
-
         try:
             # Send change url to email user
             if self.settings.ENV == "prod":
+                print("[PROD] password reset task")
                 send_password_reset_email_task.delay(user.email, token)
             else:
+                print("[DEV] Password reset task")
                 self.logger.info(f"[DEV] Reset token for {user.email}: {token}")
 
         except Exception as e:
+            print("Request password reset error: ", e)
             self.logger.exception("Password reset delivery failed")
 
     async def reset_password(self, token: str, new_password: str):

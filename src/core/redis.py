@@ -7,5 +7,5 @@ settings = get_settings()
 redis_client = redis.from_url(
     settings.REDIS_URL,
     encoding="utf-8",
-    decode_response=True,
+    decode_responses=True,
 )

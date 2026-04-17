@@ -16,7 +16,7 @@ from core.slowapi import limiter
 from middlewares.audit import AuditMiddleware
 from middlewares.request_id import RequestIDMiddleware
 from middlewares.metrics import MetricsMiddleware
-
+from middlewares.logging import LoggingMiddleware
 
 
 def create_app() -> FastAPI:
@@ -58,13 +58,13 @@ def configure_middlewares(app: FastAPI, settings: Settings):
         allow_headers=["*"],
     )
 
-    app.add_middleware(MetricsMiddleware)
-    app.add_middleware(AuditMiddleware)
-    app.add_middleware(RequestIDMiddleware)
+    app.add_middleware(MetricsMiddleware) # Metrics
+    app.add_middleware(AuditMiddleware) # audit
+    app.add_middleware(RequestIDMiddleware) # request id
+    app.add_middleware(LoggingMiddleware) # logging
+    app.add_middleware(SlowAPIMiddleware) # rate limit (SowAPI)
 
-    app.add_middleware(SlowAPIMiddleware)
-
-    app.add_middleware(
+    app.add_middleware( # session
         SessionMiddleware,
         secret_key=settings.SECRET_KEY,
         session_cookie="session",

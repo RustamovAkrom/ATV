@@ -1,17 +1,17 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from datetime import datetime
 from uuid import UUID
 from typing import Optional, List
-
+from db.models.enums import UserStatus
 
 class UserCreate(BaseModel):
     login: str
     email: EmailStr
     phone: str
     password: str
-
     first_name: Optional[str]
     last_name: Optional[str]
-
+    status: Optional[UserStatus]
     role_id: UUID
 
 
@@ -38,4 +38,9 @@ class UserOut(BaseModel):
     phone: str
     role: str
     permissions: List[str]
+    first_name: Optional[str]
+    last_name: Optional[str]
+    status: UserStatus
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
     model_config = ConfigDict(from_attributes=True)

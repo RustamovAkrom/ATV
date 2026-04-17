@@ -1,81 +1,52 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
-
-import loguru
 from loguru import logger
-
 from core.config import get_settings
 
+settings = get_settings()
 
-def configure_logger() -> loguru.Logger:
-    """
-    Production-safe logger configuration.
 
-    - stdout logging (default, Docker-friendly)
-    - optional file logging via LOG_PATH
-    - no filesystem crashes
-    """
+def _inject_request_id(record):
+    if settings.LOG_INCLUDE_REQUEST_ID:
+        record["extra"].setdefault("request_id", "-")
+    return record
 
-    settings = get_settings()
 
-    # remove default handlers
+def configure_logger():
     logger.remove()
 
-    level = "DEBUG" if settings.DEBUG else "INFO"
+    logger.configure(
+        patcher=_inject_request_id
+    )
 
-    # STDOUT (MAIN)
-    common_kwargs = {
-        "level": level,
-        "colorize": settings.DEBUG,
-        "backtrace": settings.DEBUG,
-        "diagnose": settings.DEBUG,
-        "format": (
-            "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
-            "<level>{level}</level> | "
-            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> "
-            "- <level>{message}</level>"
-        ),
-    }
-    try:
-        logger.add(sys.stdout, enqueue=True, **common_kwargs)  # async-friendly
-    except PermissionError:
-        # Some restricted Windows environments cannot create multiprocessing queues.
-        logger.add(sys.stdout, enqueue=False, **common_kwargs)
+    if settings.LOG_INCLUDE_REQUEST_ID:
+        log_format = (
+            "{time:YYYY-MM-DD HH:mm:ss} | "
+            "{level} | "
+            "{extra[request_id]} | "
+            "{name}:{function}:{line} - {message}"
+        )
+    else:
+        log_format = (
+            "{time:YYYY-MM-DD HH:mm:ss} | "
+            "{level} | "
+            "{name}:{function}:{line} - {message}"
+        )
 
-    # OPTIONAL FILE LOGGING
-    log_path: str | None = getattr(settings, "LOG_PATH", None)
-
-    if log_path:
-        try:
-            log_dir = Path(log_path)
-            log_dir.mkdir(parents=True, exist_ok=True)
-
-            # general logs
-            logger.add(
-                log_dir / "app.log",
-                rotation="10 MB",
-                retention="10 days",
-                enqueue=True,
-                serialize=not settings.DEBUG,
-            )
-
-            # error logs
-            logger.add(
-                log_dir / "errors.log",
-                level="ERROR",
-                rotation="5 MB",
-                retention="30 days",
-                compression="zip",
-                enqueue=True,
-                backtrace=True,
-                diagnose=True,
-                serialize=True,
-            )
-
-        except OSError:
-            # fallback: ignore file logging in read-only FS
-            logger.warning("File logging disabled (read-only filesystem)")
+    logger.add(
+        sys.stdout,
+        level=settings.LOG_LEVEL,
+        enqueue=True,
+        backtrace=settings.DEBUG,
+        diagnose=settings.DEBUG,
+        colorize=settings.DEBUG and not settings.LOG_JSON,
+        serialize=settings.LOG_JSON,
+        format=log_format,
+    )
 
     return logger
+
+
+def bind_logger(request_id: str):
+    return logger.bind(request_id=request_id)
