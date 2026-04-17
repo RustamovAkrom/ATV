@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 
 from core.security.rbac.guards import require_roles, require_permissions
 from db.models.enums import UserRole

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 from core.config import get_settings
 from core.exceptions.errors import InvalidToken
@@ -50,28 +50,24 @@ class SecurityService:
 
         try:
             # Send change url to email user
-            if self.settings.USE_CELERY:
+            if self.settings.ENV == "prod":
                 send_password_reset_email_task.delay(user.email, token)
             else:
                 self.logger.info(f"[DEV] Reset token for {user.email}: {token}")
 
         except Exception as e:
-            print("Password Reset Error: ", e)
-            pass
+            self.logger.exception("Password reset delivery failed")
 
     async def reset_password(self, token: str, new_password: str):
-        token_hash = hash_token(token)
+        token_hash = tokens.hash_token(token)
 
         reset = await self.reset_repo.use_token(token_hash)
-
         if not reset:
             raise InvalidToken()
 
         user = await self.user_repo.get_by_id(reset.user_id)
-
         if not user:
             raise InvalidToken()
-
 
         # update password
         user.password_hash = hash_password(new_password)
@@ -79,7 +75,6 @@ class SecurityService:
 
         # revoke sessions
         await self.auth_repo.revoke_all_by_user(user.id)
-
         await self.reset_repo.clean_old(user.id)
 
         self.logger.info(f"Password reset success user={user.id}")

@@ -1,13 +1,11 @@
 from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel
 
 from api.dependencies.security import get_security_service
-from core.config import get_settings
 from core.slowapi import limiter
 from services.security_service import SecurityService
 from schemas.security import ForgotPasswordRequest, ResetPasswordRequest
+
 router = APIRouter(prefix="/security", tags=["Security"])
-settings = get_settings()
 
 
 @router.post("/forgot-password")

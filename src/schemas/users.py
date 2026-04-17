@@ -1,7 +1,6 @@
-from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_serializer
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from uuid import UUID
 from typing import Optional, List
-from db.models.enums import UserRole
 
 
 class UserCreate(BaseModel):

@@ -11,7 +11,8 @@ from core.config import get_settings
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 settings = get_settings()
-MAX_AGE = 60 * 15 # TTL access token
+MAX_AGE = settings.JWT_ACCESS_TOKEN_EXPIRES_MINUTES * 60
+
 
 @router.post("/login", response_model=TokenResponse)
 @limiter.limit("5/minute")
@@ -29,11 +30,12 @@ async def login(
 
     response.set_cookie(
         key="access_token",
-        value=tokens["access_token"],
+        value=tokens.access_token,
         httponly=True,
-        secure=not settings.DEBUG,
+        secure=not settings.DEBUG and settings.ENV == "prod",
         samesite="lax",
         max_age=MAX_AGE,
+        path="/",
     )
 
     return tokens
@@ -50,11 +52,12 @@ async def refresh(
 
     response.set_cookie(
         key="access_token",
-        value=tokens["access_token"],
+        value=tokens.access_token,
         httponly=True,
-        secure=not settings.DEBUG,
+        secure=not settings.DEBUG and settings.ENV == "prod",
         samesite="lax",
         max_age=MAX_AGE,
+        path="/",
     )
 
     return tokens
@@ -70,15 +73,18 @@ async def logout(
 ):
     await service.logout(request, data.refresh_token)
 
-    response.delete_cookie("access_token")
+    response.delete_cookie("access_token", path="/")
 
     return {"status": "ok"}
 
 
 @router.post("/logout-all")
 async def logout_all(
+    request: Request,
+    response: Response,
     current_user: CurrentUser = Depends(get_current_user),
     service: AuthService = Depends(get_auth_service),
 ):
-    await service.logout_all(current_user.id)
+    await service.logout_all(request, current_user.id)
+    response.delete_cookie("access_token", path="/")
     return {"status": "ok"}

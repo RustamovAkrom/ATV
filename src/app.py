@@ -11,13 +11,12 @@ from core.config import get_settings, Settings
 from core.exceptions.handlers import configure_exception_handlers
 from core.lifespan import lifespan
 from core.observability.monitoring import router as monitoring_router
-from core.slowapi import limiter, rate_limit_exceeded_handler
+from core.slowapi import limiter
 
 from middlewares.audit import AuditMiddleware
 from middlewares.request_id import RequestIDMiddleware
 from middlewares.metrics import MetricsMiddleware
 
-from core.slowapi import limiter, rate_limit_exceeded_handler
 
 
 def create_app() -> FastAPI:

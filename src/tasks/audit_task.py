@@ -1,7 +1,7 @@
 # src/tasks/audit_task.py
 
 from core.celery import celery_app
-from core.database_sync import get_sync_session_factory
+from core.database.db_sync import get_sync_session_factory
 from db.models.audit.audit_log import AuditLog
 
 

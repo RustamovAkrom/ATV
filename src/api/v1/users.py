@@ -14,13 +14,42 @@ from schemas.users import (
     UserOut,
     ChangePasswordRequest,
 )
+from db.models.users.user import User
+from schemas.pagination import PaginationParams
+
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
+def _to_user_out(user: User) -> UserOut:
+    role = getattr(user.role, "code", None)
+    permissions = [
+        str(getattr(permission, "code", getattr(permission, "value", permission)))
+        for permission in (getattr(user, "permissions", None) or [])
+    ]
+
+    return UserOut(
+        id=user.id,
+        login=user.login,
+        email=user.email,
+        phone=user.phone,
+        role=str(role).lower() if role else None,
+        permissions=permissions,
+        first_name=getattr(user, "first_name", None),
+        last_name=getattr(user, "last_name", None),
+        status=getattr(user, "status", None),
+        created_at=getattr(user, "created_at", None),
+        updated_at=getattr(user, "updated_at", None),
+    )
+
+
 @router.get("/me", response_model=UserOut)
-async def me(current_user: CurrentUser = Depends(get_current_user)):
-    return current_user
+async def me(
+    current_user: CurrentUser = Depends(get_current_user),
+    service: UserService = Depends(get_user_service),
+):
+    user = await service.get(current_user.id)
+    return _to_user_out(user)
 
 
 @router.patch("/me", response_model=UserOut)
@@ -29,7 +58,8 @@ async def update_me(
     current_user: CurrentUser = Depends(get_current_user),
     service: UserService = Depends(get_user_service),
 ):
-    return await service.update(current_user.id, data)
+    user = await service.update(current_user.id, data)
+    return _to_user_out(user)
 
 
 @router.post("/me/change-password")
@@ -50,21 +80,10 @@ async def change_password(
 async def list_users(
     _: CurrentUser = Depends(IsAdmin),
     service: UserService = Depends(get_user_service),
-    limit: int = Query(20, le=100),
-    page: int = Query(0),
+    pagination: PaginationParams = Depends(),
 ):
-    users = await service.get_all(limit, page * limit)
-    return [
-        UserOut(
-            id=u.id,
-            login=u.login,
-            email=u.email,
-            phone=u.phone,
-            role=u.role.code if u.role else None,
-            permissions=u.permissions,
-        )
-        for u in users
-    ]
+    users = await service.get_all(pagination.limit, pagination.offset())
+    return [_to_user_out(user) for user in users]
 
 
 @router.post("/", response_model=UserOut)
@@ -74,14 +93,8 @@ async def create_user(
     service: UserService = Depends(get_user_service),
 ):
     user = await service.create(data)
-    return UserOut(
-        id=user.id,
-        login=user.login,
-        email=user.email,
-        phone=user.phone,
-        role=user.role.code,
-        permissions=user.permissions,
-    )
+    user = await service.get(user.id)
+    return _to_user_out(user)
 
 
 @router.patch("/{user_id}", response_model=UserOut)
@@ -94,7 +107,8 @@ async def update_user(
     if user_id == current_user.id:
         raise HTTPException(400, "Cannot modify yourself")
 
-    return await service.admin_update(user_id, data)
+    user = await service.admin_update(user_id, data)
+    return _to_user_out(user)
 
 
 @router.get("/{user_id}", response_model=UserOut)
@@ -103,7 +117,8 @@ async def get_user(
     _: CurrentUser = Depends(IsAdmin),
     service: UserService = Depends(get_user_service),
 ):
-    return await service.get(user_id)
+    user = await service.get(user_id)
+    return _to_user_out(user)
 
 
 @router.delete("/{user_id}")

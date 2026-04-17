@@ -1,15 +1,10 @@
 import pytest
 from datetime import datetime, timezone, timedelta
-from uuid import uuid4
 
-from sqlalchemy import select, update
+from sqlalchemy import update
 
 from core.security.jwt import decode_token
-from core.security.passwords import hash_password
-from db.models.enums import UserRole, UserStatus
 from db.models.refresh_token import RefreshToken
-from db.models.users.permission import Role
-from db.models.users.user import User
 
 
 async def login_user(

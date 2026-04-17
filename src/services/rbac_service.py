@@ -3,7 +3,7 @@ from uuid import UUID
 from core.exceptions.errors import InvalidToken
 from db.models.users.permission import Role
 from repositories.rbac_repo import RBACRepository
-from schemas.rbac import RoleCreate
+from schemas.rbac import RoleCreate, RoleUpdate
 
 
 class RBACService:
@@ -28,11 +28,16 @@ class RBACService:
         )
         return await self.rbac_repo.create_role(role)
 
-    async def update_role(self, role_id: UUID, data: dict):
+    async def update_role(self, role_id: UUID, data: RoleUpdate):
         role = await self.rbac_repo.get_role(role_id)
         if not role:
             raise InvalidToken()
-        return await self.rbac_repo.update_role(role_id, data)
+
+        payload = data.model_dump(exclude_unset=True)
+        if payload.get("code"):
+            payload["code"] = payload["code"].lower()
+
+        return await self.rbac_repo.update_role(role_id, payload)
 
     async def delete_role(self, role_id: UUID):
         role = await self.rbac_repo.get_role(role_id)
@@ -51,6 +56,8 @@ class RBACService:
             raise InvalidToken()
 
         permissions = await self.rbac_repo.get_permissions_by_ids(permission_ids)
+        if len(permissions) != len(permission_ids):
+            raise InvalidToken("Some permissions not found")
 
         await self.rbac_repo.set_role_permissions(role, permissions)
 

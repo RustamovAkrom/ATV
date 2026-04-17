@@ -9,7 +9,7 @@ from core.config import get_settings
 
 
 @lru_cache
-def get_sync_engine():
+def get_db_sync_engine():
     settings = get_settings()
 
     return create_engine(
@@ -25,6 +25,6 @@ def get_sync_engine():
 @lru_cache
 def get_sync_session_factory() -> sessionmaker[Session]:
     return sessionmaker(
-        bind=get_sync_engine(),
+        bind=get_db_sync_engine(),
         expire_on_commit=False,
     )

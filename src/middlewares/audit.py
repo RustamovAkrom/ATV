@@ -7,7 +7,7 @@ import asyncio
 from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.requests import Request
 from core.config import get_settings
-from core.database import get_session_factory
+from core.database.db_async import get_async_session_factory
 from tasks.audit_task import process_audit_log_task
 from repositories.audit_repo import AuditRepository
 
@@ -62,7 +62,7 @@ class AuditMiddleware:
 
                 else:
                     async def run():
-                        session_factory = get_session_factory()
+                        session_factory = get_async_session_factory()
 
                         async with session_factory() as session:
                             async with session.begin():
@@ -71,7 +71,8 @@ class AuditMiddleware:
 
                     try:
                         asyncio.create_task(run())
-                    except RuntimeError:
+                    except RuntimeError as e:
+                        print("Runtime error: ", e)
                         # если нет loop (например sync контекст)
                         asyncio.run(run())
 

@@ -4,7 +4,7 @@ from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from db.models.users.permission import Role, Permission, role_permissions
+from db.models.users.permission import Role, Permission
 
 
 class RBACRepository:

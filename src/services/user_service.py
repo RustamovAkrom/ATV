@@ -7,6 +7,7 @@ from db.models.users import User
 from schemas.users import UserCreate, UserUpdate, AdminUserUpdate
 from core.security.passwords import hash_password, verify_password
 from db.models.enums import UserStatus
+from utils.helpers import utc_now
 
 
 class UserService:
@@ -42,6 +43,7 @@ class UserService:
             role_id=data.role_id,
             first_name=data.first_name,
             last_name=data.last_name,
+            status=UserStatus.ACTIVE.value,
         )
         return await self.user_repo.create(user)
 
@@ -89,6 +91,10 @@ class UserService:
         await self.user_repo.set_password(
             user_id,
             hash_password(new_password)
+        )
+        await self.user_repo.update(
+            user_id,
+            {"last_password_change", utc_now()},
         )
 
     async def activate(self, user_id: UUID):

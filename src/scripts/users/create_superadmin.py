@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.security.passwords import hash_password
-from core.exceptions.errors import Conflict, InternalError
+from core.exceptions.errors import InternalError
 from db.models.enums import UserRole, UserStatus
 from db.models.users.permission import Role
 from db.models.users.user import User

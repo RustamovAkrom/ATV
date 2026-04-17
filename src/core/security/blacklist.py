@@ -1,14 +1,10 @@
 import time
 from datetime import datetime
 
+from core.redis import redis_client
 from core.config import get_settings
 
 settings = get_settings()
-
-
-# =========================
-# MEMORY FALLBACK (DEV)
-# =========================
 
 _memory_blacklist: dict[str, float] = {}
 
@@ -19,9 +15,10 @@ class MemoryBlacklist:
 
     async def contains(self, jti: str) -> bool:
         now = time.time()
+        key = str(jti)
 
-        exp = _memory_blacklist.get(str(jti))
-        if not exp:
+        exp = _memory_blacklist.get(key)
+        if exp is None:
             return False
 
         if exp < now:
@@ -31,7 +28,6 @@ class MemoryBlacklist:
         return True
 
 
-# REDIS (PROD)
 class RedisBlacklist:
     def __init__(self, redis):
         self.redis = redis
@@ -44,19 +40,18 @@ class RedisBlacklist:
         await self.redis.set(f"bl:{str(jti)}", "1", ex=ttl)
 
     async def contains(self, jti: str) -> bool:
-        return await self.redis.exists(f"bl:{str(jti)}") == 1
+        return bool(await self.redis.exists(f"bl:{str(jti)}"))
 
 
-_blacklist = None
+_blacklist: MemoryBlacklist | RedisBlacklist | None = None
 
 def get_blacklist():
     global _blacklist
 
-    if _blacklist:
+    if _blacklist is not None:
         return _blacklist
 
-    if settings.USE_REDIS:
-        from core.redis import redis_client
+    if settings.ENV == "prod":
         _blacklist = RedisBlacklist(redis_client)
     else:
         _blacklist = MemoryBlacklist()

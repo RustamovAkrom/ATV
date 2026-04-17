@@ -12,21 +12,15 @@ from .extractor import extract_token
 async def get_token_payload(
     request: Request,
     token: str = Depends(extract_token),
-    user_repo: UserRepository = Depends(get_user_repo),  # 🔥
 ):
     payload = await decode_token(token, expected_type="access")
 
-    user = await user_repo.get_by_id(payload.sub)
-    if user and user.last_password_change:
-        if payload.iat <= int(user.last_password_change.timestamp()):
-            raise InvalidToken("Token outdated")
+    if await get_blacklist().contains(payload.jti):
+        raise InvalidToken()
 
     request.state.user_id = str(payload.sub)
     request.state.access_payload = payload
-    request.state.session_id = getattr(payload, "session_id", None)
-
-    if await get_blacklist().contains(payload.jti):
-        raise InvalidToken()
+    request.state.session_id = payload.session_id
 
     return payload
 
@@ -45,8 +39,14 @@ async def get_current_user(
         if payload.iat <= int(user.last_password_change.timestamp()):
             raise InvalidToken("Token outdated")
 
+    role_code = getattr(user.role, "code", None)
+    permissions = [
+        str(getattr(permission, "code", getattr(permission, "value", permission)))
+        for permission in (user.permissions or [])
+    ]
+
     return CurrentUser(
         id=user.id,
         role=user.role.code.lower() if user.role else None,
-        permissions=user.permissions or [],
+        permissions=permissions,
     )

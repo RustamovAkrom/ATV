@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models.audit.audit_log import AuditLog
-
+from schemas.pagination import PaginationParams
 
 class AuditRepository:
     def __init__(self, session: AsyncSession):

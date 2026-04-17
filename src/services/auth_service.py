@@ -11,6 +11,7 @@ from db.models.refresh_token import RefreshToken
 from repositories.user_repo import UserRepository
 from repositories.auth_repo import AuthRepository
 from utils.helpers import generate_device_id, utc_now
+from core.security.auth.schemas import TokenPair
 
 
 class AuthService:
@@ -34,9 +35,11 @@ class AuthService:
         refresh, jti = create_refresh_token(str(user.id))
         access = create_access_token(str(user.id), str(jti))
 
+        user.last_login = utc_now()
+
         await self.auth_repo.create(
             RefreshToken(
-                id=jti,
+                id=UUID(jti),
                 user_id=user.id,
                 ip_address=request.client.host if request.client else None,
                 user_agent=request.headers.get("user-agent"),
@@ -46,13 +49,15 @@ class AuthService:
             )
         )
 
-        return {"access_token": access, "refresh_token": refresh}
+        return TokenPair(
+            access_token=access,
+            refresh_token=refresh,
+        )
 
     async def refresh(self, refresh_token: str, request: Request):
         payload = await decode_token(refresh_token, "refresh")
 
         token = await self.auth_repo.get_by_id(payload.jti)
-
         if not token:
             raise InvalidToken()
 
@@ -70,27 +75,33 @@ class AuthService:
 
         # DEVICE binding (new)
         if token.device_id and token.device_id != current_device:
+            await self.auth_repo.revoke_all_by_user(payload.sub)
             raise InvalidToken("Device mismatch detected")
 
         # IP binding (optional but good)
         if token.ip_address and token.ip_address != current_ip:
+            await self.auth_repo.revoke_all_by_user(payload.sub)
             raise InvalidToken("IP mismatched")
-
-        # ROTATION
-        await self.auth_repo.revoke(payload.jti)
 
         user = await self.user_repo.get_by_id(payload.sub)
         if not user:
             raise InvalidToken()
+
+        if user.last_password_change and payload.iat:
+            if payload.iat <= int(user.last_password_change.timestamp()):
+                await self.auth_repo.revoke_all_by_user(user.id)
+                raise InvalidToken("Token outdated")
+
+        await self.auth_repo.revoke(payload.jti)
 
         new_refresh, new_jti = create_refresh_token(str(user.id))
         access = create_access_token(str(user.id), str(new_jti))
 
         await self.auth_repo.create(
             RefreshToken(
-                id=new_jti,
+                id=UUID(new_jti),
                 user_id=user.id,
-                ip_address=request.client.host if request.client else None,
+                ip_address=current_ip,
                 user_agent=request.headers.get("user-agent"),
                 device_id=current_device,
                 expires_at=utc_now()
@@ -98,7 +109,10 @@ class AuthService:
             )
         )
 
-        return {"access_token": access, "refresh_token": new_refresh}
+        return TokenPair(
+            access_token=access,
+            refresh_token=new_refresh,
+        )
 
     async def logout(self, request: Request, refresh_token: str):
         payload = getattr(request.state, "access_payload", None)
@@ -117,5 +131,13 @@ class AuthService:
         except Exception:
             pass  # logout всегда успешен
 
-    async def logout_all(self, user_id: UUID):
+    async def logout_all(self, request: Request, user_id: UUID):
+        paylod = getattr(request.state, "access_payload", None)
+
+        if paylod:
+            await get_blacklist().add(
+                jti=paylod.jti,
+                exp=datetime.fromtimestamp(paylod.exp, tz=timezone.utc),
+            )
+
         await self.auth_repo.revoke_all_by_user(user_id)

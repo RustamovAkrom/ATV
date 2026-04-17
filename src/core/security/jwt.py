@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4, UUID
 import jwt
+from pydantic import ValidationError
 
 from core.config import get_settings
 from core.exceptions.errors import InvalidToken, TokenExpired
@@ -9,7 +10,7 @@ from core.security.auth.types import TokenPayload
 settings = get_settings()
 
 
-def _base_payload(user_id: str, token_type: str):
+def _base_payload(user_id: str, token_type: str) -> dict[str, object]:
     now = datetime.now(timezone.utc)
 
     return {
@@ -43,7 +44,7 @@ def create_refresh_token(user_id: str):
     )
 
     token = jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
-    return token, payload["jti"]
+    return token, str(payload["jti"])
 
 
 async def decode_token(token: str, expected_type: str | None = None) -> TokenPayload:
@@ -54,6 +55,9 @@ async def decode_token(token: str, expected_type: str | None = None) -> TokenPay
             algorithms=[settings.JWT_ALGORITHM],
             audience=settings.JWT_AUDIENCE,
             issuer=settings.JWT_ISSUER,
+            options={
+                "require": ["exp", "iat", "jti", "sub", "type"],
+            },
         )
 
         if expected_type and raw.get("type") != expected_type:
@@ -62,14 +66,18 @@ async def decode_token(token: str, expected_type: str | None = None) -> TokenPay
         return TokenPayload(
             sub=UUID(raw["sub"]),
             jti=UUID(raw["jti"]),
-            exp=raw["exp"],
-            type=raw["type"],
-            iat=raw.get("iat", raw["exp"]), # fallback
-            session_id=UUID(raw["session_id"]) if raw.get("session_id") else None
+            exp=int(raw["exp"]),
+            iat=int(raw.get("iat", raw["exp"])),
+            type=str(raw["type"]),
+            iss=raw.get("iss"),
+            aud=raw.get("aud"),
+            session_id=UUID(raw["session_id"])
+            if raw.get("session_id")
+            else None
         )
 
     except jwt.ExpiredSignatureError:
         raise TokenExpired()
 
-    except jwt.PyJWTError:
+    except (jwt.PyJWTError, ValidationError, KeyError, TypeError, ValueError):
         raise InvalidToken()

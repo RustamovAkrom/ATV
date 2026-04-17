@@ -42,7 +42,7 @@ async def update_role(
     _: CurrentUser = Depends(IsSuperAdmin),
     service: RBACService = Depends(get_rbac_service),
 ):
-    return await service.update_role(role_id, data.model_dump(exclude_unset=True))
+    return await service.update_role(role_id, data)
 
 
 @router.delete("/roles/{role_id}")

@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import (
 from core.config import get_settings
 
 @lru_cache
-def get_db_engine() -> AsyncEngine:
+def get_db_async_engine() -> AsyncEngine:
     settings = get_settings()
 
     return create_async_engine(
@@ -23,8 +23,8 @@ def get_db_engine() -> AsyncEngine:
 
 
 @lru_cache
-def get_session_factory() -> async_sessionmaker[AsyncSession]:
+def get_async_session_factory() -> async_sessionmaker[AsyncSession]:
     return async_sessionmaker(
-        bind=get_db_engine(),
+        bind=get_db_async_engine(),
         expire_on_commit=False,
     )

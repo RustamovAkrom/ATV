@@ -27,7 +27,6 @@ async def revoke_session(
     service: SessionService = Depends(get_session_service),
 ):
     await service.revoke_session(current_user.id, session_id)
-
     return {"status": "revoked"}
 
 

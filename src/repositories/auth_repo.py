@@ -1,11 +1,9 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import Depends
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.dependencies import get_db_session
 from db.models.refresh_token import RefreshToken
 
 

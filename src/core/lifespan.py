@@ -3,13 +3,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from core.database import get_db_engine, get_session_factory
+from core.database.db_async import get_db_async_engine, get_async_session_factory
 from core.requests import get_http_transport
 from scripts.bootstrap.rbac import seed_rbac
 
 
 async def run_bootstrap():
-    session_factory = get_session_factory()
+    session_factory = get_async_session_factory()
     async with session_factory() as session:
         async with session.begin():
             await seed_rbac(session)
@@ -17,7 +17,7 @@ async def run_bootstrap():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    db_engine = get_db_engine()
+    db_engine = get_db_async_engine()
     http_transport = get_http_transport()
     yield
     await db_engine.dispose()
