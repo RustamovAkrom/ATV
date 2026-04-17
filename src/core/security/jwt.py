@@ -64,6 +64,8 @@ async def decode_token(token: str, expected_type: str | None = None) -> TokenPay
             jti=UUID(raw["jti"]),
             exp=raw["exp"],
             type=raw["type"],
+            iat=raw.get("iat", raw["exp"]), # fallback
+            session_id=UUID(raw["session_id"]) if raw.get("session_id") else None
         )
 
     except jwt.ExpiredSignatureError:

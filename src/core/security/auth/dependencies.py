@@ -9,19 +9,22 @@ from api.dependencies.users import get_user_repo
 from .extractor import extract_token
 
 
-# PAYLOAD (JWT слой)
 async def get_token_payload(
     request: Request,
     token: str = Depends(extract_token),
+    user_repo: UserRepository = Depends(get_user_repo),  # 🔥
 ):
     payload = await decode_token(token, expected_type="access")
 
-    # write for audit
+    user = await user_repo.get_by_id(payload.sub)
+    if user and user.last_password_change:
+        if payload.iat <= int(user.last_password_change.timestamp()):
+            raise InvalidToken("Token outdated")
+
     request.state.user_id = str(payload.sub)
     request.state.access_payload = payload
     request.state.session_id = getattr(payload, "session_id", None)
 
-    # blacklist check
     if await get_blacklist().contains(payload.jti):
         raise InvalidToken()
 
@@ -37,6 +40,10 @@ async def get_current_user(
     user = await user_repo.get_by_id(payload.sub)
     if not user:
         raise InvalidToken()
+
+    if user.last_password_change and payload.iat:
+        if payload.iat <= int(user.last_password_change.timestamp()):
+            raise InvalidToken("Token outdated")
 
     return CurrentUser(
         id=user.id,

@@ -8,10 +8,10 @@ from repositories.auth_repo import AuthRepository
 from repositories.password_reset_repo import PasswordResetRepository
 from repositories.user_repo import UserRepository
 from tasks.email_task import send_password_reset_email_task
-from utils.reset_tokens import generate_token, hash_token
-
-def utc_now():
-    return datetime.now(timezone.utc)
+from utils.reset_tokens import hash_token
+import utils.reset_tokens as tokens
+from utils.helpers import utc_now
+from core.logger import configure_logger
 
 
 class SecurityService:
@@ -22,6 +22,7 @@ class SecurityService:
         reset_repo: PasswordResetRepository,
     ):
         self.settings = get_settings()
+        self.logger = configure_logger()
         self.user_repo = user_repo
         self.auth_repo = auth_repo
         self.reset_repo = reset_repo
@@ -32,8 +33,12 @@ class SecurityService:
         if not user:
             return
 
-        token = generate_token()
+        self.logger.info(f"Password reset requested user={user.id}")
+
+        token = tokens.generate_token()
         token_hash = hash_token(token)
+
+        await self.reset_repo.clean_old(user.id)
 
         await self.reset_repo.create(
             PasswordReset(
@@ -43,14 +48,21 @@ class SecurityService:
             )
         )
 
-        # Send change url to email user
-        send_password_reset_email_task.delay(user.email, token)
+        try:
+            # Send change url to email user
+            if self.settings.USE_CELERY:
+                send_password_reset_email_task.delay(user.email, token)
+            else:
+                self.logger.info(f"[DEV] Reset token for {user.email}: {token}")
 
+        except Exception as e:
+            print("Password Reset Error: ", e)
+            pass
 
     async def reset_password(self, token: str, new_password: str):
         token_hash = hash_token(token)
 
-        reset = await self.reset_repo.get_valid(token_hash)
+        reset = await self.reset_repo.use_token(token_hash)
 
         if not reset:
             raise InvalidToken()
@@ -60,12 +72,14 @@ class SecurityService:
         if not user:
             raise InvalidToken()
 
+
         # update password
         user.password_hash = hash_password(new_password)
-        user.last_password_change = datetime.utcnow()
+        user.last_password_change = utc_now()
 
         # revoke sessions
         await self.auth_repo.revoke_all_by_user(user.id)
 
-        # mark token used
-        await self.reset_repo.mark_used(reset.id)
+        await self.reset_repo.clean_old(user.id)
+
+        self.logger.info(f"Password reset success user={user.id}")

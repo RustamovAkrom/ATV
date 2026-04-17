@@ -5,17 +5,9 @@ from api.dependencies.security import get_security_service
 from core.config import get_settings
 from core.slowapi import limiter
 from services.security_service import SecurityService
-
+from schemas.security import ForgotPasswordRequest, ResetPasswordRequest
 router = APIRouter(prefix="/security", tags=["Security"])
 settings = get_settings()
-
-class ForgotPasswordRequest(BaseModel):
-    login: str
-
-
-class ResetPasswordRequest(BaseModel):
-    token: str
-    new_password: str
 
 
 @router.post("/forgot-password")

@@ -85,6 +85,7 @@ class Settings(BaseSettings):
     LOGIN_RATE_LIMIT_BLOCK_SECONDS: int = 15
 
     # Celery
+    USE_CELERY: bool = False
     CELERY_BROKER_URL: str = "redis://redis:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://redis:6379/1"
     CELERY_TASK_SERIALIZER: str = "json"

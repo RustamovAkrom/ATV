@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends
 
 from core.security.auth.dependencies import get_current_user
 from core.security.auth.types import CurrentUser
@@ -22,20 +22,10 @@ async def list_sessions(
 
 @router.delete("/{session_id}")
 async def revoke_session(
-    request: Request,
     session_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
     service: SessionService = Depends(get_session_service),
 ):
-
-    current_session_id = request.state.session_id
-
-    if str(session_id) == str(current_session_id):
-        raise HTTPException(
-            status_code=400,
-            detail="Cannot revoke current session",
-        )
-
     await service.revoke_session(current_user.id, session_id)
 
     return {"status": "revoked"}
