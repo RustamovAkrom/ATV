@@ -47,7 +47,6 @@ class Repair(Base, UUIDMixing, TimestampMixin):
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
     labor_cost: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 2))
-    total_cost: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 2))
 
     asset = relationship("Asset", back_populates="repairs", lazy="selectin")
     reported_by = relationship(
@@ -71,27 +70,3 @@ class Repair(Base, UUIDMixing, TimestampMixin):
         if value is not None and value < 0:
             raise ValueError(f"{key} must be >= 0")
         return value
-
-    # BUSINESS LOGIC
-    def start(self):
-        if self.status != RepairStatus.IN_PROGRESS:
-            raise ValueError(f"Cannot complete repair from status {self.status}")
-
-        self.status = RepairStatus.DONE
-        self.completed_at = func.now()
-
-    def cancel(self):
-        if self.status == RepairStatus.DONE:
-            raise ValueError("Cannot cancel completed repair")
-
-        if self.status == RepairStatus.CANCELED:
-            return # indempotent
-
-        self.status = RepairStatus.CANCELED
-
-    def calculate_total_cost(self):
-        parts_cost = sum(
-            (p.total_price or 0) for p in self.parts
-        )
-
-        self.total_cost = (self.labor_cost or 0) + parts_cost

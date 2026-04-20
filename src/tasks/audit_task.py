@@ -1,28 +1,22 @@
-# src/tasks/audit_task.py
+import asyncio
 
+from core.database.db_async import get_async_session_factory
 from core.celery import celery_app
-from core.database.db_sync import get_sync_session_factory
-from db.models.audit.audit_log import AuditLog
+from repositories.audit_repo import AuditRepository
+from schemas.audit import AuditCreate
+from services.audit_service import AuditService
 
 
-@celery_app.task(
-    autoretry_for=(Exception,),
-    retry_backoff=2,
-    retry_kwargs={"max_retries": 5},
-)
-def process_audit_log_task(payload: dict):
-
-    session_factory = get_sync_session_factory()
-    session = session_factory()
+@celery_app.task(bind=True, max_retries=3)
+def process_audit_log_task(self, payload: dict):
+    async def _run():
+        session_factory = get_async_session_factory()
+        async with session_factory() as session:
+            async with session.begin():
+                service = AuditService(AuditRepository(session))
+                await service.persist_audit(AuditCreate(**payload))
 
     try:
-        audit = AuditLog(**payload)
-        session.add(audit)
-        session.commit()
-
-    except Exception:
-        session.rollback()
-        raise
-
-    finally:
-        session.close()
+        asyncio.run(_run())
+    except Exception as exc:
+        raise self.retry(exc=exc, countdown=5)

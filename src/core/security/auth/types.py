@@ -1,14 +1,8 @@
 from pydantic import BaseModel, Field
 from uuid import UUID
-from typing import Optional, List
+from typing import Optional, List, Set
 
-
-def _normalize_role(value: object) -> str:
-    return str(getattr(value, "value", value)).lower()
-
-
-def _normalize_permission(value: object) -> str:
-    return str(getattr(value, "value", value))
+from db.models.enums import UserRole
 
 
 class CurrentUser(BaseModel):
@@ -16,13 +10,29 @@ class CurrentUser(BaseModel):
     role: Optional[str]
     permissions: List[str] = Field(default_factory=list)
 
-    def has_role(self, *roles: str) -> bool:
-        normalized = {_normalize_role(role) for role in roles}
-        return self.role in normalized
+    @property
+    def permission_set(self) -> Set[str]:
+        if not hasattr(self, "_perm_set"):
+            self._perm_set = set(self.permissions)
+        return self._perm_set
 
-    def has_permission(self, *perms: str) -> bool:
-        normalized = {_normalize_permission(perm) for perm in perms}
-        return normalized.issubset(set(self.permissions))
+    def has_role(self, *roles: str) -> bool:
+        if self.role == UserRole.SUPERADMIN.value:
+            return True
+
+        normalized_required = {str(r).lower() for r in roles}
+        return self.role in normalized_required
+
+    def has_permission(self, *perms: str, any_of: bool = False) -> bool:
+        if self.role == UserRole.SUPERADMIN.value:
+            return True
+
+        required = {str(p).lower() for p in perms}
+        user_perms = self.permission_set
+
+        if any_of:
+            return not user_perms.isdisjoint(required)
+        return required.issubset(user_perms)
 
 
 class TokenPayload(BaseModel):

@@ -19,6 +19,14 @@ class AssetStatus(str, Enum):
     IN_STOCK = "in_stock"
     BROKEN = "broken"
     RETIRED = "retired"
+    IN_REPAIR = "in_repair"
+    IN_TRANSIT = "in_transit"
+
+
+class TransferStatus(str, Enum):
+    PENDING = "pending"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
 
 
 class LifecycleStage(str, Enum):

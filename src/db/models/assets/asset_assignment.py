@@ -32,10 +32,6 @@ class AssetAssignment(Base, UUIDMixing):
 
     unassigned_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
-    # relationships
     asset = relationship("Asset", lazy="selectin")
     user = relationship("User", lazy="selectin")
 
-    # business
-    def is_active(self) -> bool:
-        return self.unassigned_at is None

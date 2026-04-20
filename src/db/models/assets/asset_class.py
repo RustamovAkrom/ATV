@@ -22,12 +22,3 @@ class AssetClass(Base, UUIDMixing, TimestampMixin):
         lazy="selectin"
     )
 
-    # ======================
-    # BUSINESS
-    # ======================
-
-    def is_it_related(self) -> bool:
-        return self.code.startswith("IT")
-
-    def is_transport(self) -> bool:
-        return self.code.startswith("TR")

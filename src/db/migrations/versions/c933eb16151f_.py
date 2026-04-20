@@ -1,8 +1,8 @@
 """
 
-Revision ID: b51aaff5741b
+Revision ID: c933eb16151f
 Revises: 
-Create Date: 2026-04-17 00:52:55.347682
+Create Date: 2026-04-21 01:29:20.549528
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'b51aaff5741b'
+revision: str = 'c933eb16151f'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -42,25 +42,6 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id', name=op.f('pk_asset_classes')),
     sa.UniqueConstraint('code', name=op.f('uq_asset_classes_code'))
     )
-    op.create_table('audit_logs',
-    sa.Column('method', sa.String(length=10), nullable=False),
-    sa.Column('path', sa.String(length=255), nullable=False),
-    sa.Column('status_code', sa.Integer(), nullable=False),
-    sa.Column('user_id', sa.String(length=36), nullable=True),
-    sa.Column('request_id', sa.String(length=36), nullable=False),
-    sa.Column('latency_ms', sa.Integer(), nullable=False),
-    sa.Column('ip', sa.String(length=45), nullable=True),
-    sa.Column('user_agent', sa.String(length=255), nullable=True),
-    sa.Column('query', sa.Text(), nullable=True),
-    sa.Column('is_suspicious', sa.Boolean(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('id', sa.UUID(), nullable=False),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_audit_logs'))
-    )
-    op.create_index(op.f('ix_audit_logs_created_at'), 'audit_logs', ['created_at'], unique=False)
-    op.create_index(op.f('ix_audit_logs_path'), 'audit_logs', ['path'], unique=False)
-    op.create_index(op.f('ix_audit_logs_request_id'), 'audit_logs', ['request_id'], unique=False)
-    op.create_index(op.f('ix_audit_logs_user_id'), 'audit_logs', ['user_id'], unique=False)
     op.create_table('manufacturers',
     sa.Column('name', sa.String(length=150), nullable=False),
     sa.Column('country', sa.String(length=100), nullable=True),
@@ -129,6 +110,16 @@ def upgrade() -> None:
     sa.UniqueConstraint('code', name=op.f('uq_services_code')),
     sa.UniqueConstraint('name', name=op.f('uq_services_name'))
     )
+    op.create_table('system_configs',
+    sa.Column('key', sa.String(length=100), nullable=False),
+    sa.Column('value', sa.JSON(), nullable=False),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_system_configs'))
+    )
+    op.create_index(op.f('ix_system_configs_key'), 'system_configs', ['key'], unique=True)
     op.create_table('asset_models',
     sa.Column('name', sa.String(length=150), nullable=False),
     sa.Column('manufacturer_id', sa.UUID(), nullable=False),
@@ -193,23 +184,30 @@ def upgrade() -> None:
     sa.UniqueConstraint('passport_number', name=op.f('uq_users_passport_number')),
     sa.UniqueConstraint('phone', name=op.f('uq_users_phone'))
     )
-    op.create_table('documents',
-    sa.Column('title', sa.String(length=255), nullable=False),
-    sa.Column('description', sa.String(length=500), nullable=True),
-    sa.Column('created_by_id', sa.UUID(), nullable=False),
-    sa.Column('status', sa.Enum('DRAFT', 'PENDING', 'APPROVED', 'REJECTED', name='documentstatus'), nullable=False),
-    sa.Column('metadata', sa.JSON(), nullable=False),
-    sa.Column('id', sa.UUID(), nullable=False),
+    op.create_table('audit_logs',
+    sa.Column('method', sa.String(length=10), nullable=False),
+    sa.Column('path', sa.String(length=255), nullable=False),
+    sa.Column('status_code', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=True),
+    sa.Column('request_id', sa.String(length=36), nullable=False),
+    sa.Column('latency_ms', sa.Integer(), nullable=False),
+    sa.Column('ip', sa.String(length=45), nullable=True),
+    sa.Column('user_agent', sa.String(length=255), nullable=True),
+    sa.Column('query', sa.Text(), nullable=True),
+    sa.Column('is_suspicious', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['created_by_id'], ['users.id'], name=op.f('fk_documents_created_by_id_users')),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_documents'))
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_audit_logs_user_id_users'), ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_audit_logs'))
     )
-    op.create_index(op.f('ix_documents_created_by_id'), 'documents', ['created_by_id'], unique=False)
+    op.create_index(op.f('ix_audit_logs_created_at'), 'audit_logs', ['created_at'], unique=False)
+    op.create_index(op.f('ix_audit_logs_path'), 'audit_logs', ['path'], unique=False)
+    op.create_index(op.f('ix_audit_logs_request_id'), 'audit_logs', ['request_id'], unique=False)
+    op.create_index(op.f('ix_audit_logs_user_id'), 'audit_logs', ['user_id'], unique=False)
     op.create_table('password_resets',
     sa.Column('user_id', sa.UUID(), nullable=False),
     sa.Column('token_hash', sa.String(length=255), nullable=False),
-    sa.Column('expires_at', sa.DateTime(), nullable=False),
+    sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('is_used', sa.Boolean(), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -254,18 +252,17 @@ def upgrade() -> None:
     sa.Column('asset_tag', sa.String(length=255), nullable=True),
     sa.Column('serial_number', sa.String(length=255), nullable=True),
     sa.Column('model_id', sa.UUID(), nullable=False),
+    sa.Column('status', sa.Enum('ACTIVE', 'IN_STOCK', 'BROKEN', 'RETIRED', 'IN_REPAIR', 'IN_TRANSIT', name='asset_status'), nullable=False),
     sa.Column('class_id', sa.UUID(), nullable=True),
     sa.Column('service_id', sa.UUID(), nullable=True),
     sa.Column('region_id', sa.UUID(), nullable=True),
     sa.Column('current_warehouse_id', sa.UUID(), nullable=True),
     sa.Column('responsible_user_id', sa.UUID(), nullable=True),
-    sa.Column('purchase_date', sa.Date(), nullable=True),
     sa.Column('commission_date', sa.Date(), nullable=True),
     sa.Column('warranty_end', sa.Date(), nullable=True),
-    sa.Column('purchase_cost', sa.Numeric(precision=18, scale=2), nullable=True),
-    sa.Column('status', sa.Enum('ACTIVE', 'IN_STOCK', 'BROKEN', 'RETIRED', name='asset_status'), nullable=False),
-    sa.Column('lifecycle_stage', sa.Enum('NEW', 'NORMAL', 'OLD', 'CRITICAL', name='lifecycle_stage'), nullable=True),
     sa.Column('condition_percent', sa.Integer(), nullable=False),
+    sa.Column('purchase_date', sa.Date(), nullable=True),
+    sa.Column('purchase_cost', sa.Numeric(precision=18, scale=2), nullable=True),
     sa.Column('last_repair_date', sa.Date(), nullable=True),
     sa.Column('failure_count', sa.Integer(), nullable=False),
     sa.Column('usage_intensity', sa.Integer(), nullable=False),
@@ -275,7 +272,6 @@ def upgrade() -> None:
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.CheckConstraint('condition_percent BETWEEN 0 AND 100', name=op.f('ck_assets_ck_assets_condition_percent')),
     sa.ForeignKeyConstraint(['class_id'], ['asset_classes.id'], name=op.f('fk_assets_class_id_asset_classes'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['current_warehouse_id'], ['warehouses.id'], name=op.f('fk_assets_current_warehouse_id_warehouses'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['model_id'], ['asset_models.id'], name=op.f('fk_assets_model_id_asset_models'), ondelete='RESTRICT'),
@@ -292,41 +288,6 @@ def upgrade() -> None:
     op.create_index(op.f('ix_assets_responsible_user_id'), 'assets', ['responsible_user_id'], unique=False)
     op.create_index(op.f('ix_assets_serial_number'), 'assets', ['serial_number'], unique=True)
     op.create_index(op.f('ix_assets_service_id'), 'assets', ['service_id'], unique=False)
-    op.create_table('document_approvals',
-    sa.Column('document_id', sa.UUID(), nullable=False),
-    sa.Column('approver_id', sa.UUID(), nullable=False),
-    sa.Column('status', sa.Enum('PENDING', 'APPROVED', 'REJECTED', name='approvalstatus'), nullable=False),
-    sa.Column('approved_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-    sa.Column('id', sa.UUID(), nullable=False),
-    sa.ForeignKeyConstraint(['approver_id'], ['users.id'], name=op.f('fk_document_approvals_approver_id_users')),
-    sa.ForeignKeyConstraint(['document_id'], ['documents.id'], name=op.f('fk_document_approvals_document_id_documents'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_document_approvals')),
-    sa.UniqueConstraint('document_id', 'approver_id', name='uq_document_approvals_document_approver')
-    )
-    op.create_index(op.f('ix_document_approvals_approver_id'), 'document_approvals', ['approver_id'], unique=False)
-    op.create_index(op.f('ix_document_approvals_document_id'), 'document_approvals', ['document_id'], unique=False)
-    op.create_table('document_files',
-    sa.Column('document_id', sa.UUID(), nullable=False),
-    sa.Column('file_name', sa.String(length=255), nullable=False),
-    sa.Column('file_path', sa.String(length=500), nullable=False),
-    sa.Column('file_size', sa.Integer(), nullable=True),
-    sa.Column('content_type', sa.String(length=100), nullable=True),
-    sa.Column('id', sa.UUID(), nullable=False),
-    sa.ForeignKeyConstraint(['document_id'], ['documents.id'], name=op.f('fk_document_files_document_id_documents'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_document_files'))
-    )
-    op.create_index(op.f('ix_document_files_document_id'), 'document_files', ['document_id'], unique=False)
-    op.create_table('document_signatures',
-    sa.Column('document_id', sa.UUID(), nullable=False),
-    sa.Column('user_id', sa.UUID(), nullable=False),
-    sa.Column('signed_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('id', sa.UUID(), nullable=False),
-    sa.ForeignKeyConstraint(['document_id'], ['documents.id'], name=op.f('fk_document_signatures_document_id_documents'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_document_signatures_user_id_users')),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_document_signatures'))
-    )
-    op.create_index(op.f('ix_document_signatures_document_id'), 'document_signatures', ['document_id'], unique=False)
-    op.create_index(op.f('ix_document_signatures_user_id'), 'document_signatures', ['user_id'], unique=False)
     op.create_table('asset_assignments',
     sa.Column('asset_id', sa.UUID(), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=False),
@@ -340,25 +301,60 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_asset_assignments_asset_id'), 'asset_assignments', ['asset_id'], unique=False)
     op.create_index(op.f('ix_asset_assignments_user_id'), 'asset_assignments', ['user_id'], unique=False)
+    op.create_table('asset_history',
+    sa.Column('asset_id', sa.UUID(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('action', sa.String(length=50), nullable=False),
+    sa.Column('description', sa.Text(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.ForeignKeyConstraint(['asset_id'], ['assets.id'], name=op.f('fk_asset_history_asset_id_assets'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_asset_history_user_id_users')),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_asset_history'))
+    )
+    op.create_index(op.f('ix_asset_history_asset_id'), 'asset_history', ['asset_id'], unique=False)
     op.create_table('asset_transfers',
     sa.Column('asset_id', sa.UUID(), nullable=False),
+    sa.Column('created_by_id', sa.UUID(), nullable=False),
+    sa.Column('status', sa.String(length=20), nullable=False),
     sa.Column('from_warehouse_id', sa.UUID(), nullable=True),
     sa.Column('to_warehouse_id', sa.UUID(), nullable=True),
     sa.Column('from_service_id', sa.UUID(), nullable=True),
     sa.Column('to_service_id', sa.UUID(), nullable=True),
     sa.Column('transferred_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('comment', sa.String(length=255), nullable=True),
+    sa.Column('received_by_id', sa.UUID(), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['asset_id'], ['assets.id'], name=op.f('fk_asset_transfers_asset_id_assets'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['created_by_id'], ['users.id'], name=op.f('fk_asset_transfers_created_by_id_users')),
     sa.ForeignKeyConstraint(['from_service_id'], ['services.id'], name=op.f('fk_asset_transfers_from_service_id_services')),
     sa.ForeignKeyConstraint(['from_warehouse_id'], ['warehouses.id'], name=op.f('fk_asset_transfers_from_warehouse_id_warehouses')),
+    sa.ForeignKeyConstraint(['received_by_id'], ['users.id'], name=op.f('fk_asset_transfers_received_by_id_users')),
     sa.ForeignKeyConstraint(['to_service_id'], ['services.id'], name=op.f('fk_asset_transfers_to_service_id_services')),
     sa.ForeignKeyConstraint(['to_warehouse_id'], ['warehouses.id'], name=op.f('fk_asset_transfers_to_warehouse_id_warehouses')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_asset_transfers'))
     )
     op.create_index(op.f('ix_asset_transfers_asset_id'), 'asset_transfers', ['asset_id'], unique=False)
+    op.create_table('documents',
+    sa.Column('title', sa.String(length=255), nullable=False),
+    sa.Column('description', sa.String(length=500), nullable=True),
+    sa.Column('document_type', sa.String(length=50), nullable=False),
+    sa.Column('asset_id', sa.UUID(), nullable=True),
+    sa.Column('created_by_id', sa.UUID(), nullable=False),
+    sa.Column('status', sa.Enum('DRAFT', 'PENDING', 'APPROVED', 'REJECTED', name='documentstatus'), nullable=False),
+    sa.Column('metadata', sa.JSON(), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['asset_id'], ['assets.id'], name=op.f('fk_documents_asset_id_assets'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['created_by_id'], ['users.id'], name=op.f('fk_documents_created_by_id_users')),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_documents'))
+    )
+    op.create_index(op.f('ix_documents_asset_id'), 'documents', ['asset_id'], unique=False)
+    op.create_index(op.f('ix_documents_created_by_id'), 'documents', ['created_by_id'], unique=False)
+    op.create_index(op.f('ix_documents_document_type'), 'documents', ['document_type'], unique=False)
     op.create_table('repairs',
     sa.Column('asset_id', sa.UUID(), nullable=False),
     sa.Column('reported_by_id', sa.UUID(), nullable=True),
@@ -368,7 +364,6 @@ def upgrade() -> None:
     sa.Column('started_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('completed_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('labor_cost', sa.Numeric(precision=18, scale=2), nullable=True),
-    sa.Column('total_cost', sa.Numeric(precision=18, scale=2), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -380,12 +375,22 @@ def upgrade() -> None:
     op.create_index(op.f('ix_repairs_asset_id'), 'repairs', ['asset_id'], unique=False)
     op.create_index(op.f('ix_repairs_assigned_to_id'), 'repairs', ['assigned_to_id'], unique=False)
     op.create_index(op.f('ix_repairs_reported_by_id'), 'repairs', ['reported_by_id'], unique=False)
+    op.create_table('document_files',
+    sa.Column('document_id', sa.UUID(), nullable=False),
+    sa.Column('file_name', sa.String(length=255), nullable=False),
+    sa.Column('file_path', sa.String(length=500), nullable=False),
+    sa.Column('file_size', sa.Integer(), nullable=True),
+    sa.Column('content_type', sa.String(length=100), nullable=True),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.ForeignKeyConstraint(['document_id'], ['documents.id'], name=op.f('fk_document_files_document_id_documents'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_document_files'))
+    )
+    op.create_index(op.f('ix_document_files_document_id'), 'document_files', ['document_id'], unique=False)
     op.create_table('repair_parts',
     sa.Column('repair_id', sa.UUID(), nullable=False),
     sa.Column('part_name', sa.String(length=150), nullable=False),
     sa.Column('quantity', sa.Integer(), nullable=False),
     sa.Column('unit_price', sa.Numeric(precision=18, scale=2), nullable=False),
-    sa.Column('total_price', sa.Numeric(precision=18, scale=2), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.ForeignKeyConstraint(['repair_id'], ['repairs.id'], name=op.f('fk_repair_parts_repair_id_repairs'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_repair_parts'))
@@ -399,23 +404,23 @@ def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_index(op.f('ix_repair_parts_repair_id'), table_name='repair_parts')
     op.drop_table('repair_parts')
+    op.drop_index(op.f('ix_document_files_document_id'), table_name='document_files')
+    op.drop_table('document_files')
     op.drop_index(op.f('ix_repairs_reported_by_id'), table_name='repairs')
     op.drop_index(op.f('ix_repairs_assigned_to_id'), table_name='repairs')
     op.drop_index(op.f('ix_repairs_asset_id'), table_name='repairs')
     op.drop_table('repairs')
+    op.drop_index(op.f('ix_documents_document_type'), table_name='documents')
+    op.drop_index(op.f('ix_documents_created_by_id'), table_name='documents')
+    op.drop_index(op.f('ix_documents_asset_id'), table_name='documents')
+    op.drop_table('documents')
     op.drop_index(op.f('ix_asset_transfers_asset_id'), table_name='asset_transfers')
     op.drop_table('asset_transfers')
+    op.drop_index(op.f('ix_asset_history_asset_id'), table_name='asset_history')
+    op.drop_table('asset_history')
     op.drop_index(op.f('ix_asset_assignments_user_id'), table_name='asset_assignments')
     op.drop_index(op.f('ix_asset_assignments_asset_id'), table_name='asset_assignments')
     op.drop_table('asset_assignments')
-    op.drop_index(op.f('ix_document_signatures_user_id'), table_name='document_signatures')
-    op.drop_index(op.f('ix_document_signatures_document_id'), table_name='document_signatures')
-    op.drop_table('document_signatures')
-    op.drop_index(op.f('ix_document_files_document_id'), table_name='document_files')
-    op.drop_table('document_files')
-    op.drop_index(op.f('ix_document_approvals_document_id'), table_name='document_approvals')
-    op.drop_index(op.f('ix_document_approvals_approver_id'), table_name='document_approvals')
-    op.drop_table('document_approvals')
     op.drop_index(op.f('ix_assets_service_id'), table_name='assets')
     op.drop_index(op.f('ix_assets_serial_number'), table_name='assets')
     op.drop_index(op.f('ix_assets_responsible_user_id'), table_name='assets')
@@ -433,14 +438,19 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_password_resets_user_id'), table_name='password_resets')
     op.drop_index(op.f('ix_password_resets_expires_at'), table_name='password_resets')
     op.drop_table('password_resets')
-    op.drop_index(op.f('ix_documents_created_by_id'), table_name='documents')
-    op.drop_table('documents')
+    op.drop_index(op.f('ix_audit_logs_user_id'), table_name='audit_logs')
+    op.drop_index(op.f('ix_audit_logs_request_id'), table_name='audit_logs')
+    op.drop_index(op.f('ix_audit_logs_path'), table_name='audit_logs')
+    op.drop_index(op.f('ix_audit_logs_created_at'), table_name='audit_logs')
+    op.drop_table('audit_logs')
     op.drop_table('users')
     op.drop_table('role_permissions')
     op.drop_table('region_services')
     op.drop_index(op.f('ix_asset_models_manufacturer_id'), table_name='asset_models')
     op.drop_index(op.f('ix_asset_models_category_id'), table_name='asset_models')
     op.drop_table('asset_models')
+    op.drop_index(op.f('ix_system_configs_key'), table_name='system_configs')
+    op.drop_table('system_configs')
     op.drop_table('services')
     op.drop_index(op.f('ix_roles_name'), table_name='roles')
     op.drop_index(op.f('ix_roles_code'), table_name='roles')
@@ -452,11 +462,6 @@ def downgrade() -> None:
     op.drop_table('permissions')
     op.drop_index(op.f('ix_manufacturers_name'), table_name='manufacturers')
     op.drop_table('manufacturers')
-    op.drop_index(op.f('ix_audit_logs_user_id'), table_name='audit_logs')
-    op.drop_index(op.f('ix_audit_logs_request_id'), table_name='audit_logs')
-    op.drop_index(op.f('ix_audit_logs_path'), table_name='audit_logs')
-    op.drop_index(op.f('ix_audit_logs_created_at'), table_name='audit_logs')
-    op.drop_table('audit_logs')
     op.drop_table('asset_classes')
     op.drop_index(op.f('ix_asset_categories_code'), table_name='asset_categories')
     op.drop_table('asset_categories')

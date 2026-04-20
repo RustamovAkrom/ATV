@@ -20,11 +20,6 @@ class RepairPart(Base, UUIDMixing):
     part_name: Mapped[str] = mapped_column(String(150), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     unit_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 2), nullable=False)
-    total_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 2), nullable=False)
-
-    # ======================
-    # RELATIONSHIPS
-    # ======================
 
     repair = relationship(
         "Repair",
@@ -32,20 +27,8 @@ class RepairPart(Base, UUIDMixing):
         lazy="selectin"
     )
 
-    # ======================
-    # VALIDATION
-    # ======================
-
     @validates("quantity")
     def validate_quantity(self, key, value):
         if value <= 0:
             raise ValueError("quantity must be > 0")
         return value
-
-    # ======================
-    # BUSINESS LOGIC
-    # ======================
-
-    def calculate_total(self):
-        if self.unit_price:
-            self.total_price = self.unit_price * self.quantity

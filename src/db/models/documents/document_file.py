@@ -23,7 +23,6 @@ class DocumentFile(Base, UUIDMixing):
 
     file_name: Mapped[str] = mapped_column(String(255))
     file_path: Mapped[str] = mapped_column(String(500))
-
     file_size: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     content_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 

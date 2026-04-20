@@ -1,38 +1,54 @@
+from fastapi import Depends
+from core.security.rbac.guards import require_role, require_permission
+from core.security.rbac.permissions import Permissions
 from db.models.enums import UserRole
-from core.security.permissions import Permissions
-from core.security.rbac.guards import require_roles, require_permissions
+
+# =================================================================
+# ROLE-BASED PRESETS (Жесткие проверки по роли)
+# =================================================================
+
+# Только для разработчика/главного админа
+IsSuperAdmin = Depends(require_role(UserRole.SUPERADMIN.value))
+
+# Для административного персонала (пропустит и супера)
+IsAdmin = Depends(require_role(UserRole.ADMIN.value))
+
+# Для модераторов
+IsModerator = Depends(require_role(UserRole.MODERATOR.value))
+
+# Любой сотрудник (не обычный юзер)
+IsStaff = Depends(require_role(
+    UserRole.ADMIN.value,
+    UserRole.MODERATOR.value,
+    UserRole.ANALYTIC.value
+))
 
 
-# =========================
-# ROLE PRESETS
-# =========================
-IsSuperAdmin = require_roles(UserRole.SUPERADMIN)
+# =================================================================
+# PERMISSION-BASED PRESETS (Гибкие проверки по правам)
+# =================================================================
 
-IsAdmin = require_roles(
-    UserRole.ADMIN,
-    UserRole.SUPERADMIN,
-)
+# --- Users Management ---
+CanViewUsers = Depends(require_permission(Permissions.USERS_VIEW))
+CanCreateUsers = Depends(require_permission(Permissions.USERS_CREATE))
+CanManageUsers = Depends(require_permission(Permissions.USERS_EDIT, Permissions.USERS_CREATE))
+CanDeleteUsers = Depends(require_permission(Permissions.USERS_DELETE))
 
-IsModerator = require_roles(
-    UserRole.MODERATOR,
-    UserRole.SUPERADMIN,
-)
+# --- Audit & Security ---
+CanViewAudit = Depends(require_permission(Permissions.AUDIT_VIEW))
+CanExportAudit = Depends(require_permission(Permissions.AUDIT_EXPORT))
+CanFullAuditControl = Depends(require_permission(Permissions.AUDIT_VIEW, Permissions.AUDIT_CLEANUP))
 
-IsAnalytic = require_roles(
-    UserRole.ANALYTIC,
-    UserRole.SUPERADMIN,
-)
+# --- RBAC ---
+CanManageRoles = Depends(require_permission(Permissions.ROLES_MANAGE))
 
+# --- Sessions ---
+CanViewSessions = Depends(require_permission(Permissions.SESSIONS_VIEW))
+CanRevokeSessions = Depends(require_permission(Permissions.SESSIONS_REVOKE))
 
-# =========================
-# PERMISSION PRESETS
-# =========================
-CanReadUsers = require_permissions(Permissions.USERS_READ)
-CanCreateUsers = require_permissions(Permissions.USERS_CREATE)
-CanUpdateUsers = require_permissions(Permissions.USERS_UPDATE)
-CanDeleteUsers = require_permissions(Permissions.USERS_DELETE)
+# --- Assets ---
+CanUploadAssets = Depends(require_permission(Permissions.ASSETS_UPLOAD))
+CanDeleteAssets = Depends(require_permission(Permissions.ASSETS_DELETE))
 
-CanReadAudit = require_permissions(Permissions.AUDIT_READ)
-
-CanReadSessions = require_permissions(Permissions.SESSIONS_READ)
-CanDeleteSessions = require_permissions(Permissions.SESSIONS_DELETE)
+# --- System ---
+CanViewSystemHealth = Depends(require_permission(Permissions.SYSTEM_HEALTH))

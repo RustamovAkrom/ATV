@@ -47,14 +47,6 @@ class Settings(BaseSettings):
     ALLOWED_HOSTS: list[str] = ["*"]
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
 
-    @field_validator("SECRET_KEY")
-    @classmethod
-    def validate_secret(cls, v: str):
-        if len(v) < 32:
-            raise ValueError("SECRET_KEY must be at least 32 charecters")
-        return v
-
-
     # PostgreSQL
     POSTGRES_HOST: str
     POSTGRES_PORT: int
@@ -70,6 +62,9 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRES_MINUTES: int = 15
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # Passwords hash
+    BCRYPT_ROUNDS: int = 12
+
     # SlowAPI
     RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_STORAGE_URL: str = "memory://"
@@ -78,7 +73,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_TRUSTED_PROXIES: str = ""
 
     # redis
-    REDIS_URL: str
+    REDIS_URL: str = "redis://redis:6379/0"
     LOGIN_RATE_LIMIT_MAX_ATTEMPTS: int = 5
     LOGIN_RATE_LIMIT_BLOCK_SECONDS: int = 15
 
@@ -91,9 +86,9 @@ class Settings(BaseSettings):
     CELERY_TIMEZONE: str = "UTC"
 
     # E-Mail
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
     SMTP_FROM: str
-    SMTP_HOST: str
-    SMTP_PORT: str
     SMTP_USER: str
     SMTP_PASSWORD: str
 

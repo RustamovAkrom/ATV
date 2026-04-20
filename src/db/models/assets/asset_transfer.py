@@ -2,14 +2,14 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from db.base import Base, TimestampMixin, UUIDMixing
+from db.models.enums import TransferStatus
 
-if TYPE_CHECKING:
-    pass
 
 
 class AssetTransfer(Base, UUIDMixing, TimestampMixin):
@@ -19,26 +19,16 @@ class AssetTransfer(Base, UUIDMixing, TimestampMixin):
         ForeignKey("assets.id", ondelete="CASCADE"),
         index=True,
     )
+    created_by_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
 
-    from_warehouse_id: Mapped[Optional[UUID]] = mapped_column(
-        ForeignKey("warehouses.id")
-    )
+    status: Mapped[TransferStatus] = mapped_column(SAEnum(TransferStatus), default=TransferStatus.PENDING.value)
+    from_warehouse_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("warehouses.id"))
+    to_warehouse_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("warehouses.id"))
 
-    to_warehouse_id: Mapped[Optional[UUID]] = mapped_column(
-        ForeignKey("warehouses.id")
-    )
+    from_service_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("services.id"))
+    to_service_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("services.id"))
 
-    from_service_id: Mapped[Optional[UUID]] = mapped_column(
-        ForeignKey("services.id")
-    )
-
-    to_service_id: Mapped[Optional[UUID]] = mapped_column(
-        ForeignKey("services.id")
-    )
-
-    transferred_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    transferred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     comment: Mapped[Optional[str]] = mapped_column(String(255))
 
@@ -55,9 +45,5 @@ class AssetTransfer(Base, UUIDMixing, TimestampMixin):
         lazy="selectin"
     )
 
-    # business
-    def is_internal_transfer(self) -> bool:
-        return self.from_service_id == self.to_service_id
-
-    def is_warehouse_transfer(self) -> bool:
-        return self.from_warehouse_id != self.to_warehouse_id
+    received_by_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="pending")

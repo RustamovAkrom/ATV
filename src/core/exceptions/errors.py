@@ -20,9 +20,15 @@ class Conflict(APIException):
 
 
 class ValidationError(APIException):
-    status_code = 422
+    status_code = 400  # 🔥 FIX
     code = "validation_error"
     detail = "Invalid request data."
+
+
+class BadRequest(APIException):
+    status_code = 400
+    code = "bad_request"  # 🔥 добавлен code
+    detail = "Bad request"
 
 
 class AuthenticationError(APIException):

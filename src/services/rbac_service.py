@@ -1,9 +1,10 @@
 from uuid import UUID
 
-from core.exceptions.errors import InvalidToken
+from core.exceptions.errors import NotFound, ValidationError, BadRequest, BadRequest
 from db.models.users.permission import Role
 from repositories.rbac_repo import RBACRepository
 from schemas.rbac import RoleCreate, RoleUpdate
+from sqlalchemy.exc import IntegrityError
 
 
 class RBACService:
@@ -15,34 +16,62 @@ class RBACService:
         return await self.rbac_repo.get_roles()
 
     async def get_role(self, role_id: UUID):
-        role = await self.rbac_repo.get_role(role_id)
-        if not role:
-            raise InvalidToken()
-        return role
+        try:
+            role = await self.rbac_repo.get_role(role_id)
+            if not role:
+                raise NotFound("Role not found")
+            return role
+        except IntegrityError:
+            raise BadRequest("Role with this code already exists")
 
     async def create_role(self, data: RoleCreate):
-        role = Role(
-            name=data.name,
-            code=data.code,
-            description=data.description,
-        )
-        return await self.rbac_repo.create_role(role)
+        # normalize
+        code = data.code.lower().strip()
+
+        if await self.rbac_repo.exists_by_code(code):
+            raise ValidationError("Role code already exists")
+
+        if await self.rbac_repo.exists_by_name(data.name):
+            raise ValidationError("Role name already exists")
+
+        try:
+            role = Role(
+                name=data.name.strip(),
+                code=data.code,
+                description=(data.description or "").strip() or None,
+            )
+            return await self.rbac_repo.create_role(role)
+        except IntegrityError:
+            raise BadRequest("Role with this code already exists")
 
     async def update_role(self, role_id: UUID, data: RoleUpdate):
         role = await self.rbac_repo.get_role(role_id)
         if not role:
-            raise InvalidToken()
+            raise NotFound("Role not found")
 
         payload = data.model_dump(exclude_unset=True)
-        if payload.get("code"):
-            payload["code"] = payload["code"].lower()
+
+        if "code" in payload and payload["code"]:
+            payload["code"] = payload["code"].lower().strip()
+            if await self.rbac_repo.exists_by_code(payload["code"], exclude_id=role_id):
+                raise ValidationError("Role code already exists")
+
+        if "name" in payload and payload["name"]:
+            payload["name"] = payload["codnamee"].lower().strip()
+            if await self.rbac_repo.exists_by_name(payload["name"], exclude_id=role_id):
+                raise ValidationError("Role name already exists")
 
         return await self.rbac_repo.update_role(role_id, payload)
 
     async def delete_role(self, role_id: UUID):
         role = await self.rbac_repo.get_role(role_id)
         if not role:
-            raise InvalidToken()
+            raise BadRequest("Role not found")
+
+        # safety:
+        if role.users:
+            raise BadRequest("Cannot delete role with assigned users")
+
         await self.rbac_repo.delete_role(role_id)
 
     # PERMISSIONS
@@ -53,11 +82,15 @@ class RBACService:
     async def set_role_permissions(self, role_id: UUID, permission_ids: list[UUID]):
         role = await self.rbac_repo.get_role(role_id)
         if not role:
-            raise InvalidToken()
+            raise NotFound("Role not found")
+
+        # remove duplicates early
+        permission_ids = list(set(permission_ids))
 
         permissions = await self.rbac_repo.get_permissions_by_ids(permission_ids)
+
         if len(permissions) != len(permission_ids):
-            raise InvalidToken("Some permissions not found")
+            raise ValidationError("Some permissions not found")
 
         await self.rbac_repo.set_role_permissions(role, permissions)
 

@@ -1,25 +1,25 @@
 from uuid import UUID
+from fastapi import APIRouter, Depends
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-
+from api.dependencies.users import get_user_service
+from core.cache.decorators import cached, invalidate_cache
+from core.exceptions.errors import BadRequest
 from core.security.auth.dependencies import get_current_user
 from core.security.auth.types import CurrentUser
-from core.security.rbac.presets import IsAdmin
-from services.user_service import UserService
-from api.dependencies.users import get_user_service
-from schemas.users import (
-    UserCreate,
-    UserUpdate,
-    AdminUserUpdate,
-    UserOut,
-    ChangePasswordRequest,
-)
+# Импортируем наши точные пресеты
+from core.security.rbac import presets
 from db.models.users.user import User
 from schemas.pagination import PaginationParams
-
+from schemas.users import (
+    AdminUserUpdate,
+    ChangePasswordRequest,
+    UserCreate,
+    UserOut,
+    UserUpdate,
+)
+from services.user_service import UserService
 
 router = APIRouter(prefix="/users", tags=["Users"])
-
 
 def _to_user_out(user: User) -> UserOut:
     role = getattr(user.role, "code", None)
@@ -42,8 +42,10 @@ def _to_user_out(user: User) -> UserOut:
         updated_at=getattr(user, "updated_at", None),
     )
 
+# --- ЛИЧНЫЕ ДАННЫЕ (Доступно всем авторизованным) ---
 
 @router.get("/me", response_model=UserOut)
+@cached(ttl=60, tags=("users:me",))
 async def me(
     current_user: CurrentUser = Depends(get_current_user),
     service: UserService = Depends(get_user_service),
@@ -51,8 +53,8 @@ async def me(
     user = await service.get(current_user.id)
     return _to_user_out(user)
 
-
 @router.patch("/me", response_model=UserOut)
+@invalidate_cache(tags=("users:list", "users:search", "users:detail", "users:me"))
 async def update_me(
     data: UserUpdate,
     current_user: CurrentUser = Depends(get_current_user),
@@ -61,8 +63,8 @@ async def update_me(
     user = await service.update(current_user.id, data)
     return _to_user_out(user)
 
-
 @router.post("/me/change-password")
+@invalidate_cache(tags=("users:me",))
 async def change_password(
     data: ChangePasswordRequest,
     current_user: CurrentUser = Depends(get_current_user),
@@ -75,83 +77,96 @@ async def change_password(
     )
     return {"status": "ok"}
 
-# ADMIN
-@router.get("/", response_model=list[UserOut])
+# --- УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ (Reliable RBAC) ---
+
+@router.get("/", response_model=list[UserOut], dependencies=[presets.CanViewUsers])
+@cached(ttl=60, tags=("users:list",))
 async def list_users(
-    _: CurrentUser = Depends(IsAdmin),
     service: UserService = Depends(get_user_service),
     pagination: PaginationParams = Depends(),
 ):
-    users = await service.get_all(pagination.limit, pagination.offset())
+    users = await service.get_all(pagination)
     return [_to_user_out(user) for user in users]
 
-
-@router.post("/", response_model=UserOut)
+@router.post("/", response_model=UserOut, dependencies=[presets.CanCreateUsers])
+@invalidate_cache(tags=("users:list", "users:search"))
 async def create_user(
     data: UserCreate,
-    _: CurrentUser = Depends(IsAdmin),
     service: UserService = Depends(get_user_service),
 ):
     user = await service.create(data)
     user = await service.get(user.id)
     return _to_user_out(user)
 
-
-@router.patch("/{user_id}", response_model=UserOut)
-async def update_user(
-    user_id: UUID,
-    data: AdminUserUpdate,
-    current_user: CurrentUser = Depends(IsAdmin),
+@router.get("/search", response_model=list[UserOut], dependencies=[presets.CanViewUsers])
+@cached(ttl=30, tags=("users:search",))
+async def search_users(
+    q: str,
     service: UserService = Depends(get_user_service),
+    pagination: PaginationParams = Depends(),
 ):
-    if user_id == current_user.id:
-        raise HTTPException(400, "Cannot modify yourself")
+    users = await service.search(q, pagination)
+    return [_to_user_out(user) for user in users]
 
-    user = await service.admin_update(user_id, data)
-    return _to_user_out(user)
-
-
-@router.get("/{user_id}", response_model=UserOut)
+@router.get("/{user_id}", response_model=UserOut, dependencies=[presets.CanViewUsers])
+@cached(ttl=60, tags=("users:detail",))
 async def get_user(
     user_id: UUID,
-    _: CurrentUser = Depends(IsAdmin),
     service: UserService = Depends(get_user_service),
 ):
     user = await service.get(user_id)
     return _to_user_out(user)
 
-
-@router.delete("/{user_id}")
-async def archive_user(
+@router.patch("/{user_id}", response_model=UserOut)
+@invalidate_cache(tags=("users:list", "users:search", "users:detail"))
+async def update_user(
     user_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    data: AdminUserUpdate,
+    # Используем CanManageUsers (Админы/Суперадмины)
+    current_user: CurrentUser = presets.CanManageUsers,
     service: UserService = Depends(get_user_service),
 ):
     if user_id == current_user.id:
-        raise HTTPException(400, "Cannot delete yourself")
+        raise BadRequest("Cannot modify yourself. Use /me")
+
+    user = await service.admin_update(user_id, data)
+    return _to_user_out(user)
+
+@router.delete("/{user_id}")
+@invalidate_cache(tags=("users:list", "users:search", "users:detail"))
+async def archive_user(
+    user_id: UUID,
+    current_user: CurrentUser = presets.CanDeleteUsers,
+    service: UserService = Depends(get_user_service),
+):
+    if user_id == current_user.id:
+        raise BadRequest("Cannot delete yourself")
 
     await service.archive(user_id)
     return {"status": "archived"}
 
-
 @router.post("/{user_id}/block")
+@invalidate_cache(tags=("users:list", "users:search", "users:detail"))
 async def block_user(
     user_id: UUID,
-    current_user: CurrentUser = Depends(IsAdmin),
+    current_user: CurrentUser = presets.CanManageUsers,
     service: UserService = Depends(get_user_service),
 ):
     if user_id == current_user.id:
-        raise HTTPException(400, "Cannot block yourself")
+        raise BadRequest("Cannot block yourself")
 
     await service.block(user_id)
     return {"status": "blocked"}
 
-
 @router.post("/{user_id}/activate")
+@invalidate_cache(tags=("users:list", "users:search", "users:detail"))
 async def activate_user(
     user_id: UUID,
-    _: CurrentUser = Depends(IsAdmin),
+    current_user: CurrentUser = presets.CanManageUsers,
     service: UserService = Depends(get_user_service),
 ):
+    if user_id == current_user.id:
+        raise BadRequest("Cannot activate yourself")
+
     await service.activate(user_id)
     return {"status": "active"}

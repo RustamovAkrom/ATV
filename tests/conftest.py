@@ -1,15 +1,20 @@
 from collections.abc import AsyncGenerator
 from typing import Any
 from uuid import uuid4
+
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
-
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy import select
 
 from db.models.users.user import User
-from db.models.users.permission import Role
+from db.models.users.permission import Role, Permission
 from db.models.enums import UserRole, UserStatus
 from core.security.passwords import hash_password
 from app import create_app
@@ -17,20 +22,18 @@ from core.config import get_settings
 from db.dependencies import get_db_session
 from db.meta import meta
 from db.models import load_all_models
+from tests.utils.auth import login
 
+
+# ---------------- ENGINE ----------------
 
 @pytest.fixture(scope="session")
 async def _engine() -> AsyncGenerator[AsyncEngine, None]:
-    """
-    Create engine and databases.
-
-    :yield: new engine.
-    """
     settings = get_settings()
 
     load_all_models()
 
-    engine = create_async_engine(str(settings.postgres_async_url), echo=True)
+    engine = create_async_engine(str(settings.postgres_async_url), echo=False)
 
     async with engine.begin() as conn:
         await conn.run_sync(meta.create_all)
@@ -41,19 +44,13 @@ async def _engine() -> AsyncGenerator[AsyncEngine, None]:
         await engine.dispose()
 
 
+# ---------------- SESSION ----------------
+
 @pytest.fixture
 async def dbsession(
     _engine: AsyncEngine,
 ) -> AsyncGenerator[AsyncSession, None]:
-    """
-    Get session to database.
 
-    Fixture that returns a SQLAlchemy session with a SAVEPOINT, and the rollback to it
-    after the test completes.
-
-    :param _engine: current engine.
-    :yields: async session.
-    """
     connection = await _engine.connect()
     trans = await connection.begin()
 
@@ -71,15 +68,10 @@ async def dbsession(
         await connection.close()
 
 
-@pytest.fixture
-async def fastapi_app(
-    dbsession: AsyncSession,
-) -> FastAPI:
-    """
-    Fixture for creating FastAPI app.
+# ---------------- APP ----------------
 
-    :return: fastapi app with mocked dependencies.
-    """
+@pytest.fixture
+async def fastapi_app(dbsession: AsyncSession) -> FastAPI:
     app = create_app()
 
     async def override_db():
@@ -87,20 +79,17 @@ async def fastapi_app(
 
     app.dependency_overrides[get_db_session] = override_db
 
+    # отключаем audit middleware в тестах
     app.user_middleware = [
         m for m in app.user_middleware
         if m.cls.__name__ != "AuditMiddleware"
     ]
-    return app  # noqa: WPS331
+
+    return app
 
 
 @pytest.fixture(scope="session")
 def anyio_backend() -> str:
-    """
-    Backend for anyio pytest plugin.
-
-    :return: backend name.
-    """
     return "asyncio"
 
 
@@ -109,12 +98,7 @@ async def client(
     fastapi_app: FastAPI,
     anyio_backend: Any,
 ) -> AsyncGenerator[AsyncClient, None]:
-    """
-    Fixture that creates client for requesting server.
 
-    :param fastapi_app: the application.
-    :yield: client for the app.
-    """
     transport = ASGITransport(
         app=fastapi_app,
         raise_app_exceptions=True,
@@ -127,41 +111,94 @@ async def client(
         yield client
 
 
+# ---------------- USER FACTORY ----------------
 
 @pytest.fixture
 async def create_user(dbsession):
-    async def _create(
-        login: str = "test_user",
-        password: str = "password",
-        email: str | None = None,
-        phone: str | None = None,
-    ):
+    async def _create(login="test_user", password="password"):
         role_result = await dbsession.execute(
             select(Role).where(Role.code == UserRole.SUPERADMIN.value)
         )
         role = role_result.scalar_one_or_none()
 
-        if role is None:
+        if not role:
             role = Role(
                 name="SuperAdmin",
                 code=UserRole.SUPERADMIN.value,
             )
-            dbsession.add(role)
-            await dbsession.flush()
+        dbsession.add(role)
+        await dbsession.flush()
 
         suffix = uuid4().hex[:8]
 
         user = User(
             login=login,
             password_hash=hash_password(password),
-            email=email or f"{login}_{suffix}@test.com",
-            phone=phone or f"+998900{suffix[:6]}",
+            email=f"{login}_{suffix}@test.com",
+            phone=f"+998900{suffix[:6]}",
             role_id=role.id,
             status=UserStatus.ACTIVE.value,
         )
 
         dbsession.add(user)
-        await dbsession.flush()
+        await dbsession.commit()
+
         return user
 
     return _create
+
+
+# ---------------- SUPERADMIN ----------------
+
+@pytest.fixture
+async def superadmin(create_user):
+    return await create_user(login="superadmin", password="password")
+
+
+@pytest.fixture
+async def superadmin_token(client: AsyncClient, superadmin):
+    _, access_token = await login(client, "superadmin", "password")
+    return access_token
+
+
+# ---------------- PERMISSIONS ----------------
+
+@pytest.fixture
+async def permission_id(dbsession):
+    perm = Permission(name="Test", code="test_perm")
+    dbsession.add(perm)
+    await dbsession.commit()
+    return perm.id
+
+
+# ---------------- ROLE ----------------
+
+@pytest.fixture
+async def role_id(client, superadmin_token):
+    res = await client.post(
+        "/rbac/roles",
+        json={"name": "TestRole", "code": "testrole"},
+        headers={"Authorization": f"Bearer {superadmin_token}"},
+    )
+    return res.json()["id"]
+
+
+@pytest.fixture
+async def role_with_users(dbsession):
+    role = Role(name="RoleWithUsers", code="role_with_users")
+    dbsession.add(role)
+    await dbsession.flush()
+
+    user = User(
+        login="user2",
+        password_hash=hash_password("password"),
+        email="user2@test.com",
+        phone="+998900000000",
+        role_id=role.id,
+        status=UserStatus.ACTIVE.value,
+    )
+    dbsession.add(user)
+
+    await dbsession.commit()
+
+    return role.id

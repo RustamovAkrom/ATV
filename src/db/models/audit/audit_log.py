@@ -2,8 +2,9 @@
 
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
-from sqlalchemy import Boolean, Integer, String, Text, DateTime
+from sqlalchemy import Boolean, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 from db.base import Base, UUIDMixing
@@ -17,7 +18,7 @@ class AuditLog(Base, UUIDMixing):
 
     status_code: Mapped[int] = mapped_column(Integer)
 
-    user_id: Mapped[Optional[str]] = mapped_column(String(36), index=True)
+    user_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
 
     request_id: Mapped[str] = mapped_column(String(36), index=True)
 

@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from db.models.users import Role, User
 from db.models.enums import UserStatus
+from schemas.pagination import PaginationParams
 
 
 class UserRepository:
@@ -42,9 +43,23 @@ class UserRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_all(self, limit: int, offset: int) -> list[User]:
+    async def list(self, pagination: PaginationParams) -> list[User]:
         result = await self.session.execute(
-            self._base_query().limit(limit).offset(offset)
+            self._base_query().limit(pagination.limit).offset(pagination.offset())
+        )
+        return result.scalars().all()
+
+    async def search(self, query: str, pagination: PaginationParams):
+        result = await self.session.execute(
+            self._base_query(include_inactive=True)
+            .where(
+                or_(
+                    User.login.ilike(f"%{query}%"),
+                    User.email.ilike(f"%{query}%"),
+                )
+            )
+            .limit(pagination.limit)
+            .offset(pagination.offset())
         )
         return result.scalars().all()
 
@@ -72,13 +87,6 @@ class UserRepository:
             .values(**data)
         )
 
-    async def delete(self, user_id: UUID) -> None:
-        await self.session.execute(
-            update(User)
-            .where(User.id == user_id)
-            .values(status=UserStatus.ARCHIVED.value)
-        )
-
     async def set_password(self, user_id: UUID, password_hash: str):
         await self.session.execute(
             update(User)
@@ -93,6 +101,13 @@ class UserRepository:
             .values(status=status)
         )
 
+    async def update_role(self, user_id: UUID, role_id: UUID) -> None:
+        await self.session.execute(
+            update(User)
+            .where(User.id == user_id)
+            .values(role_id=role_id)
+        )
+
     async def get_all_with_inactive(self, limit: int, offset: int):
         result = await self.session.execute(
             self._base_query(include_inactive=True)
@@ -100,13 +115,6 @@ class UserRepository:
             .offset(offset)
         )
         return result.scalars().all()
-
-    async def update_role(self, user_id: UUID, role_id: UUID) -> None:
-        await self.session.execute(
-            update(User)
-            .where(User.id == user_id)
-            .values(role_id=role_id)
-        )
 
     async def set_permissions(self, user: User, permissions: list) -> None:
         user.permissions = permissions

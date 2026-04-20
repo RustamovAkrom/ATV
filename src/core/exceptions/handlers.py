@@ -3,26 +3,31 @@ import uuid
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.encoders import jsonable_encoder
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
 from slowapi.errors import RateLimitExceeded
 from sqlalchemy.exc import IntegrityError
 from asyncpg.exceptions import ForeignKeyViolationError, UniqueViolationError
-from core.exceptions.errors import Conflict, ValidationError
+
 from core.slowapi import rate_limit_exceeded_handler
 from core.logger import configure_logger
 
 from .base import APIException
-from .errors import InternalError
+from .errors import InternalError, Conflict, ValidationError
 
 
 def configure_exception_handlers(app: FastAPI) -> None:
     logger = configure_logger()
 
-    # SlowAPI Exception Handler
+    # =========================
+    # RATE LIMIT
+    # =========================
     app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
-    # APIException
+    # =========================
+    # CUSTOM API EXCEPTION
+    # =========================
     @app.exception_handler(APIException)
     async def api_exception_handler(request: Request, exc: APIException):
         trace_id = str(uuid.uuid4())
@@ -42,6 +47,9 @@ def configure_exception_handlers(app: FastAPI) -> None:
             content=exc.to_dict(trace_id),
         )
 
+    # =========================
+    # REQUEST VALIDATION (🔥 FIX: 422 → 400)
+    # =========================
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError):
         trace_id = str(uuid.uuid4())
@@ -56,8 +64,8 @@ def configure_exception_handlers(app: FastAPI) -> None:
         )
 
         return JSONResponse(
-            status_code=422,
-            content=jsonable_encoder({   # ✅ ВАЖНО
+            status_code=400,  # 🔥 FIX
+            content=jsonable_encoder({
                 "error": {
                     "code": "validation_error",
                     "message": "Invalid request data",
@@ -67,10 +75,22 @@ def configure_exception_handlers(app: FastAPI) -> None:
             }),
         )
 
-    # 🔴 FastAPI HTTPException
+    # =========================
+    # HTTP EXCEPTION
+    # =========================
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         trace_id = str(uuid.uuid4())
+
+        logger.warning(
+            "HTTP exception",
+            extra={
+                "trace_id": trace_id,
+                "path": request.url.path,
+                "status_code": exc.status_code,
+                "detail": exc.detail,
+            },
+        )
 
         return JSONResponse(
             status_code=exc.status_code,
@@ -83,26 +103,9 @@ def configure_exception_handlers(app: FastAPI) -> None:
             },
         )
 
-    # 🔴 UNEXPECTED ERROR (CRITICAL)
-    @app.exception_handler(Exception)
-    async def unexpected_exception_handler(request: Request, exc: Exception):
-        trace_id = str(uuid.uuid4())
-
-        logger.exception(
-            "Unhandled exception",
-            extra={
-                "trace_id": trace_id,
-                "path": request.url.path,
-            },
-        )
-
-        error = InternalError()
-
-        return JSONResponse(
-            status_code=error.status_code,
-            content=error.to_dict(trace_id),
-        )
-
+    # =========================
+    # DATABASE EXCEPTIONS
+    # =========================
     @app.exception_handler(IntegrityError)
     async def db_exception_handler(request: Request, exc: IntegrityError):
         trace_id = str(uuid.uuid4())
@@ -117,6 +120,37 @@ def configure_exception_handlers(app: FastAPI) -> None:
 
         else:
             error = ValidationError(detail="Database error")
+
+        logger.warning(
+            "Database error",
+            extra={
+                "trace_id": trace_id,
+                "path": request.url.path,
+                "error": str(orig),
+            },
+        )
+
+        return JSONResponse(
+            status_code=error.status_code,
+            content=error.to_dict(trace_id),
+        )
+
+    # =========================
+    # UNHANDLED EXCEPTIONS
+    # =========================
+    @app.exception_handler(Exception)
+    async def unexpected_exception_handler(request: Request, exc: Exception):
+        trace_id = str(uuid.uuid4())
+
+        logger.exception(
+            "Unhandled exception",
+            extra={
+                "trace_id": trace_id,
+                "path": request.url.path,
+            },
+        )
+
+        error = InternalError()
 
         return JSONResponse(
             status_code=error.status_code,

@@ -61,29 +61,3 @@ class Warehouse(Base, UUIDMixing, TimestampMixin):
     )
     manager_user: Mapped[Optional["User"]] = relationship("User", lazy="selectin")
     service: Mapped[Optional["Service"]] = relationship("Service", lazy="selectin")
-
-    # ======================
-    # BUSINESS LOGIC
-    # ======================
-
-    def is_empty(self) -> bool:
-        return len(self.assets) == 0
-
-    def can_store_assets(self) -> bool:
-        return self.is_active
-
-    def deactivate(self):
-        if not self.is_empty():
-            raise ValueError("Cannot deactivate non-empty warehouse")
-
-        self.is_active = False
-
-    def to_dict(self):
-        return {
-            "id": str(self.id),
-            "name": self.name,
-            "code": self.code,
-            "region_id": str(self.region_id),
-            "service_id": str(self.service_id),
-            "is_active": self.is_active,
-        }

@@ -1,26 +1,30 @@
 from fastapi import APIRouter, Depends
 
-from core.security.rbac.guards import require_roles, require_permissions
-from db.models.enums import UserRole
+from core.security.rbac import presets
+from core.security.rbac.permissions import Permissions
 from core.security.auth.types import CurrentUser
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 @router.get("/")
-async def dashboard(
-    user: CurrentUser = Depends(require_roles(UserRole.ADMIN)),
+async def get_main_dashboard(
+    # Используем готовый пресет (пропустит Admin и SuperAdmin)
+    user: CurrentUser = presets.IsAdmin,
 ):
     return {
         "message": f"Welcome {user.id}",
         "role": user.role,
+        "permissions": user.permissions
     }
 
 
 @router.get("/analytics")
-async def analytics(
-    user: CurrentUser = Depends(require_permissions("assets.read")),
+async def get_analytics(
+    # Используем типизированную проверку через Permissions
+    user: CurrentUser = presets.CanViewAudit,
 ):
     return {
         "message": f"Welcome to analytics dashboard {user.id}",
-        "ok": True
+        "ok": True,
+        "role": user.role
     }

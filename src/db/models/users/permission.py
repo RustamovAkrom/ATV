@@ -32,7 +32,6 @@ class Role(Base, UUIDMixing, TimestampMixin):
         back_populates="roles",
         lazy="selectin"
     )
-    def to_dict(self): return {"id": str(self.id), "name": self.name}
 
 
 class Permission(Base, UUIDMixing, TimestampMixin):
@@ -46,7 +45,6 @@ class Permission(Base, UUIDMixing, TimestampMixin):
         back_populates="permissions",
         lazy="selectin"
     )
-    def to_dict(self): return {"id": str(self.id), "code": self.code}
 
 
 __all__ = ["Role", "Permission", "role_permissions"]

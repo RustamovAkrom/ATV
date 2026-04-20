@@ -15,8 +15,7 @@ class RoleOut(BaseModel):
     id: UUID
     name: str
     code: str
-    permissions: List[PermissionOut] = Field(default_factory=list)
-
+    permissions: List[PermissionOut] = []
     model_config = ConfigDict(from_attributes=True)
 
 

@@ -1,15 +1,25 @@
-# src/core/audit/middleware.py
-
+import asyncio
 import time
 import uuid
-import asyncio
 
-from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.requests import Request
+from starlette.types import ASGIApp, Receive, Scope, Send
+
+from core.audit.stream import audit_stream
 from core.config import get_settings
 from core.database.db_async import get_async_session_factory
-from tasks.audit_task import process_audit_log_task
 from repositories.audit_repo import AuditRepository
+from schemas.audit import AuditCreate, AuditStreamSchema
+from services.audit_service import AuditService
+from tasks.audit_task import process_audit_log_task
+
+
+def _get_level(status: int) -> str:
+    if status >= 500:
+        return "critical"
+    if status >= 400:
+        return "warning"
+    return "info"
 
 
 class AuditMiddleware:
@@ -23,17 +33,38 @@ class AuditMiddleware:
             return
 
         request = Request(scope, receive)
-
         start = time.perf_counter()
 
-        request_id = scope.get("state", {}).get("request_id") or str(uuid.uuid4())
-        scope.setdefault("state", {})["request_id"] = request_id
+        state = scope.setdefault("state", {})
+        request_id = getattr(request.state, "request_id", None) or state.get("request_id")
+        if not request_id:
+            request_id = str(uuid.uuid4())
 
-        logger = scope.get("state", {}).get("logger")
+        request.state.request_id = request_id
+        state["request_id"] = request_id
+
+        logger = getattr(request.state, "logger", None)
+
+        async def safe_publish(event: dict):
+            try:
+                await audit_stream.publish(event)
+            except Exception as exc:
+                if logger:
+                    logger.warning("audit_stream_publish_failed", error=str(exc))
+
+        async def persist_dev(payload: AuditCreate):
+            try:
+                session_factory = get_async_session_factory()
+                async with session_factory() as session:
+                    async with session.begin():
+                        service = AuditService(AuditRepository(session))
+                        await service.persist_audit(payload)
+            except Exception as exc:
+                if logger:
+                    logger.warning("audit_persist_failed", error=str(exc))
 
         async def send_wrapper(message):
             if message["type"] == "http.response.start":
-
                 latency = int((time.perf_counter() - start) * 1000)
 
                 headers = dict(scope["headers"])
@@ -46,41 +77,34 @@ class AuditMiddleware:
                     else scope.get("client")[0] if scope.get("client") else None
                 )
 
-                payload = {
+                status_code = message["status"]
+
+                base_payload = {
                     "method": scope["method"],
                     "path": scope["path"],
-                    "status_code": message["status"],
-                    "user_id": scope["state"].get("user_id"),
+                    "status_code": status_code,
+                    "user_id": state.get("user_id"),
                     "request_id": request_id,
                     "latency_ms": latency,
                     "ip": ip,
                     "user_agent": user_agent,
-                    "query": str(request.query_params),
-                    "is_suspicious": message["status"] >= 500,
+                    "query": str(request.query_params) or None,
+                    "is_suspicious": status_code >= 500,
                 }
 
-                if logger:
-                    logger.info("audit_log_created", **payload)
+                db_payload = AuditCreate(**base_payload)
+                stream_payload = AuditStreamSchema(
+                    **base_payload,
+                    level=_get_level(status_code),
+                    timestamp=time.time(),
+                )
+
+                asyncio.create_task(safe_publish(stream_payload.model_dump()))
 
                 if self.settings.ENV == "prod":
-                    print("[PROD] process audit log task")
-                    process_audit_log_task.delay(payload)
-
+                    process_audit_log_task.delay(db_payload.model_dump())
                 else:
-                    print("[DEV] process audit log task without celery + redis!")
-                    async def run():
-                        session_factory = get_async_session_factory()
-
-                        async with session_factory() as session:
-                            async with session.begin():
-                                repo = AuditRepository(session)
-                                await repo.create(payload)
-
-                    try:
-                        asyncio.create_task(run())
-                    except RuntimeError as e:
-                        print("[DEV] Runtime error: ", e)
-                        asyncio.run(run())
+                    asyncio.create_task(persist_dev(db_payload))
 
             await send(message)
 

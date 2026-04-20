@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Audit Monitor</title>
+
+<style>
+:root {
+    --bg: #0f172a;
+    --panel: #020617;
+    --border: #1e293b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+
+    --info: #22c55e;
+    --warn: #eab308;
+    --crit: #ef4444;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui;
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* HEADER */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+}
+
+h1 {
+    font-size: 16px;
+    margin: 0;
+}
+
+/* CONTROLS */
+.controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+input, select {
+    background: #020617;
+    border: 1px solid var(--border);
+    color: white;
+    padding: 6px;
+    border-radius: 6px;
+}
+
+button {
+    background: #1e293b;
+    border: none;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #334155;
+}
+
+/* STATS */
+.stats {
+    display: flex;
+    gap: 20px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    background: #020617;
+    font-size: 13px;
+}
+
+.stat {
+    color: var(--muted);
+}
+
+/* LOGS */
+#logs {
+    height: calc(100vh - 110px);
+    overflow-y: auto;
+    padding: 10px;
+}
+
+/* LOG ITEM */
+.log {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--info);
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 6px;
+    font-size: 12px;
+}
+
+.log.warning { border-left-color: var(--warn); }
+.log.critical { border-left-color: var(--crit); }
+
+.row {
+    display: flex;
+    gap: 10px;
+}
+
+.time { color: var(--muted); width: 90px; }
+.method { width: 60px; font-weight: bold; }
+.status { width: 50px; text-align: right; }
+.path { flex: 1; }
+
+/* DETAILS */
+.details {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.json {
+    margin-top: 5px;
+    font-family: monospace;
+    white-space: pre-wrap;
+    display: none;
+}
+
+.log.open .json {
+    display: block;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🚀 Audit Monitor</h1>
+
+    <div class="controls">
+        <input id="search" placeholder="Search..." />
+
+        <select id="level">
+            <option value="">All</option>
+            <option value="info">Info</option>
+            <option value="warning">Warning</option>
+            <option value="critical">Critical</option>
+        </select>
+
+        <select id="method">
+            <option value="">All</option>
+            <option>GET</option>
+            <option>POST</option>
+            <option>PUT</option>
+            <option>DELETE</option>
+        </select>
+
+        <button onclick="togglePause()">Pause</button>
+        <button onclick="clearLogs()">Clear</button>
+    </div>
+</header>
+
+<div class="stats">
+    <div class="stat">Total: <b id="total">0</b></div>
+    <div class="stat">Errors: <b id="errors">0</b></div>
+    <div class="stat">RPS: <b id="rps">0</b></div>
+</div>
+
+<div id="logs"></div>
+
+<script>
+let paused = false;
+let total = 0;
+let errors = 0;
+let requests = 0;
+
+const logs = document.getElementById("logs");
+
+const es = new EventSource("http://localhost:8001/audit/stream/");
+
+// RPS counter
+setInterval(() => {
+    document.getElementById("rps").innerText = requests;
+    requests = 0;
+}, 1000);
+
+es.onmessage = (event) => {
+    if (paused) return;
+
+    const data = JSON.parse(event.data);
+
+    if (!applyFilters(data)) return;
+
+    render(data);
+    updateStats(data);
+};
+
+function applyFilters(d) {
+    const search = document.getElementById("search").value.toLowerCase();
+    const level = document.getElementById("level").value;
+    const method = document.getElementById("method").value;
+
+    if (search && !JSON.stringify(d).toLowerCase().includes(search)) return false;
+    if (level && d.level !== level) return false;
+    if (method && d.method !== method) return false;
+
+    return true;
+}
+
+function updateStats(d) {
+    total++;
+    requests++;
+
+    if (d.status_code >= 400) errors++;
+
+    document.getElementById("total").innerText = total;
+    document.getElementById("errors").innerText = errors;
+}
+
+function render(d) {
+    const el = document.createElement("div");
+    el.className = `log ${d.level || "info"}`;
+
+    const time = new Date(d.timestamp * 1000 || Date.now()).toLocaleTimeString();
+
+    el.innerHTML = `
+        <div class="row">
+            <div class="time">${time}</div>
+            <div class="method">${d.method}</div>
+            <div class="path">${d.path}</div>
+            <div class="status">${d.status_code}</div>
+        </div>
+
+        <div class="details">
+            ${d.ip || "-"} • ${d.latency_ms}ms • ${d.user_id || "anon"}
+        </div>
+
+        <div class="json">${JSON.stringify(d, null, 2)}</div>
+    `;
+
+    el.onclick = () => el.classList.toggle("open");
+
+    logs.appendChild(el);
+
+    if (logs.children.length > 1000) {
+        logs.removeChild(logs.firstChild);
+    }
+
+    logs.scrollTop = logs.scrollHeight;
+}
+
+function togglePause() {
+    paused = !paused;
+}
+
+function clearLogs() {
+    logs.innerHTML = "";
+}
+</script>
+
+</body>
+</html>

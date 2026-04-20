@@ -2,10 +2,9 @@ from datetime import date
 from typing import TYPE_CHECKING, List, Optional
 from uuid import UUID
 
-from dateutil.relativedelta import relativedelta
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
-from db.models.enums import LifecycleStage
 from db.base import Base, TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
@@ -57,10 +56,6 @@ class AssetModel(Base, UUIDMixing, TimestampMixin):
         lazy="selectin"
     )
 
-    # ======================
-    # VALIDATION
-    # ======================
-
     @validates("lifetime_years")
     def validate_lifetime(self, key, value):
         if value is not None and value < 0:
@@ -72,56 +67,3 @@ class AssetModel(Base, UUIDMixing, TimestampMixin):
         if value is not None and value < 0:
             raise ValueError("warranty_months must be >= 0")
         return value
-
-    # ======================
-    # BUSINESS LOGIC
-    # ======================
-
-    def get_warranty_end(self, purchase_date: date | None) -> Optional[date]:
-        """
-        Рассчитать дату окончания гарантии
-        """
-        if not purchase_date or not self.warranty_months:
-            return None
-
-        return purchase_date + relativedelta(months=self.warranty_months)
-
-    def get_lifecycle_stage(self, purchase_date: date | None) -> str:
-        if not purchase_date or not self.lifetime_years:
-            return "unknown"
-
-        now = date.today()
-        delta = relativedelta(now, purchase_date)
-
-        total_months = delta.years * 12 + delta.months
-        lifetime_months = self.lifetime_years * 12
-
-        ratio = total_months / self.lifetime_years
-
-        if ratio < 0.5:
-            return LifecycleStage.NEW.value
-        elif ratio < 1.0:
-            return LifecycleStage.NORMAL.value
-        elif ratio < 1.5:
-            return LifecycleStage.OLD.value
-        else:
-            return LifecycleStage.CRITICAL.value
-
-    def is_out_of_warranty(self, purchase_date: date | None) -> bool:
-        """
-        Проверка гарантии
-        """
-        end_date = self.get_warranty_end(purchase_date)
-        if not end_date:
-            return False
-        return date.today() > end_date
-
-    def to_dict(self):
-        return {
-            "id": str(self.id),
-            "name": self.name,
-            "manufacturer_id": str(self.manufacturer_id),
-            "category_id": str(self.category_id),
-            "lifetime_years": self.lifetime_years,
-            "warranty_months": self.warranty_months,
-        }

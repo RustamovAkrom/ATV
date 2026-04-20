@@ -26,9 +26,26 @@ class RBACRepository:
         )
         return result.scalar_one_or_none()
 
+    async def exists_by_code(self, code: str, exclude_id: UUID | None = None) -> bool:
+        stmt = select(Role.id).where(Role.code == code)
+        if exclude_id:
+            stmt = stmt.where(Role.id != exclude_id)
+
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none() is not None
+
+    async def exists_by_name(self, name: str, exclude_id: UUID | None = None) -> bool:
+        stmt = select(Role.id).where(Role.name == name)
+        if exclude_id:
+            stmt = stmt.where(Role.id != exclude_id)
+
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none() is not None
+
     async def create_role(self, role: Role):
         self.session.add(role)
         await self.session.flush()
+        await self.session.refresh(role, ["permissions"])
         return role
 
     async def update_role(self, role_id: UUID, data: dict):
@@ -39,6 +56,8 @@ class RBACRepository:
         for k, v in data.items():
             setattr(role, k, v)
 
+        await self.session.flush()
+        await self.session.refresh(role, ["permissions"])
         return role
 
     async def delete_role(self, role_id: UUID):
@@ -52,6 +71,9 @@ class RBACRepository:
         return result.scalars().all()
 
     async def get_permissions_by_ids(self, ids: list[UUID]):
+        if not ids:
+            return []
+
         result = await self.session.execute(
             select(Permission).where(Permission.id.in_(ids))
         )

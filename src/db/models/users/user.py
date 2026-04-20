@@ -56,23 +56,8 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
     rank: Mapped["Rank"] = relationship("Rank", lazy="selectin")
 
     @property
-    def full_name(self) -> str:
-        return f"{self.first_name or ''} {self.last_name or ''}".strip()
-
-    def has_permission(self, code: str) -> bool:
-        return code in self.permissions
-
-    def change_status(self, new_status: str):
-        if new_status not in [e.value for e in UserStatus]:
-            raise ValueError("Invalid status")
-        self.status = new_status
-
-    @property
     def is_active(self) -> bool:
         return self.status == UserStatus.ACTIVE.value if self.status else False
-
-    def soft_delete(self):
-        self.status = UserStatus.ARCHIVED.value
 
     @property
     def permissions(self) -> list[str]:
