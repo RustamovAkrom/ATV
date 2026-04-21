@@ -2,12 +2,12 @@
 
 from datetime import date
 from decimal import Decimal
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING, List, Optional
 from uuid import UUID
 
 from sqlalchemy import JSON, CheckConstraint, Date
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy import ForeignKey, Numeric, String, Integer
+from sqlalchemy import ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from db.base import Base, TimestampMixin, UUIDMixing
@@ -16,12 +16,12 @@ from db.models.enums import AssetStatus, LifecycleStage
 if TYPE_CHECKING:
     from db.models.assets.asset_class import AssetClass
     from db.models.assets.asset_model import AssetModel
+    from db.models.documents.document import Document
     from db.models.org.region import Region
     from db.models.org.service import Service
     from db.models.repairs.repair import Repair
     from db.models.users.user import User
     from db.models.warehouse.warehouse import Warehouse
-    from db.models.documents.document import Document
 
 
 class Asset(Base, UUIDMixing, TimestampMixin):

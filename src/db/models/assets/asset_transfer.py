@@ -2,14 +2,14 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
+from sqlalchemy import DateTime
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from db.base import Base, TimestampMixin, UUIDMixing
 from db.models.enums import TransferStatus
-
 
 
 class AssetTransfer(Base, UUIDMixing, TimestampMixin):
@@ -32,7 +32,6 @@ class AssetTransfer(Base, UUIDMixing, TimestampMixin):
 
     comment: Mapped[Optional[str]] = mapped_column(String(255))
 
-    # relationships
     asset = relationship("Asset", lazy="selectin")
     from_warehouse = relationship(
         "Warehouse",

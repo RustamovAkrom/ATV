@@ -2,12 +2,10 @@ import asyncio
 import json
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse
 
 from core.audit.stream import audit_stream
-from core.security.auth.types import CurrentUser
-# CanViewAudit — это уже готовый объект зависимости (variable)
 from core.security.rbac import presets
 
 router = APIRouter(
@@ -60,11 +58,14 @@ async def stream_audit(
                 except asyncio.TimeoutError:
                     yield ": keep-alive\n\n"
                     continue
-
+                except asyncio.TimeoutError:
+                    yield {"comment": "keep-alive"}
+                except StopAsyncIteration:
+                    break
                 if not _match_filters(event, user_id, status_min, level, method, request_id):
                     continue
 
-                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps(event, ensure_ascii=False, default=str)}\n\n"
 
         except asyncio.CancelledError:
             pass

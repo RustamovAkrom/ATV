@@ -1,14 +1,15 @@
-import pytest
 from uuid import uuid4
 
-from schemas.audit import AuditCreate, AuditFilters
-from schemas.pagination import PaginationParams
+import pytest
+
+from schemas.audit_schema import AuditCreateSchema, AuditFiltersSchema
+from schemas.pagination_schema import PaginationParamsSchema
 from services.audit_service import AuditService
 
 
 @pytest.fixture
 def sample_payload():
-    return AuditCreate(
+    return AuditCreateSchema(
         method="GET",
         path="/test",
         status_code=200,
@@ -43,8 +44,8 @@ async def test_list_audit_logs_empty(dbsession):
     service = AuditService(AuditRepository(dbsession))
 
     page = await service.list_audit_logs(
-        filters=AuditFilters(),
-        pagination=PaginationParams(page=1, limit=10),
+        filters=AuditFiltersSchema(),
+        pagination=PaginationParamsSchema(page=1, limit=10),
     )
 
     assert page.total == 0
@@ -60,8 +61,8 @@ async def test_list_audit_logs_with_data(dbsession, sample_payload):
     await service.persist_audit(sample_payload)
 
     page = await service.list_audit_logs(
-        filters=AuditFilters(),
-        pagination=PaginationParams(page=1, limit=10),
+        filters=AuditFiltersSchema(),
+        pagination=PaginationParamsSchema(page=1, limit=10),
     )
 
     assert page.total == 1
@@ -83,8 +84,8 @@ async def test_filter_by_user_id(dbsession, sample_payload, create_user): # До
     await service.persist_audit(sample_payload.model_copy(update={"user_id": user_id}))
 
     page = await service.list_audit_logs(
-        filters=AuditFilters(user_id=user_id),
-        pagination=PaginationParams(page=1, limit=10),
+        filters=AuditFiltersSchema(user_id=user_id),
+        pagination=PaginationParamsSchema(page=1, limit=10),
     )
 
     assert page.total == 1
@@ -101,8 +102,8 @@ async def test_filter_by_status_code(dbsession, sample_payload):
     await service.persist_audit(sample_payload.model_copy(update={"status_code": 500}))
 
     page = await service.list_audit_logs(
-        filters=AuditFilters(status_code=500),
-        pagination=PaginationParams(page=1, limit=10),
+        filters=AuditFiltersSchema(status_code=500),
+        pagination=PaginationParamsSchema(page=1, limit=10),
     )
 
     assert page.total == 1
@@ -118,8 +119,8 @@ async def test_filter_by_search(dbsession, sample_payload):
     await service.persist_audit(sample_payload.model_copy(update={"path": "/search/test"}))
 
     page = await service.list_audit_logs(
-        filters=AuditFilters(search="search"),
-        pagination=PaginationParams(page=1, limit=10),
+        filters=AuditFiltersSchema(search="search"),
+        pagination=PaginationParamsSchema(page=1, limit=10),
     )
 
     assert page.total == 1
@@ -136,7 +137,7 @@ async def test_get_by_request_id(dbsession, sample_payload):
 
     page = await service.get_by_request_id(
         request_id="req-1",
-        pagination=PaginationParams(page=1, limit=10),
+        pagination=PaginationParamsSchema(page=1, limit=10),
     )
 
     assert page.total == 1
@@ -152,7 +153,7 @@ async def test_get_errors(dbsession, sample_payload):
     await service.persist_audit(sample_payload.model_copy(update={"status_code": 500}))
 
     page = await service.get_errors(
-        pagination=PaginationParams(page=1, limit=10),
+        pagination=PaginationParamsSchema(page=1, limit=10),
     )
 
     assert page.total == 1
@@ -189,8 +190,8 @@ async def test_pagination(dbsession, sample_payload):
         )
 
     page = await service.list_audit_logs(
-        filters=AuditFilters(),
-        pagination=PaginationParams(page=1, limit=2),
+        filters=AuditFiltersSchema(),
+        pagination=PaginationParamsSchema(page=1, limit=2),
     )
 
     assert page.total == 5

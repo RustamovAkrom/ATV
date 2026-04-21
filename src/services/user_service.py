@@ -1,14 +1,15 @@
 from uuid import UUID
 
-from core.exceptions.errors import BadRequest, AuthenticationError, NotFound
-from repositories.user_repo import UserRepository
-from repositories.rbac_repo import RBACRepository
-from db.models.users import User
-from schemas.users import UserCreate, UserUpdate, AdminUserUpdate
+from core.exceptions.errors import AuthenticationError, BadRequest, NotFound
 from core.security.passwords import hash_password, verify_password
 from db.models.enums import UserStatus
+from db.models.users import User
+from repositories.rbac_repo import RBACRepository
+from repositories.user_repo import UserRepository
+from schemas.pagination_schema import PaginationParamsSchema
+from schemas.users_schema import (AdminUserUpdateSchema, UserCreateSchema,
+                                  UserUpdateSchema)
 from utils.helpers import utc_now
-from schemas.pagination import PaginationParams
 
 
 class UserService:
@@ -16,10 +17,10 @@ class UserService:
         self.user_repo = user_repo
         self.rbac_repo = rbac_repo
 
-    async def get_all(self, pagination: PaginationParams):
+    async def get_all(self, pagination: PaginationParamsSchema):
         return await self.user_repo.list(pagination)
 
-    async def search(self, query: str, pagination: PaginationParams):
+    async def search(self, query: str, pagination: PaginationParamsSchema):
         return await self.user_repo.search(query, pagination)
 
     async def get(self, user_id: UUID):
@@ -28,7 +29,7 @@ class UserService:
             raise BadRequest("User not found")
         return user
 
-    async def create(self, data: UserCreate):
+    async def create(self, data: UserCreateSchema):
         if await self.user_repo.exists_by_email(data.email):
             raise BadRequest("Email already exists")
 
@@ -52,7 +53,7 @@ class UserService:
         user = await self.user_repo.create(user)
         return user
 
-    async def update(self, user_id: UUID, data: UserUpdate):
+    async def update(self, user_id: UUID, data: UserUpdateSchema):
         user = await self.user_repo.get_by_id(user_id)
         if not user:
             raise NotFound("User not found")
@@ -64,7 +65,7 @@ class UserService:
 
         return await self.get(user_id)
 
-    async def admin_update(self, user_id: UUID, data: AdminUserUpdate):
+    async def admin_update(self, user_id: UUID, data: AdminUserUpdateSchema):
         await self.get(user_id)
 
         if data.role_id:

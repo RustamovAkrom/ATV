@@ -1,11 +1,11 @@
-from typing import Generic, TypeVar, List
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Generic, List, TypeVar
 
+from pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar("T")
 
 
-class PaginationParams(BaseModel):
+class PaginationParamsSchema(BaseModel):
     page: int = Field(1, ge=1)
     limit: int = Field(20, ge=1, le=100)
 
@@ -13,7 +13,7 @@ class PaginationParams(BaseModel):
         return (self.page - 1) * self.limit
 
 
-class Page(BaseModel, Generic[T]):
+class PageSchema(BaseModel, Generic[T]):
     items: list[T]
     total: int
     page: int

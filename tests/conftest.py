@@ -5,25 +5,20 @@ from uuid import uuid4
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
+                                    async_sessionmaker, create_async_engine)
 
-from db.models.users.user import User
-from db.models.users.permission import Role, Permission
-from db.models.enums import UserRole, UserStatus
-from core.security.passwords import hash_password
 from app import create_app
 from core.config import get_settings
+from core.security.passwords import hash_password
 from db.dependencies import get_db_session
 from db.meta import meta
 from db.models import load_all_models
+from db.models.enums import UserRole, UserStatus
+from db.models.users.permission import Permission, Role
+from db.models.users.user import User
 from tests.utils.auth import login
-
 
 # ---------------- ENGINE ----------------
 

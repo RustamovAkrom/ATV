@@ -1,9 +1,10 @@
-from pydantic import BaseModel, ConfigDict, Field
-from uuid import UUID
 from typing import List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class PermissionOut(BaseModel):
+class PermissionOutSchema(BaseModel):
     id: UUID
     name: str
     code: str
@@ -11,24 +12,24 @@ class PermissionOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class RoleOut(BaseModel):
+class RoleOutSchema(BaseModel):
     id: UUID
     name: str
     code: str
-    permissions: List[PermissionOut] = []
+    permissions: List[PermissionOutSchema] = []
     model_config = ConfigDict(from_attributes=True)
 
 
-class RoleCreate(BaseModel):
+class RoleCreateSchema(BaseModel):
     name: str
     code: str
     description: Optional[str] = None
 
 
-class RoleUpdate(BaseModel):
+class RoleUpdateSchema(BaseModel):
     name: Optional[str]
     description: Optional[str] = None
 
 
-class RolePermissionsUpdate(BaseModel):
+class RolePermissionsUpdateSchema(BaseModel):
     permission_ids: List[UUID]

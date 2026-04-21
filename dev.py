@@ -1,7 +1,8 @@
-from pwdlib.hashers.bcrypt import BcryptHasher
-from pwdlib import PasswordHash
 import hashlib
 from typing import Optional
+
+from pwdlib import PasswordHash
+from pwdlib.hashers.bcrypt import BcryptHasher
 
 password_hash = PasswordHash((BcryptHasher(rounds=12), ))
 

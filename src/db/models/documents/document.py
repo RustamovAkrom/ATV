@@ -12,8 +12,8 @@ from db.base import Base, TimestampMixin, UUIDMixing
 from db.models.enums import DocumentStatus
 
 if TYPE_CHECKING:
-    from db.models.documents.document_file import DocumentFile
     from db.models.assets.asset import Asset
+    from db.models.documents.document_file import DocumentFile
     from db.models.users.user import User
 
 

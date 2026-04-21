@@ -1,10 +1,12 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from db.dependencies import get_db_session
 
+from db.dependencies import get_db_session
 from repositories.user_repo import UserRepository
 from services.user_service import UserService
-from .rbac import get_rbac_repo, RBACRepository
+
+from .rbac import RBACRepository, get_rbac_repo
+
 
 def get_user_repo(
     db: AsyncSession = Depends(get_db_session)

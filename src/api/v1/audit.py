@@ -5,10 +5,10 @@ from fastapi import APIRouter, Depends, Query
 
 from api.dependencies.audit import get_audit_service
 from core.cache.decorators import cached
-from core.security.auth.types import CurrentUser
 from core.security.rbac.presets import CanViewAudit
-from schemas.audit import AuditFilters, AuditSchema, AuditStatsSchema
-from schemas.pagination import Page, PaginationParams
+from schemas.audit_schema import (AuditFiltersSchema, AuditSchema,
+                                  AuditStatsSchema)
+from schemas.pagination_schema import PageSchema, PaginationParamsSchema
 from services.audit_service import AuditService
 
 router = APIRouter(prefix="/audit", tags=["Audit"])
@@ -29,8 +29,8 @@ def get_audit_filters(
     to_date: datetime | None = Query(None, alias="to"),
     search: str | None = Query(None),
     is_suspicious: bool | None = Query(None),
-) -> AuditFilters:
-    return AuditFilters(
+) -> AuditFiltersSchema:
+    return AuditFiltersSchema(
         user_id=user_id,
         request_id=request_id,
         method=method,
@@ -44,59 +44,59 @@ def get_audit_filters(
     )
 
 
-@router.get("/", response_model=Page[AuditSchema])
+@router.get("/", response_model=PageSchema[AuditSchema])
 @cached(ttl=10, tags=("audit:list",))
 async def list_audit_logs(
-    filters: AuditFilters = Depends(get_audit_filters),
-    pagination: PaginationParams = Depends(),
+    filters: AuditFiltersSchema = Depends(get_audit_filters),
+    pagination: PaginationParamsSchema = Depends(),
     service: AuditService = Depends(get_audit_service),
 ):
     return await service.list_audit_logs(filters, pagination)
 
 
-@router.get("/recent", response_model=Page[AuditSchema])
+@router.get("/recent", response_model=PageSchema[AuditSchema])
 @cached(ttl=10, tags=("audit:recent",))
 async def recent_audit_logs(
-    pagination: PaginationParams = Depends(),
+    pagination: PaginationParamsSchema = Depends(),
     service: AuditService = Depends(get_audit_service),
 ):
     return await service.get_recent(pagination)
 
 
-@router.get("/request/{request_id}", response_model=Page[AuditSchema])
+@router.get("/request/{request_id}", response_model=PageSchema[AuditSchema])
 @cached(ttl=10, tags=("audit:request",))
 async def get_by_request_id(
     request_id: str,
-    pagination: PaginationParams = Depends(),
+    pagination: PaginationParamsSchema = Depends(),
     service: AuditService = Depends(get_audit_service),
 ):
     return await service.get_by_request_id(request_id, pagination)
 
 
-@router.get("/user/{user_id}", response_model=Page[AuditSchema])
+@router.get("/user/{user_id}", response_model=PageSchema[AuditSchema])
 @cached(ttl=10, tags=("audit:user",))
 async def get_user_audit(
     user_id: UUID,
-    pagination: PaginationParams = Depends(),
+    pagination: PaginationParamsSchema = Depends(),
     service: AuditService = Depends(get_audit_service),
 ):
     return await service.get_by_user(user_id, pagination)
 
 
-@router.get("/status/{status_code}", response_model=Page[AuditSchema])
+@router.get("/status/{status_code}", response_model=PageSchema[AuditSchema])
 @cached(ttl=10, tags=("audit:status",))
 async def get_by_status_code(
     status_code: int,
-    pagination: PaginationParams = Depends(),
+    pagination: PaginationParamsSchema = Depends(),
     service: AuditService = Depends(get_audit_service),
 ):
     return await service.get_by_status_code(status_code, pagination)
 
 
-@router.get("/errors", response_model=Page[AuditSchema])
+@router.get("/errors", response_model=PageSchema[AuditSchema])
 @cached(ttl=10, tags=("audit:errors",))
 async def get_recent_errors(
-    pagination: PaginationParams = Depends(),
+    pagination: PaginationParamsSchema = Depends(),
     service: AuditService = Depends(get_audit_service),
 ):
     return await service.get_errors(pagination)

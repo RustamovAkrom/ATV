@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # =========================
 # BASE (общая модель)
 # =========================
-class AuditBase(BaseModel):
+class AuditBaseSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     method: str
@@ -43,25 +43,25 @@ class AuditBase(BaseModel):
         return value or None
 
 
-class AuditCreate(AuditBase):
+class AuditCreateSchema(AuditBaseSchema):
     pass
 
 
-class AuditSchema(AuditBase):
+class AuditSchema(AuditBaseSchema):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
     created_at: datetime
 
 
-class AuditStreamSchema(AuditBase):
+class AuditStreamSchema(AuditBaseSchema):
     model_config = ConfigDict(extra="forbid")
 
     level: str
     timestamp: float
 
 
-class AuditFilters(BaseModel):
+class AuditFiltersSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     user_id: uuid.UUID | None = None

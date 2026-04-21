@@ -1,5 +1,6 @@
 from fastapi import Depends
-from core.security.rbac.guards import require_role, require_permission
+
+from core.security.rbac.guards import require_permission, require_role
 from core.security.rbac.permissions import Permissions
 from db.models.enums import UserRole
 

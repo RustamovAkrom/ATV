@@ -1,5 +1,7 @@
 from typing import Dict, Set
+
 from db.models.enums import UserRole
+
 
 class Permissions:
     # --- USERS & PROFILE ---

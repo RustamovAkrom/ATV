@@ -1,8 +1,7 @@
 import pytest
 
 from tests.factories.user import create_user
-from tests.utils.auth import login, auth_client
-
+from tests.utils.auth import auth_client, login
 
 # =========================================================
 # FORGOT PASSWORD

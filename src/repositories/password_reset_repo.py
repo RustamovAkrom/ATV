@@ -1,8 +1,9 @@
 from uuid import UUID
 
-from sqlalchemy import select, update, delete
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import func
+
 from db.models.auth.password_reset import PasswordReset
 from utils.helpers import utc_now
 

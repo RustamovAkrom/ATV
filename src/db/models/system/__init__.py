@@ -1,1 +1,1 @@
-from .system_config import * # noqa
+from .system_config import *  # noqa

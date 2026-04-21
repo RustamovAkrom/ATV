@@ -1,10 +1,12 @@
-import json
 import asyncio
+import json
 from uuid import uuid4
+
 import pytest
 
 from db.models.audit.audit_log import AuditLog
 from tests.utils.auth import auth_client, login
+
 
 @pytest.mark.anyio
 async def test_list_audit_logs_requires_authentication(client):

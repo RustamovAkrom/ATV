@@ -3,7 +3,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from core.database.db_async import get_db_async_engine, get_async_session_factory
+from core.database.db_async import (get_async_session_factory,
+                                    get_db_async_engine)
 from core.requests import get_http_transport
 from scripts.bootstrap.rbac import seed_rbac
 

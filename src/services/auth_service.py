@@ -1,18 +1,20 @@
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
+
 from fastapi import Request
 
 from core.config import get_settings
 from core.exceptions.errors import AuthenticationError, InvalidToken
 from core.security.blacklist import get_blacklist
-from core.security.jwt import create_access_token, create_refresh_token, decode_token
+from core.security.jwt import (create_access_token, create_refresh_token,
+                               decode_token)
 from core.security.passwords import verify_password
 from db.models.refresh_token import RefreshToken
 from db.models.users.user import User
-from repositories.user_repo import UserRepository
 from repositories.auth_repo import AuthRepository
+from repositories.user_repo import UserRepository
+from schemas.auth_schema import TokenPairSchema
 from utils.helpers import generate_device_id, utc_now
-from core.security.auth.schemas import TokenPair
 
 
 class AuthService:
@@ -26,14 +28,6 @@ class AuthService:
 
         if not user:
             raise AuthenticationError()
-
-        # valid, new_hash = verify_and_upgrade(password, user.password_hash)
-        # print(valid)
-        # if not valid:
-        #     raise AuthenticationError()
-
-        # if new_hash:
-        #     await self.user_repo.set_password(user.id, new_hash)
 
         # verify hashes
         if not verify_password(password, user.password_hash):
@@ -60,7 +54,7 @@ class AuthService:
             )
         )
 
-        return TokenPair(
+        return TokenPairSchema(
             access_token=access,
             refresh_token=refresh,
         )
@@ -120,7 +114,7 @@ class AuthService:
             )
         )
 
-        return TokenPair(
+        return TokenPairSchema(
             access_token=access,
             refresh_token=new_refresh,
         )

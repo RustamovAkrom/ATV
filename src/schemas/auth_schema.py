@@ -1,11 +1,12 @@
-from pydantic import BaseModel, Field
+from typing import List, Optional, Set
 from uuid import UUID
-from typing import Optional, List, Set
+
+from pydantic import BaseModel, Field
 
 from db.models.enums import UserRole
 
 
-class CurrentUser(BaseModel):
+class CurrentUserSchema(BaseModel):
     id: UUID
     role: Optional[str]
     permissions: List[str] = Field(default_factory=list)
@@ -35,7 +36,7 @@ class CurrentUser(BaseModel):
         return required.issubset(user_perms)
 
 
-class TokenPayload(BaseModel):
+class TokenPayloadSchema(BaseModel):
     sub: UUID
     jti: UUID
     exp: int
@@ -44,3 +45,22 @@ class TokenPayload(BaseModel):
     iss: Optional[str] = None
     aud: Optional[str] = None
     session_id: Optional[UUID] = None
+
+
+class TokenPairSchema(BaseModel):
+    access_token: str
+    refresh_token: str
+
+
+class LoginRequestSchema(BaseModel):
+    login: str
+    password: str
+
+
+class TokenResponseSchema(BaseModel):
+    access_token: str
+    refresh_token: str
+
+
+class RefreshRequestSchema(BaseModel):
+    refresh_token: str

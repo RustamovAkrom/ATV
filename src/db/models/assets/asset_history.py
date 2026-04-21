@@ -1,10 +1,10 @@
-from uuid import UUID
 from datetime import datetime
-from sqlalchemy import ForeignKey, String, Text, DateTime, func
+from uuid import UUID
+
+from sqlalchemy import DateTime, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from db.base import Base, UUIDMixin
-
 
 
 class AssetHistory(Base, UUIDMixin):

@@ -2,14 +2,14 @@ from fastapi import APIRouter, Depends
 
 from core.security.rbac import presets
 from core.security.rbac.permissions import Permissions
-from core.security.auth.types import CurrentUser
+from schemas.auth_schema import CurrentUserSchema
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 @router.get("/")
 async def get_main_dashboard(
     # Используем готовый пресет (пропустит Admin и SuperAdmin)
-    user: CurrentUser = presets.IsAdmin,
+    user: CurrentUserSchema = presets.IsAdmin,
 ):
     return {
         "message": f"Welcome {user.id}",
@@ -21,7 +21,7 @@ async def get_main_dashboard(
 @router.get("/analytics")
 async def get_analytics(
     # Используем типизированную проверку через Permissions
-    user: CurrentUser = presets.CanViewAudit,
+    user: CurrentUserSchema = presets.CanViewAudit,
 ):
     return {
         "message": f"Welcome to analytics dashboard {user.id}",

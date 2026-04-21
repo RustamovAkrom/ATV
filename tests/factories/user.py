@@ -1,7 +1,7 @@
-from db.models.users.user import User
-from db.models.users.permission import Role
-from db.models.enums import UserRole, UserStatus
 from core.security.passwords import hash_password
+from db.models.enums import UserRole, UserStatus
+from db.models.users.permission import Role
+from db.models.users.user import User
 
 
 async def create_user(dbsession, login="user", password="password"):

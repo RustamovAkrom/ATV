@@ -5,6 +5,7 @@ from uuid import UUID
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
+
 from db.base import Base, TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
@@ -37,19 +38,16 @@ class AssetModel(Base, UUIDMixing, TimestampMixin):
     lifetime_years: Mapped[Optional[int]] = mapped_column(Integer)
     warranty_months: Mapped[Optional[int]] = mapped_column(Integer)
 
-    # RELATIONSHIPS
     manufacturer: Mapped["Manufacturer"] = relationship(
         "Manufacturer",
         back_populates="models",
         lazy="selectin"
     )
-
     category: Mapped["AssetCategory"] = relationship(
         "AssetCategory",
         back_populates="models",
         lazy="selectin"
     )
-
     assets: Mapped[List["Asset"]] = relationship(
         "Asset",
         back_populates="model",

@@ -1,12 +1,12 @@
 from uuid import UUID
 
-from sqlalchemy import select, update, or_
+from sqlalchemy import or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from db.models.users import Role, User
 from db.models.enums import UserStatus
-from schemas.pagination import PaginationParams
+from db.models.users import Role, User
+from schemas.pagination_schema import PaginationParamsSchema
 
 
 class UserRepository:
@@ -43,13 +43,13 @@ class UserRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list(self, pagination: PaginationParams) -> list[User]:
+    async def list(self, pagination: PaginationParamsSchema) -> list[User]:
         result = await self.session.execute(
             self._base_query().limit(pagination.limit).offset(pagination.offset())
         )
         return result.scalars().all()
 
-    async def search(self, query: str, pagination: PaginationParams):
+    async def search(self, query: str, pagination: PaginationParamsSchema):
         result = await self.session.execute(
             self._base_query(include_inactive=True)
             .where(

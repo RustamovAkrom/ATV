@@ -1,10 +1,11 @@
-from pydantic import BaseModel, ConfigDict
-from uuid import UUID
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict
 
 
-class SessionOut(BaseModel):
+class SessionOutSchema(BaseModel):
     id: UUID
     ip_address: Optional[str]
     user_agent: Optional[str]

@@ -1,9 +1,9 @@
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from core.security.rbac.permissions import ROLE_PERMISSIONS, Permissions
 from db.models.enums import UserRole
 from db.models.users.permission import Permission, Role
-from core.security.rbac.permissions import Permissions, ROLE_PERMISSIONS
 
 
 async def seed_rbac(db):

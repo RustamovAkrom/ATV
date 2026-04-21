@@ -1,7 +1,9 @@
 from typing import Optional
+
+from sqlalchemy import JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
-from sqlalchemy import String, JSON, Text
-from db.base import Base, UUIDMixin, TimestampMixin
+
+from db.base import Base, TimestampMixin, UUIDMixin
 
 
 class SystemConfig(Base, UUIDMixin, TimestampMixin):

@@ -49,7 +49,6 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
     def validate_status(self, value):
         return super().validate_status(value)
 
-    # relationships
     role: Mapped["Role"] = relationship("Role", back_populates="users", lazy="selectin")
     region: Mapped["Region"] = relationship("Region", lazy="selectin")
     service: Mapped["Service"] = relationship("Service", lazy="selectin")

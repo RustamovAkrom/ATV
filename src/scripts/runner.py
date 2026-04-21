@@ -1,8 +1,9 @@
 import asyncio
-from typing import Callable, Awaitable
+from typing import Awaitable, Callable
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database.db_async import get_async_session_factory
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def _run(func: Callable[[AsyncSession], Awaitable[None]]):

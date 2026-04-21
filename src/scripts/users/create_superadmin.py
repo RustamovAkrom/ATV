@@ -1,11 +1,11 @@
 # scripts/users/create_superadmin.py
 
-from sqlalchemy import select, or_
+from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.security.passwords import hash_password
 from core.exceptions.errors import InternalError
+from core.security.passwords import hash_password
 from db.models.enums import UserRole, UserStatus
 from db.models.users.permission import Role
 from db.models.users.user import User

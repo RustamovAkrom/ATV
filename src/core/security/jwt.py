@@ -1,11 +1,12 @@
 from datetime import datetime, timedelta, timezone
-from uuid import uuid4, UUID
+from uuid import UUID, uuid4
+
 import jwt
 from pydantic import ValidationError
 
 from core.config import get_settings
 from core.exceptions.errors import InvalidToken, TokenExpired
-from core.security.auth.types import TokenPayload
+from schemas.auth_schema import CurrentUserSchema, TokenPayloadSchema
 
 settings = get_settings()
 
@@ -47,7 +48,7 @@ def create_refresh_token(user_id: str):
     return token, str(payload["jti"])
 
 
-async def decode_token(token: str, expected_type: str | None = None) -> TokenPayload:
+async def decode_token(token: str, expected_type: str | None = None) -> TokenPayloadSchema:
     try:
         raw = jwt.decode(
             token,
@@ -63,7 +64,7 @@ async def decode_token(token: str, expected_type: str | None = None) -> TokenPay
         if expected_type and raw.get("type") != expected_type:
             raise InvalidToken()
 
-        return TokenPayload(
+        return TokenPayloadSchema(
             sub=UUID(raw["sub"]),
             jti=UUID(raw["jti"]),
             exp=int(raw["exp"]),

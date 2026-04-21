@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import sys
+
 from loguru import logger
+
 from core.config import get_settings
 
 settings = get_settings()

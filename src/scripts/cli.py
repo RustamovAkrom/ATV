@@ -1,4 +1,5 @@
 import typer
+
 from scripts.runner import run
 
 app = typer.Typer(help="System CLI")
