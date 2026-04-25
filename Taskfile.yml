@@ -1,0 +1,146 @@
+version: "3"
+
+vars:
+  RUNNER:
+    sh: 'echo {{ .RUNNER | default "uv run --no-sync"}} '
+  SOURCES: src tests
+  SOURCES_ROOT: src
+
+tasks:
+  default:
+    cmd: task --list
+
+  db-up:
+    desc: Initialize Database (PostgreSQL)
+    cmds:
+      - docker compose up -d --wait postgres
+  db-down:
+    desc: Stop DB
+    cmds:
+      - docker compose down
+
+  db-reset:
+    desc: Clean database (Danger)
+    env:
+      ENV: local
+    cmds:
+      - docker compose down -v
+      - task: db-up
+      - task: db-migrate
+
+  db-revision:
+    desc: Create migration
+    cmds:
+      - task: db-up
+      - "{{.RUNNER}} alembic -c src/alembic.ini revision --autogenerate -m '{{.NAME | default .MSG}}'"
+
+  db-migrate:
+    desc: Apply database migrations
+    cmds:
+      - task: db-up
+      - "{{.RUNNER}} alembic -c src/alembic.ini upgrade head"
+
+  db-downgrade:
+    desc: Roll back the latest migration
+    cmds:
+      - task: db-up
+      - "{{.RUNNER}} alembic -c src/alembic.ini downgrade -1"
+
+  db-shell:
+    desc: SQL database shell (Docker)
+    cmd: docker compose exec postgres sh -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
+
+  redis-up:
+    desc: Start Redis
+    cmds:
+      - docker compose up -d --wait redis
+
+  bootstrap:
+    desc: Seed roles & permissions
+    env:
+      PYTHONPATH: src
+    cmds:
+      - "{{.RUNNER}} python -m scripts.cli bootstrap"
+
+  create-superadmin:
+    desc: Create superadmin user
+    env:
+      PYTHONPATH: src
+    cmd: "{{.RUNNER}} python -m scripts.cli create-superadmin"
+
+  init:
+    desc: Initialize project
+    env:
+      ENV: local
+    cmds:
+      - "uv sync"
+      - task: db-up
+      - task: db-migrate
+      - task: bootstrap
+
+  run:
+    desc: run backend locally (dev mode)
+    env:
+      PYTHONPATH: src
+      ENV: local
+    cmds:
+      - task: init
+      - "{{.RUNNER}} fastapi dev src/dev.py"
+
+  run-no-init:
+    desc: Run without init (faster dev loop)
+    env:
+      PYTHONPATH: src
+      ENV: local
+    cmds:
+      - "{{.RUNNER}} fastapi dev src/dev.py"
+
+  cleanup-tokens:
+    desc: Delete expired refresh tokens
+    env:
+      PYTHONPATH: src
+    cmds:
+      - "{{.RUNNER}} python -c 'from scripts.cleanup.tokens import run; run()'"
+
+  prod:
+    desc: Run production stack
+    cmds:
+      - docker compose up -d --build
+      - docker compose ps
+      - docker compose logs -f
+
+  test-setup:
+    cmds:
+      - docker compose down -v postgres-test || true
+      - docker compose up -d --wait postgres-test
+
+  test:
+    desc: Run unit tests
+    env:
+      ENV: test
+    cmds:
+      - task: test-setup
+      - "{{.RUNNER}} pytest -vv"
+
+  test-cov:
+    desc: Run tests with coverage report
+    env:
+      ENV: test
+    cmds:
+      - task: test-setup
+      - "{{.RUNNER}} coverage run -m pytest -vv"
+      - "{{.RUNNER}} coverage report -m --fail-under=80"
+
+  pre-commit:
+    desc: Run pre-commit
+    cmd: uvx pre-commit run
+
+  security:
+    desc: Security scan (bandit)
+    cmd: "{{.RUNNER}} bandit -r {{.SOURCES}} -q"
+
+  fix-imports:
+    desc: Check import sorting
+    cmds:
+      - "{{.RUNNER}} isort ."
+      - "{{.RUNNER}} ruff check --select I {{.SOURCES}}"

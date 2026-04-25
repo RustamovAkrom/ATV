@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+set -x
+
+echo "Applying database migrations..."
+
+alembic upgrade head
+
+echo "Starting FastAPI server..."
+
+# Get environment and determine workers
+ENV=${ENV:-dev}
+WORKERS=${WORKERS:-2}
+APP_HOST=${APP_HOST:-0.0.0.0}
+APP_PORT=${APP_PORT:-8000}
+
+# Use 4 workers in production for better concurrency
+if [ "$ENV" = "prod" ]; then
+    WORKERS=${WORKERS:-4}
+fi
+
+exec uvicorn app:create_app \
+    --factory \
+    --proxy-headers \
+    --workers ${WORKERS} \
+    --loop uvloop \
+    --http httptools \
+    --host ${APP_HOST} \
+    --port ${APP_PORT}
