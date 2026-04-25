@@ -1,4 +1,5 @@
 from sqlalchemy.orm import validates
+
 from utils.slug import slugify
 
 

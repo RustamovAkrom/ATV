@@ -1,11 +1,8 @@
-import re
-
-from sqlalchemy.exc import IntegrityError
-from core.exceptions.errors import NotFound, BadRequest
+from core.exceptions.errors import BadRequest, NotFound
 from db.models.assets.asset_category import AssetCategory
 from repositories.asset_category_repo import AssetCategoryRepository
 from schemas.asset_category import AssetCategoryCreateSchema
-from utils.validators import validate_and_prepare, safe_create
+from utils.validators import safe_create, validate_and_prepare
 
 
 class AssetCategoryService:

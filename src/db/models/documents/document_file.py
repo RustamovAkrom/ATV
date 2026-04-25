@@ -26,8 +26,4 @@ class DocumentFile(Base, UUIDMixing):
     file_size: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     content_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
-    document = relationship(
-        "Document",
-        back_populates="files",
-        lazy="selectin"
-    )
+    document = relationship("Document", back_populates="files", lazy="selectin")

@@ -1,8 +1,9 @@
 from uuid import UUID
 
-from sqlalchemy import select, update, delete
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import func
+
 from db.models.auth.password_reset import PasswordReset
 from utils.helpers import utc_now
 
@@ -32,14 +33,12 @@ class PasswordResetRepository:
 
     async def clean_old(self, user_id: UUID):
         await self.session.execute(
-            delete(PasswordReset)
-            .where(PasswordReset.user_id == user_id)
+            delete(PasswordReset).where(PasswordReset.user_id == user_id)
         )
 
     async def count_active_resets(self, user_id: UUID) -> int:
         result = await self.session.execute(
-            select(func.count())
-            .where(
+            select(func.count()).where(
                 PasswordReset.user_id == user_id,
                 PasswordReset.is_used == False,
                 PasswordReset.expires_at > utc_now(),

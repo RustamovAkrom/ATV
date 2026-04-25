@@ -26,7 +26,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=ENV_FILE_PATH,
         env_file_encoding="utf-8",
-        extra="allow",
+        extra="ignore",
+        frozen=True,
     )
 
     # App core
@@ -127,10 +128,17 @@ class Settings(BaseSettings):
             normalized = value.strip().lower()
             if normalized in {"1", "true", "yes", "on", "debug"}:
                 return True
-            if normalized in {"0", "false", "no", "off", "release", "prod", "production"}:
+            if normalized in {
+                "0",
+                "false",
+                "no",
+                "off",
+                "release",
+                "prod",
+                "production",
+            }:
                 return False
         return bool(value)
-
 
     @property
     def postgres_async_url(self) -> str:
@@ -157,6 +165,7 @@ class Settings(BaseSettings):
                 path=f"/{self.POSTGRES_DB}",
             )
         )
+
 
 @cache
 def get_settings() -> Settings:

@@ -59,7 +59,9 @@ class RedisAuditStream:
             try:
                 await pubsub.unsubscribe(CHANNEL)
             finally:
-                close = getattr(pubsub, "aclose", None) or getattr(pubsub, "close", None)
+                close = getattr(pubsub, "aclose", None) or getattr(
+                    pubsub, "close", None
+                )
                 if close is not None:
                     result = close()
                     if asyncio.iscoroutine(result):

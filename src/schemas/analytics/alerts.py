@@ -26,4 +26,3 @@ class AlertOut(BaseModel):
     metric_value: float
     threshold: float
     detected_at: datetime
-

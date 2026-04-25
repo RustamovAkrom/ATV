@@ -43,7 +43,9 @@ class TopAnalyticsRepository:
                 Asset.id,
                 Asset.name,
                 Asset.asset_tag,
-                func.coalesce(assignments.c.assignment_count, 0).label("assignment_count"),
+                func.coalesce(assignments.c.assignment_count, 0).label(
+                    "assignment_count"
+                ),
                 func.coalesce(transfers.c.transfer_count, 0).label("transfer_count"),
                 func.coalesce(repairs.c.repair_count, 0).label("repair_count"),
             )
@@ -91,7 +93,9 @@ class TopAnalyticsRepository:
                 User.id,
                 User.full_name,
                 User.email,
-                func.coalesce(assignments.c.assignment_count, 0).label("assignment_count"),
+                func.coalesce(assignments.c.assignment_count, 0).label(
+                    "assignment_count"
+                ),
                 func.coalesce(transfers.c.transfer_count, 0).label("transfer_count"),
                 func.coalesce(repairs.c.repair_count, 0).label("repair_count"),
             )
@@ -123,7 +127,9 @@ class TopAnalyticsRepository:
             select(AssetTransfer.from_service_id.label("service_id"))
             .where(AssetTransfer.from_service_id.isnot(None))
             .union_all(
-                select(AssetTransfer.to_service_id.label("service_id")).where(AssetTransfer.to_service_id.isnot(None))
+                select(AssetTransfer.to_service_id.label("service_id")).where(
+                    AssetTransfer.to_service_id.isnot(None)
+                )
             )
             .subquery()
         )
@@ -149,7 +155,9 @@ class TopAnalyticsRepository:
             select(
                 Service.id,
                 Service.name,
-                func.coalesce(assignments.c.assignment_count, 0).label("assignment_count"),
+                func.coalesce(assignments.c.assignment_count, 0).label(
+                    "assignment_count"
+                ),
                 func.coalesce(transfers.c.transfer_count, 0).label("transfer_count"),
                 func.coalesce(repairs.c.repair_count, 0).label("repair_count"),
             )
@@ -165,4 +173,3 @@ class TopAnalyticsRepository:
             .limit(limit)
         )
         return result.all()
-

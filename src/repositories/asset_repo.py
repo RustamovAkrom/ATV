@@ -7,17 +7,15 @@ from sqlalchemy.orm import lazyload, selectinload
 
 from db.models.assets.asset import Asset
 from db.models.assets.asset_assignment import AssetAssignment
+from db.models.assets.asset_class import AssetClass
 from db.models.assets.asset_history import AssetHistory
 from db.models.assets.asset_model import AssetModel
 from db.models.org.region import Region
 from db.models.org.service import Service
 from db.models.users.permission import Role
 from db.models.users.user import User
-from db.models.assets.manufacturer import Manufacturer
-from db.models.assets.asset_category import AssetCategory
-from db.models.assets.asset_class import AssetClass
 from schemas.assets import AssetFilters
-from schemas.pagination import PaginationParams
+from schemas.pagination import PaginationParamsSchema
 
 
 class AssetRepository:
@@ -43,8 +41,10 @@ class AssetRepository:
     def _base_query(self):
         return select(Asset).options(*self._list_options())
 
-    async def list(self, filters: AssetFilters, pagination: PaginationParams):
-        query = self._apply_filters(self._base_query(), filters).order_by(Asset.created_at.desc())
+    async def list(self, filters: AssetFilters, pagination: PaginationParamsSchema):
+        query = self._apply_filters(self._base_query(), filters).order_by(
+            Asset.created_at.desc()
+        )
 
         total = await self.session.scalar(
             select(func.count()).select_from(query.order_by(None).subquery())
@@ -105,7 +105,9 @@ class AssetRepository:
             )
         return query
 
-    async def get_by_id(self, asset_id: UUID, include_history: bool = True) -> Asset | None:
+    async def get_by_id(
+        self, asset_id: UUID, include_history: bool = True
+    ) -> Asset | None:
         query = (
             select(Asset)
             .where(Asset.id == asset_id)
@@ -115,7 +117,9 @@ class AssetRepository:
         result = await self.session.execute(query.options(*options))
         return result.scalar_one_or_none()
 
-    async def get_by_id_for_update(self, asset_id: UUID, include_history: bool = True) -> Asset | None:
+    async def get_by_id_for_update(
+        self, asset_id: UUID, include_history: bool = True
+    ) -> Asset | None:
         query = (
             select(Asset)
             .options(lazyload("*"))
@@ -146,14 +150,18 @@ class AssetRepository:
         )
         return result.scalar_one_or_none()
 
-    async def asset_tag_exists(self, asset_tag: str, exclude_id: UUID | None = None) -> bool:
+    async def asset_tag_exists(
+        self, asset_tag: str, exclude_id: UUID | None = None
+    ) -> bool:
         query = select(Asset.id).where(Asset.asset_tag == asset_tag)
         if exclude_id is not None:
             query = query.where(Asset.id != exclude_id)
         result = await self.session.execute(query.limit(1))
         return result.scalar_one_or_none() is not None
 
-    async def serial_number_exists(self, serial_number: str, exclude_id: UUID | None = None) -> bool:
+    async def serial_number_exists(
+        self, serial_number: str, exclude_id: UUID | None = None
+    ) -> bool:
         query = select(Asset.id).where(Asset.serial_number == serial_number)
         if exclude_id is not None:
             query = query.where(Asset.id != exclude_id)
@@ -183,7 +191,9 @@ class AssetRepository:
         )
         return result.scalar_one_or_none()
 
-    async def close_active_assignment(self, assignment: AssetAssignment, timestamp: datetime) -> None:
+    async def close_active_assignment(
+        self, assignment: AssetAssignment, timestamp: datetime
+    ) -> None:
         assignment.unassigned_at = timestamp
         await self.session.flush()
 

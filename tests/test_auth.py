@@ -1,4 +1,5 @@
 import pytest
+
 from tests.factories.user import create_user
 from tests.utils.auth import login
 

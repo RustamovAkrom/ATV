@@ -3,26 +3,24 @@
 from decimal import Decimal
 from uuid import UUID
 
-from schemas.analytics.asset_transfer_analytics import (
-    AssetTransferFilterInput,
-    AssetTransferOut,
-    AssetTransferPageOut,
-    TransferDurationMetrics,
-    AssetTransferDetailOut,
-    AssetTransferHistory,
-    TransferHistoryEntry,
-    TransferMetrics,
-    TransferStatusBreakdown,
-    BottleneckReportOut,
-    TransferBottleneck,
-    WarehouseTransferMetrics,
-)
-from schemas.pagination import PageOut, PaginationParams, build_page
+from db.models.assets.asset_transfer import AssetTransfer
+from db.models.enums import TransferStatus
 from repositories.analytics.asset_transfer_analytics_repo import (
     AssetTransferAnalyticsRepository,
 )
-from db.models.enums import TransferStatus
-from db.models.assets.asset_transfer import AssetTransfer
+from schemas.analytics.asset_transfer_analytics import (
+    AssetTransferFilterInput,
+    AssetTransferHistory,
+    AssetTransferOut,
+    AssetTransferPageOut,
+    BottleneckReportOut,
+    TransferBottleneck,
+    TransferHistoryEntry,
+    TransferMetrics,
+    TransferStatusBreakdown,
+    WarehouseTransferMetrics,
+)
+from schemas.pagination import PageOutSchema, PaginationParamsSchema, build_page
 from utils.helpers import utc_now
 
 
@@ -35,18 +33,15 @@ class AssetTransferAnalyticsService:
     async def list_transfers(
         self,
         filters: AssetTransferFilterInput,
-        pagination: PaginationParams,
+        pagination: PaginationParamsSchema,
     ) -> AssetTransferPageOut:
         """List transfers with pagination."""
         transfers, total = await self.repo.list_transfers(filters, pagination)
 
-        items = [
-            self._to_transfer_out(t)
-            for t in transfers
-        ]
+        items = [self._to_transfer_out(t) for t in transfers]
 
         return build_page(
-            schema=PageOut[AssetTransferOut],
+            schema=PageOutSchema[AssetTransferOut],
             items=items,
             total=total,
             page=pagination.page,
@@ -58,18 +53,15 @@ class AssetTransferAnalyticsService:
 
     async def list_pending_transfers(
         self,
-        pagination: PaginationParams,
+        pagination: PaginationParamsSchema,
     ) -> AssetTransferPageOut:
         """List pending transfers."""
         transfers, total = await self.repo.list_pending_transfers(pagination)
 
-        items = [
-            self._to_transfer_out(t)
-            for t in transfers
-        ]
+        items = [self._to_transfer_out(t) for t in transfers]
 
         return build_page(
-            schema=PageOut[AssetTransferOut],
+            schema=PageOutSchema[AssetTransferOut],
             items=items,
             total=total,
             page=pagination.page,
@@ -94,16 +86,22 @@ class AssetTransferAnalyticsService:
                 transfer_id=t.id,
                 sequence=i + 1,
                 status=t.status.value,
-                from_location=t.from_warehouse.name if t.from_warehouse else (
-                    t.from_service.name if t.from_service else None
+                from_location=(
+                    t.from_warehouse.name
+                    if t.from_warehouse
+                    else (t.from_service.name if t.from_service else None)
                 ),
-                to_location=t.to_warehouse.name if t.to_warehouse else (
-                    t.to_service.name if t.to_service else None
+                to_location=(
+                    t.to_warehouse.name
+                    if t.to_warehouse
+                    else (t.to_service.name if t.to_service else None)
                 ),
                 created_at=t.created_at,
                 transferred_at=t.transferred_at,
                 created_by_name=t.created_by.full_name if t.created_by else "Unknown",
-                duration_days=self._calculate_duration_days(t.created_at, t.transferred_at),
+                duration_days=self._calculate_duration_days(
+                    t.created_at, t.transferred_at
+                ),
             )
             for i, t in enumerate(transfers)
         ]
@@ -118,7 +116,9 @@ class AssetTransferAnalyticsService:
             history=history,
         )
 
-    async def get_transfer_metrics(self, filters: AssetTransferFilterInput) -> TransferMetrics:
+    async def get_transfer_metrics(
+        self, filters: AssetTransferFilterInput
+    ) -> TransferMetrics:
         """Get aggregated transfer metrics."""
         agg_dict = await self.repo.get_transfer_aggregates(filters)
 
@@ -128,19 +128,31 @@ class AssetTransferAnalyticsService:
             TransferStatusBreakdown(
                 status="completed",
                 count=agg_dict["completed_transfers"],
-                percentage=Decimal(100 * agg_dict["completed_transfers"] / total) if total > 0 else Decimal(0),
+                percentage=(
+                    Decimal(100 * agg_dict["completed_transfers"] / total)
+                    if total > 0
+                    else Decimal(0)
+                ),
                 average_pending_days=None,
             ),
             TransferStatusBreakdown(
                 status="pending",
                 count=agg_dict["pending_transfers"],
-                percentage=Decimal(100 * agg_dict["pending_transfers"] / total) if total > 0 else Decimal(0),
+                percentage=(
+                    Decimal(100 * agg_dict["pending_transfers"] / total)
+                    if total > 0
+                    else Decimal(0)
+                ),
                 average_pending_days=Decimal(0),  # Could calculate separately if needed
             ),
             TransferStatusBreakdown(
                 status="cancelled",
                 count=agg_dict["cancelled_transfers"],
-                percentage=Decimal(100 * agg_dict["cancelled_transfers"] / total) if total > 0 else Decimal(0),
+                percentage=(
+                    Decimal(100 * agg_dict["cancelled_transfers"] / total)
+                    if total > 0
+                    else Decimal(0)
+                ),
                 average_pending_days=None,
             ),
         ]
@@ -169,13 +181,11 @@ class AssetTransferAnalyticsService:
         bottlenecks_dict = await self.repo.get_bottlenecks(critical_days, warning_days)
 
         critical_bottlenecks = [
-            self._to_bottleneck(t)
-            for t in bottlenecks_dict["critical"]
+            self._to_bottleneck(t) for t in bottlenecks_dict["critical"]
         ]
 
         warning_bottlenecks = [
-            self._to_bottleneck(t)
-            for t in bottlenecks_dict["warning"]
+            self._to_bottleneck(t) for t in bottlenecks_dict["warning"]
         ]
 
         return BottleneckReportOut(
@@ -184,7 +194,9 @@ class AssetTransferAnalyticsService:
             warning_bottlenecks=warning_bottlenecks,
         )
 
-    async def get_warehouse_metrics(self, warehouse_id: UUID) -> WarehouseTransferMetrics:
+    async def get_warehouse_metrics(
+        self, warehouse_id: UUID
+    ) -> WarehouseTransferMetrics:
         """Get transfer metrics for a warehouse."""
         metrics_dict = await self.repo.get_warehouse_transfer_metrics(warehouse_id)
 
@@ -198,15 +210,25 @@ class AssetTransferAnalyticsService:
             asset_name=transfer.asset.name if transfer.asset else "Unknown",
             asset_tag=transfer.asset.asset_tag if transfer.asset else None,
             status=transfer.status.value,
-            from_warehouse_name=transfer.from_warehouse.name if transfer.from_warehouse else None,
-            to_warehouse_name=transfer.to_warehouse.name if transfer.to_warehouse else None,
-            from_service_name=transfer.from_service.name if transfer.from_service else None,
+            from_warehouse_name=(
+                transfer.from_warehouse.name if transfer.from_warehouse else None
+            ),
+            to_warehouse_name=(
+                transfer.to_warehouse.name if transfer.to_warehouse else None
+            ),
+            from_service_name=(
+                transfer.from_service.name if transfer.from_service else None
+            ),
             to_service_name=transfer.to_service.name if transfer.to_service else None,
             created_by_id=transfer.created_by_id,
-            created_by_name=transfer.created_by.full_name if transfer.created_by else "Unknown",
+            created_by_name=(
+                transfer.created_by.full_name if transfer.created_by else "Unknown"
+            ),
             created_at=transfer.created_at,
             received_by_id=transfer.received_by_id,
-            received_by_name=transfer.received_by.full_name if transfer.received_by else None,
+            received_by_name=(
+                transfer.received_by.full_name if transfer.received_by else None
+            ),
             transferred_at=transfer.transferred_at,
             comment=transfer.comment,
         )
@@ -221,12 +243,18 @@ class AssetTransferAnalyticsService:
             asset_tag=transfer.asset.asset_tag if transfer.asset else None,
             status=transfer.status.value,
             pending_days=pending_days,
-            created_by_name=transfer.created_by.full_name if transfer.created_by else "Unknown",
-            from_location=transfer.from_warehouse.name if transfer.from_warehouse else (
-                transfer.from_service.name if transfer.from_service else None
+            created_by_name=(
+                transfer.created_by.full_name if transfer.created_by else "Unknown"
             ),
-            to_location=transfer.to_warehouse.name if transfer.to_warehouse else (
-                transfer.to_service.name if transfer.to_service else None
+            from_location=(
+                transfer.from_warehouse.name
+                if transfer.from_warehouse
+                else (transfer.from_service.name if transfer.from_service else None)
+            ),
+            to_location=(
+                transfer.to_warehouse.name
+                if transfer.to_warehouse
+                else (transfer.to_service.name if transfer.to_service else None)
             ),
             created_at=transfer.created_at,
         )

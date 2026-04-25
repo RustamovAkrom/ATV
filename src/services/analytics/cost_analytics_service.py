@@ -4,7 +4,7 @@ from schemas.analytics.costs import (
     RegionCostAnalyticsOut,
     RepairCostAnalyticsOut,
 )
-from schemas.pagination import PageOut, PaginationParams, build_page
+from schemas.pagination import PageOutSchema, PaginationParamsSchema, build_page
 
 
 class CostAnalyticsService:
@@ -15,7 +15,7 @@ class CostAnalyticsService:
     def _safe_money(value) -> float:
         return float(value or 0)
 
-    async def get_repair_costs(self, pagination: PaginationParams):
+    async def get_repair_costs(self, pagination: PaginationParamsSchema):
         rows, total = await self.repo.list_repair_costs(pagination)
         items = [
             RepairCostAnalyticsOut(
@@ -30,14 +30,14 @@ class CostAnalyticsService:
             for row in rows
         ]
         return build_page(
-            schema=PageOut[RepairCostAnalyticsOut],
+            schema=PageOutSchema[RepairCostAnalyticsOut],
             items=items,
             total=total,
             page=pagination.page,
             limit=pagination.limit,
         )
 
-    async def get_asset_costs(self, pagination: PaginationParams):
+    async def get_asset_costs(self, pagination: PaginationParamsSchema):
         rows, total = await self.repo.list_asset_costs(pagination)
         items = [
             AssetCostAnalyticsOut(
@@ -46,19 +46,21 @@ class CostAnalyticsService:
                 asset_tag=row.asset_tag,
                 purchase_cost=self._safe_money(row.purchase_cost),
                 repair_cost=self._safe_money(row.repair_cost),
-                total_cost=self._safe_money((row.purchase_cost or 0) + (row.repair_cost or 0)),
+                total_cost=self._safe_money(
+                    (row.purchase_cost or 0) + (row.repair_cost or 0)
+                ),
             )
             for row in rows
         ]
         return build_page(
-            schema=PageOut[AssetCostAnalyticsOut],
+            schema=PageOutSchema[AssetCostAnalyticsOut],
             items=items,
             total=total,
             page=pagination.page,
             limit=pagination.limit,
         )
 
-    async def get_region_costs(self, pagination: PaginationParams):
+    async def get_region_costs(self, pagination: PaginationParamsSchema):
         rows, total = await self.repo.list_region_costs(pagination)
         items = [
             RegionCostAnalyticsOut(
@@ -66,12 +68,14 @@ class CostAnalyticsService:
                 region_name=row.name,
                 purchase_cost=self._safe_money(row.purchase_cost),
                 repair_cost=self._safe_money(row.repair_cost),
-                total_cost=self._safe_money((row.purchase_cost or 0) + (row.repair_cost or 0)),
+                total_cost=self._safe_money(
+                    (row.purchase_cost or 0) + (row.repair_cost or 0)
+                ),
             )
             for row in rows
         ]
         return build_page(
-            schema=PageOut[RegionCostAnalyticsOut],
+            schema=PageOutSchema[RegionCostAnalyticsOut],
             items=items,
             total=total,
             page=pagination.page,

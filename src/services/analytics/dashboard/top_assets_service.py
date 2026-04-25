@@ -1,5 +1,5 @@
-from schemas.analytics.dashboard.top_assets import TopAssetOut
 from repositories.analytics.dashboard.top_assets_repo import TopAssetsRepository
+from schemas.analytics.dashboard.top_assets import TopAssetOut
 
 
 class TopAssetsService:

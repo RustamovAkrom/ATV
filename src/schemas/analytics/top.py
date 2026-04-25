@@ -40,4 +40,3 @@ class TopServiceAnalyticsOut(BaseModel):
     repair_count: int
     primary_metric: TopMetric
     primary_value: int
-

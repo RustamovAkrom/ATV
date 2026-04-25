@@ -1,6 +1,7 @@
 from uuid import UUID
-import asyncpg
 
+import asyncpg
+from sqlalchemy.exc import DBAPIError
 
 from core.audit.stream import audit_stream
 from core.exceptions.errors import BadRequest, NotFound
@@ -8,14 +9,15 @@ from db.models.enums import AssetStatus, UserStatus
 from repositories.asset_assignment_repo import AssetAssignmentRepository
 from schemas.asset_assignments import AssetAssignmentActionSchema
 from utils.helpers import utc_now
-from sqlalchemy.exc import DBAPIError
 
 
 class AssetAssignmentService:
     def __init__(self, repo: AssetAssignmentRepository):
         self.repo = repo
 
-    async def assign_asset(self, asset_id: UUID, user_id: UUID, actor_id: UUID) -> AssetAssignmentActionSchema:
+    async def assign_asset(
+        self, asset_id: UUID, user_id: UUID, actor_id: UUID
+    ) -> AssetAssignmentActionSchema:
         try:
             asset = await self.repo.get_asset_for_update(asset_id, nowait=True)
         except DBAPIError as e:
@@ -46,10 +48,16 @@ class AssetAssignmentService:
         await self.repo.flush()
 
         assignment = await self.repo.create_assignment(asset.id, user.id)
-        await self.repo.add_history(asset.id, actor_id, "assigned", f"Asset assigned to user {user.id}")
+        await self.repo.add_history(
+            asset.id, actor_id, "assigned", f"Asset assigned to user {user.id}"
+        )
         await self._publish(
             "asset.assigned",
-            {"asset_id": str(asset.id), "actor_id": str(actor_id), "user_id": str(user.id)},
+            {
+                "asset_id": str(asset.id),
+                "actor_id": str(actor_id),
+                "user_id": str(user.id),
+            },
         )
         return AssetAssignmentActionSchema(
             asset_id=asset.id,
@@ -57,7 +65,9 @@ class AssetAssignmentService:
             assigned_at=assignment.assigned_at,
         )
 
-    async def unassign_asset(self, asset_id: UUID, actor_id: UUID) -> AssetAssignmentActionSchema:
+    async def unassign_asset(
+        self, asset_id: UUID, actor_id: UUID
+    ) -> AssetAssignmentActionSchema:
         try:
             asset = await self.repo.get_asset_for_update(asset_id)
         except DBAPIError:
@@ -80,10 +90,19 @@ class AssetAssignmentService:
         asset.status = AssetStatus.ACTIVE
         await self.repo.flush()
 
-        await self.repo.add_history(asset.id, actor_id, "unassigned", f"Asset unassigned from user {previous_user_id}")
+        await self.repo.add_history(
+            asset.id,
+            actor_id,
+            "unassigned",
+            f"Asset unassigned from user {previous_user_id}",
+        )
         await self._publish(
             "asset.unassigned",
-            {"asset_id": str(asset.id), "actor_id": str(actor_id), "user_id": str(previous_user_id)},
+            {
+                "asset_id": str(asset.id),
+                "actor_id": str(actor_id),
+                "user_id": str(previous_user_id),
+            },
         )
         return AssetAssignmentActionSchema(
             asset_id=asset.id,
@@ -91,7 +110,9 @@ class AssetAssignmentService:
             unassigned_at=timestamp,
         )
 
-    async def reassign_asset(self, asset_id: UUID, new_user_id: UUID, actor_id: UUID) -> AssetAssignmentActionSchema:
+    async def reassign_asset(
+        self, asset_id: UUID, new_user_id: UUID, actor_id: UUID
+    ) -> AssetAssignmentActionSchema:
         try:
             asset = await self.repo.get_asset_for_update(asset_id)
         except DBAPIError:
@@ -109,6 +130,8 @@ class AssetAssignmentService:
 
     async def _publish(self, event: str, payload: dict) -> None:
         try:
-            await audit_stream.publish({"event": event, **payload, "timestamp": utc_now().timestamp()})
+            await audit_stream.publish(
+                {"event": event, **payload, "timestamp": utc_now().timestamp()}
+            )
         except Exception:
             return

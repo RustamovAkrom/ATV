@@ -78,7 +78,9 @@ def invalidate_cache(tags: tuple[str, ...] | str | None = None):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             result = await func(*args, **kwargs)
-            await cache.bump_version(resolved_tags or (f"{func.__module__}:{func.__qualname__}",))
+            await cache.bump_version(
+                resolved_tags or (f"{func.__module__}:{func.__qualname__}",)
+            )
             return result
 
         return wrapper

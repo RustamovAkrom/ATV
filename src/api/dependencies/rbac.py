@@ -6,9 +6,7 @@ from repositories.rbac_repo import RBACRepository
 from services.rbac_service import RBACService
 
 
-def get_rbac_repo(
-    db: AsyncSession = Depends(get_db_session)
-) -> RBACRepository:
+def get_rbac_repo(db: AsyncSession = Depends(get_db_session)) -> RBACRepository:
     return RBACRepository(db)
 
 

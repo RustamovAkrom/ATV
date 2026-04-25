@@ -1,5 +1,7 @@
 from uuid import UUID
 
+from fastapi.encoders import jsonable_encoder
+
 from core.exceptions.errors import BadRequest, NotFound
 from db.models.approvals.approval_request import ApprovalRequest
 from db.models.enums import ApprovalStatus, AssetStatus
@@ -11,8 +13,6 @@ from schemas.approvals import (
     AssetDeleteApprovalPayload,
     RepairCompleteApprovalPayload,
 )
-from fastapi.encoders import jsonable_encoder
-
 from schemas.asset_transfers import AssetTransferCreate
 from schemas.assets import AssetStatusChangeRequest
 from schemas.repairs import RepairCompleteRequest
@@ -48,9 +48,13 @@ class ApprovalService:
 
     async def list(self) -> list[ApprovalSchema]:
         items = await self.approval_repo.list()
-        return [ApprovalSchema.model_validate(item, from_attributes=True) for item in items]
+        return [
+            ApprovalSchema.model_validate(item, from_attributes=True) for item in items
+        ]
 
-    async def approve(self, approval_id: UUID, actor_id: UUID, comment: str | None = None) -> ApprovalSchema:
+    async def approve(
+        self, approval_id: UUID, actor_id: UUID, comment: str | None = None
+    ) -> ApprovalSchema:
         async with self.approval_repo.session.begin_nested():
             approval = await self._get_pending(approval_id, for_update=True)
             await self._execute_approved_action(approval, actor_id, comment)
@@ -59,22 +63,32 @@ class ApprovalService:
             approval.executed = True
             approval.decided_at = utc_now()
             if comment:
-                approval.payload = {**approval.payload, "approval_comment": comment.strip()}
+                approval.payload = {
+                    **approval.payload,
+                    "approval_comment": comment.strip(),
+                }
             await self.approval_repo.flush()
         return ApprovalSchema.model_validate(approval, from_attributes=True)
 
-    async def reject(self, approval_id: UUID, actor_id: UUID, comment: str | None = None) -> ApprovalSchema:
+    async def reject(
+        self, approval_id: UUID, actor_id: UUID, comment: str | None = None
+    ) -> ApprovalSchema:
         async with self.approval_repo.session.begin_nested():
             approval = await self._get_pending(approval_id, for_update=True)
             approval.status = ApprovalStatus.REJECTED
             approval.approved_by_id = actor_id
             approval.decided_at = utc_now()
             if comment:
-                approval.payload = {**approval.payload, "rejection_comment": comment.strip()}
+                approval.payload = {
+                    **approval.payload,
+                    "rejection_comment": comment.strip(),
+                }
             await self.approval_repo.flush()
         return ApprovalSchema.model_validate(approval, from_attributes=True)
 
-    async def _get_pending(self, approval_id: UUID, for_update: bool = False) -> ApprovalRequest:
+    async def _get_pending(
+        self, approval_id: UUID, for_update: bool = False
+    ) -> ApprovalRequest:
         approval = await (
             self.approval_repo.get_by_id_for_update(approval_id)
             if for_update
@@ -100,20 +114,39 @@ class ApprovalService:
             raise BadRequest("Unsupported approval request")
         try:
             if key == ("asset_transfer", "create_transfer"):
-                return jsonable_encoder(AssetTransferCreate(**data.payload).model_dump(exclude_none=True))
+                return jsonable_encoder(
+                    AssetTransferCreate(**data.payload).model_dump(exclude_none=True)
+                )
             if key == ("asset_archive", "archive"):
-                return jsonable_encoder(AssetArchiveApprovalPayload(**data.payload).model_dump(exclude_none=True))
+                return jsonable_encoder(
+                    AssetArchiveApprovalPayload(**data.payload).model_dump(
+                        exclude_none=True
+                    )
+                )
             if key == ("asset_delete", "delete"):
-                return jsonable_encoder(AssetDeleteApprovalPayload(**data.payload).model_dump(exclude_none=True))
+                return jsonable_encoder(
+                    AssetDeleteApprovalPayload(**data.payload).model_dump(
+                        exclude_none=True
+                    )
+                )
             if key == ("repair", "complete_repair"):
-                return jsonable_encoder(RepairCompleteApprovalPayload(**data.payload).model_dump(exclude_none=True))
+                return jsonable_encoder(
+                    RepairCompleteApprovalPayload(**data.payload).model_dump(
+                        exclude_none=True
+                    )
+                )
         except Exception as exc:
             raise BadRequest(f"Invalid approval payload: {exc}") from exc
         raise BadRequest("Unsupported approval request")
 
-    async def _execute_approved_action(self, approval: ApprovalRequest, actor_id: UUID, comment: str | None) -> None:
+    async def _execute_approved_action(
+        self, approval: ApprovalRequest, actor_id: UUID, comment: str | None
+    ) -> None:
         payload = dict(approval.payload or {})
-        if approval.entity_type == "asset_transfer" and approval.action == "create_transfer":
+        if (
+            approval.entity_type == "asset_transfer"
+            and approval.action == "create_transfer"
+        ):
             await self.transfer_service.create_transfer(
                 approval.entity_id,
                 AssetTransferCreate(**payload),

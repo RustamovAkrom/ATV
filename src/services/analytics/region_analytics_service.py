@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from repositories.analytics.region_analytics_repo import RegionAnalyticsRepository
 from schemas.analytics.regions import (
     RegionAssetCostSummaryOut,
     RegionAssetStatusCounts,
@@ -8,7 +9,6 @@ from schemas.analytics.regions import (
     RegionOverviewOut,
     RegionServiceLoadOut,
 )
-from repositories.analytics.region_analytics_repo import RegionAnalyticsRepository
 from utils.helpers import utc_now
 
 
@@ -84,7 +84,9 @@ class RegionAnalyticsService:
             assignment_load = int(row.assignment_load or 0)
             repairs = int(row.repairs_count or 0)
             transfers = int(row.transfers_in or 0) + int(row.transfers_out or 0)
-            score = float(total_assets + assignment_load * 1.5 + repairs * 2 + transfers)
+            score = float(
+                total_assets + assignment_load * 1.5 + repairs * 2 + transfers
+            )
             heatmap.append(
                 RegionHeatmapPointOut(
                     region_id=row.id,
@@ -102,4 +104,3 @@ class RegionAnalyticsService:
                 )
             )
         return heatmap
-

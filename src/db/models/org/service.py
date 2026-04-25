@@ -21,13 +21,26 @@ class Service(Base, UUIDMixing, TimestampMixin):
         "Region",
         secondary="region_services",
         back_populates="services",
-        lazy="selectin"
+        lazy="selectin",
     )
-    users: Mapped[list["User"]] = relationship("User", back_populates="service", lazy="selectin")
+    users: Mapped[list["User"]] = relationship(
+        "User", back_populates="service", lazy="selectin"
+    )
 
 
 region_services = Table(
-    "region_services", Base.metadata,
-    Column("region_id", UUID(as_uuid=True), ForeignKey("regions.id", ondelete="CASCADE"), primary_key=True),
-    Column("service_id", UUID(as_uuid=True), ForeignKey("services.id", ondelete="CASCADE"), primary_key=True),
+    "region_services",
+    Base.metadata,
+    Column(
+        "region_id",
+        UUID(as_uuid=True),
+        ForeignKey("regions.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "service_id",
+        UUID(as_uuid=True),
+        ForeignKey("services.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )

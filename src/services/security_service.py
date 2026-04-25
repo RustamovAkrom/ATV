@@ -1,17 +1,17 @@
 from datetime import timedelta
 
+import utils.reset_tokens as tokens
 from core.config import get_settings
 from core.exceptions.errors import InvalidToken
+from core.logger import configure_logger
 from core.security.passwords import hash_password
 from db.models.auth.password_reset import PasswordReset
 from repositories.auth_repo import AuthRepository
 from repositories.password_reset_repo import PasswordResetRepository
 from repositories.user_repo import UserRepository
 from tasks.email_task import send_password_reset_email_task
-from utils.reset_tokens import hash_token
-import utils.reset_tokens as tokens
 from utils.helpers import utc_now
-from core.logger import configure_logger
+from utils.reset_tokens import hash_token
 
 
 class SecurityService:

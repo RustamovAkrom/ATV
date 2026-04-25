@@ -5,7 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from db.models.enums import AssetStatus
-from schemas.pagination import Page
+from schemas.pagination import PageSchema
 
 
 class AssetRef(BaseModel):
@@ -124,7 +124,6 @@ class AssetFilters(BaseModel):
     search: str | None = Field(default=None, max_length=255)
 
 
-
 class AssetSchema(BaseModel):
     id: UUID
     name: str
@@ -158,4 +157,4 @@ class AssetDetailSchema(AssetSchema):
     history_entries: list[AssetHistorySchema] = Field(default_factory=list)
 
 
-AssetPage = Page[AssetSchema]
+AssetPage = PageSchema[AssetSchema]

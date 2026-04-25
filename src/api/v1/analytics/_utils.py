@@ -18,7 +18,9 @@ def parse_optional_datetime(value: str | None) -> datetime | None:
     try:
         parsed = datetime.fromisoformat(value)
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail="Invalid datetime format. Use ISO 8601.") from exc
+        raise HTTPException(
+            status_code=422, detail="Invalid datetime format. Use ISO 8601."
+        ) from exc
 
     # Normalize naive inputs to UTC to keep analytics ranges deterministic.
     if parsed.tzinfo is None:
@@ -31,14 +33,18 @@ def sanitize_search(value: str | None) -> str | None:
     if value is None:
         return None
 
-    cleaned = " ".join(value.replace("%", " ").replace("_", " ").replace("*", " ").split())
+    cleaned = " ".join(
+        value.replace("%", " ").replace("_", " ").replace("*", " ").split()
+    )
     if not cleaned:
         return None
 
     return cleaned[: settings.ANALYTICS_SEARCH_MAX_LENGTH]
 
 
-async def enforce_rate_limit(request: Request, scope: str, limit: int, window_seconds: int = 60) -> None:
+async def enforce_rate_limit(
+    request: Request, scope: str, limit: int, window_seconds: int = 60
+) -> None:
     user_id = getattr(request.state, "user_id", None)
     client_ip = request.client.host if request.client else "unknown"
     identity = str(user_id or client_ip)

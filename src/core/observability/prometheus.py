@@ -4,8 +4,15 @@ import os
 
 from prometheus_client import CONTENT_TYPE_LATEST
 from prometheus_client import REGISTRY as DEFAULT_REGISTRY
-from prometheus_client import (CollectorRegistry, Counter, Gauge, Histogram,
-                               Info, generate_latest, multiprocess)
+from prometheus_client import (
+    CollectorRegistry,
+    Counter,
+    Gauge,
+    Histogram,
+    Info,
+    generate_latest,
+    multiprocess,
+)
 from starlette.responses import Response as StarletteResponse
 
 from core.config import get_settings

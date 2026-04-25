@@ -1,7 +1,11 @@
 from fastapi import APIRouter, Depends, Query, Request
 
 from api.dependencies.analytics import get_alert_analytics_service
-from api.v1.analytics._utils import enforce_rate_limit, parse_rate_limit, run_analytics_operation
+from api.v1.analytics._utils import (
+    enforce_rate_limit,
+    parse_rate_limit,
+    run_analytics_operation,
+)
 from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.rbac import presets
@@ -24,7 +28,9 @@ async def get_alerts(
     assignment_threshold: int | None = Query(default=None, ge=1, le=100),
     service: AlertAnalyticsService = Depends(get_alert_analytics_service),
 ):
-    await enforce_rate_limit(request, "analytics:alerts", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
+    await enforce_rate_limit(
+        request, "analytics:alerts", ANALYTICS_LIMIT, ANALYTICS_WINDOW
+    )
     return await run_analytics_operation(
         request,
         "analytics.alerts",

@@ -10,7 +10,9 @@ from schemas.bulk import BulkFailedItem, BulkResult
 class BulkAssetService:
     MAX_BATCH_SIZE = 100
 
-    def __init__(self, session: AsyncSession, assignment_service, transfer_service, asset_service):
+    def __init__(
+        self, session: AsyncSession, assignment_service, transfer_service, asset_service
+    ):
         self.session = session
         self.assignment_service = assignment_service
         self.transfer_service = transfer_service
@@ -20,14 +22,20 @@ class BulkAssetService:
         asset_ids = self._validate_asset_ids(asset_ids)
         return await self._process_items(
             asset_ids,
-            lambda asset_id: self.assignment_service.assign_asset(asset_id, user_id, actor_id),
+            lambda asset_id: self.assignment_service.assign_asset(
+                asset_id, user_id, actor_id
+            ),
         )
 
-    async def bulk_transfer(self, asset_ids, transfer: AssetTransferCreate, actor_id) -> BulkResult:
+    async def bulk_transfer(
+        self, asset_ids, transfer: AssetTransferCreate, actor_id
+    ) -> BulkResult:
         asset_ids = self._validate_asset_ids(asset_ids)
         return await self._process_items(
             asset_ids,
-            lambda asset_id: self.transfer_service.create_transfer(asset_id, transfer, actor_id),
+            lambda asset_id: self.transfer_service.create_transfer(
+                asset_id, transfer, actor_id
+            ),
         )
 
     async def bulk_update_status(self, asset_ids, status, actor_id) -> BulkResult:

@@ -2,27 +2,27 @@
 
 from uuid import UUID
 
-from core.exceptions.errors import NotFound, BadRequest
+from core.exceptions.errors import BadRequest, NotFound
 from db.models.assets.asset_model import AssetModel
-
+from repositories.asset_category_repo import AssetCategoryRepository
 from repositories.asset_model_repo import AssetModelRepository
 from repositories.manufacturer_repo import ManufacturerRepository
-from repositories.asset_category_repo import AssetCategoryRepository
 from schemas.asset_model import AssetModelCreateSchema
-from utils.validators import (
-    validate_name,
-    normalize_name,
-    ensure_unique_code,
-    safe_create,
-)
 from utils.slug import slugify
+from utils.validators import (
+    ensure_unique_code,
+    normalize_name,
+    safe_create,
+    validate_name,
+)
 
 
 class AssetModelService:
-    def __init__(self,
-            repo: AssetModelRepository,
-            manufacturer_repo: ManufacturerRepository,
-            category_repo: AssetCategoryRepository,
+    def __init__(
+        self,
+        repo: AssetModelRepository,
+        manufacturer_repo: ManufacturerRepository,
+        category_repo: AssetCategoryRepository,
     ):
         self.repo = repo
         self.manufacturer_repo = manufacturer_repo
@@ -38,8 +38,7 @@ class AssetModelService:
 
         # 2. check duplicate (ВАЖНО: с manufacturer)
         existing = await self.repo.get_by_name_and_manufacturer(
-            normalized,
-            data.manufacturer_id
+            normalized, data.manufacturer_id
         )
         if existing:
             raise BadRequest("Model already exists for this manufacturer")

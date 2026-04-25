@@ -1,10 +1,12 @@
-from sqlalchemy import func, and_, or_, select
-from sqlalchemy.ext.asyncio import AsyncSession
 from collections.abc import Mapping
 from typing import Any
-from db.models.audit.audit_log import AuditLog
-from schemas.audit import AuditCreate, AuditFilters
 from uuid import UUID
+
+from sqlalchemy import and_, func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from db.models.audit.audit_log import AuditLog
+from schemas.audit import AuditCreateSchema, AuditFiltersSchema
 
 
 class AuditRepository:
@@ -12,7 +14,9 @@ class AuditRepository:
         self.session = session
 
     @staticmethod
-    def _normalize_payload(data: AuditCreate | Mapping[str, Any]) -> dict[str, Any]:
+    def _normalize_payload(
+        data: AuditCreateSchema | Mapping[str, Any],
+    ) -> dict[str, Any]:
         if hasattr(data, "model_dump"):
             return data.model_dump()
         if isinstance(data, Mapping):
@@ -28,7 +32,7 @@ class AuditRepository:
         return select(func.count()).select_from(query.order_by(None).subquery())
 
     @staticmethod
-    def _apply_filters(query, filters: AuditFilters | None):
+    def _apply_filters(query, filters: AuditFiltersSchema | None):
         if filters is None:
             return query
 
@@ -79,14 +83,14 @@ class AuditRepository:
 
         return query
 
-    async def create(self, data: AuditCreate | Mapping[str, Any]):
+    async def create(self, data: AuditCreateSchema | Mapping[str, Any]):
         payload = self._normalize_payload(data)
         audit = AuditLog(**payload)
         self.session.add(audit)
         await self.session.flush()
         return audit
 
-    async def list(self, filters: AuditFilters | None, limit: int, offset: int):
+    async def list(self, filters: AuditFiltersSchema | None, limit: int, offset: int):
         query = self._apply_filters(self._base_query(), filters).order_by(
             AuditLog.created_at.desc()
         )
@@ -179,7 +183,9 @@ class AuditRepository:
                 func.count().label("total"),
                 func.count().filter(AuditLog.status_code >= 400).label("errors"),
                 func.count().filter(AuditLog.status_code >= 500).label("server_errors"),
-                func.count().filter(AuditLog.is_suspicious.is_(True)).label("suspicious"),
+                func.count()
+                .filter(AuditLog.is_suspicious.is_(True))
+                .label("suspicious"),
                 func.count(func.distinct(AuditLog.user_id)).label("unique_users"),
             )
         )

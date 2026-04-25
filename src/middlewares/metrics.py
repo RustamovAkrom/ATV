@@ -1,96 +1,76 @@
-from __future__ import annotations
-
 import time
-from collections.abc import Awaitable, Callable
 
-from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from core.observability.prometheus import (
     APP_NAME,
     EXCEPTIONS_TOTAL,
     IN_PROGRESS,
     REQUEST_DURATION,
+    REQUEST_ERRORS,
     REQUEST_STATUS_CLASS,
     REQUEST_TOTAL,
-    REQUEST_ERRORS,
 )
 
 
-class MetricsMiddleware(BaseHTTPMiddleware):
-    async def dispatch(
-        self,
-        request: Request,
-        call_next: Callable[[Request], Awaitable[Response]]
-    ) -> Response:
-        if request.url.path.startswith("/metrics"):
-            return await call_next(request)
+class MetricsMiddleware:
+    def __init__(self, app: ASGIApp):
+        self.app = app
+        self.app_label = APP_NAME
 
-        app_label = APP_NAME
-        method = request.method
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        # Игнорируем метрики и не-http запросы
+        if scope["type"] != "http" or scope["path"].startswith("/metrics"):
+            await self.app(scope, receive, send)
+            return
 
-        route = request.scope.get("route")
-        endpoint = route.path if route else request.url.path
+        method = scope["method"]
+        # Получаем путь роута или дефолтный путь
+        route = scope.get("route")
+        endpoint = route.path if route else scope["path"]
 
         start_time = time.perf_counter()
-        IN_PROGRESS.labels(app=app_label).inc()
+        IN_PROGRESS.labels(app=self.app_label).inc()
+
+        async def send_wrapper(message: Send):
+            if message["type"] == "http.response.start":
+                status_code = message["status"]
+                duration = time.perf_counter() - start_time
+                status_str = str(status_code)
+
+                # Записываем метрики
+                REQUEST_TOTAL.labels(
+                    app=self.app_label,
+                    method=method,
+                    endpoint=endpoint,
+                    status=status_str,
+                ).inc()
+
+                REQUEST_DURATION.labels(
+                    app=self.app_label, method=method, endpoint=endpoint
+                ).observe(duration)
+
+                REQUEST_STATUS_CLASS.labels(
+                    app=self.app_label,
+                    method=method,
+                    endpoint=endpoint,
+                    status_class=f"{status_code // 100}xx",
+                ).inc()
+
+                if status_code >= 400:
+                    REQUEST_ERRORS.labels(
+                        app=self.app_label,
+                        method=method,
+                        endpoint=endpoint,
+                        status=status_str,
+                    ).inc()
+
+            await send(message)
 
         try:
-            response = await call_next(request)
-            status_code = response.status_code
-            status = str(status_code)
-
+            await self.app(scope, receive, send_wrapper)
         except Exception:
-            EXCEPTIONS_TOTAL.labels(
-                app=app_label,
-                endpoint=endpoint,
-            ).inc()
-
-            REQUEST_ERRORS.labels(
-                app=app_label,
-                method=method,
-                endpoint=endpoint,
-                status="500",
-            ).inc()
-
-            IN_PROGRESS.labels(app=app_label).dec()
+            EXCEPTIONS_TOTAL.labels(app=self.app_label, endpoint=endpoint).inc()
             raise
-
-        duration = time.perf_counter() - start_time
-
-        # total
-        REQUEST_TOTAL.labels(
-            app=app_label,
-            method=method,
-            endpoint=endpoint,
-            status=status,
-        ).inc()
-
-        # histogram
-        REQUEST_DURATION.labels(
-            app=app_label,
-            method=method,
-            endpoint=endpoint,
-        ).observe(duration)
-
-        # status class (2xx / 4xx / 5xx)
-        status_class = f"{status_code // 100}xx"
-        REQUEST_STATUS_CLASS.labels(
-            app=app_label,
-            method=method,
-            endpoint=endpoint,
-            status_class=status_class,
-        ).inc()
-
-        # errors
-        if status_code >= 400:
-            REQUEST_ERRORS.labels(
-                app=app_label,
-                method=method,
-                endpoint=endpoint,
-                status=status,
-            ).inc()
-
-        IN_PROGRESS.labels(app=app_label).dec()
-
-        return response
+        finally:
+            IN_PROGRESS.labels(app=self.app_label).dec()

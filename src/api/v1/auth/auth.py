@@ -1,20 +1,19 @@
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 
-from core.security.auth.dependencies import get_current_user
-from core.security.auth.types import CurrentUser
-from core.slowapi import limiter
-from services.auth_service import AuthService
 from api.dependencies.auth import get_auth_service
-from schemas.auth import RefreshRequest, TokenResponse
 from core.config import get_settings
+from core.security.auth.dependencies import get_current_user
+from core.slowapi import limiter
+from schemas.auth import CurrentUserSchema, RefreshRequestSchema, TokenResponseSchema
+from services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 settings = get_settings()
 MAX_AGE = settings.JWT_ACCESS_TOKEN_EXPIRES_MINUTES * 60
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=TokenResponseSchema)
 @limiter.limit("5/minute")
 async def login(
     request: Request,
@@ -41,9 +40,9 @@ async def login(
     return tokens
 
 
-@router.post("/refresh", response_model=TokenResponse)
+@router.post("/refresh", response_model=TokenResponseSchema)
 async def refresh(
-    data: RefreshRequest,
+    data: RefreshRequestSchema,
     request: Request,
     response: Response,
     service: AuthService = Depends(get_auth_service),
@@ -66,9 +65,9 @@ async def refresh(
 @router.post("/logout")
 async def logout(
     request: Request,
-    data: RefreshRequest,
+    data: RefreshRequestSchema,
     response: Response,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUserSchema = Depends(get_current_user),
     service: AuthService = Depends(get_auth_service),
 ):
     await service.logout(request, data.refresh_token)
@@ -82,7 +81,7 @@ async def logout(
 async def logout_all(
     request: Request,
     response: Response,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUserSchema = Depends(get_current_user),
     service: AuthService = Depends(get_auth_service),
 ):
     await service.logout_all(request, current_user.id)

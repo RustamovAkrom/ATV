@@ -1,4 +1,5 @@
 import pytest
+
 from core.security.jwt import decode_token
 
 
@@ -151,9 +152,11 @@ async def test_logout_all_sessions(client, create_user):
 @pytest.mark.anyio
 async def test_cleanup_sessions(client, create_user, dbsession):
     # Arrange
-    from db.models.refresh_token import RefreshToken
+    from datetime import datetime, timedelta, timezone
+
     from sqlalchemy import update
-    from datetime import datetime, timezone, timedelta
+
+    from db.models.refresh_token import RefreshToken
 
     user = await create_user()
 

@@ -1,17 +1,16 @@
-from fastapi import APIRouter, Depends
 from uuid import UUID
 
-from schemas.asset_model import * # noqa
-from services.asset_model_service import AssetModelService
+from fastapi import APIRouter, Depends
+
 from api.dependencies.asset_model import get_asset_model_service
+from schemas.asset_model import *  # noqa
+from services.asset_model_service import AssetModelService
 
 router = APIRouter(prefix="/asset-models", tags=["Asset models"])
 
 
 @router.get("/", response_model=list[AssetModelOutSchema])
-async def list_models(
-    service: AssetModelService = Depends(get_asset_model_service)
-):
+async def list_models(service: AssetModelService = Depends(get_asset_model_service)):
     return await service.list()
 
 

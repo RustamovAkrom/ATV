@@ -1,10 +1,10 @@
 from uuid import UUID
 
-from sqlalchemy import select, delete
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from db.models.users.permission import Role, Permission
+from db.models.users.permission import Permission, Role
 
 
 class RBACRepository:
@@ -61,9 +61,7 @@ class RBACRepository:
         return role
 
     async def delete_role(self, role_id: UUID):
-        await self.session.execute(
-            delete(Role).where(Role.id == role_id)
-        )
+        await self.session.execute(delete(Role).where(Role.id == role_id))
 
     # PERMISSIONS
     async def get_permissions(self):

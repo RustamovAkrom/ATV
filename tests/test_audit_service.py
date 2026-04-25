@@ -3,11 +3,13 @@ import pytest
 from db.models.audit.audit_log import AuditLog
 from tests.utils.auth import auth_client, login
 
+
 @pytest.mark.anyio
 async def test_list_audit_logs_requires_authentication(client):
     """Неавторизованный пользователь не должен читать audit-логи."""
     response = await client.get("/audit/")
     assert response.status_code == 401
+
 
 @pytest.mark.anyio
 async def test_list_audit_logs_success_as_admin(client, create_user, dbsession):
@@ -46,7 +48,9 @@ async def test_list_audit_logs_success_as_admin(client, create_user, dbsession):
     )
     await dbsession.commit()
 
-    response = await client.get("/audit/", params={"limit": 10, "page": 1, "method": "POST"})
+    response = await client.get(
+        "/audit/", params={"limit": 10, "page": 1, "method": "POST"}
+    )
 
     assert response.status_code == 200
     data = response.json()
@@ -54,6 +58,7 @@ async def test_list_audit_logs_success_as_admin(client, create_user, dbsession):
     assert len(data["items"]) == 1
     assert data["items"][0]["method"] == "POST"
     assert data["items"][0]["request_id"] == "req-post"
+
 
 @pytest.mark.anyio
 async def test_audit_stats_returns_expected_counters(client, create_user, dbsession):
@@ -113,6 +118,7 @@ async def test_audit_stats_returns_expected_counters(client, create_user, dbsess
         "server_errors": 1,
         "suspicious": 1,
     }
+
 
 # @pytest.mark.anyio
 # async def test_audit_stream_filters_events(client, create_user):

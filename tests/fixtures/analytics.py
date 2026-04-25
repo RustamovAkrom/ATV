@@ -20,10 +20,18 @@ from utils.helpers import utc_now
 
 @pytest.fixture
 async def analytics_users(dbsession):
-    superadmin = await create_user_with_role(dbsession, login_prefix="superadmin", role_code=UserRole.SUPERADMIN.value)
-    admin = await create_user_with_role(dbsession, login_prefix="admin", role_code=UserRole.ADMIN.value)
-    analytic = await create_user_with_role(dbsession, login_prefix="analytic", role_code=UserRole.ANALYTIC.value)
-    moderator = await create_user_with_role(dbsession, login_prefix="moderator", role_code=UserRole.MODERATOR.value)
+    superadmin = await create_user_with_role(
+        dbsession, login_prefix="superadmin", role_code=UserRole.SUPERADMIN.value
+    )
+    admin = await create_user_with_role(
+        dbsession, login_prefix="admin", role_code=UserRole.ADMIN.value
+    )
+    analytic = await create_user_with_role(
+        dbsession, login_prefix="analytic", role_code=UserRole.ANALYTIC.value
+    )
+    moderator = await create_user_with_role(
+        dbsession, login_prefix="moderator", role_code=UserRole.MODERATOR.value
+    )
     await dbsession.commit()
     return {
         "superadmin": superadmin,

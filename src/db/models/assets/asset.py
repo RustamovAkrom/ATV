@@ -2,20 +2,19 @@
 
 from datetime import date
 from decimal import Decimal
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING, List, Optional
 from uuid import UUID
 
 from sqlalchemy import JSON, Date
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy import ForeignKey, Numeric, String, Integer
+from sqlalchemy import ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship, synonym, validates
 
 from db.base import Base, TimestampMixin, UUIDMixing
+from db.models.documents.document import Document
 from db.models.enums import AssetStatus
-
 from db.models.repairs.repair import Repair
 from db.models.warehouse.warehouse import Warehouse
-from db.models.documents.document import Document
 
 if TYPE_CHECKING:
     from db.models.assets.asset_assignment import AssetAssignment
@@ -35,8 +34,12 @@ class Asset(Base, UUIDMixing, TimestampMixin):
     type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
 
     # Identifiers
-    asset_tag: Mapped[Optional[str]] = mapped_column(String(255), unique=True, index=True)
-    serial_number: Mapped[Optional[str]] = mapped_column(String(255), unique=True, index=True)
+    asset_tag: Mapped[Optional[str]] = mapped_column(
+        String(255), unique=True, index=True
+    )
+    serial_number: Mapped[Optional[str]] = mapped_column(
+        String(255), unique=True, index=True
+    )
 
     # Relations (FK)
     model_id: Mapped[UUID] = mapped_column(
@@ -89,15 +92,12 @@ class Asset(Base, UUIDMixing, TimestampMixin):
     commission_date: Mapped[Optional[date]] = mapped_column(Date)
     warranty_end: Mapped[Optional[date]] = mapped_column(Date)
 
-
     # State (0-100)
     condition_percent: Mapped[int] = mapped_column(default=100)
 
     # Finance
     purchase_date: Mapped[Optional[date]] = mapped_column(Date)
-    purchase_cost: Mapped[Optional[Decimal]] = mapped_column(
-        Numeric(18, 2)
-    )
+    purchase_cost: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 2))
 
     # usage
     last_repair_date: Mapped[Optional[date]] = mapped_column(Date)
@@ -108,19 +108,23 @@ class Asset(Base, UUIDMixing, TimestampMixin):
     is_transfer_locked: Mapped[bool] = mapped_column(default=False)
 
     # flexible data
-    meta: Mapped[dict] = mapped_column("metadata", JSON, default=lambda: {}, nullable=False)
+    meta: Mapped[dict] = mapped_column(
+        "metadata", JSON, default=lambda: {}, nullable=False
+    )
 
     # versioning
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     # relationships
     repairs: Mapped[list["Repair"]] = relationship(
-        "Repair",
-        back_populates="asset",
-        lazy="selectin"
+        "Repair", back_populates="asset", lazy="selectin"
     )
-    model: Mapped["AssetModel"] = relationship("AssetModel", back_populates="assets", lazy="joined")
-    asset_class: Mapped[Optional["AssetClass"]] = relationship("AssetClass", back_populates="assets", lazy="joined")
+    model: Mapped["AssetModel"] = relationship(
+        "AssetModel", back_populates="assets", lazy="joined"
+    )
+    asset_class: Mapped[Optional["AssetClass"]] = relationship(
+        "AssetClass", back_populates="assets", lazy="joined"
+    )
     region: Mapped[Optional["Region"]] = relationship("Region", lazy="selectin")
     service: Mapped[Optional["Service"]] = relationship("Service", lazy="joined")
     warehouse: Mapped[Optional["Warehouse"]] = relationship(
@@ -129,7 +133,9 @@ class Asset(Base, UUIDMixing, TimestampMixin):
         lazy="selectin",
         foreign_keys=[current_warehouse_id],
     )
-    owner: Mapped[Optional["User"]] = relationship("User", foreign_keys=[owner_id], lazy="selectin")
+    owner: Mapped[Optional["User"]] = relationship(
+        "User", foreign_keys=[owner_id], lazy="selectin"
+    )
     assignments: Mapped[list["AssetAssignment"]] = relationship(
         "AssetAssignment",
         back_populates="asset",
@@ -155,7 +161,7 @@ class Asset(Base, UUIDMixing, TimestampMixin):
         "Document",
         back_populates="asset",
         lazy="selectin",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
 
     responsible_user_id = synonym("owner_id")
@@ -167,6 +173,4 @@ class Asset(Base, UUIDMixing, TimestampMixin):
             raise ValueError("condition_percent must be between 0 and 100")
         return value
 
-    __mapper_args__ = {
-        "version_id_col": version
-    }
+    __mapper_args__ = {"version_id_col": version}

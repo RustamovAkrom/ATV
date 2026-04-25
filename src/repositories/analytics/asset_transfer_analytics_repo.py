@@ -4,19 +4,18 @@ from datetime import timedelta
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from db.models.assets.asset import Asset
 from db.models.assets.asset_transfer import AssetTransfer
-from db.models.users.user import User
-from db.models.warehouse.warehouse import Warehouse
-from db.models.org.service import Service
-from schemas.analytics.asset_transfer_analytics import AssetTransferFilterInput
-from schemas.pagination import PaginationParams
 from db.models.enums import TransferStatus
+from db.models.warehouse.warehouse import Warehouse
+from schemas.analytics.asset_transfer_analytics import AssetTransferFilterInput
+from schemas.pagination import PaginationParamsSchema
 from utils.helpers import utc_now
+
 
 class AssetTransferAnalyticsRepository:
     """Read-optimized repository for transfer analytics."""
@@ -38,13 +37,19 @@ class AssetTransferAnalyticsRepository:
             query = query.where(AssetTransfer.received_by_id == filters.received_by_id)
 
         if filters.from_warehouse_id:
-            query = query.where(AssetTransfer.from_warehouse_id == filters.from_warehouse_id)
+            query = query.where(
+                AssetTransfer.from_warehouse_id == filters.from_warehouse_id
+            )
 
         if filters.to_warehouse_id:
-            query = query.where(AssetTransfer.to_warehouse_id == filters.to_warehouse_id)
+            query = query.where(
+                AssetTransfer.to_warehouse_id == filters.to_warehouse_id
+            )
 
         if filters.from_service_id:
-            query = query.where(AssetTransfer.from_service_id == filters.from_service_id)
+            query = query.where(
+                AssetTransfer.from_service_id == filters.from_service_id
+            )
 
         if filters.to_service_id:
             query = query.where(AssetTransfer.to_service_id == filters.to_service_id)
@@ -78,7 +83,7 @@ class AssetTransferAnalyticsRepository:
     async def list_transfers(
         self,
         filters: AssetTransferFilterInput,
-        pagination: PaginationParams,
+        pagination: PaginationParamsSchema,
     ) -> tuple[list[AssetTransfer], int]:
         """List transfers with pagination."""
         query = (
@@ -109,7 +114,9 @@ class AssetTransferAnalyticsRepository:
 
         return result.scalars().all(), int(total or 0)
 
-    async def list_pending_transfers(self, pagination: PaginationParams) -> tuple[list[AssetTransfer], int]:
+    async def list_pending_transfers(
+        self, pagination: PaginationParamsSchema
+    ) -> tuple[list[AssetTransfer], int]:
         """List pending transfers."""
         query = (
             select(AssetTransfer)
@@ -126,7 +133,9 @@ class AssetTransferAnalyticsRepository:
         )
 
         total = await self.session.scalar(
-            select(func.count(AssetTransfer.id)).where(AssetTransfer.status == TransferStatus.PENDING)
+            select(func.count(AssetTransfer.id)).where(
+                AssetTransfer.status == TransferStatus.PENDING
+            )
         )
 
         result = await self.session.execute(
@@ -135,7 +144,9 @@ class AssetTransferAnalyticsRepository:
 
         return result.scalars().all(), int(total or 0)
 
-    async def get_transfer_history_for_asset(self, asset_id: UUID) -> list[AssetTransfer]:
+    async def get_transfer_history_for_asset(
+        self, asset_id: UUID
+    ) -> list[AssetTransfer]:
         """Get complete transfer history for an asset."""
         result = await self.session.execute(
             select(AssetTransfer)
@@ -244,16 +255,30 @@ class AssetTransferAnalyticsRepository:
             "completed_transfers": int(aggregates.completed_transfers or 0),
             "pending_transfers": int(aggregates.pending_transfers or 0),
             "cancelled_transfers": int(aggregates.cancelled_transfers or 0),
-            "average_completion_time_days": Decimal(aggregates.average_completion_duration.total_seconds() / 86400) if aggregates.average_completion_duration else None,
-            "longest_completion_time_days": Decimal(aggregates.longest_completion_duration.total_seconds() / 86400) if aggregates.longest_completion_duration else None,
-            "shortest_completion_time_days": Decimal(aggregates.shortest_completion_duration.total_seconds() / 86400) if aggregates.shortest_completion_duration else None,
+            "average_completion_time_days": (
+                Decimal(aggregates.average_completion_duration.total_seconds() / 86400)
+                if aggregates.average_completion_duration
+                else None
+            ),
+            "longest_completion_time_days": (
+                Decimal(aggregates.longest_completion_duration.total_seconds() / 86400)
+                if aggregates.longest_completion_duration
+                else None
+            ),
+            "shortest_completion_time_days": (
+                Decimal(aggregates.shortest_completion_duration.total_seconds() / 86400)
+                if aggregates.shortest_completion_duration
+                else None
+            ),
             "oldest_pending_transfer_days": oldest_pending_days,
             "oldest_pending_transfer_id": oldest_pending_id,
             "transfers_pending_over_7_days": int(bottlenecks.over_7_days or 0),
             "transfers_pending_over_30_days": int(bottlenecks.over_30_days or 0),
         }
 
-    async def get_bottlenecks(self, critical_days: int = 30, warning_days: int = 7) -> dict:
+    async def get_bottlenecks(
+        self, critical_days: int = 30, warning_days: int = 7
+    ) -> dict:
         """Get transfer bottlenecks."""
         now = utc_now()
 
@@ -263,7 +288,7 @@ class AssetTransferAnalyticsRepository:
             .where(
                 and_(
                     AssetTransfer.status == TransferStatus.PENDING,
-                    AssetTransfer.created_at <= now - timedelta(days=critical_days)
+                    AssetTransfer.created_at <= now - timedelta(days=critical_days),
                 )
             )
             .options(
@@ -285,7 +310,7 @@ class AssetTransferAnalyticsRepository:
                 and_(
                     AssetTransfer.status == TransferStatus.PENDING,
                     AssetTransfer.created_at <= now - timedelta(days=warning_days),
-                    AssetTransfer.created_at > now - timedelta(days=critical_days)
+                    AssetTransfer.created_at > now - timedelta(days=critical_days),
                 )
             )
             .options(
@@ -326,7 +351,7 @@ class AssetTransferAnalyticsRepository:
             select(func.count(AssetTransfer.id)).where(
                 and_(
                     AssetTransfer.to_warehouse_id == warehouse_id,
-                    AssetTransfer.status == TransferStatus.PENDING
+                    AssetTransfer.status == TransferStatus.PENDING,
                 )
             )
         )
@@ -336,7 +361,7 @@ class AssetTransferAnalyticsRepository:
             select(func.count(AssetTransfer.id)).where(
                 and_(
                     AssetTransfer.from_warehouse_id == warehouse_id,
-                    AssetTransfer.status == TransferStatus.PENDING
+                    AssetTransfer.status == TransferStatus.PENDING,
                 )
             )
         )
@@ -344,15 +369,17 @@ class AssetTransferAnalyticsRepository:
         # Average duration for completed
         avg_dur_result = await self.session.execute(
             select(
-                func.avg(AssetTransfer.transferred_at - AssetTransfer.created_at).label("avg_duration")
+                func.avg(AssetTransfer.transferred_at - AssetTransfer.created_at).label(
+                    "avg_duration"
+                )
             ).where(
                 and_(
                     or_(
                         AssetTransfer.from_warehouse_id == warehouse_id,
-                        AssetTransfer.to_warehouse_id == warehouse_id
+                        AssetTransfer.to_warehouse_id == warehouse_id,
                     ),
                     AssetTransfer.status == TransferStatus.COMPLETED,
-                    AssetTransfer.transferred_at.isnot(None)
+                    AssetTransfer.transferred_at.isnot(None),
                 )
             )
         )
@@ -369,5 +396,7 @@ class AssetTransferAnalyticsRepository:
             "transfers_to": to_count or 0,
             "pending_in": pending_in or 0,
             "pending_out": pending_out or 0,
-            "average_duration_days": Decimal(avg_dur.total_seconds() / 86400) if avg_dur else None,
+            "average_duration_days": (
+                Decimal(avg_dur.total_seconds() / 86400) if avg_dur else None
+            ),
         }

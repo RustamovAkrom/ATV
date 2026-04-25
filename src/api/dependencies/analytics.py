@@ -4,77 +4,70 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.dependencies import get_db_session
-from repositories.analytics.asset_history_analytics_repo import (
-    AssetHistoryAnalyticsRepository,
-)
+from repositories.analytics.alert_analytics_repo import AlertAnalyticsRepository
 from repositories.analytics.asset_assignment_analytics_repo import (
     AssetAssignmentAnalyticsRepository,
+)
+from repositories.analytics.asset_history_analytics_repo import (
+    AssetHistoryAnalyticsRepository,
 )
 from repositories.analytics.asset_transfer_analytics_repo import (
     AssetTransferAnalyticsRepository,
 )
-from services.analytics.asset_history_analytics_service import (
-    AssetHistoryAnalyticsService,
-)
-from services.analytics.asset_assignment_analytics_service import (
-    AssetAssignmentAnalyticsService,
-)
-from services.analytics.asset_transfer_analytics_service import (
-    AssetTransferAnalyticsService,
-)
-from services.analytics.dashboard.overview_service import (
-    OverviewService,
-)
-
+from repositories.analytics.cost_analytics_repo import CostAnalyticsRepository
 from repositories.analytics.dashboard.region_repo import RegionAnalyticsRepository
-from repositories.analytics.dashboard.top_assets_repo import TopAssetsRepository
-
-from services.analytics.dashboard.region_service import RegionAnalyticsService
-from services.analytics.dashboard.top_assets_service import TopAssetsService
-
 from repositories.analytics.dashboard.repair_repo import RepairAnalyticsRepository
-from services.analytics.dashboard.repair_service import RepairAnalyticsService
-
 from repositories.analytics.dashboard.service_repo import ServiceAnalyticsRepository
-from services.analytics.dashboard.service_service import ServiceAnalyticsService
+from repositories.analytics.dashboard.top_assets_repo import TopAssetsRepository
+from repositories.analytics.forecast_analytics_repo import ForecastAnalyticsRepository
 from repositories.analytics.region_analytics_repo import (
     RegionAnalyticsRepository as ExtendedRegionAnalyticsRepository,
 )
 from repositories.analytics.top_analytics_repo import TopAnalyticsRepository
-from repositories.analytics.cost_analytics_repo import CostAnalyticsRepository
 from repositories.analytics.trend_analytics_repo import TrendAnalyticsRepository
-from repositories.analytics.forecast_analytics_repo import ForecastAnalyticsRepository
-from repositories.analytics.alert_analytics_repo import AlertAnalyticsRepository
-from services.analytics.region_analytics_service import RegionAnalyticsService as ExtendedRegionAnalyticsService
-from services.analytics.top_analytics_service import TopAnalyticsService
-from services.analytics.cost_analytics_service import CostAnalyticsService
-from services.analytics.trend_analytics_service import TrendAnalyticsService
-from services.analytics.forecast_analytics_service import ForecastAnalyticsService
 from services.analytics.alert_analytics_service import AlertAnalyticsService
+from services.analytics.asset_assignment_analytics_service import (
+    AssetAssignmentAnalyticsService,
+)
+from services.analytics.asset_history_analytics_service import (
+    AssetHistoryAnalyticsService,
+)
+from services.analytics.asset_transfer_analytics_service import (
+    AssetTransferAnalyticsService,
+)
+from services.analytics.cost_analytics_service import CostAnalyticsService
+from services.analytics.dashboard.overview_service import OverviewService
+from services.analytics.dashboard.region_service import RegionAnalyticsService
+from services.analytics.dashboard.repair_service import RepairAnalyticsService
+from services.analytics.dashboard.service_service import ServiceAnalyticsService
+from services.analytics.dashboard.top_assets_service import TopAssetsService
+from services.analytics.forecast_analytics_service import ForecastAnalyticsService
+from services.analytics.region_analytics_service import (
+    RegionAnalyticsService as ExtendedRegionAnalyticsService,
+)
+from services.analytics.top_analytics_service import TopAnalyticsService
+from services.analytics.trend_analytics_service import TrendAnalyticsService
 
 
-def get_repair_analytics_repo(
-    db: AsyncSession = Depends(get_db_session)
-):
+def get_repair_analytics_repo(db: AsyncSession = Depends(get_db_session)):
     return RepairAnalyticsRepository(db)
 
 
-def get_service_analytics_repo(
-    db: AsyncSession = Depends(get_db_session)
-):
+def get_service_analytics_repo(db: AsyncSession = Depends(get_db_session)):
     return ServiceAnalyticsRepository(db)
 
 
 def get_service_analytics_service(
-    repo: ServiceAnalyticsRepository = Depends(get_service_analytics_repo)
+    repo: ServiceAnalyticsRepository = Depends(get_service_analytics_repo),
 ) -> ServiceAnalyticsService:
     return ServiceAnalyticsService(repo)
 
 
 def get_repair_analytics_service(
-    repo: RepairAnalyticsRepository = Depends(get_repair_analytics_repo)
+    repo: RepairAnalyticsRepository = Depends(get_repair_analytics_repo),
 ) -> RepairAnalyticsService:
     return RepairAnalyticsService(repo)
+
 
 def get_region_analytics_repo(
     db: AsyncSession = Depends(get_db_session),
@@ -121,7 +114,9 @@ def get_asset_assignment_analytics_repo(
 
 
 def get_asset_assignment_analytics_service(
-    repo: AssetAssignmentAnalyticsRepository = Depends(get_asset_assignment_analytics_repo),
+    repo: AssetAssignmentAnalyticsRepository = Depends(
+        get_asset_assignment_analytics_repo
+    ),
 ):
     return AssetAssignmentAnalyticsService(repo)
 
@@ -158,7 +153,9 @@ def get_extended_region_analytics_repo(
 
 
 def get_extended_region_analytics_service(
-    repo: ExtendedRegionAnalyticsRepository = Depends(get_extended_region_analytics_repo),
+    repo: ExtendedRegionAnalyticsRepository = Depends(
+        get_extended_region_analytics_repo
+    ),
 ):
     return ExtendedRegionAnalyticsService(repo)
 

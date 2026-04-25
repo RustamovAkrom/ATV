@@ -1,12 +1,12 @@
 import pytest
 
 from tests.factories.user import create_user
-from tests.utils.auth import login, auth_client
-
+from tests.utils.auth import auth_client, login
 
 # =========================================================
 # FORGOT PASSWORD
 # =========================================================
+
 
 @pytest.mark.anyio
 async def test_forgot_password_existing_user(client, dbsession):
@@ -36,6 +36,7 @@ async def test_forgot_password_non_existing_user(client):
 # =========================================================
 # RESET PASSWORD
 # =========================================================
+
 
 @pytest.mark.anyio
 async def test_reset_password_success(client, dbsession, monkeypatch):
@@ -95,6 +96,7 @@ async def test_reset_password_invalid_token(client):
 # TOKEN REUSE ATTACK
 # =========================================================
 
+
 @pytest.mark.anyio
 async def test_reset_token_reuse(client, dbsession, monkeypatch):
     monkeypatch.setattr(
@@ -129,6 +131,7 @@ async def test_reset_token_reuse(client, dbsession, monkeypatch):
 # PASSWORD CHANGE EFFECT
 # =========================================================
 
+
 @pytest.mark.anyio
 async def test_password_changed_after_reset(client, dbsession, monkeypatch):
     monkeypatch.setattr(
@@ -156,10 +159,10 @@ async def test_password_changed_after_reset(client, dbsession, monkeypatch):
     assert r.status_code == 200
 
 
-
 # =========================================================
 # SESSION REVOKE AFTER RESET
 # =========================================================
+
 
 @pytest.mark.anyio
 async def test_sessions_revoked_after_password_reset(
@@ -172,7 +175,6 @@ async def test_sessions_revoked_after_password_reset(
         "utils.reset_tokens.generate_token",
         lambda: "test-token",
     )
-
 
     user = await create_user(dbsession)
 
@@ -201,9 +203,11 @@ async def test_sessions_revoked_after_password_reset(
     r = await client.get("/sessions/")
     assert r.status_code in (401, 403)
 
+
 # =========================================================
 # RATE LIMIT (опционально)
 # =========================================================
+
 
 @pytest.mark.anyio
 async def test_forgot_password_rate_limit(client):

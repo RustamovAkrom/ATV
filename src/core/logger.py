@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import sys
+
 from loguru import logger
+
 from core.config import get_settings
 
 settings = get_settings()
@@ -16,9 +18,7 @@ def _inject_request_id(record):
 def configure_logger():
     logger.remove()
 
-    logger.configure(
-        patcher=_inject_request_id
-    )
+    logger.configure(patcher=_inject_request_id)
 
     if settings.LOG_INCLUDE_REQUEST_ID:
         log_format = (

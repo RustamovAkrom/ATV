@@ -5,29 +5,30 @@ from uuid import uuid4
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy import select
 
-from db.models.users.user import User
-from db.models.users.permission import Role, Permission
-from db.models.enums import UserRole, UserStatus
-from core.security.passwords import hash_password
 from app import create_app
 from core.config import get_settings
+from core.security.passwords import hash_password
 from db.dependencies import get_db_session
 from db.meta import meta
 from db.models import load_all_models
+from db.models.enums import UserRole, UserStatus
+from db.models.users.permission import Permission, Role
+from db.models.users.user import User
 from tests.utils.auth import login
 
 pytest_plugins = ("tests.fixtures.analytics",)
 
 
 # ---------------- ENGINE ----------------
+
 
 @pytest.fixture(scope="session")
 async def _engine() -> AsyncGenerator[AsyncEngine, None]:
@@ -47,6 +48,7 @@ async def _engine() -> AsyncGenerator[AsyncEngine, None]:
 
 
 # ---------------- SESSION ----------------
+
 
 @pytest.fixture
 async def dbsession(
@@ -72,6 +74,7 @@ async def dbsession(
 
 # ---------------- APP ----------------
 
+
 @pytest.fixture
 async def fastapi_app(dbsession: AsyncSession) -> FastAPI:
     app = create_app()
@@ -83,8 +86,7 @@ async def fastapi_app(dbsession: AsyncSession) -> FastAPI:
 
     # отключаем audit middleware в тестах
     app.user_middleware = [
-        m for m in app.user_middleware
-        if m.cls.__name__ != "AuditMiddleware"
+        m for m in app.user_middleware if m.cls.__name__ != "AuditMiddleware"
     ]
 
     return app
@@ -114,6 +116,7 @@ async def client(
 
 
 # ---------------- USER FACTORY ----------------
+
 
 @pytest.fixture
 async def create_user(dbsession):
@@ -152,6 +155,7 @@ async def create_user(dbsession):
 
 # ---------------- SUPERADMIN ----------------
 
+
 @pytest.fixture
 async def superadmin(create_user):
     return await create_user(login="superadmin", password="password")
@@ -165,6 +169,7 @@ async def superadmin_token(client: AsyncClient, superadmin):
 
 # ---------------- PERMISSIONS ----------------
 
+
 @pytest.fixture
 async def permission_id(dbsession):
     perm = Permission(name="Test", code="test_perm")
@@ -174,6 +179,7 @@ async def permission_id(dbsession):
 
 
 # ---------------- ROLE ----------------
+
 
 @pytest.fixture
 async def role_id(client, superadmin_token):

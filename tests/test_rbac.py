@@ -27,7 +27,7 @@ async def test_duplicate_role_code(client, superadmin_token):
 async def test_set_permissions(client, superadmin_token, permission_id, role_id):
     res = await client.put(
         f"/rbac/roles/{role_id}/permissions",
-        json={"permission_ids": [str(permission_id)]},  # 🔥 FIX
+        json={"permission_ids": [str(permission_id)]},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
 
@@ -35,7 +35,9 @@ async def test_set_permissions(client, superadmin_token, permission_id, role_id)
     assert len(res.json()["permissions"]) == 1
 
 
-async def test_delete_role_with_users_forbidden(client, superadmin_token, role_with_users):
+async def test_delete_role_with_users_forbidden(
+    client, superadmin_token, role_with_users
+):
     res = await client.delete(
         f"/rbac/roles/{role_with_users}",
         headers={"Authorization": f"Bearer {superadmin_token}"},

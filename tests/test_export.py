@@ -9,11 +9,11 @@ from core.security.rbac.permissions import Permissions
 from db.models.assets.asset_category import AssetCategory
 from db.models.assets.asset_model import AssetModel
 from db.models.assets.manufacturer import Manufacturer
+from db.models.enums import UserStatus
 from db.models.org.region import Region
 from db.models.org.service import Service
-from db.models.users.permission import Role, Permission
+from db.models.users.permission import Permission, Role
 from db.models.users.user import User
-from db.models.enums import UserStatus
 from services.export_service import ExportService
 
 
@@ -55,20 +55,30 @@ async def _create_asset(client, token: str, deps: dict, name: str):
 
 async def _create_role_user(dbsession, role_code: str, login: str):
     # Get or create the role with permissions loaded
-    role = await dbsession.scalar(select(Role).options(selectinload(Role.permissions)).where(Role.code == role_code))
+    role = await dbsession.scalar(
+        select(Role)
+        .options(selectinload(Role.permissions))
+        .where(Role.code == role_code)
+    )
     if not role:
         role = Role(name=role_code.upper(), code=role_code, permissions=[])
         dbsession.add(role)
         await dbsession.flush()
         # Reload with selectinload
-        role = await dbsession.scalar(select(Role).options(selectinload(Role.permissions)).where(Role.code == role_code))
+        role = await dbsession.scalar(
+            select(Role)
+            .options(selectinload(Role.permissions))
+            .where(Role.code == role_code)
+        )
 
     # Assign appropriate permissions based on role code
     permissions_to_assign = []
 
     if role_code == "analytic":
         # Analytic role should have ASSETS_EXPORT permission
-        perm = await dbsession.scalar(select(Permission).where(Permission.code == Permissions.ASSETS_EXPORT))
+        perm = await dbsession.scalar(
+            select(Permission).where(Permission.code == Permissions.ASSETS_EXPORT)
+        )
         if not perm:
             perm = Permission(name="Export Assets", code=Permissions.ASSETS_EXPORT)
             dbsession.add(perm)
@@ -77,7 +87,9 @@ async def _create_role_user(dbsession, role_code: str, login: str):
     elif role_code == "moderator":
         # Moderator role should NOT have ASSETS_EXPORT permission
         # Get ASSETS_VIEW permission if it exists
-        perm = await dbsession.scalar(select(Permission).where(Permission.code == Permissions.ASSETS_VIEW))
+        perm = await dbsession.scalar(
+            select(Permission).where(Permission.code == Permissions.ASSETS_VIEW)
+        )
         if not perm:
             perm = Permission(name="View Assets", code=Permissions.ASSETS_VIEW)
             dbsession.add(perm)

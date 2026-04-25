@@ -1,12 +1,12 @@
 from uuid import UUID
 
-from sqlalchemy import select, update, or_
+from sqlalchemy import or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from db.models.users import Role, User
 from db.models.enums import UserStatus
-from schemas.pagination import PaginationParams
+from db.models.users import Role, User
+from schemas.pagination import PaginationParamsSchema
 
 
 class UserRepository:
@@ -43,13 +43,13 @@ class UserRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list(self, pagination: PaginationParams) -> list[User]:
+    async def list(self, pagination: PaginationParamsSchema) -> list[User]:
         result = await self.session.execute(
             self._base_query().limit(pagination.limit).offset(pagination.offset())
         )
         return result.scalars().all()
 
-    async def search(self, query: str, pagination: PaginationParams):
+    async def search(self, query: str, pagination: PaginationParamsSchema):
         result = await self.session.execute(
             self._base_query(include_inactive=True)
             .where(
@@ -82,37 +82,27 @@ class UserRepository:
 
     async def update(self, user_id: UUID, data: dict) -> None:
         await self.session.execute(
-            update(User)
-            .where(User.id == user_id)
-            .values(**data)
+            update(User).where(User.id == user_id).values(**data)
         )
 
     async def set_password(self, user_id: UUID, password_hash: str):
         await self.session.execute(
-            update(User)
-            .where(User.id == user_id)
-            .values(password_hash=password_hash)
+            update(User).where(User.id == user_id).values(password_hash=password_hash)
         )
 
     async def change_status(self, user_id: UUID, status: str):
         await self.session.execute(
-            update(User)
-            .where(User.id == user_id)
-            .values(status=status)
+            update(User).where(User.id == user_id).values(status=status)
         )
 
     async def update_role(self, user_id: UUID, role_id: UUID) -> None:
         await self.session.execute(
-            update(User)
-            .where(User.id == user_id)
-            .values(role_id=role_id)
+            update(User).where(User.id == user_id).values(role_id=role_id)
         )
 
     async def get_all_with_inactive(self, limit: int, offset: int):
         result = await self.session.execute(
-            self._base_query(include_inactive=True)
-            .limit(limit)
-            .offset(offset)
+            self._base_query(include_inactive=True).limit(limit).offset(offset)
         )
         return result.scalars().all()
 

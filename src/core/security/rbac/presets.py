@@ -1,5 +1,6 @@
 from fastapi import Depends
-from core.security.rbac.guards import require_role, require_permission
+
+from core.security.rbac.guards import require_permission, require_role
 from core.security.rbac.permissions import Permissions
 from db.models.enums import UserRole
 
@@ -17,16 +18,18 @@ IsAdmin = Depends(require_role(UserRole.ADMIN.value))
 IsModerator = Depends(require_role(UserRole.MODERATOR.value))
 
 # Любой сотрудник (не обычный юзер)
-IsStaff = Depends(require_role(
-    UserRole.ADMIN.value,
-    UserRole.MODERATOR.value,
-    UserRole.ANALYTIC.value
-))
+IsStaff = Depends(
+    require_role(
+        UserRole.ADMIN.value, UserRole.MODERATOR.value, UserRole.ANALYTIC.value
+    )
+)
 
-IsAdminOrAnalytic = Depends(require_role(
-    UserRole.ADMIN.value,
-    UserRole.ANALYTIC.value,
-))
+IsAdminOrAnalytic = Depends(
+    require_role(
+        UserRole.ADMIN.value,
+        UserRole.ANALYTIC.value,
+    )
+)
 
 
 # =================================================================
@@ -36,13 +39,17 @@ IsAdminOrAnalytic = Depends(require_role(
 # --- Users Management ---
 CanViewUsers = Depends(require_permission(Permissions.USERS_VIEW))
 CanCreateUsers = Depends(require_permission(Permissions.USERS_CREATE))
-CanManageUsers = Depends(require_permission(Permissions.USERS_EDIT, Permissions.USERS_CREATE))
+CanManageUsers = Depends(
+    require_permission(Permissions.USERS_EDIT, Permissions.USERS_CREATE)
+)
 CanDeleteUsers = Depends(require_permission(Permissions.USERS_DELETE))
 
 # --- Audit & Security ---
 CanViewAudit = Depends(require_permission(Permissions.AUDIT_VIEW))
 CanExportAudit = Depends(require_permission(Permissions.AUDIT_EXPORT))
-CanFullAuditControl = Depends(require_permission(Permissions.AUDIT_VIEW, Permissions.AUDIT_CLEANUP))
+CanFullAuditControl = Depends(
+    require_permission(Permissions.AUDIT_VIEW, Permissions.AUDIT_CLEANUP)
+)
 
 # --- RBAC ---
 CanManageRoles = Depends(require_permission(Permissions.ROLES_MANAGE))

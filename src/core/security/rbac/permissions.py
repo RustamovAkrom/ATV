@@ -1,5 +1,7 @@
 from typing import Dict, Set
+
 from db.models.enums import UserRole
+
 
 class Permissions:
     # --- USERS & PROFILE ---
@@ -7,7 +9,7 @@ class Permissions:
     USERS_CREATE = "users.create"
     USERS_EDIT = "users.edit"
     USERS_DELETE = "users.delete"
-    USERS_PASSWORD_RESET = "users.password_reset" # Сброс чужих паролей
+    USERS_PASSWORD_RESET = "users.password_reset"  # Сброс чужих паролей
 
     # --- RBAC (Roles & Permissions) ---
     ROLES_VIEW = "roles.view"
@@ -16,7 +18,7 @@ class Permissions:
     # --- AUDIT & SECURITY LOGS ---
     AUDIT_VIEW = "audit.view"
     AUDIT_EXPORT = "audit.export"
-    AUDIT_CLEANUP = "audit.cleanup" # Только для SuperAdmin
+    AUDIT_CLEANUP = "audit.cleanup"  # Только для SuperAdmin
 
     # --- SESSIONS ---
     SESSIONS_VIEW = "sessions.view"
@@ -36,9 +38,11 @@ class Permissions:
     @classmethod
     def all(cls) -> Set[str]:
         return {
-            v for k, v in cls.__dict__.items()
+            v
+            for k, v in cls.__dict__.items()
             if isinstance(v, str) and not k.startswith("_") and "." in v
         }
+
 
 # Вспомогательные наборы прав для упрощения маппинга
 MODERATOR_BASE = {
@@ -62,16 +66,14 @@ ADMIN_BASE = MODERATOR_BASE | {
 ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     # Божественный доступ
     UserRole.SUPERADMIN.value: Permissions.all(),
-
     # Полное управление операционкой, но без удаления системы и очистки аудита
-    UserRole.ADMIN.value: ADMIN_BASE | {
+    UserRole.ADMIN.value: ADMIN_BASE
+    | {
         Permissions.AUDIT_VIEW,
         Permissions.SYSTEM_HEALTH,
     },
-
     # Просмотр и базовая модерация
     UserRole.MODERATOR.value: MODERATOR_BASE,
-
     # Офицер безопасности / Аналитик
     UserRole.ANALYTIC.value: {
         Permissions.AUDIT_VIEW,

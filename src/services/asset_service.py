@@ -19,13 +19,17 @@ from schemas.assets import (
     AssetStatusChangeRequest,
     AssetUpdate,
 )
-from schemas.pagination import Page, PaginationParams, build_page
+from schemas.pagination import PageSchema, PaginationParamsSchema
 from utils.helpers import utc_now
 
 
 class AssetService:
     _ALLOWED_TRANSITIONS = {
-        AssetStatus.ACTIVE: {AssetStatus.ASSIGNED, AssetStatus.IN_REPAIR, AssetStatus.ARCHIVED},
+        AssetStatus.ACTIVE: {
+            AssetStatus.ASSIGNED,
+            AssetStatus.IN_REPAIR,
+            AssetStatus.ARCHIVED,
+        },
         AssetStatus.ASSIGNED: {AssetStatus.ACTIVE, AssetStatus.IN_REPAIR},
         AssetStatus.IN_REPAIR: {AssetStatus.ACTIVE, AssetStatus.ARCHIVED},
         AssetStatus.ARCHIVED: set(),
@@ -34,10 +38,14 @@ class AssetService:
     def __init__(self, asset_repo: AssetRepository):
         self.asset_repo = asset_repo
 
-    async def list(self, filters: AssetFilters, pagination: PaginationParams) -> Page[AssetSchema]:
+    async def list(
+        self, filters: AssetFilters, pagination: PaginationParamsSchema
+    ) -> PageSchema[AssetSchema]:
         items, total = await self.asset_repo.list(filters, pagination)
-        return Page[AssetSchema](
-            items=[AssetSchema.model_validate(item, from_attributes=True) for item in items],
+        return PageSchema[AssetSchema](
+            items=[
+                AssetSchema.model_validate(item, from_attributes=True) for item in items
+            ],
             total=total,
             page=pagination.page,
             limit=pagination.limit,
@@ -118,7 +126,9 @@ class AssetService:
         )
         return await self.get(asset.id)
 
-    async def update(self, asset_id: UUID, data: AssetUpdate, actor_id: UUID) -> AssetDetailSchema:
+    async def update(
+        self, asset_id: UUID, data: AssetUpdate, actor_id: UUID
+    ) -> AssetDetailSchema:
         asset = await self._get_asset(asset_id, include_history=False, for_update=True)
         payload = data.model_dump(exclude_unset=True)
         if not payload:
@@ -134,7 +144,11 @@ class AssetService:
         changes: list[str] = []
         for field_name, value in payload.items():
             target_field = "meta" if field_name == "metadata" else field_name
-            normalized_value = self._clean_optional(value) if field_name in {"asset_tag", "serial_number"} else value
+            normalized_value = (
+                self._clean_optional(value)
+                if field_name in {"asset_tag", "serial_number"}
+                else value
+            )
             if getattr(asset, target_field) == normalized_value:
                 continue
             setattr(asset, target_field, normalized_value)
@@ -160,7 +174,9 @@ class AssetService:
         )
         return await self.get(asset.id)
 
-    async def assign(self, asset_id: UUID, data: AssetAssignRequest, actor_id: UUID) -> AssetDetailSchema:
+    async def assign(
+        self, asset_id: UUID, data: AssetAssignRequest, actor_id: UUID
+    ) -> AssetDetailSchema:
         asset = await self._get_asset(asset_id, include_history=False, for_update=True)
         if asset.status == AssetStatus.ARCHIVED:
             raise BadRequest("Cannot assign archived asset")
@@ -184,7 +200,9 @@ class AssetService:
         asset.owner_id = user.id
         asset.status = AssetStatus.ASSIGNED
         await self.asset_repo.flush()
-        await self.asset_repo.add_assignment(AssetAssignment(asset_id=asset.id, user_id=user.id))
+        await self.asset_repo.add_assignment(
+            AssetAssignment(asset_id=asset.id, user_id=user.id)
+        )
 
         if previous_owner_id != user.id:
             await self._add_history(
@@ -206,7 +224,9 @@ class AssetService:
             {
                 "asset_id": str(asset.id),
                 "actor_id": str(actor_id),
-                "previous_owner_id": str(previous_owner_id) if previous_owner_id else None,
+                "previous_owner_id": (
+                    str(previous_owner_id) if previous_owner_id else None
+                ),
                 "owner_id": str(user.id),
             },
         )
@@ -257,7 +277,11 @@ class AssetService:
 
     async def delete(self, asset_id: UUID, actor_id: UUID) -> None:
         asset = await self._get_asset(asset_id, include_history=False, for_update=True)
-        if asset.status in {AssetStatus.ACTIVE, AssetStatus.ASSIGNED, AssetStatus.IN_REPAIR}:
+        if asset.status in {
+            AssetStatus.ACTIVE,
+            AssetStatus.ASSIGNED,
+            AssetStatus.IN_REPAIR,
+        }:
             raise BadRequest("Only archived assets can be deleted")
 
         await self._add_history(
@@ -275,9 +299,13 @@ class AssetService:
         )
         await self.asset_repo.delete(asset)
 
-    async def _get_asset(self, asset_id: UUID, include_history: bool = True, for_update: bool = False) -> Asset:
+    async def _get_asset(
+        self, asset_id: UUID, include_history: bool = True, for_update: bool = False
+    ) -> Asset:
         asset = await (
-            self.asset_repo.get_by_id_for_update(asset_id, include_history=include_history)
+            self.asset_repo.get_by_id_for_update(
+                asset_id, include_history=include_history
+            )
             if for_update
             else self.asset_repo.get_by_id(asset_id, include_history=include_history)
         )
@@ -330,23 +358,33 @@ class AssetService:
         serial_number: str | None,
         exclude_id: UUID | None = None,
     ) -> None:
-        if asset_tag and await self.asset_repo.asset_tag_exists(asset_tag, exclude_id=exclude_id):
+        if asset_tag and await self.asset_repo.asset_tag_exists(
+            asset_tag, exclude_id=exclude_id
+        ):
             raise BadRequest("Asset tag already exists")
-        if serial_number and await self.asset_repo.serial_number_exists(serial_number, exclude_id=exclude_id):
+        if serial_number and await self.asset_repo.serial_number_exists(
+            serial_number, exclude_id=exclude_id
+        ):
             raise BadRequest("Serial number already exists")
 
     def _validate_status_change(self, asset: Asset, new_status: AssetStatus) -> None:
         allowed = self._ALLOWED_TRANSITIONS[asset.status]
         if new_status not in allowed:
-            raise BadRequest(f"Cannot change asset status from '{asset.status.value}' to '{new_status.value}'")
+            raise BadRequest(
+                f"Cannot change asset status from '{asset.status.value}' to '{new_status.value}'"
+            )
         if new_status == AssetStatus.ASSIGNED and asset.owner_id is None:
             raise BadRequest("Assigned status requires an owner")
         if new_status == AssetStatus.ACTIVE and asset.owner_id is not None:
-            raise BadRequest("Assigned asset cannot be moved to active without reassignment handling")
+            raise BadRequest(
+                "Assigned asset cannot be moved to active without reassignment handling"
+            )
         if new_status == AssetStatus.ARCHIVED and asset.owner_id is not None:
             raise BadRequest("Cannot archive assigned asset")
 
-    async def _add_history(self, asset_id: UUID, user_id: UUID, action: str, description: str) -> None:
+    async def _add_history(
+        self, asset_id: UUID, user_id: UUID, action: str, description: str
+    ) -> None:
         await self.asset_repo.add_history(
             AssetHistory(
                 asset_id=asset_id,
@@ -358,7 +396,9 @@ class AssetService:
 
     async def _publish_event(self, event: str, payload: dict) -> None:
         try:
-            await audit_stream.publish({"event": event, **payload, "timestamp": utc_now().timestamp()})
+            await audit_stream.publish(
+                {"event": event, **payload, "timestamp": utc_now().timestamp()}
+            )
         except Exception:
             return
 

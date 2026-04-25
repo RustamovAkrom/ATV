@@ -24,14 +24,18 @@ class AlertAnalyticsService:
         repair_days = repair_days or settings.ALERT_REPAIR_LOOKBACK_DAYS
         repair_threshold = repair_threshold or settings.ALERT_REPAIR_THRESHOLD
         inactive_days = inactive_days or settings.ALERT_INACTIVE_ASSET_DAYS
-        assignment_threshold = assignment_threshold or settings.ALERT_OVERLOADED_USER_THRESHOLD
+        assignment_threshold = (
+            assignment_threshold or settings.ALERT_OVERLOADED_USER_THRESHOLD
+        )
         now = utc_now()
         transfer_cutoff = now - timedelta(days=transfer_days)
         repair_cutoff = now - timedelta(days=repair_days)
         inactive_cutoff = now - timedelta(days=inactive_days)
 
         stuck_transfers = await self.repo.stuck_transfers(transfer_cutoff)
-        excessive_repairs = await self.repo.excessive_repairs(repair_cutoff, repair_threshold)
+        excessive_repairs = await self.repo.excessive_repairs(
+            repair_cutoff, repair_threshold
+        )
         inactive_assets = await self.repo.inactive_assets(inactive_cutoff)
         overloaded_users = await self.repo.overloaded_users(assignment_threshold)
 
@@ -52,7 +56,12 @@ class AlertAnalyticsService:
             AlertOut(
                 alert_type=AlertType.EXCESSIVE_REPAIRS,
                 # Use settings-driven multipliers so the alert policy can change without code edits.
-                severity=AlertSeverity.CRITICAL if row.repair_count > repair_threshold * settings.ALERT_REPAIR_THRESHOLD_MULTIPLIER else AlertSeverity.WARNING,
+                severity=(
+                    AlertSeverity.CRITICAL
+                    if row.repair_count
+                    > repair_threshold * settings.ALERT_REPAIR_THRESHOLD_MULTIPLIER
+                    else AlertSeverity.WARNING
+                ),
                 entity_id=row.id,
                 entity_name=row.name,
                 message=f"Asset exceeded {repair_threshold} repairs in the review window",
@@ -78,7 +87,12 @@ class AlertAnalyticsService:
         alerts.extend(
             AlertOut(
                 alert_type=AlertType.OVERLOADED_USER,
-                severity=AlertSeverity.CRITICAL if row.active_assignments > assignment_threshold * settings.ALERT_REPAIR_THRESHOLD_MULTIPLIER else AlertSeverity.WARNING,
+                severity=(
+                    AlertSeverity.CRITICAL
+                    if row.active_assignments
+                    > assignment_threshold * settings.ALERT_REPAIR_THRESHOLD_MULTIPLIER
+                    else AlertSeverity.WARNING
+                ),
                 entity_id=row.id,
                 entity_name=row.full_name,
                 message=f"User holds more than {assignment_threshold} active assignments",

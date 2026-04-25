@@ -1,26 +1,40 @@
-import pytest
 from datetime import timedelta
 from types import SimpleNamespace
 from uuid import uuid4
 
+import pytest
+
 from services.analytics.alert_analytics_service import AlertAnalyticsService
-from utils.helpers import utc_now
 
 pytestmark = pytest.mark.anyio
 
 
 class _AlertRepo:
     async def stuck_transfers(self, cutoff):
-        return [SimpleNamespace(id=uuid4(), name="TransferAsset", created_at=cutoff - timedelta(days=1))]
+        return [
+            SimpleNamespace(
+                id=uuid4(), name="TransferAsset", created_at=cutoff - timedelta(days=1)
+            )
+        ]
 
     async def excessive_repairs(self, since, threshold):
-        return [SimpleNamespace(id=uuid4(), name="RepairAsset", repair_count=threshold + 1)]
+        return [
+            SimpleNamespace(id=uuid4(), name="RepairAsset", repair_count=threshold + 1)
+        ]
 
     async def inactive_assets(self, cutoff):
-        return [SimpleNamespace(id=uuid4(), name="InactiveAsset", updated_at=cutoff - timedelta(days=1))]
+        return [
+            SimpleNamespace(
+                id=uuid4(), name="InactiveAsset", updated_at=cutoff - timedelta(days=1)
+            )
+        ]
 
     async def overloaded_users(self, threshold):
-        return [SimpleNamespace(id=uuid4(), full_name="Busy User", active_assignments=threshold + 1)]
+        return [
+            SimpleNamespace(
+                id=uuid4(), full_name="Busy User", active_assignments=threshold + 1
+            )
+        ]
 
 
 async def test_alert_service_uses_configurable_thresholds():

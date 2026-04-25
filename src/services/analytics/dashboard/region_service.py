@@ -1,7 +1,4 @@
-from schemas.analytics.dashboard.region import (
-    RegionDistributionOut,
-    RegionMetrics,
-)
+from schemas.analytics.dashboard.region import RegionDistributionOut, RegionMetrics
 
 
 class RegionAnalyticsService:

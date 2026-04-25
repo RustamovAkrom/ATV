@@ -20,6 +20,7 @@ celery_app.conf.update(
     enable_utc=True,
 )
 
+
 def autodiscover_module_tasks() -> None:
     """
     Auto-discover tasks inside src/tasks/*

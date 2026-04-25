@@ -1,9 +1,9 @@
 import asyncio
 
-from core.database.db_async import get_async_session_factory
 from core.celery import celery_app
+from core.database.db_async import get_async_session_factory
 from repositories.audit_repo import AuditRepository
-from schemas.audit import AuditCreate
+from schemas.audit import AuditCreateSchema
 from services.audit_service import AuditService
 
 
@@ -14,7 +14,7 @@ def process_audit_log_task(self, payload: dict):
         async with session_factory() as session:
             async with session.begin():
                 service = AuditService(AuditRepository(session))
-                await service.persist_audit(AuditCreate(**payload))
+                await service.persist_audit(AuditCreateSchema(**payload))
 
     try:
         asyncio.run(_run())

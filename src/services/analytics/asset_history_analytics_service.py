@@ -1,12 +1,12 @@
 # services/analytics/asset_history_analytics_service.py
 
 from schemas.analytics.asset_history import (
+    AssetHistoryAggregates,
     AssetHistoryFilter,
     AssetHistoryOut,
     AssetHistoryPage,
-    AssetHistoryAggregates,
 )
-from schemas.pagination import PaginationParams, PageOut, build_page
+from schemas.pagination import PageOutSchema, PaginationParamsSchema, build_page
 
 
 class AssetHistoryAnalyticsService:
@@ -18,7 +18,7 @@ class AssetHistoryAnalyticsService:
     async def list(
         self,
         filters: AssetHistoryFilter,
-        pagination: PaginationParams,
+        pagination: PaginationParamsSchema,
     ) -> AssetHistoryPage:
         """List asset history with pagination."""
         items, total = await self.repo.list(filters, pagination)
@@ -38,14 +38,16 @@ class AssetHistoryAnalyticsService:
         ]
 
         return build_page(
-            schema=PageOut[AssetHistoryOut],
+            schema=PageOutSchema[AssetHistoryOut],
             items=history_out,
             total=total,
             page=pagination.page,
             limit=pagination.limit,
         )
 
-    async def get_aggregates(self, filters: AssetHistoryFilter) -> AssetHistoryAggregates:
+    async def get_aggregates(
+        self, filters: AssetHistoryFilter
+    ) -> AssetHistoryAggregates:
         """Get aggregated history metrics."""
         agg_dict = await self.repo.get_aggregates(filters)
 

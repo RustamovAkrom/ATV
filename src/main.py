@@ -2,6 +2,7 @@
 Run FastAPI app with uvicorn.
     uv run src/main.py
 """
+
 import uvicorn
 
 from core.config import get_settings
@@ -19,5 +20,5 @@ def main() -> None:
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

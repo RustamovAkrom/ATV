@@ -1,8 +1,10 @@
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+
 from db.models.assets.asset import Asset
-from db.models.org.service import Service
 from db.models.enums import AssetStatus
+from db.models.org.service import Service
+
 
 class ServiceAnalyticsRepository:
     def __init__(self, session: AsyncSession):
@@ -15,7 +17,9 @@ class ServiceAnalyticsRepository:
                 Service.name,
                 func.count(Asset.id).label("total"),
                 func.count().filter(Asset.status == AssetStatus.ACTIVE).label("active"),
-                func.count().filter(Asset.status == AssetStatus.IN_REPAIR).label("repair"),
+                func.count()
+                .filter(Asset.status == AssetStatus.IN_REPAIR)
+                .label("repair"),
             )
             .outerjoin(Asset, Asset.service_id == Service.id)
             .group_by(Service.id)

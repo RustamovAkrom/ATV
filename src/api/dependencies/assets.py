@@ -110,7 +110,9 @@ def get_approval_service(
     transfer_service: AssetTransferService = Depends(get_asset_transfer_service),
     repair_service: RepairService = Depends(get_repair_service),
 ) -> ApprovalService:
-    return ApprovalService(approval_repo, asset_service, transfer_service, repair_service)
+    return ApprovalService(
+        approval_repo, asset_service, transfer_service, repair_service
+    )
 
 
 def get_bulk_asset_service(

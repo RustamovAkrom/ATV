@@ -1,12 +1,12 @@
+from db.models.enums import UserRole
+from repositories.analytics.top_analytics_repo import TopAnalyticsRepository
 from schemas.analytics.top import (
     TopAssetAnalyticsOut,
     TopMetric,
     TopServiceAnalyticsOut,
     TopUserAnalyticsOut,
 )
-from core.security.auth.types import CurrentUser
-from db.models.enums import UserRole
-from repositories.analytics.top_analytics_repo import TopAnalyticsRepository
+from schemas.auth import CurrentUserSchema
 
 
 class TopAnalyticsService:
@@ -22,7 +22,7 @@ class TopAnalyticsService:
         return int(row.assignment_count or 0)
 
     @staticmethod
-    def _filter_email(email: str, current_user: CurrentUser) -> str:
+    def _filter_email(email: str, current_user: CurrentUserSchema) -> str:
         # Limit sensitive fields to privileged roles without changing the response schema.
         if current_user.has_role(UserRole.ADMIN.value, UserRole.SUPERADMIN.value):
             return email
@@ -50,7 +50,9 @@ class TopAnalyticsService:
             for row in rows[:limit]
         ]
 
-    async def get_top_users(self, metric: TopMetric, limit: int, current_user: CurrentUser):
+    async def get_top_users(
+        self, metric: TopMetric, limit: int, current_user: CurrentUserSchema
+    ):
         rows = await self.repo.get_top_users(max(limit, 50))
         rows = sorted(
             rows,

@@ -1,5 +1,6 @@
-from pydantic import BaseModel, HttpUrl, ConfigDict
 from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, HttpUrl
 
 
 class ManufacturerCreateSchema(BaseModel):

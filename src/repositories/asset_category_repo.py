@@ -1,6 +1,8 @@
 from uuid import UUID
-from sqlalchemy import select, func
+
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from db.models.assets.asset_category import AssetCategory
 
 
@@ -28,9 +30,7 @@ class AssetCategoryRepository:
 
     async def get_by_normalized_name(self, name: str):
         result = await self.session.execute(
-            select(AssetCategory).where(
-                func.lower(AssetCategory.name) == name
-            )
+            select(AssetCategory).where(func.lower(AssetCategory.name) == name)
         )
         return result.scalar_one_or_none()
 

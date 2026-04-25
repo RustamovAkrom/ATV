@@ -30,7 +30,9 @@ _IGNORED_PARAM_NAMES = {
 
 class CacheManager:
     def __init__(self):
-        self.backend = RedisBackend(redis_client) if settings.ENV == "prod" else MemoryBackend()
+        self.backend = (
+            RedisBackend(redis_client) if settings.ENV == "prod" else MemoryBackend()
+        )
 
     def _scope(self, func: Callable, tags: tuple[str, ...] | None = None) -> str:
         if tags:
@@ -67,7 +69,9 @@ class CacheManager:
 
         return None
 
-    def _bind_arguments(self, func: Callable, args: tuple[Any, ...], kwargs: dict[str, Any]) -> dict[str, Any]:
+    def _bind_arguments(
+        self, func: Callable, args: tuple[Any, ...], kwargs: dict[str, Any]
+    ) -> dict[str, Any]:
         signature = inspect.signature(func)
         bound = signature.bind_partial(*args, **kwargs)
         bound.apply_defaults()
@@ -108,13 +112,17 @@ class CacheManager:
             "versions": await self._version_token(tags or (scope,)),
         }
 
-        raw = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        raw = json.dumps(
+            payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        )
         digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
         return f"cache:{scope}:{digest}:v{payload['versions']}"
 
     def serialize(self, data: Any) -> str:
         encoded = jsonable_encoder(data)
-        return json.dumps(encoded, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        return json.dumps(
+            encoded, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        )
 
     def deserialize(self, raw: str) -> Any:
         return json.loads(raw)

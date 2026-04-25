@@ -14,7 +14,7 @@ from db.models.assets.asset_history import AssetHistory
 from db.models.assets.asset_model import AssetModel
 from db.models.assets.asset_transfer import AssetTransfer
 from db.models.assets.manufacturer import Manufacturer
-from db.models.enums import AssetStatus, RepairStatus, TransferStatus, UserRole, UserStatus
+from db.models.enums import AssetStatus, RepairStatus, TransferStatus, UserStatus
 from db.models.org.region import Region
 from db.models.org.service import Service, region_services
 from db.models.repairs.repair import Repair
@@ -27,7 +27,9 @@ from db.models.warehouse.warehouse import Warehouse
 async def ensure_role_with_permissions(dbsession, role_code: str) -> Role:
     # Query with explicit selectinload to avoid lazy loading issues
     result = await dbsession.execute(
-        select(Role).where(Role.code == role_code).options(selectinload(Role.permissions))
+        select(Role)
+        .where(Role.code == role_code)
+        .options(selectinload(Role.permissions))
     )
     role = result.scalar_one_or_none()
     if role is None:
@@ -38,7 +40,9 @@ async def ensure_role_with_permissions(dbsession, role_code: str) -> Role:
         await dbsession.refresh(role, ["permissions"])
 
     for permission_code in ROLE_PERMISSIONS.get(role_code, set()):
-        perm_result = await dbsession.execute(select(Permission).where(Permission.code == permission_code))
+        perm_result = await dbsession.execute(
+            select(Permission).where(Permission.code == permission_code)
+        )
         permission = perm_result.scalar_one_or_none()
         if permission is None:
             permission = Permission(name=permission_code, code=permission_code)
@@ -51,7 +55,9 @@ async def ensure_role_with_permissions(dbsession, role_code: str) -> Role:
     return role
 
 
-async def create_user_with_role(dbsession, *, login_prefix: str, role_code: str, password: str = "password") -> User:
+async def create_user_with_role(
+    dbsession, *, login_prefix: str, role_code: str, password: str = "password"
+) -> User:
     role = await ensure_role_with_permissions(dbsession, role_code)
     suffix = uuid4().hex[:8]
     user = User(
@@ -70,9 +76,15 @@ async def create_user_with_role(dbsession, *, login_prefix: str, role_code: str,
 
 
 async def create_org_graph(dbsession):
-    manufacturer = Manufacturer(name=f"Manufacturer-{uuid4().hex[:6]}", code=f"mfg-{uuid4().hex[:6]}")
-    category = AssetCategory(name=f"Category-{uuid4().hex[:6]}", code=f"cat-{uuid4().hex[:6]}")
-    asset_class = AssetClass(name=f"Class-{uuid4().hex[:6]}", code=f"class-{uuid4().hex[:6]}")
+    manufacturer = Manufacturer(
+        name=f"Manufacturer-{uuid4().hex[:6]}", code=f"mfg-{uuid4().hex[:6]}"
+    )
+    category = AssetCategory(
+        name=f"Category-{uuid4().hex[:6]}", code=f"cat-{uuid4().hex[:6]}"
+    )
+    asset_class = AssetClass(
+        name=f"Class-{uuid4().hex[:6]}", code=f"class-{uuid4().hex[:6]}"
+    )
     region = Region(
         name=f"Region-{uuid4().hex[:6]}",
         latitude=41.31,
@@ -149,7 +161,9 @@ async def create_asset(
     return asset
 
 
-async def create_assignment(dbsession, *, asset: Asset, user: User, assigned_at, unassigned_at=None) -> AssetAssignment:
+async def create_assignment(
+    dbsession, *, asset: Asset, user: User, assigned_at, unassigned_at=None
+) -> AssetAssignment:
     assignment = AssetAssignment(
         asset_id=asset.id,
         user_id=user.id,
@@ -220,7 +234,9 @@ async def create_repair(
     return repair
 
 
-async def create_history(dbsession, *, asset: Asset, user: User, action: str, description: str, created_at) -> AssetHistory:
+async def create_history(
+    dbsession, *, asset: Asset, user: User, action: str, description: str, created_at
+) -> AssetHistory:
     history = AssetHistory(
         asset_id=asset.id,
         user_id=user.id,

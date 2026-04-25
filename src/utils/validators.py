@@ -1,5 +1,7 @@
 import re
+
 from sqlalchemy.exc import IntegrityError
+
 from core.exceptions.errors import BadRequest
 from utils.slug import slugify
 

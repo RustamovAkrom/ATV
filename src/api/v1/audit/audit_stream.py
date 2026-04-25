@@ -6,6 +6,7 @@ from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse
 
 from core.audit.stream import audit_stream
+
 # CanViewAudit — это уже готовый объект зависимости (variable)
 from core.security.rbac import presets
 
@@ -14,8 +15,9 @@ router = APIRouter(
     tags=["Audit Stream"],
     # Если CanViewAudit — это переменная (например, CanViewAudit = Depends(...)),
     # то в список dependencies мы кладем её напрямую.
-    dependencies=[presets.CanViewAudit]
+    dependencies=[presets.CanViewAudit],
 )
+
 
 def _match_filters(
     event: dict,
@@ -36,6 +38,7 @@ def _match_filters(
     if method and str(event.get("method", "")).upper() != method.upper():
         return False
     return True
+
 
 @router.get("/", include_in_schema=False)
 async def stream_audit(
@@ -60,7 +63,9 @@ async def stream_audit(
                     yield ": keep-alive\n\n"
                     continue
 
-                if not _match_filters(event, user_id, status_min, level, method, request_id):
+                if not _match_filters(
+                    event, user_id, status_min, level, method, request_id
+                ):
                     continue
 
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"

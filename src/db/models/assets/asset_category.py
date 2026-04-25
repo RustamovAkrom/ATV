@@ -9,7 +9,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from db.base import Base, TimestampMixin, UUIDMixing
 from db.models.mixins.slug_mixin import SlugMixin
 
-
 if TYPE_CHECKING:
     from .asset_model import AssetModel
 
@@ -29,13 +28,11 @@ class AssetCategory(Base, UUIDMixing, TimestampMixin, SlugMixin):
         "AssetCategory",
         remote_side="AssetCategory.id",
         back_populates="children",
-        lazy="selectin"
+        lazy="selectin",
     )
 
     children: Mapped[List["AssetCategory"]] = relationship(
-        "AssetCategory",
-        back_populates="parent",
-        lazy="selectin"
+        "AssetCategory", back_populates="parent", lazy="selectin"
     )
 
     models: Mapped[List["AssetModel"]] = relationship(

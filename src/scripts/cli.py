@@ -1,4 +1,5 @@
 import typer
+
 from scripts.runner import run
 
 app = typer.Typer(help="System CLI")
@@ -8,6 +9,7 @@ app = typer.Typer(help="System CLI")
 def bootstrap():
     """Init RBAC"""
     from scripts.bootstrap.rbac import seed_rbac
+
     run(seed_rbac)
 
 
@@ -15,6 +17,7 @@ def bootstrap():
 def create_superadmin():
     """Create superadmin"""
     from scripts.users.create_superadmin import create_superadmin
+
     run(create_superadmin)
 
 
@@ -22,6 +25,7 @@ def create_superadmin():
 def cleanup_tokens():
     """Cleanup expired tokens"""
     from scripts.cleanup.tokens import cleanup_expired_tokens
+
     run(cleanup_expired_tokens)
 
 

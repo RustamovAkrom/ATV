@@ -28,7 +28,9 @@ class TrendAnalyticsRepository:
                 bucket.label("bucket_start"),
                 func.count(AssetAssignment.id).label("value"),
             )
-            .where(AssetAssignment.assigned_at >= start, AssetAssignment.assigned_at <= end)
+            .where(
+                AssetAssignment.assigned_at >= start, AssetAssignment.assigned_at <= end
+            )
             .group_by(bucket)
             .order_by(bucket.asc())
         )
@@ -51,7 +53,9 @@ class TrendAnalyticsRepository:
         repair_parts = (
             select(
                 RepairPart.repair_id.label("repair_id"),
-                func.sum(RepairPart.quantity * RepairPart.unit_price).label("parts_cost"),
+                func.sum(RepairPart.quantity * RepairPart.unit_price).label(
+                    "parts_cost"
+                ),
             )
             .group_by(RepairPart.repair_id)
             .subquery()
@@ -62,7 +66,10 @@ class TrendAnalyticsRepository:
                 bucket.label("bucket_start"),
                 func.count(Repair.id).label("value"),
                 func.coalesce(
-                    func.sum(func.coalesce(Repair.labor_cost, 0) + func.coalesce(repair_parts.c.parts_cost, 0)),
+                    func.sum(
+                        func.coalesce(Repair.labor_cost, 0)
+                        + func.coalesce(repair_parts.c.parts_cost, 0)
+                    ),
                     0,
                 ).label("total_cost"),
             )
@@ -72,4 +79,3 @@ class TrendAnalyticsRepository:
             .order_by(bucket.asc())
         )
         return result.all()
-

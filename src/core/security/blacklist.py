@@ -1,8 +1,8 @@
 import time
 from datetime import datetime
 
-from core.redis import redis_client
 from core.config import get_settings
+from core.redis import redis_client
 
 settings = get_settings()
 
@@ -44,6 +44,7 @@ class RedisBlacklist:
 
 
 _blacklist: MemoryBlacklist | RedisBlacklist | None = None
+
 
 def get_blacklist():
     global _blacklist

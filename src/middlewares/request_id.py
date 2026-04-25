@@ -1,28 +1,55 @@
-from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
 import uuid
 
-from core.logger import bind_logger
-from core.config import get_settings
+from starlette.types import ASGIApp, Receive, Scope, Send
 
+from core.config import get_settings
+from core.logger import bind_logger
 
 settings = get_settings()
 
 
-class RequestIDMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
+class RequestIDMiddleware:
+    def __init__(self, app: ASGIApp):
+        self.app = app
 
-        request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
-        # 🔥 единый источник
-        request.state.request_id = request_id
-        request.scope["state"]["request_id"] = request_id
+        headers = dict(scope.get("headers", []))
+        request_id = headers.get(b"x-request-id", b"").decode() or str(uuid.uuid4())
+
+        scope.setdefault("state", {})
+        scope["state"]["request_id"] = request_id
 
         if settings.LOG_INCLUDE_REQUEST_ID:
-            request.state.logger = bind_logger(request_id)
+            scope["state"]["logger"] = bind_logger(request_id)
 
-        response = await call_next(request)
+        async def send_wrapper(message: Send):
+            if message["type"] == "http.response.start":
+                response_headers = list(message.get("headers", []))
+                response_headers.append((b"X-Request-ID", request_id.encode()))
+                message["headers"] = response_headers
+            await send(message)
 
-        response.headers["X-Request-ID"] = request_id
+        await self.app(scope, receive, send_wrapper)
 
-        return response
+
+# class RequestIDMiddleware(BaseHTTPMiddleware):
+#     async def dispatch(self, request: Request, call_next):
+
+#         request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+
+#         # 🔥 единый источник
+#         request.state.request_id = request_id
+#         request.scope["state"]["request_id"] = request_id
+
+#         if settings.LOG_INCLUDE_REQUEST_ID:
+#             request.state.logger = bind_logger(request_id)
+
+#         response = await call_next(request)
+
+#         response.headers["X-Request-ID"] = request_id
+
+#         return response

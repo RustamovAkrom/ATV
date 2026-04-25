@@ -16,7 +16,9 @@ class ForecastAnalyticsService:
         relevant = values[-window:]
         return float(sum(relevant) / len(relevant))
 
-    async def repair_forecast(self, interval: TrendInterval, periods: int, basis_window: int):
+    async def repair_forecast(
+        self, interval: TrendInterval, periods: int, basis_window: int
+    ):
         series = await self.trend_service.repair_trends(interval, periods)
         values = [point.value for point in series.points]
         moving_average = self._moving_average(values, basis_window)
@@ -31,7 +33,9 @@ class ForecastAnalyticsService:
             ],
         )
 
-    async def failure_forecast(self, interval: TrendInterval, periods: int, basis_window: int):
+    async def failure_forecast(
+        self, interval: TrendInterval, periods: int, basis_window: int
+    ):
         series = await self.trend_service.repair_trends(interval, periods)
         values = [point.value for point in series.points]
         moving_average = self._moving_average(values, basis_window)
@@ -45,4 +49,3 @@ class ForecastAnalyticsService:
                 for index in range(periods)
             ],
         )
-

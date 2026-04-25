@@ -9,7 +9,7 @@ from core.audit.stream import audit_stream
 from core.config import get_settings
 from core.database.db_async import get_async_session_factory
 from repositories.audit_repo import AuditRepository
-from schemas.audit import AuditCreate, AuditStreamSchema
+from schemas.audit import AuditCreateSchema, AuditStreamSchema
 from services.audit_service import AuditService
 from tasks.audit_task import process_audit_log_task
 
@@ -36,7 +36,9 @@ class AuditMiddleware:
         start = time.perf_counter()
 
         state = scope.setdefault("state", {})
-        request_id = getattr(request.state, "request_id", None) or state.get("request_id")
+        request_id = getattr(request.state, "request_id", None) or state.get(
+            "request_id"
+        )
         if not request_id:
             request_id = str(uuid.uuid4())
 
@@ -52,7 +54,7 @@ class AuditMiddleware:
                 if logger:
                     logger.warning("audit_stream_publish_failed", error=str(exc))
 
-        async def persist_dev(payload: AuditCreate):
+        async def persist_dev(payload: AuditCreateSchema):
             try:
                 session_factory = get_async_session_factory()
                 async with session_factory() as session:
@@ -92,7 +94,7 @@ class AuditMiddleware:
                     "is_suspicious": status_code >= 500,
                 }
 
-                db_payload = AuditCreate(**base_payload)
+                db_payload = AuditCreateSchema(**base_payload)
                 stream_payload = AuditStreamSchema(
                     **base_payload,
                     level=_get_level(status_code),

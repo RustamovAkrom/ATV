@@ -1,10 +1,11 @@
 # api/v1/asset_classes.py
 
-from fastapi import APIRouter, Depends
 from uuid import UUID
 
-from schemas.asset_class import *
+from fastapi import APIRouter, Depends
+
 from api.dependencies.asset_class import get_asset_class_service
+from schemas.asset_class import *
 from services.asset_class_service import AssetClassService
 
 router = APIRouter(prefix="/asset-classes", tags=["Asset Classes"])

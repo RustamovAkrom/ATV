@@ -1,6 +1,6 @@
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
+import pytest
 from sqlalchemy import update
 
 from core.security.jwt import decode_token

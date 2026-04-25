@@ -1,12 +1,12 @@
 from math import ceil
-from typing import Generic, TypeVar, Any
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any, Generic, TypeVar
 
+from pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar("T")
 
 
-class PaginationParams(BaseModel):
+class PaginationParamsSchema(BaseModel):
     page: int = Field(1, ge=1)
     limit: int = Field(20, ge=1, le=100)
 
@@ -14,7 +14,7 @@ class PaginationParams(BaseModel):
         return (self.page - 1) * self.limit
 
 
-class Page(BaseModel, Generic[T]):
+class PageSchema(BaseModel, Generic[T]):
     items: list[T]
     total: int
     page: int
@@ -23,13 +23,13 @@ class Page(BaseModel, Generic[T]):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-class PageMeta(BaseModel):
+class PageMetaSchema(BaseModel):
     pages: int
     has_next: bool
     has_prev: bool
 
 
-class PageOut(PageMeta, Generic[T]):
+class PageOutSchema(PageMetaSchema, Generic[T]):
     items: list[T]
     total: int
     page: int

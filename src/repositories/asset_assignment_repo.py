@@ -3,8 +3,7 @@ from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import lazyload, selectinload, noload
-from sqlalchemy.exc import DBAPIError
+from sqlalchemy.orm import selectinload
 
 from db.models.assets.asset import Asset
 from db.models.assets.asset_assignment import AssetAssignment
@@ -29,17 +28,12 @@ class AssetAssignmentRepository:
         return result.scalar_one_or_none()
 
     async def get_asset_plain(self, asset_id: UUID) -> Asset | None:
-        result = await self.session.execute(
-            select(Asset).where(Asset.id == asset_id)
-        )
+        result = await self.session.execute(select(Asset).where(Asset.id == asset_id))
         return result.scalar_one_or_none()
-
 
     async def get_asset_for_update(self, asset_id: UUID, nowait: bool = False):
         stmt = (
-            select(Asset.id)
-            .where(Asset.id == asset_id)
-            .with_for_update(nowait=nowait)
+            select(Asset.id).where(Asset.id == asset_id).with_for_update(nowait=nowait)
         )
 
         result = await self.session.execute(stmt)
@@ -76,12 +70,16 @@ class AssetAssignmentRepository:
         await self.session.flush()
         return assignment
 
-    async def close_assignment(self, assignment: AssetAssignment, timestamp: datetime) -> AssetAssignment:
+    async def close_assignment(
+        self, assignment: AssetAssignment, timestamp: datetime
+    ) -> AssetAssignment:
         assignment.unassigned_at = timestamp
         await self.session.flush()
         return assignment
 
-    async def add_history(self, asset_id: UUID, user_id: UUID, action: str, description: str) -> AssetHistory:
+    async def add_history(
+        self, asset_id: UUID, user_id: UUID, action: str, description: str
+    ) -> AssetHistory:
         entry = AssetHistory(
             asset_id=asset_id,
             user_id=user_id,

@@ -28,4 +28,3 @@ class TrendSeriesOut(BaseModel):
 class RepairTrendSeriesOut(BaseModel):
     interval: TrendInterval
     points: list[RepairTrendPointOut]
-

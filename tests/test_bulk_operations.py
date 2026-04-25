@@ -73,7 +73,9 @@ async def test_bulk_limit_exceeded(client, dbsession, superadmin_token, create_u
     user = await create_user(login="bulk_limit_owner")
     asset_ids = []
     for idx in range(101):
-        asset = await _create_asset(client, superadmin_token, deps, f"BulkLimitAsset{idx}")
+        asset = await _create_asset(
+            client, superadmin_token, deps, f"BulkLimitAsset{idx}"
+        )
         asset_ids.append(asset["id"])
 
     response = await client.post(
@@ -85,7 +87,9 @@ async def test_bulk_limit_exceeded(client, dbsession, superadmin_token, create_u
 
 
 @pytest.mark.anyio
-async def test_bulk_invalid_items_return_failed_entries(client, dbsession, superadmin_token):
+async def test_bulk_invalid_items_return_failed_entries(
+    client, dbsession, superadmin_token
+):
     deps = await _seed_asset_dependencies(dbsession)
     asset = await _create_asset(client, superadmin_token, deps, "BulkStatusAsset")
 

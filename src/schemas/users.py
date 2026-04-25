@@ -1,10 +1,13 @@
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from datetime import datetime
+from typing import List, Optional
 from uuid import UUID
-from typing import Optional, List
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
 from db.models.enums import UserStatus
 
-class UserCreate(BaseModel):
+
+class UserCreateSchema(BaseModel):
     login: str
     email: EmailStr
     phone: str
@@ -15,23 +18,23 @@ class UserCreate(BaseModel):
     role_id: UUID
 
 
-class UserUpdate(BaseModel):
+class UserUpdateSchema(BaseModel):
     first_name: Optional[str]
     last_name: Optional[str]
     phone: Optional[str]
 
 
-class AdminUserUpdate(BaseModel):
+class AdminUserUpdateSchema(BaseModel):
     role_id: Optional[UUID]
     status: Optional[str]
 
 
-class ChangePasswordRequest(BaseModel):
+class ChangePasswordRequestSchema(BaseModel):
     old_password: str
     new_password: str = Field(min_length=6)
 
 
-class UserOut(BaseModel):
+class UserOutSchema(BaseModel):
     id: UUID
     login: str
     email: str

@@ -30,7 +30,9 @@ class AssetTransferService:
             to_warehouse = await self.repo.get_warehouse(data.to_warehouse_id)
             if not to_warehouse:
                 raise BadRequest("Invalid target warehouse")
-        if data.to_service_id is not None and not await self.repo.get_service(data.to_service_id):
+        if data.to_service_id is not None and not await self.repo.get_service(
+            data.to_service_id
+        ):
             raise BadRequest("Invalid target service")
         if data.to_warehouse_id is None and data.to_service_id is None:
             raise BadRequest("Transfer requires a target warehouse or service")
@@ -46,14 +48,26 @@ class AssetTransferService:
             comment=(data.comment or "").strip() or None,
         )
         await self.repo.create_transfer(transfer)
-        await self.repo.add_history(asset.id, actor_id, "transfer_created", f"Transfer {transfer.id} created")
+        await self.repo.add_history(
+            asset.id, actor_id, "transfer_created", f"Transfer {transfer.id} created"
+        )
         await self._publish(
             "asset.transfer_created",
-            {"asset_id": str(asset.id), "actor_id": str(actor_id), "transfer_id": str(transfer.id)},
+            {
+                "asset_id": str(asset.id),
+                "actor_id": str(actor_id),
+                "transfer_id": str(transfer.id),
+            },
         )
         return AssetTransferSchema.model_validate(transfer, from_attributes=True)
 
-    async def approve_transfer(self, asset_id: UUID, transfer_id: UUID, actor_id: UUID, comment: str | None = None) -> AssetTransferSchema:
+    async def approve_transfer(
+        self,
+        asset_id: UUID,
+        transfer_id: UUID,
+        actor_id: UUID,
+        comment: str | None = None,
+    ) -> AssetTransferSchema:
         asset = await self.repo.get_asset_for_update(asset_id)
         if not asset:
             raise NotFound("Asset not found")
@@ -84,14 +98,26 @@ class AssetTransferService:
             transfer.comment = comment.strip() or None
         await self.repo.flush()
 
-        await self.repo.add_history(asset.id, actor_id, "transfer_approved", f"Transfer {transfer.id} approved")
+        await self.repo.add_history(
+            asset.id, actor_id, "transfer_approved", f"Transfer {transfer.id} approved"
+        )
         await self._publish(
             "asset.transfer_approved",
-            {"asset_id": str(asset.id), "actor_id": str(actor_id), "transfer_id": str(transfer.id)},
+            {
+                "asset_id": str(asset.id),
+                "actor_id": str(actor_id),
+                "transfer_id": str(transfer.id),
+            },
         )
         return AssetTransferSchema.model_validate(transfer, from_attributes=True)
 
-    async def reject_transfer(self, asset_id: UUID, transfer_id: UUID, actor_id: UUID, comment: str | None = None) -> AssetTransferSchema:
+    async def reject_transfer(
+        self,
+        asset_id: UUID,
+        transfer_id: UUID,
+        actor_id: UUID,
+        comment: str | None = None,
+    ) -> AssetTransferSchema:
         asset = await self.repo.get_asset_for_update(asset_id)
         if not asset:
             raise NotFound("Asset not found")
@@ -108,15 +134,23 @@ class AssetTransferService:
             transfer.comment = comment.strip() or None
         await self.repo.flush()
 
-        await self.repo.add_history(asset.id, actor_id, "transfer_rejected", f"Transfer {transfer.id} rejected")
+        await self.repo.add_history(
+            asset.id, actor_id, "transfer_rejected", f"Transfer {transfer.id} rejected"
+        )
         await self._publish(
             "asset.transfer_rejected",
-            {"asset_id": str(asset.id), "actor_id": str(actor_id), "transfer_id": str(transfer.id)},
+            {
+                "asset_id": str(asset.id),
+                "actor_id": str(actor_id),
+                "transfer_id": str(transfer.id),
+            },
         )
         return AssetTransferSchema.model_validate(transfer, from_attributes=True)
 
     async def _publish(self, event: str, payload: dict) -> None:
         try:
-            await audit_stream.publish({"event": event, **payload, "timestamp": utc_now().timestamp()})
+            await audit_stream.publish(
+                {"event": event, **payload, "timestamp": utc_now().timestamp()}
+            )
         except Exception:
             return

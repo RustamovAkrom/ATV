@@ -15,7 +15,9 @@ async def _seed_asset_dependencies(dbsession):
     suffix = uuid4().hex[:8]
     region = Region(name=f"ApprovalHardRegion-{suffix}")
     service = Service(name=f"ApprovalHardService-{suffix}", code=f"AHS-{suffix}")
-    category = AssetCategory(name=f"ApprovalHardCategory-{suffix}", code=f"AHC-{suffix}")
+    category = AssetCategory(
+        name=f"ApprovalHardCategory-{suffix}", code=f"AHC-{suffix}"
+    )
     manufacturer = Manufacturer(name=f"ApprovalHardManufacturer-{suffix}")
     dbsession.add_all([region, service, category, manufacturer])
     await dbsession.flush()
@@ -54,7 +56,12 @@ async def test_double_approve_fails(client, dbsession, superadmin_token):
 
     created = await client.post(
         "/approvals/",
-        json={"entity_type": "asset_archive", "entity_id": asset["id"], "action": "archive", "payload": {}},
+        json={
+            "entity_type": "asset_archive",
+            "entity_id": asset["id"],
+            "action": "archive",
+            "payload": {},
+        },
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert created.status_code == 200
@@ -83,7 +90,12 @@ async def test_replay_after_approve_fails(client, dbsession, superadmin_token):
 
     created = await client.post(
         "/approvals/",
-        json={"entity_type": "asset_archive", "entity_id": asset["id"], "action": "archive", "payload": {}},
+        json={
+            "entity_type": "asset_archive",
+            "entity_id": asset["id"],
+            "action": "archive",
+            "payload": {},
+        },
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert created.status_code == 200
@@ -103,7 +115,9 @@ async def test_replay_after_approve_fails(client, dbsession, superadmin_token):
     )
     assert replay.status_code == 400
 
-    approval = await dbsession.scalar(select(ApprovalRequest).where(ApprovalRequest.id == approval_id))
+    approval = await dbsession.scalar(
+        select(ApprovalRequest).where(ApprovalRequest.id == approval_id)
+    )
     assert approval is not None
     assert approval.executed is True
 
@@ -111,7 +125,9 @@ async def test_replay_after_approve_fails(client, dbsession, superadmin_token):
 @pytest.mark.anyio
 async def test_invalid_approval_payload_fails(client, dbsession, superadmin_token):
     deps = await _seed_asset_dependencies(dbsession)
-    asset = await _create_asset(client, superadmin_token, deps, "InvalidApprovalPayloadAsset")
+    asset = await _create_asset(
+        client, superadmin_token, deps, "InvalidApprovalPayloadAsset"
+    )
 
     response = await client.post(
         "/approvals/",

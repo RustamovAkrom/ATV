@@ -1,11 +1,11 @@
 from uuid import UUID
 
-from core.exceptions.errors import NotFound, BadRequest
+from core.exceptions.errors import BadRequest, NotFound
 from db.models.assets.manufacturer import Manufacturer
-from utils.validators import validate_and_prepare, safe_create
-
 from repositories.manufacturer_repo import ManufacturerRepository
 from schemas.manufacturer import ManufacturerCreateSchema
+from utils.validators import safe_create, validate_and_prepare
+
 
 class ManufacturerService:
     def __init__(self, repo: ManufacturerRepository):

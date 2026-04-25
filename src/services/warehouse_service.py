@@ -11,7 +11,9 @@ class WarehouseService:
     def __init__(self, repo: WarehouseRepository):
         self.repo = repo
 
-    async def move_asset_to_warehouse(self, asset_id: UUID, data: WarehouseMoveRequest, actor_id: UUID) -> UUID:
+    async def move_asset_to_warehouse(
+        self, asset_id: UUID, data: WarehouseMoveRequest, actor_id: UUID
+    ) -> UUID:
         asset = await self.repo.get_asset(asset_id)
         if not asset:
             raise NotFound("Asset not found")
@@ -22,17 +24,35 @@ class WarehouseService:
             raise BadRequest("Warehouse is inactive")
         if asset.region_id is not None and asset.region_id != warehouse.region_id:
             raise BadRequest("Warehouse region is incompatible with asset region")
-        if asset.service_id is not None and warehouse.service_id is not None and asset.service_id != warehouse.service_id:
+        if (
+            asset.service_id is not None
+            and warehouse.service_id is not None
+            and asset.service_id != warehouse.service_id
+        ):
             raise BadRequest("Warehouse service is incompatible with asset service")
 
         asset.current_warehouse_id = warehouse.id
         await self.repo.flush()
-        await self.repo.add_history(asset.id, actor_id, "warehouse_moved", f"Asset moved to warehouse {warehouse.id}")
-        await self._publish("asset.warehouse_moved", {"asset_id": str(asset.id), "warehouse_id": str(warehouse.id), "actor_id": str(actor_id)})
+        await self.repo.add_history(
+            asset.id,
+            actor_id,
+            "warehouse_moved",
+            f"Asset moved to warehouse {warehouse.id}",
+        )
+        await self._publish(
+            "asset.warehouse_moved",
+            {
+                "asset_id": str(asset.id),
+                "warehouse_id": str(warehouse.id),
+                "actor_id": str(actor_id),
+            },
+        )
         return warehouse.id
 
     async def _publish(self, event: str, payload: dict) -> None:
         try:
-            await audit_stream.publish({"event": event, **payload, "timestamp": utc_now().timestamp()})
+            await audit_stream.publish(
+                {"event": event, **payload, "timestamp": utc_now().timestamp()}
+            )
         except Exception:
             return

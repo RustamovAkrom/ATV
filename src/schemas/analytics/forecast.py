@@ -14,4 +14,3 @@ class ForecastSeriesOut(BaseModel):
     forecast_periods: int
     moving_average: float
     points: list[ForecastPointOut]
-

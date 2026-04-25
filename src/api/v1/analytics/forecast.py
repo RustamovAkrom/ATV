@@ -1,7 +1,11 @@
 from fastapi import APIRouter, Depends, Query, Request
 
 from api.dependencies.analytics import get_forecast_analytics_service
-from api.v1.analytics._utils import enforce_rate_limit, parse_rate_limit, run_analytics_operation
+from api.v1.analytics._utils import (
+    enforce_rate_limit,
+    parse_rate_limit,
+    run_analytics_operation,
+)
 from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.rbac import presets
@@ -14,7 +18,9 @@ settings = get_settings()
 ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTICS)
 
 
-@router.get("/repairs", response_model=ForecastSeriesOut, dependencies=[presets.CanViewAssets])
+@router.get(
+    "/repairs", response_model=ForecastSeriesOut, dependencies=[presets.CanViewAssets]
+)
 @cached(ttl=300, tags=("analytics:forecast:repairs",))
 async def get_repair_forecast(
     request: Request,
@@ -23,17 +29,27 @@ async def get_repair_forecast(
     basis_window: int = Query(default=4, ge=1, le=24),
     service: ForecastAnalyticsService = Depends(get_forecast_analytics_service),
 ):
-    await enforce_rate_limit(request, "analytics:forecast:repairs", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
+    await enforce_rate_limit(
+        request, "analytics:forecast:repairs", ANALYTICS_LIMIT, ANALYTICS_WINDOW
+    )
     return await run_analytics_operation(
         request,
         "analytics.forecast.repairs",
         {"interval": interval, "periods": periods, "basis_window": basis_window},
         lambda: service.repair_forecast(interval, periods, basis_window),
-        lambda: ForecastSeriesOut(interval=interval, basis_window=basis_window, forecast_periods=periods, moving_average=0, points=[]),
+        lambda: ForecastSeriesOut(
+            interval=interval,
+            basis_window=basis_window,
+            forecast_periods=periods,
+            moving_average=0,
+            points=[],
+        ),
     )
 
 
-@router.get("/failures", response_model=ForecastSeriesOut, dependencies=[presets.CanViewAssets])
+@router.get(
+    "/failures", response_model=ForecastSeriesOut, dependencies=[presets.CanViewAssets]
+)
 @cached(ttl=300, tags=("analytics:forecast:failures",))
 async def get_failure_forecast(
     request: Request,
@@ -42,11 +58,19 @@ async def get_failure_forecast(
     basis_window: int = Query(default=4, ge=1, le=24),
     service: ForecastAnalyticsService = Depends(get_forecast_analytics_service),
 ):
-    await enforce_rate_limit(request, "analytics:forecast:failures", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
+    await enforce_rate_limit(
+        request, "analytics:forecast:failures", ANALYTICS_LIMIT, ANALYTICS_WINDOW
+    )
     return await run_analytics_operation(
         request,
         "analytics.forecast.failures",
         {"interval": interval, "periods": periods, "basis_window": basis_window},
         lambda: service.failure_forecast(interval, periods, basis_window),
-        lambda: ForecastSeriesOut(interval=interval, basis_window=basis_window, forecast_periods=periods, moving_average=0, points=[]),
+        lambda: ForecastSeriesOut(
+            interval=interval,
+            basis_window=basis_window,
+            forecast_periods=periods,
+            moving_average=0,
+            points=[],
+        ),
     )

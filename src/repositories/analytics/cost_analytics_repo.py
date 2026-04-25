@@ -15,7 +15,9 @@ class CostAnalyticsRepository:
         return (
             select(
                 RepairPart.repair_id.label("repair_id"),
-                func.sum(RepairPart.quantity * RepairPart.unit_price).label("parts_cost"),
+                func.sum(RepairPart.quantity * RepairPart.unit_price).label(
+                    "parts_cost"
+                ),
             )
             .group_by(RepairPart.repair_id)
             .subquery()
@@ -47,7 +49,9 @@ class CostAnalyticsRepository:
             )
         )
         count = await self.session.scalar(select(func.count()).select_from(Repair))
-        result = await self.session.execute(base.limit(pagination.limit).offset(pagination.offset()))
+        result = await self.session.execute(
+            base.limit(pagination.limit).offset(pagination.offset())
+        )
         return result.all(), int(count or 0)
 
     async def list_asset_costs(self, pagination):
@@ -59,7 +63,10 @@ class CostAnalyticsRepository:
                 Asset.asset_tag,
                 func.coalesce(Asset.purchase_cost, 0).label("purchase_cost"),
                 func.coalesce(
-                    func.sum(func.coalesce(Repair.labor_cost, 0) + func.coalesce(repair_parts.c.parts_cost, 0)),
+                    func.sum(
+                        func.coalesce(Repair.labor_cost, 0)
+                        + func.coalesce(repair_parts.c.parts_cost, 0)
+                    ),
                     0,
                 ).label("repair_cost"),
             )
@@ -70,14 +77,19 @@ class CostAnalyticsRepository:
                 (
                     func.coalesce(Asset.purchase_cost, 0)
                     + func.coalesce(
-                        func.sum(func.coalesce(Repair.labor_cost, 0) + func.coalesce(repair_parts.c.parts_cost, 0)),
+                        func.sum(
+                            func.coalesce(Repair.labor_cost, 0)
+                            + func.coalesce(repair_parts.c.parts_cost, 0)
+                        ),
                         0,
                     )
                 ).desc()
             )
         )
         count = await self.session.scalar(select(func.count()).select_from(Asset))
-        result = await self.session.execute(base.limit(pagination.limit).offset(pagination.offset()))
+        result = await self.session.execute(
+            base.limit(pagination.limit).offset(pagination.offset())
+        )
         return result.all(), int(count or 0)
 
     async def list_region_costs(self, pagination):
@@ -94,7 +106,10 @@ class CostAnalyticsRepository:
         repair_costs = (
             select(
                 Asset.region_id.label("region_id"),
-                func.sum(func.coalesce(Repair.labor_cost, 0) + func.coalesce(repair_parts.c.parts_cost, 0)).label("repair_cost"),
+                func.sum(
+                    func.coalesce(Repair.labor_cost, 0)
+                    + func.coalesce(repair_parts.c.parts_cost, 0)
+                ).label("repair_cost"),
             )
             .join(Repair, Repair.asset_id == Asset.id)
             .outerjoin(repair_parts, repair_parts.c.repair_id == Repair.id)
@@ -112,9 +127,14 @@ class CostAnalyticsRepository:
             .outerjoin(purchase_costs, purchase_costs.c.region_id == Region.id)
             .outerjoin(repair_costs, repair_costs.c.region_id == Region.id)
             .order_by(
-                (func.coalesce(purchase_costs.c.purchase_cost, 0) + func.coalesce(repair_costs.c.repair_cost, 0)).desc()
+                (
+                    func.coalesce(purchase_costs.c.purchase_cost, 0)
+                    + func.coalesce(repair_costs.c.repair_cost, 0)
+                ).desc()
             )
         )
         count = await self.session.scalar(select(func.count()).select_from(Region))
-        result = await self.session.execute(base.limit(pagination.limit).offset(pagination.offset()))
+        result = await self.session.execute(
+            base.limit(pagination.limit).offset(pagination.offset())
+        )
         return result.all(), int(count or 0)

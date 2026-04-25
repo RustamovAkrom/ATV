@@ -24,7 +24,9 @@ async def _seed_asset_dependencies(dbsession):
     category = AssetCategory(name=f"Category-{suffix}", code=f"CAT-{suffix}")
     manufacturer = Manufacturer(name=f"Manufacturer-{suffix}")
 
-    dbsession.add_all([region, other_region, service, other_service, category, manufacturer])
+    dbsession.add_all(
+        [region, other_region, service, other_service, category, manufacturer]
+    )
     await dbsession.flush()
 
     model = AssetModel(
@@ -151,7 +153,10 @@ async def test_asset_transfer_flow(client, dbsession, superadmin_token):
 
     create_transfer = await client.post(
         f"/assets/{asset['id']}/transfer",
-        json={"to_warehouse_id": str(deps["target_warehouse"].id), "comment": "Move asset"},
+        json={
+            "to_warehouse_id": str(deps["target_warehouse"].id),
+            "comment": "Move asset",
+        },
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert create_transfer.status_code == 200
@@ -271,7 +276,9 @@ async def test_document_attach_and_delete_flow(client, dbsession, superadmin_tok
 
 
 @pytest.mark.anyio
-async def test_warehouse_move_rejects_incompatible_location(client, dbsession, superadmin_token):
+async def test_warehouse_move_rejects_incompatible_location(
+    client, dbsession, superadmin_token
+):
     deps = await _seed_asset_dependencies(dbsession)
     asset = await _create_asset(client, superadmin_token, deps, name="WarehouseAsset")
 
@@ -286,9 +293,13 @@ async def test_warehouse_move_rejects_incompatible_location(client, dbsession, s
 @pytest.mark.anyio
 async def test_locked_asset_transfer_is_rejected(client, dbsession, superadmin_token):
     deps = await _seed_asset_dependencies(dbsession)
-    asset = await _create_asset(client, superadmin_token, deps, name="LockedTransferAsset")
+    asset = await _create_asset(
+        client, superadmin_token, deps, name="LockedTransferAsset"
+    )
 
-    db_asset = await dbsession.scalar(select(Asset).where(Asset.id == UUID(asset["id"])))
+    db_asset = await dbsession.scalar(
+        select(Asset).where(Asset.id == UUID(asset["id"]))
+    )
     db_asset.is_transfer_locked = True
     await dbsession.commit()
 

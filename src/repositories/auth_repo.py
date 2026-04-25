@@ -44,9 +44,7 @@ class AuthRepository:
         """
 
         await self.session.execute(
-            update(RefreshToken)
-            .where(RefreshToken.id == jti)
-            .values(is_revoked=True)
+            update(RefreshToken).where(RefreshToken.id == jti).values(is_revoked=True)
         )
 
     async def revoke_all_by_user(self, user_id: UUID) -> None:
@@ -66,7 +64,8 @@ class AuthRepository:
         """
 
         result = await self.session.execute(
-            delete(RefreshToken)
-            .where(RefreshToken.expires_at < datetime.now(timezone.utc))
+            delete(RefreshToken).where(
+                RefreshToken.expires_at < datetime.now(timezone.utc)
+            )
         )
         return result.rowcount or 0

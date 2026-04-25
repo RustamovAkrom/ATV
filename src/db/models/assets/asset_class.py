@@ -1,12 +1,10 @@
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy import String, Text
+from sqlalchemy import Index, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Index, func
 
 from db.base import Base, TimestampMixin, UUIDMixing
 from db.models.mixins.slug_mixin import SlugMixin
-
 
 if TYPE_CHECKING:
     from .asset import Asset
@@ -20,9 +18,7 @@ class AssetClass(Base, UUIDMixing, TimestampMixin, SlugMixin):
     description: Mapped[str | None] = mapped_column(Text)
 
     assets: Mapped[List["Asset"]] = relationship(
-        "Asset",
-        back_populates="asset_class",
-        lazy="selectin"
+        "Asset", back_populates="asset_class", lazy="selectin"
     )
 
     __table_args__ = (

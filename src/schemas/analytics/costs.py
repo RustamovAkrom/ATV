@@ -29,4 +29,3 @@ class RegionCostAnalyticsOut(BaseModel):
     purchase_cost: float
     repair_cost: float
     total_cost: float
-

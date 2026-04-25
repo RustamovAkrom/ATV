@@ -2,7 +2,9 @@
 
 from datetime import datetime
 from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
 from api.v1.analytics._utils import sanitize_search
 
 
@@ -12,7 +14,9 @@ class AssetHistoryFilter(BaseModel):
     action: str | None = Field(default=None, max_length=50)
     date_from: datetime | None = None
     date_to: datetime | None = None
-    search: str | None = Field(None, description="Search by asset name/tag or user name", max_length=100)
+    search: str | None = Field(
+        None, description="Search by asset name/tag or user name", max_length=100
+    )
 
     @field_validator("action", "search")
     @classmethod
@@ -38,6 +42,7 @@ class AssetHistoryOut(BaseModel):
 
 class AssetHistoryMetrics(BaseModel):
     """Metrics aggregated for asset history."""
+
     action: str
     count: int
     last_occurrence: datetime
@@ -46,6 +51,7 @@ class AssetHistoryMetrics(BaseModel):
 
 class AssetHistoryAggregates(BaseModel):
     """Aggregated history data."""
+
     total_entries: int
     unique_assets: int
     unique_users: int
@@ -60,6 +66,7 @@ class AssetHistoryAggregates(BaseModel):
 
 class AssetHistoryPage(BaseModel):
     """Paginated history with total count."""
+
     items: list[AssetHistoryOut]
     total: int
     page: int

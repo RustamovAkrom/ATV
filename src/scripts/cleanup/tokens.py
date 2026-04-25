@@ -9,9 +9,7 @@ from db.models.refresh_token import RefreshToken
 
 async def cleanup_expired_tokens(db: AsyncSession) -> int:
     result = await db.execute(
-        delete(RefreshToken).where(
-            RefreshToken.expires_at < datetime.now(timezone.utc)
-        )
+        delete(RefreshToken).where(RefreshToken.expires_at < datetime.now(timezone.utc))
     )
 
     return result.rowcount or 0
@@ -32,4 +30,5 @@ async def _run():
 
 def run():
     import asyncio
+
     asyncio.run(_run())

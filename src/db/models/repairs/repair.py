@@ -5,9 +5,11 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, List, Optional
 from uuid import UUID
 
+from sqlalchemy import DateTime
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy import ForeignKey, Numeric, String, DateTime
+from sqlalchemy import ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
+
 from db.base import Base, TimestampMixin, UUIDMixing
 from db.models.enums import RepairStatus
 
@@ -37,9 +39,7 @@ class Repair(Base, UUIDMixing, TimestampMixin):
     description: Mapped[Optional[str]] = mapped_column(String(500))
 
     status: Mapped[RepairStatus] = mapped_column(
-        SAEnum(RepairStatus),
-        default=RepairStatus.REPORTED,
-        nullable=False
+        SAEnum(RepairStatus), default=RepairStatus.REPORTED, nullable=False
     )
 
     started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
@@ -48,20 +48,10 @@ class Repair(Base, UUIDMixing, TimestampMixin):
     labor_cost: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 2))
 
     asset = relationship("Asset", back_populates="repairs", lazy="selectin")
-    reported_by = relationship(
-        "User",
-        foreign_keys=[reported_by_id],
-        lazy="selectin"
-    )
-    assigned_to = relationship(
-        "User",
-        foreign_keys=[assigned_to_id],
-        lazy="selectin"
-    )
+    reported_by = relationship("User", foreign_keys=[reported_by_id], lazy="selectin")
+    assigned_to = relationship("User", foreign_keys=[assigned_to_id], lazy="selectin")
     parts: Mapped[List["RepairPart"]] = relationship(
-        "RepairPart",
-        back_populates="repair",
-        lazy="selectin"
+        "RepairPart", back_populates="repair", lazy="selectin"
     )
 
     @validates("labor_cost")

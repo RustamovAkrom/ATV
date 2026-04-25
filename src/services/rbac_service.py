@@ -1,10 +1,11 @@
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
+
 from core.exceptions.errors import BadRequest, NotFound, ValidationError
 from db.models.users.permission import Role
 from repositories.rbac_repo import RBACRepository
-from schemas.rbac import RoleCreate, RoleUpdate
-from sqlalchemy.exc import IntegrityError
+from schemas.rbac import RoleCreateSchema, RoleUpdateSchema
 
 
 class RBACService:
@@ -24,7 +25,7 @@ class RBACService:
         except IntegrityError:
             raise BadRequest("Role with this code already exists")
 
-    async def create_role(self, data: RoleCreate):
+    async def create_role(self, data: RoleCreateSchema):
         # normalize
         code = data.code.lower().strip()
 
@@ -44,7 +45,7 @@ class RBACService:
         except IntegrityError:
             raise BadRequest("Role with this code already exists")
 
-    async def update_role(self, role_id: UUID, data: RoleUpdate):
+    async def update_role(self, role_id: UUID, data: RoleUpdateSchema):
         role = await self.rbac_repo.get_role(role_id)
         if not role:
             raise NotFound("Role not found")

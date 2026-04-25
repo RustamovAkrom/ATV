@@ -44,6 +44,4 @@ class RefreshToken(Base, UUIDMixing):
 
     user: Mapped["User"] = relationship(lazy="selectin")
 
-    __table_args__ = (
-        Index("idx_refresh_user_active", "user_id", "is_revoked"),
-    )
+    __table_args__ = (Index("idx_refresh_user_active", "user_id", "is_revoked"),)

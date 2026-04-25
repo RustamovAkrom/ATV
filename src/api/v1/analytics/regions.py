@@ -3,11 +3,19 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request
 
 from api.dependencies.analytics import get_extended_region_analytics_service
-from api.v1.analytics._utils import enforce_rate_limit, parse_rate_limit, run_analytics_operation
+from api.v1.analytics._utils import (
+    enforce_rate_limit,
+    parse_rate_limit,
+    run_analytics_operation,
+)
 from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.rbac import presets
-from schemas.analytics.regions import RegionDetailsOut, RegionHeatmapPointOut, RegionOverviewOut
+from schemas.analytics.regions import (
+    RegionDetailsOut,
+    RegionHeatmapPointOut,
+    RegionOverviewOut,
+)
 from services.analytics.region_analytics_service import RegionAnalyticsService
 
 router = APIRouter(prefix="/analytics/regions", tags=["Analytics - Regions"])
@@ -25,8 +33,16 @@ async def get_regions_overview(
     request: Request,
     service: RegionAnalyticsService = Depends(get_extended_region_analytics_service),
 ):
-    await enforce_rate_limit(request, "analytics:regions:overview", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
-    return await run_analytics_operation(request, "analytics.regions.overview", {}, lambda: service.get_overview(), lambda: [])
+    await enforce_rate_limit(
+        request, "analytics:regions:overview", ANALYTICS_LIMIT, ANALYTICS_WINDOW
+    )
+    return await run_analytics_operation(
+        request,
+        "analytics.regions.overview",
+        {},
+        lambda: service.get_overview(),
+        lambda: [],
+    )
 
 
 @router.get(
@@ -40,7 +56,9 @@ async def get_region_details(
     region_id: UUID,
     service: RegionAnalyticsService = Depends(get_extended_region_analytics_service),
 ):
-    await enforce_rate_limit(request, "analytics:regions:details", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
+    await enforce_rate_limit(
+        request, "analytics:regions:details", ANALYTICS_LIMIT, ANALYTICS_WINDOW
+    )
     return await run_analytics_operation(
         request,
         "analytics.regions.details",
@@ -52,7 +70,13 @@ async def get_region_details(
             latitude=None,
             longitude=None,
             geojson=None,
-            asset_counts={"active": 0, "assigned": 0, "in_repair": 0, "archived": 0, "total": 0},
+            asset_counts={
+                "active": 0,
+                "assigned": 0,
+                "in_repair": 0,
+                "archived": 0,
+                "total": 0,
+            },
             transfers_in=0,
             transfers_out=0,
             repairs_count=0,
@@ -73,5 +97,13 @@ async def get_region_heatmap(
     request: Request,
     service: RegionAnalyticsService = Depends(get_extended_region_analytics_service),
 ):
-    await enforce_rate_limit(request, "analytics:regions:heatmap", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
-    return await run_analytics_operation(request, "analytics.regions.heatmap", {}, lambda: service.get_heatmap(), lambda: [])
+    await enforce_rate_limit(
+        request, "analytics:regions:heatmap", ANALYTICS_LIMIT, ANALYTICS_WINDOW
+    )
+    return await run_analytics_operation(
+        request,
+        "analytics.regions.heatmap",
+        {},
+        lambda: service.get_heatmap(),
+        lambda: [],
+    )

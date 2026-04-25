@@ -1,4 +1,4 @@
-from sqlalchemy import and_, exists, func, or_, select
+from sqlalchemy import exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models.assets.asset import Asset
@@ -86,4 +86,3 @@ class AlertAnalyticsRepository:
             .order_by(func.count(AssetAssignment.id).desc(), User.full_name.asc())
         )
         return result.all()
-

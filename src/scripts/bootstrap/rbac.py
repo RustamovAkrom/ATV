@@ -1,12 +1,11 @@
-from sqlalchemy import select, delete, insert
-from sqlalchemy.orm import selectinload
+from sqlalchemy import delete, insert, select
 
+from core.security.rbac.permissions import ROLE_PERMISSIONS, Permissions
 from db.models.enums import UserRole
-from db.models.users.permission import Permission, Role
-from core.security.rbac.permissions import Permissions, ROLE_PERMISSIONS
 
 # 👉 импортируй свою association table
 from db.models.users.permission import role_permissions  # 👈 ВАЖНО
+from db.models.users.permission import Permission, Role
 
 
 async def seed_rbac(db):

@@ -1,5 +1,6 @@
-from schemas.analytics.dashboard.services import ServiceBreakdownOut
 from repositories.analytics.dashboard.service_repo import ServiceAnalyticsRepository
+from schemas.analytics.dashboard.services import ServiceBreakdownOut
+
 
 class ServiceAnalyticsService:
     def __init__(self, repo: ServiceAnalyticsRepository):

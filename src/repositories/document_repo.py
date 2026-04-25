@@ -38,7 +38,9 @@ class DocumentRepository:
         await self.session.delete(document)
         await self.session.flush()
 
-    async def add_history(self, asset_id: UUID, user_id: UUID, action: str, description: str) -> AssetHistory:
+    async def add_history(
+        self, asset_id: UUID, user_id: UUID, action: str, description: str
+    ) -> AssetHistory:
         entry = AssetHistory(
             asset_id=asset_id,
             user_id=user_id,

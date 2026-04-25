@@ -16,4 +16,6 @@ class Rank(Base, UUIDMixing, TimestampMixin):
     level: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     description: Mapped[str | None] = mapped_column(Text(), nullable=True)
 
-    users: Mapped[list["User"]] = relationship("User", back_populates="rank", lazy="selectin")
+    users: Mapped[list["User"]] = relationship(
+        "User", back_populates="rank", lazy="selectin"
+    )

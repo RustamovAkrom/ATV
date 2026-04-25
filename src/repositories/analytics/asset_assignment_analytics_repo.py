@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -14,7 +14,7 @@ from schemas.analytics.asset_assignment_analytics import (
     AssetAssignmentFilterInput,
     AssignmentAnalyticsStatus,
 )
-from schemas.pagination import PaginationParams
+from schemas.pagination import PaginationParamsSchema
 
 
 class AssetAssignmentAnalyticsRepository:
@@ -46,11 +46,15 @@ class AssetAssignmentAnalyticsRepository:
 
         if filters.search:
             term = f"%{filters.search.strip()}%"
-            query = query.join(Asset).join(User).where(
-                or_(
-                    Asset.name.ilike(term),
-                    Asset.asset_tag.ilike(term),
-                    User.full_name.ilike(term),
+            query = (
+                query.join(Asset)
+                .join(User)
+                .where(
+                    or_(
+                        Asset.name.ilike(term),
+                        Asset.asset_tag.ilike(term),
+                        User.full_name.ilike(term),
+                    )
                 )
             )
 
@@ -65,7 +69,7 @@ class AssetAssignmentAnalyticsRepository:
     async def list_assignments(
         self,
         filters: AssetAssignmentFilterInput,
-        pagination: PaginationParams,
+        pagination: PaginationParamsSchema,
     ) -> tuple[list[AssetAssignment], int]:
         """List assignments with pagination."""
         query = (
@@ -80,7 +84,9 @@ class AssetAssignmentAnalyticsRepository:
         query = self._apply_filters(query, filters)
 
         # Count total
-        count_query = select(func.count(AssetAssignment.id)).select_from(AssetAssignment)
+        count_query = select(func.count(AssetAssignment.id)).select_from(
+            AssetAssignment
+        )
         count_query = self._apply_filters(count_query, filters)
         total = await self.session.scalar(count_query)
 
@@ -91,7 +97,9 @@ class AssetAssignmentAnalyticsRepository:
 
         return result.scalars().all(), int(total or 0)
 
-    async def list_active_assignments(self, pagination: PaginationParams) -> tuple[list[AssetAssignment], int]:
+    async def list_active_assignments(
+        self, pagination: PaginationParamsSchema
+    ) -> tuple[list[AssetAssignment], int]:
         """List currently active assignments."""
         query = (
             select(AssetAssignment)
@@ -104,7 +112,9 @@ class AssetAssignmentAnalyticsRepository:
         )
 
         total = await self.session.scalar(
-            select(func.count(AssetAssignment.id)).where(AssetAssignment.unassigned_at.is_(None))
+            select(func.count(AssetAssignment.id)).where(
+                AssetAssignment.unassigned_at.is_(None)
+            )
         )
 
         result = await self.session.execute(
@@ -127,14 +137,20 @@ class AssetAssignmentAnalyticsRepository:
 
         # Total assignments count
         total_count = await self.session.scalar(
-            select(func.count(AssetAssignment.id)).where(AssetAssignment.user_id == user_id)
+            select(func.count(AssetAssignment.id)).where(
+                AssetAssignment.user_id == user_id
+            )
         )
 
         # Average duration (for completed assignments)
         duration_result = await self.session.execute(
             select(
-                func.avg(AssetAssignment.unassigned_at - AssetAssignment.assigned_at).label("avg_duration"),
-                func.max(AssetAssignment.unassigned_at - AssetAssignment.assigned_at).label("max_duration"),
+                func.avg(
+                    AssetAssignment.unassigned_at - AssetAssignment.assigned_at
+                ).label("avg_duration"),
+                func.max(
+                    AssetAssignment.unassigned_at - AssetAssignment.assigned_at
+                ).label("max_duration"),
             ).where(
                 and_(
                     AssetAssignment.user_id == user_id,
@@ -154,9 +170,15 @@ class AssetAssignmentAnalyticsRepository:
             "user_email": user.email if user else "",
             "active_assignments_count": active_count or 0,
             "total_assignments_count": total_count or 0,
-            "average_duration_days": (avg_duration.total_seconds() / 86400) if avg_duration else None,
-            "longest_assignment_days": (max_duration.total_seconds() / 86400) if max_duration else None,
-            "recent_assignment_date": await self._get_user_recent_assignment_date(user_id),
+            "average_duration_days": (
+                (avg_duration.total_seconds() / 86400) if avg_duration else None
+            ),
+            "longest_assignment_days": (
+                (max_duration.total_seconds() / 86400) if max_duration else None
+            ),
+            "recent_assignment_date": await self._get_user_recent_assignment_date(
+                user_id
+            ),
         }
 
     async def _get_user_recent_assignment_date(self, user_id: UUID) -> datetime | None:
@@ -191,10 +213,14 @@ class AssetAssignmentAnalyticsRepository:
                     func.count(filtered.c.id)
                     .filter(AssetAssignment.unassigned_at.isnot(None))
                     .label("total_inactive_assignments"),
-                    func.avg(AssetAssignment.unassigned_at - AssetAssignment.assigned_at)
+                    func.avg(
+                        AssetAssignment.unassigned_at - AssetAssignment.assigned_at
+                    )
                     .filter(AssetAssignment.unassigned_at.isnot(None))
                     .label("average_assignment_duration"),
-                    func.max(AssetAssignment.unassigned_at - AssetAssignment.assigned_at)
+                    func.max(
+                        AssetAssignment.unassigned_at - AssetAssignment.assigned_at
+                    )
                     .filter(AssetAssignment.unassigned_at.isnot(None))
                     .label("longest_assignment_duration"),
                 )
@@ -205,15 +231,19 @@ class AssetAssignmentAnalyticsRepository:
 
         return {
             "total_active_assignments": int(aggregates.total_active_assignments or 0),
-            "total_inactive_assignments": int(aggregates.total_inactive_assignments or 0),
+            "total_inactive_assignments": int(
+                aggregates.total_inactive_assignments or 0
+            ),
             "total_assignments": int(aggregates.total_assignments or 0),
             "average_assignment_duration_days": (
                 aggregates.average_assignment_duration.total_seconds() / 86400
-                if aggregates.average_assignment_duration else None
+                if aggregates.average_assignment_duration
+                else None
             ),
             "longest_assignment_duration_days": (
                 aggregates.longest_assignment_duration.total_seconds() / 86400
-                if aggregates.longest_assignment_duration else None
+                if aggregates.longest_assignment_duration
+                else None
             ),
         }
 

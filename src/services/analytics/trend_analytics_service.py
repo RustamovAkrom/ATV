@@ -36,7 +36,11 @@ class TrendAnalyticsService:
 
     @staticmethod
     def _resolve_period(interval: TrendInterval, periods: int):
-        step_days = 1 if interval == TrendInterval.DAILY else 7 if interval == TrendInterval.WEEKLY else 30
+        step_days = (
+            1
+            if interval == TrendInterval.DAILY
+            else 7 if interval == TrendInterval.WEEKLY else 30
+        )
         end = utc_now()
         start = TrendAnalyticsService._align_start(
             end - timedelta(days=step_days * max(periods - 1, 0)),
@@ -45,7 +49,9 @@ class TrendAnalyticsService:
         return start, end, step_days
 
     @staticmethod
-    def _normalize_points(rows, interval: TrendInterval, periods: int, with_cost: bool = False):
+    def _normalize_points(
+        rows, interval: TrendInterval, periods: int, with_cost: bool = False
+    ):
         start, _, step_days = TrendAnalyticsService._resolve_period(interval, periods)
         lookup = {row.bucket_start: row for row in rows}
         points = []

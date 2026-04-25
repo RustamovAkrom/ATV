@@ -16,16 +16,17 @@ if TYPE_CHECKING:
 class RepairPart(Base, UUIDMixing):
     __tablename__ = "repair_parts"
 
-    repair_id: Mapped[UUID] = mapped_column(ForeignKey("repairs.id", ondelete="CASCADE"), index=True,)
+    repair_id: Mapped[UUID] = mapped_column(
+        ForeignKey("repairs.id", ondelete="CASCADE"),
+        index=True,
+    )
     part_name: Mapped[str] = mapped_column(String(150), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    unit_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 2), nullable=False)
-
-    repair = relationship(
-        "Repair",
-        back_populates="parts",
-        lazy="selectin"
+    unit_price: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(18, 2), nullable=False
     )
+
+    repair = relationship("Repair", back_populates="parts", lazy="selectin")
 
     @validates("quantity")
     def validate_quantity(self, key, value):

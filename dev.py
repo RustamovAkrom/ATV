@@ -1,8 +1,9 @@
-from pwdlib.hashers.bcrypt import BcryptHasher
-from pwdlib import PasswordHash
 import hashlib
 
-password_hash = PasswordHash((BcryptHasher(rounds=12), ))
+from pwdlib import PasswordHash
+from pwdlib.hashers.bcrypt import BcryptHasher
+
+password_hash = PasswordHash((BcryptHasher(rounds=12),))
 
 
 def _normalize(password: str) -> str:
@@ -19,6 +20,7 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return password_hash.verify(_normalize(plain_password), hashed_password)
+
 
 password = "Akromjon2007"
 

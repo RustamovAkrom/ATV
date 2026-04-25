@@ -94,7 +94,10 @@ async def test_reject_transfer_approval_request(client, dbsession, superadmin_to
             "entity_type": "asset_transfer",
             "entity_id": asset["id"],
             "action": "create_transfer",
-            "payload": {"to_service_id": str(deps["service"].id), "comment": "Pending approval"},
+            "payload": {
+                "to_service_id": str(deps["service"].id),
+                "comment": "Pending approval",
+            },
         },
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
@@ -108,12 +111,16 @@ async def test_reject_transfer_approval_request(client, dbsession, superadmin_to
     assert rejected.status_code == 200
     assert rejected.json()["status"] == "rejected"
 
-    transfers = await dbsession.execute(select(AssetTransfer).where(AssetTransfer.asset_id == asset["id"]))
+    transfers = await dbsession.execute(
+        select(AssetTransfer).where(AssetTransfer.asset_id == asset["id"])
+    )
     assert transfers.scalars().all() == []
 
 
 @pytest.mark.anyio
-async def test_bulk_assign_partial_success(client, dbsession, superadmin_token, create_user):
+async def test_bulk_assign_partial_success(
+    client, dbsession, superadmin_token, create_user
+):
     deps = await _seed_asset_dependencies(dbsession)
     user = await create_user(login="bulk_assign_owner")
     asset_1 = await _create_asset(client, superadmin_token, deps, "BulkAssignOne")
@@ -151,7 +158,9 @@ async def test_export_assets_csv_with_filter(client, dbsession, superadmin_token
 
 
 @pytest.mark.anyio
-async def test_export_assets_json_returns_filtered_payload(client, dbsession, superadmin_token):
+async def test_export_assets_json_returns_filtered_payload(
+    client, dbsession, superadmin_token
+):
     deps = await _seed_asset_dependencies(dbsession)
     asset = await _create_asset(client, superadmin_token, deps, "JsonExportAsset")
 

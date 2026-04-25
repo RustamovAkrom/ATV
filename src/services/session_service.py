@@ -21,7 +21,7 @@ class SessionService:
             raise PermissionDenied()
 
         if session.is_revoked:
-            return # indempotent
+            return  # indempotent
 
         await self.repo.revoke(session_id)
 

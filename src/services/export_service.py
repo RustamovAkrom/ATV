@@ -16,7 +16,9 @@ class ExportService:
     async def ensure_exportable(self, filters) -> None:
         total = await self.asset_repo.count_for_export(filters)
         if total > self.MAX_EXPORT_ROWS:
-            raise BadRequest(f"Export exceeds maximum row limit of {self.MAX_EXPORT_ROWS}")
+            raise BadRequest(
+                f"Export exceeds maximum row limit of {self.MAX_EXPORT_ROWS}"
+            )
 
     async def stream_assets(self, filters, format_: str):
         if format_ == "csv":

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
+
 from fastapi import Request
 from jwt import PyJWTError
 
@@ -10,10 +11,10 @@ from core.security.jwt import create_access_token, create_refresh_token, decode_
 from core.security.passwords import verify_password
 from db.models.refresh_token import RefreshToken
 from db.models.users.user import User
-from repositories.user_repo import UserRepository
 from repositories.auth_repo import AuthRepository
+from repositories.user_repo import UserRepository
+from schemas.auth import TokenPairSchema
 from utils.helpers import generate_device_id, utc_now
-from core.security.auth.schemas import TokenPair
 
 
 class AuthService:
@@ -22,19 +23,13 @@ class AuthService:
         self.user_repo = user_repo
         self.auth_repo = auth_repo
 
-    async def login(self, login: str, password: str, request: Request) -> TokenPair:
+    async def login(
+        self, login: str, password: str, request: Request
+    ) -> TokenPairSchema:
         user: User = await self.user_repo.get_by_identity(login)
 
         if not user:
             raise AuthenticationError()
-
-        # valid, new_hash = verify_and_upgrade(password, user.password_hash)
-        # print(valid)
-        # if not valid:
-        #     raise AuthenticationError()
-
-        # if new_hash:
-        #     await self.user_repo.set_password(user.id, new_hash)
 
         # verify hashes
         if not verify_password(password, user.password_hash):
@@ -60,12 +55,12 @@ class AuthService:
             )
         )
 
-        return TokenPair(
+        return TokenPairSchema(
             access_token=access,
             refresh_token=refresh,
         )
 
-    async def refresh(self, refresh_token: str, request: Request) -> TokenPair:
+    async def refresh(self, refresh_token: str, request: Request) -> TokenPairSchema:
         payload = await decode_token(refresh_token, "refresh")
 
         token = await self.auth_repo.get_by_id(payload.jti)
@@ -120,7 +115,7 @@ class AuthService:
             )
         )
 
-        return TokenPair(
+        return TokenPairSchema(
             access_token=access,
             refresh_token=new_refresh,
         )

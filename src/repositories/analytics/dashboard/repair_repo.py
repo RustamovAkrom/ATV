@@ -1,9 +1,8 @@
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
-from db.models.repairs.repair import Repair
-from db.models.assets.asset import Asset
 from db.models.enums import RepairStatus
+from db.models.repairs.repair import Repair
 
 
 class RepairAnalyticsRepository:
@@ -24,15 +23,12 @@ class RepairAnalyticsRepository:
         result = await self.session.execute(
             select(
                 func.count(Repair.id).label("total"),
-
                 func.count()
                 .filter(Repair.status == RepairStatus.IN_PROGRESS)
                 .label("active"),
-
                 func.count()
                 .filter(Repair.status == RepairStatus.DONE)
                 .label("completed"),
-
                 func.count()
                 .filter(Repair.status == RepairStatus.REPORTED)
                 .label("reported"),

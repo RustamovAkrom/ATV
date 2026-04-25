@@ -1,15 +1,66 @@
-from pydantic import BaseModel
+from typing import List, Optional, Set
+from uuid import UUID
+
+from pydantic import BaseModel, Field
+
+from db.models.enums import UserRole
 
 
-class LoginRequest(BaseModel):
-    login: str
-    password: str
+class CurrentUserSchema(BaseModel):
+    id: UUID
+    role: Optional[str]
+    permissions: List[str] = Field(default_factory=list)
+
+    @property
+    def permission_set(self) -> Set[str]:
+        if not hasattr(self, "_perm_set"):
+            self._perm_set = set(self.permissions)
+        return self._perm_set
+
+    def has_role(self, *roles: str) -> bool:
+        if self.role == UserRole.SUPERADMIN.value:
+            return True
+
+        normalized_required = {str(r).lower() for r in roles}
+        return self.role in normalized_required
+
+    def has_permission(self, *perms: str, any_of: bool = False) -> bool:
+        if self.role == UserRole.SUPERADMIN.value:
+            return True
+
+        required = {str(p).lower() for p in perms}
+        user_perms = self.permission_set
+
+        if any_of:
+            return not user_perms.isdisjoint(required)
+        return required.issubset(user_perms)
 
 
-class TokenResponse(BaseModel):
+class TokenPayloadSchema(BaseModel):
+    sub: UUID
+    jti: UUID
+    exp: int
+    iat: int
+    type: str
+    iss: Optional[str] = None
+    aud: Optional[str] = None
+    session_id: Optional[UUID] = None
+
+
+class TokenPairSchema(BaseModel):
     access_token: str
     refresh_token: str
 
 
-class RefreshRequest(BaseModel):
+class LoginRequestSchema(BaseModel):
+    login: str
+    password: str
+
+
+class TokenResponseSchema(BaseModel):
+    access_token: str
+    refresh_token: str
+
+
+class RefreshRequestSchema(BaseModel):
     refresh_token: str

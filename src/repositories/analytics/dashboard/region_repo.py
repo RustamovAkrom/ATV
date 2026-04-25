@@ -1,4 +1,5 @@
-from sqlalchemy import select, func
+from sqlalchemy import func, select
+
 from db.models.assets.asset import Asset
 from db.models.enums import AssetStatus
 from db.models.org.region import Region
@@ -18,12 +19,24 @@ class RegionAnalyticsRepository:
                 Region.geojson,
                 func.count(Asset.id).label("total"),
                 func.count().filter(Asset.status == AssetStatus.ACTIVE).label("active"),
-                func.count().filter(Asset.status == AssetStatus.ASSIGNED).label("assigned"),
-                func.count().filter(Asset.status == AssetStatus.ARCHIVED).label("archived"),
-                func.count().filter(Asset.status == AssetStatus.IN_REPAIR).label("repair"),
+                func.count()
+                .filter(Asset.status == AssetStatus.ASSIGNED)
+                .label("assigned"),
+                func.count()
+                .filter(Asset.status == AssetStatus.ARCHIVED)
+                .label("archived"),
+                func.count()
+                .filter(Asset.status == AssetStatus.IN_REPAIR)
+                .label("repair"),
             )
             .outerjoin(Asset, Asset.region_id == Region.id)
-            .group_by(Region.id, Region.name, Region.latitude, Region.longitude, Region.geojson)
+            .group_by(
+                Region.id,
+                Region.name,
+                Region.latitude,
+                Region.longitude,
+                Region.geojson,
+            )
         )
 
         return result.all()

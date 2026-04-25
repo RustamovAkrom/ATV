@@ -1,5 +1,5 @@
 import asyncio
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 
@@ -100,10 +100,7 @@ async def test_assign_race_keeps_single_active_assignment(
     assert results["first"] == 200
     assert results["second"] in (400, 409)  # locked / already assigned
 
-    active = [
-        a for a in data['assignments']
-        if a ['unassigned_at'] is None
-    ]
+    active = [a for a in data["assignments"] if a["unassigned_at"] is None]
 
     assert len(active) == 1
 

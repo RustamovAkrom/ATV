@@ -1,5 +1,4 @@
 from datetime import datetime
-from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -61,4 +60,3 @@ class RegionHeatmapPointOut(BaseModel):
     transfers_in: int
     transfers_out: int
     updated_at: datetime
-

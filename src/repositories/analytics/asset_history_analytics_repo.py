@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from sqlalchemy import select, func, or_
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -10,7 +10,7 @@ from db.models.assets.asset import Asset
 from db.models.assets.asset_history import AssetHistory
 from db.models.users.user import User
 from schemas.analytics.asset_history import AssetHistoryFilter
-from schemas.pagination import PaginationParams
+from schemas.pagination import PaginationParamsSchema
 
 
 class AssetHistoryAnalyticsRepository:
@@ -40,13 +40,17 @@ class AssetHistoryAnalyticsRepository:
 
         if filters.search:
             term = f"%{filters.search.strip()}%"
-            query = query.join(Asset).join(User).where(
-                or_(
-                    Asset.name.ilike(term),
-                    Asset.asset_tag.ilike(term),
-                    User.full_name.ilike(term),
-                    AssetHistory.description.ilike(term),
-                    AssetHistory.action.ilike(term),
+            query = (
+                query.join(Asset)
+                .join(User)
+                .where(
+                    or_(
+                        Asset.name.ilike(term),
+                        Asset.asset_tag.ilike(term),
+                        User.full_name.ilike(term),
+                        AssetHistory.description.ilike(term),
+                        AssetHistory.action.ilike(term),
+                    )
                 )
             )
 
@@ -58,7 +62,9 @@ class AssetHistoryAnalyticsRepository:
             filters,
         ).subquery()
 
-    async def list(self, filters: AssetHistoryFilter, pagination: PaginationParams) -> tuple[list[AssetHistory], int]:
+    async def list(
+        self, filters: AssetHistoryFilter, pagination: PaginationParamsSchema
+    ) -> tuple[list[AssetHistory], int]:
         """List history entries with pagination."""
         query = (
             select(AssetHistory)
@@ -89,8 +95,12 @@ class AssetHistoryAnalyticsRepository:
             await self.session.execute(
                 select(
                     func.count(filtered.c.id).label("total_entries"),
-                    func.count(func.distinct(AssetHistory.asset_id)).label("unique_assets"),
-                    func.count(func.distinct(AssetHistory.user_id)).label("unique_users"),
+                    func.count(func.distinct(AssetHistory.asset_id)).label(
+                        "unique_assets"
+                    ),
+                    func.count(func.distinct(AssetHistory.user_id)).label(
+                        "unique_users"
+                    ),
                     func.min(AssetHistory.created_at).label("min_date"),
                     func.max(AssetHistory.created_at).label("max_date"),
                 )
@@ -136,7 +146,9 @@ class AssetHistoryAnalyticsRepository:
             "date_range_end": aggregate_row.max_date,
             "actions_breakdown": actions_breakdown,
             "most_active_asset_id": most_active_asset[0] if most_active_asset else None,
-            "most_active_asset_name": most_active_asset[1] if most_active_asset else None,
+            "most_active_asset_name": (
+                most_active_asset[1] if most_active_asset else None
+            ),
             "most_active_user_id": most_active_user[0] if most_active_user else None,
             "most_active_user_name": most_active_user[1] if most_active_user else None,
         }
@@ -168,4 +180,3 @@ class AssetHistoryAnalyticsRepository:
         )
         row = result.first()
         return (row[0], row[1]) if row else None
-

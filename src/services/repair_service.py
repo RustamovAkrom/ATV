@@ -21,7 +21,9 @@ class RepairService:
     def __init__(self, repo: RepairRepository):
         self.repo = repo
 
-    async def report_repair(self, asset_id: UUID, data: RepairReportRequest, actor_id: UUID) -> RepairSchema:
+    async def report_repair(
+        self, asset_id: UUID, data: RepairReportRequest, actor_id: UUID
+    ) -> RepairSchema:
         asset = await self.repo.get_asset_for_update(asset_id)
         if not asset:
             raise NotFound("Asset not found")
@@ -37,11 +39,22 @@ class RepairService:
             status=RepairStatus.REPORTED,
         )
         await self.repo.create_repair(repair)
-        await self.repo.add_history(asset.id, actor_id, "repair_reported", f"Repair {repair.id} reported")
-        await self._publish("asset.repair_reported", {"asset_id": str(asset.id), "repair_id": str(repair.id), "actor_id": str(actor_id)})
+        await self.repo.add_history(
+            asset.id, actor_id, "repair_reported", f"Repair {repair.id} reported"
+        )
+        await self._publish(
+            "asset.repair_reported",
+            {
+                "asset_id": str(asset.id),
+                "repair_id": str(repair.id),
+                "actor_id": str(actor_id),
+            },
+        )
         return self._to_schema(repair)
 
-    async def start_repair(self, asset_id: UUID, repair_id: UUID, data: RepairStartRequest, actor_id: UUID) -> RepairSchema:
+    async def start_repair(
+        self, asset_id: UUID, repair_id: UUID, data: RepairStartRequest, actor_id: UUID
+    ) -> RepairSchema:
         asset = await self.repo.get_asset_for_update(asset_id)
         if not asset:
             raise NotFound("Asset not found")
@@ -61,21 +74,40 @@ class RepairService:
                 raise BadRequest("Repair assignee must be active")
 
         repair.assigned_to_id = data.assigned_to_id
-        repair.description = (data.description or repair.description or "").strip() or None
+        repair.description = (
+            data.description or repair.description or ""
+        ).strip() or None
         repair.labor_cost = data.labor_cost
         repair.started_at = utc_now()
         repair.status = RepairStatus.IN_PROGRESS
         asset.status = AssetStatus.IN_REPAIR
         asset.failure_count += 1
         if data.parts:
-            await self.repo.replace_parts(repair, self._build_parts(repair.id, data.parts))
+            await self.repo.replace_parts(
+                repair, self._build_parts(repair.id, data.parts)
+            )
         await self.repo.flush()
 
-        await self.repo.add_history(asset.id, actor_id, "repair_started", f"Repair {repair.id} started")
-        await self._publish("asset.repair_started", {"asset_id": str(asset.id), "repair_id": str(repair.id), "actor_id": str(actor_id)})
+        await self.repo.add_history(
+            asset.id, actor_id, "repair_started", f"Repair {repair.id} started"
+        )
+        await self._publish(
+            "asset.repair_started",
+            {
+                "asset_id": str(asset.id),
+                "repair_id": str(repair.id),
+                "actor_id": str(actor_id),
+            },
+        )
         return self._to_schema(repair)
 
-    async def complete_repair(self, asset_id: UUID, repair_id: UUID, data: RepairCompleteRequest, actor_id: UUID) -> RepairSchema:
+    async def complete_repair(
+        self,
+        asset_id: UUID,
+        repair_id: UUID,
+        data: RepairCompleteRequest,
+        actor_id: UUID,
+    ) -> RepairSchema:
         asset = await self.repo.get_asset_for_update(asset_id)
         if not asset:
             raise NotFound("Asset not found")
@@ -88,7 +120,9 @@ class RepairService:
         if data.labor_cost is not None:
             repair.labor_cost = data.labor_cost
         if data.parts:
-            await self.repo.replace_parts(repair, self._build_parts(repair.id, data.parts))
+            await self.repo.replace_parts(
+                repair, self._build_parts(repair.id, data.parts)
+            )
 
         repair.status = RepairStatus.DONE
         repair.completed_at = utc_now()
@@ -96,11 +130,22 @@ class RepairService:
         asset.last_repair_date = repair.completed_at.date()
         await self.repo.flush()
 
-        await self.repo.add_history(asset.id, actor_id, "repair_completed", f"Repair {repair.id} completed")
-        await self._publish("asset.repair_completed", {"asset_id": str(asset.id), "repair_id": str(repair.id), "actor_id": str(actor_id)})
+        await self.repo.add_history(
+            asset.id, actor_id, "repair_completed", f"Repair {repair.id} completed"
+        )
+        await self._publish(
+            "asset.repair_completed",
+            {
+                "asset_id": str(asset.id),
+                "repair_id": str(repair.id),
+                "actor_id": str(actor_id),
+            },
+        )
         return self._to_schema(repair)
 
-    async def cancel_repair(self, asset_id: UUID, repair_id: UUID, data: RepairCancelRequest, actor_id: UUID) -> RepairSchema:
+    async def cancel_repair(
+        self, asset_id: UUID, repair_id: UUID, data: RepairCancelRequest, actor_id: UUID
+    ) -> RepairSchema:
         asset = await self.repo.get_asset_for_update(asset_id)
         if not asset:
             raise NotFound("Asset not found")
@@ -121,7 +166,14 @@ class RepairService:
         if reason:
             message = f"{message}: {reason}"
         await self.repo.add_history(asset.id, actor_id, "repair_canceled", message)
-        await self._publish("asset.repair_canceled", {"asset_id": str(asset.id), "repair_id": str(repair.id), "actor_id": str(actor_id)})
+        await self._publish(
+            "asset.repair_canceled",
+            {
+                "asset_id": str(asset.id),
+                "repair_id": str(repair.id),
+                "actor_id": str(actor_id),
+            },
+        )
         return self._to_schema(repair)
 
     def _to_schema(self, repair: Repair) -> RepairSchema:
@@ -157,6 +209,8 @@ class RepairService:
 
     async def _publish(self, event: str, payload: dict) -> None:
         try:
-            await audit_stream.publish({"event": event, **payload, "timestamp": utc_now().timestamp()})
+            await audit_stream.publish(
+                {"event": event, **payload, "timestamp": utc_now().timestamp()}
+            )
         except Exception:
             return

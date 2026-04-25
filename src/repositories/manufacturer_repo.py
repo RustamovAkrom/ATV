@@ -1,5 +1,6 @@
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from db.models.assets.manufacturer import Manufacturer
 
 
@@ -27,9 +28,7 @@ class ManufacturerRepository:
 
     async def get_by_normalized_name(self, normalized: str):
         result = await self.session.execute(
-            select(Manufacturer).where(
-                func.lower(Manufacturer.name) == normalized
-            )
+            select(Manufacturer).where(func.lower(Manufacturer.name) == normalized)
         )
         return result.scalars().first()
 

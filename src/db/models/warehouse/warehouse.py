@@ -18,46 +18,26 @@ if TYPE_CHECKING:
 class Warehouse(Base, UUIDMixing, TimestampMixin):
     __tablename__ = "warehouses"
 
-    # ======================
-    # BASIC INFO
-    # ======================
-
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     code: Mapped[Optional[str]] = mapped_column(String(50), unique=True)
 
-    # ======================
-    # ORG STRUCTURE
-    # ======================
-
     region_id: Mapped[UUID] = mapped_column(
-        ForeignKey("regions.id", ondelete="RESTRICT"),
-        nullable=False
+        ForeignKey("regions.id", ondelete="RESTRICT"), nullable=False
     )
     service_id: Mapped[Optional[UUID]] = mapped_column(
         ForeignKey("services.id", ondelete="SET NULL"),
         nullable=True,
     )
-    manager_user_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("users.id"), nullable=True)
-
-    # ======================
-    # FLAGS
-    # ======================
+    manager_user_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    # ======================
-    # RELATIONSHIPS
-    # ======================
-
     assets: Mapped[List["Asset"]] = relationship(
-        "Asset",
-        back_populates="warehouse",
-        lazy="selectin"
+        "Asset", back_populates="warehouse", lazy="selectin"
     )
+    region: Mapped[Optional["Region"]] = relationship("Region", lazy="selectin")
 
-    region: Mapped[Optional["Region"]] = relationship(
-        "Region",
-        lazy="selectin"
-    )
     manager_user: Mapped[Optional["User"]] = relationship("User", lazy="selectin")
     service: Mapped[Optional["Service"]] = relationship("Service", lazy="selectin")

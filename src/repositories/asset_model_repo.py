@@ -1,7 +1,8 @@
 # repositories/asset_model_repo.py
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from db.models.assets.asset_model import AssetModel
 
 

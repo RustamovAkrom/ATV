@@ -25,17 +25,15 @@ class Document(Base, UUIDMixing, TimestampMixin):
     document_type: Mapped[str] = mapped_column(String(50), index=True, default="other")
 
     asset_id: Mapped[Optional[UUID]] = mapped_column(
-        ForeignKey("assets.id", ondelete="CASCADE"),
-        nullable=True,
-        index=True
+        ForeignKey("assets.id", ondelete="CASCADE"), nullable=True, index=True
     )
 
-    created_by_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    created_by_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False, index=True
+    )
 
     status: Mapped[DocumentStatus] = mapped_column(
-        SAEnum(DocumentStatus),
-        default=DocumentStatus.DRAFT,
-        nullable=False
+        SAEnum(DocumentStatus), default=DocumentStatus.DRAFT, nullable=False
     )
 
     meta: Mapped[dict] = mapped_column("metadata", JSON, default=dict, nullable=False)
@@ -46,8 +44,7 @@ class Document(Base, UUIDMixing, TimestampMixin):
         "DocumentFile",
         back_populates="document",
         lazy="selectin",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
 
     asset = relationship("Asset", back_populates="documents", lazy="joined")
-

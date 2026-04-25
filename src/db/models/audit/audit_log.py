@@ -4,9 +4,10 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import Boolean, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
+
 from db.base import Base, UUIDMixing
 
 
@@ -18,7 +19,9 @@ class AuditLog(Base, UUIDMixing):
 
     status_code: Mapped[int] = mapped_column(Integer)
 
-    user_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    user_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
 
     request_id: Mapped[str] = mapped_column(String(36), index=True)
 
@@ -29,4 +32,6 @@ class AuditLog(Base, UUIDMixing):
     query: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_suspicious: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
