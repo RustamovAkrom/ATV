@@ -1,10 +1,9 @@
 from uuid import UUID
 from datetime import datetime
 from sqlalchemy import ForeignKey, String, Text, DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base, UUIDMixin
-
 
 
 class AssetHistory(Base, UUIDMixin):
@@ -17,3 +16,6 @@ class AssetHistory(Base, UUIDMixin):
     description: Mapped[str] = mapped_column(Text)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    asset = relationship("Asset", back_populates="history_entries", lazy="selectin")
+    user = relationship("User", lazy="selectin")

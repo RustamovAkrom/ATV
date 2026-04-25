@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import Enum as SAEnum
@@ -10,8 +10,6 @@ from sqlalchemy.sql import func
 from db.base import Base, TimestampMixin, UUIDMixing
 from db.models.enums import TransferStatus
 
-
-
 class AssetTransfer(Base, UUIDMixing, TimestampMixin):
     __tablename__ = "asset_transfers"
 
@@ -21,7 +19,15 @@ class AssetTransfer(Base, UUIDMixing, TimestampMixin):
     )
     created_by_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
 
-    status: Mapped[TransferStatus] = mapped_column(SAEnum(TransferStatus), default=TransferStatus.PENDING.value)
+    status: Mapped[TransferStatus] = mapped_column(
+        SAEnum(
+            TransferStatus,
+            name="transferstatus",
+            values_callable=lambda enum_cls: [item.value for item in enum_cls],
+        ),
+        default=TransferStatus.PENDING,
+        nullable=False,
+    )
     from_warehouse_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("warehouses.id"))
     to_warehouse_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("warehouses.id"))
 
@@ -33,7 +39,7 @@ class AssetTransfer(Base, UUIDMixing, TimestampMixin):
     comment: Mapped[Optional[str]] = mapped_column(String(255))
 
     # relationships
-    asset = relationship("Asset", lazy="selectin")
+    asset = relationship("Asset", back_populates="transfers", lazy="selectin")
     from_warehouse = relationship(
         "Warehouse",
         foreign_keys=[from_warehouse_id],
@@ -44,6 +50,17 @@ class AssetTransfer(Base, UUIDMixing, TimestampMixin):
         foreign_keys=[to_warehouse_id],
         lazy="selectin"
     )
+    from_service = relationship(
+        "Service",
+        foreign_keys=[from_service_id],
+        lazy="selectin",
+    )
+    to_service = relationship(
+        "Service",
+        foreign_keys=[to_service_id],
+        lazy="selectin",
+    )
 
     received_by_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("users.id"), nullable=True)
-    status: Mapped[str] = mapped_column(String(20), default="pending")
+    created_by = relationship("User", foreign_keys=[created_by_id], lazy="selectin")
+    received_by = relationship("User", foreign_keys=[received_by_id], lazy="selectin")

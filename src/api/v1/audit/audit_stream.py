@@ -2,11 +2,10 @@ import asyncio
 import json
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse
 
 from core.audit.stream import audit_stream
-from core.security.auth.types import CurrentUser
 # CanViewAudit — это уже готовый объект зависимости (variable)
 from core.security.rbac import presets
 

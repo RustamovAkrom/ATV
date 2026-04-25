@@ -24,6 +24,8 @@ from db.meta import meta
 from db.models import load_all_models
 from tests.utils.auth import login
 
+pytest_plugins = ("tests.fixtures.analytics",)
+
 
 # ---------------- ENGINE ----------------
 

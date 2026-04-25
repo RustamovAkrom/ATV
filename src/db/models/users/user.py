@@ -2,7 +2,8 @@ from datetime import date, datetime
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from db.base import Base, StatusMixin, TimestampMixin, UUIDMixing
@@ -10,7 +11,7 @@ from db.models.enums import UserStatus
 from db.models.org.rank import Rank
 from db.models.org.region import Region
 from db.models.org.service import Service
-
+from db.models.assets.asset import Asset
 if TYPE_CHECKING:
     from .permission import Role
 
@@ -54,10 +55,32 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
     region: Mapped["Region"] = relationship("Region", lazy="selectin")
     service: Mapped["Service"] = relationship("Service", lazy="selectin")
     rank: Mapped["Rank"] = relationship("Rank", lazy="selectin")
+    owned_assets: Mapped[list["Asset"]] = relationship(
+        "Asset",
+        back_populates="owner",
+        lazy="selectin",
+        foreign_keys="Asset.owner_id",
+    )
 
     @property
     def is_active(self) -> bool:
         return self.status == UserStatus.ACTIVE.value if self.status else False
+
+    @hybrid_property
+    def full_name(self) -> str:
+        parts = [self.first_name, self.last_name]
+        full_name = " ".join(part.strip() for part in parts if part and part.strip())
+        return full_name or self.login
+
+    @full_name.expression
+    def full_name(cls):
+        return func.trim(
+            func.concat(
+                func.coalesce(cls.first_name, ""),
+                " ",
+                func.coalesce(cls.last_name, ""),
+            )
+        )
 
     @property
     def permissions(self) -> list[str]:

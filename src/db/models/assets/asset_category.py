@@ -7,12 +7,14 @@ from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base, TimestampMixin, UUIDMixing
+from db.models.mixins.slug_mixin import SlugMixin
+
 
 if TYPE_CHECKING:
     from .asset_model import AssetModel
 
 
-class AssetCategory(Base, UUIDMixing, TimestampMixin):
+class AssetCategory(Base, UUIDMixing, TimestampMixin, SlugMixin):
     __tablename__ = "asset_categories"
 
     name: Mapped[str] = mapped_column(String(150), nullable=False)

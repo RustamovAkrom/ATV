@@ -1,6 +1,6 @@
 import asyncio
 from functools import wraps
-from typing import Any, Callable
+from typing import Callable
 
 from core.cache.manager import cache
 
@@ -35,6 +35,7 @@ def cached(
         @wraps(func)
         async def wrapper(*args, **kwargs):
             key = await cache.build_key(func, args, kwargs, tags=resolved_tags)
+            loop = asyncio.get_running_loop()
 
             cached_data = await cache.get(key)
             if cached_data is not None:
@@ -44,8 +45,8 @@ def cached(
             acquired = await cache.acquire_lock(lock_key, ttl=lock_ttl)
 
             if not acquired:
-                deadline = asyncio.get_event_loop().time() + wait_timeout
-                while asyncio.get_event_loop().time() < deadline:
+                deadline = loop.time() + wait_timeout
+                while loop.time() < deadline:
                     cached_data = await cache.get(key)
                     if cached_data is not None:
                         return cached_data

@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 from fastapi import Request
+from jwt import PyJWTError
 
 from core.config import get_settings
 from core.exceptions.errors import AuthenticationError, InvalidToken
@@ -21,7 +22,7 @@ class AuthService:
         self.user_repo = user_repo
         self.auth_repo = auth_repo
 
-    async def login(self, login: str, password: str, request: Request):
+    async def login(self, login: str, password: str, request: Request) -> TokenPair:
         user: User = await self.user_repo.get_by_identity(login)
 
         if not user:
@@ -37,7 +38,6 @@ class AuthService:
 
         # verify hashes
         if not verify_password(password, user.password_hash):
-            print("ERROR AUTHENTICATION")
             raise AuthenticationError()
 
         if not user.is_active:
@@ -65,7 +65,7 @@ class AuthService:
             refresh_token=refresh,
         )
 
-    async def refresh(self, refresh_token: str, request: Request):
+    async def refresh(self, refresh_token: str, request: Request) -> TokenPair:
         payload = await decode_token(refresh_token, "refresh")
 
         token = await self.auth_repo.get_by_id(payload.jti)
@@ -125,7 +125,7 @@ class AuthService:
             refresh_token=new_refresh,
         )
 
-    async def logout(self, request: Request, refresh_token: str):
+    async def logout(self, request: Request, refresh_token: str) -> None:
         payload = getattr(request.state, "access_payload", None)
 
         if not payload:
@@ -139,16 +139,16 @@ class AuthService:
         try:
             refresh_payload = await decode_token(refresh_token, "refresh")
             await self.auth_repo.revoke(refresh_payload.jti)
-        except Exception:
+        except (InvalidToken, PyJWTError, ValueError, TypeError):
             pass  # logout всегда успешен
 
-    async def logout_all(self, request: Request, user_id: UUID):
-        paylod = getattr(request.state, "access_payload", None)
+    async def logout_all(self, request: Request, user_id: UUID) -> None:
+        payload = getattr(request.state, "access_payload", None)
 
-        if paylod:
+        if payload:
             await get_blacklist().add(
-                jti=paylod.jti,
-                exp=datetime.fromtimestamp(paylod.exp, tz=timezone.utc),
+                jti=payload.jti,
+                exp=datetime.fromtimestamp(payload.exp, tz=timezone.utc),
             )
 
         await self.auth_repo.revoke_all_by_user(user_id)

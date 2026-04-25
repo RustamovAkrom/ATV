@@ -1,5 +1,5 @@
 from typing import Optional
-from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import String, JSON, Text
 from db.base import Base, UUIDMixin, TimestampMixin
 

@@ -1,7 +1,6 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
 from core.security.rbac import presets
-from core.security.rbac.permissions import Permissions
 from core.security.auth.types import CurrentUser
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])

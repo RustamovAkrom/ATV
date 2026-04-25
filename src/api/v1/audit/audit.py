@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, Query
 
 from api.dependencies.audit import get_audit_service
 from core.cache.decorators import cached
-from core.security.auth.types import CurrentUser
 from core.security.rbac.presets import CanViewAudit
 from schemas.audit import AuditFilters, AuditSchema, AuditStatsSchema
 from schemas.pagination import Page, PaginationParams

@@ -16,11 +16,9 @@ class UserStatus(str, Enum):
 
 class AssetStatus(str, Enum):
     ACTIVE = "active"
-    IN_STOCK = "in_stock"
-    BROKEN = "broken"
-    RETIRED = "retired"
+    ASSIGNED = "assigned"
     IN_REPAIR = "in_repair"
-    IN_TRANSIT = "in_transit"
+    ARCHIVED = "archived"
 
 
 class TransferStatus(str, Enum):

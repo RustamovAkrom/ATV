@@ -23,6 +23,11 @@ IsStaff = Depends(require_role(
     UserRole.ANALYTIC.value
 ))
 
+IsAdminOrAnalytic = Depends(require_role(
+    UserRole.ADMIN.value,
+    UserRole.ANALYTIC.value,
+))
+
 
 # =================================================================
 # PERMISSION-BASED PRESETS (Гибкие проверки по правам)
@@ -47,8 +52,11 @@ CanViewSessions = Depends(require_permission(Permissions.SESSIONS_VIEW))
 CanRevokeSessions = Depends(require_permission(Permissions.SESSIONS_REVOKE))
 
 # --- Assets ---
-CanUploadAssets = Depends(require_permission(Permissions.ASSETS_UPLOAD))
+CanViewAssets = Depends(require_permission(Permissions.ASSETS_VIEW))
+CanCreateAssets = Depends(require_permission(Permissions.ASSETS_CREATE))
+CanUpdateAssets = Depends(require_permission(Permissions.ASSETS_UPDATE))
 CanDeleteAssets = Depends(require_permission(Permissions.ASSETS_DELETE))
+CanExportAssets = Depends(require_permission(Permissions.ASSETS_EXPORT))
 
 # --- System ---
 CanViewSystemHealth = Depends(require_permission(Permissions.SYSTEM_HEALTH))

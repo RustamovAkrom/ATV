@@ -33,7 +33,7 @@ class Warehouse(Base, UUIDMixing, TimestampMixin):
         ForeignKey("regions.id", ondelete="RESTRICT"),
         nullable=False
     )
-    service_id: Mapped[UUID] = mapped_column(
+    service_id: Mapped[Optional[UUID]] = mapped_column(
         ForeignKey("services.id", ondelete="SET NULL"),
         nullable=True,
     )

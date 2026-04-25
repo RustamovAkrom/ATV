@@ -1,5 +1,3 @@
-import asyncio
-import json
 import time
 from typing import Any, Optional, Protocol
 
@@ -26,7 +24,7 @@ class MemoryBackend:
             return None
 
         value, exp = data
-        if exp is not None and exp > time.time():
+        if exp is not None and exp < time.time():
             self.storage.pop(key, None)
             return None
 

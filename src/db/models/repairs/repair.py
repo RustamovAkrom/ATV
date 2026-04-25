@@ -8,7 +8,6 @@ from uuid import UUID
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import ForeignKey, Numeric, String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
-from sqlalchemy.sql import func
 from db.base import Base, TimestampMixin, UUIDMixing
 from db.models.enums import RepairStatus
 
@@ -65,7 +64,7 @@ class Repair(Base, UUIDMixing, TimestampMixin):
         lazy="selectin"
     )
 
-    @validates("labor_cost", "total_cost")
+    @validates("labor_cost")
     def validate_costs(self, key, value):
         if value is not None and value < 0:
             raise ValueError(f"{key} must be >= 0")

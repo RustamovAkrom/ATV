@@ -9,7 +9,7 @@ from core.security.auth.types import CurrentUser
 # Импортируем наши точные пресеты
 from core.security.rbac import presets
 from db.models.users.user import User
-from schemas.pagination import PaginationParams
+from schemas.pagination import PaginationParams, PageOut
 from schemas.users import (
     AdminUserUpdate,
     ChangePasswordRequest,

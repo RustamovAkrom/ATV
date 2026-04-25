@@ -24,8 +24,10 @@ class Permissions:
 
     # --- ASSETS & FILES ---
     ASSETS_VIEW = "assets.view"
-    ASSETS_UPLOAD = "assets.upload"
+    ASSETS_CREATE = "assets.create"
+    ASSETS_UPDATE = "assets.update"
     ASSETS_DELETE = "assets.delete"
+    ASSETS_EXPORT = "assets.export"
 
     # --- SYSTEM ---
     SYSTEM_SETTINGS = "system.settings"
@@ -51,7 +53,10 @@ ADMIN_BASE = MODERATOR_BASE | {
     Permissions.USERS_PASSWORD_RESET,
     Permissions.SESSIONS_REVOKE,
     Permissions.ROLES_VIEW,
-    Permissions.ASSETS_UPLOAD,
+    Permissions.ASSETS_CREATE,
+    Permissions.ASSETS_UPDATE,
+    Permissions.ASSETS_DELETE,
+    Permissions.ASSETS_EXPORT,
 }
 
 ROLE_PERMISSIONS: Dict[str, Set[str]] = {
@@ -72,6 +77,8 @@ ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         Permissions.AUDIT_VIEW,
         Permissions.AUDIT_EXPORT,
         Permissions.USERS_VIEW,
+        Permissions.ASSETS_VIEW,
+        Permissions.ASSETS_EXPORT,
         Permissions.SYSTEM_HEALTH,
     },
 }

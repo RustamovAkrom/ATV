@@ -1,8 +1,8 @@
 """
 
-Revision ID: c933eb16151f
+Revision ID: 869172b1cafb
 Revises: 
-Create Date: 2026-04-21 01:29:20.549528
+Create Date: 2026-04-24 20:28:10.902460
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'c933eb16151f'
+revision: str = '869172b1cafb'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -184,6 +184,27 @@ def upgrade() -> None:
     sa.UniqueConstraint('passport_number', name=op.f('uq_users_passport_number')),
     sa.UniqueConstraint('phone', name=op.f('uq_users_phone'))
     )
+    op.create_table('approval_requests',
+    sa.Column('entity_type', sa.String(length=100), nullable=False),
+    sa.Column('entity_id', sa.Uuid(), nullable=False),
+    sa.Column('action', sa.String(length=100), nullable=False),
+    sa.Column('payload', sa.JSON(), nullable=False),
+    sa.Column('status', sa.Enum('pending', 'approved', 'rejected', name='approval_status'), nullable=False),
+    sa.Column('created_by_id', sa.UUID(), nullable=False),
+    sa.Column('approved_by_id', sa.UUID(), nullable=True),
+    sa.Column('executed', sa.Boolean(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('decided_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.ForeignKeyConstraint(['approved_by_id'], ['users.id'], name=op.f('fk_approval_requests_approved_by_id_users')),
+    sa.ForeignKeyConstraint(['created_by_id'], ['users.id'], name=op.f('fk_approval_requests_created_by_id_users')),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_approval_requests'))
+    )
+    op.create_index(op.f('ix_approval_requests_action'), 'approval_requests', ['action'], unique=False)
+    op.create_index(op.f('ix_approval_requests_approved_by_id'), 'approval_requests', ['approved_by_id'], unique=False)
+    op.create_index(op.f('ix_approval_requests_created_by_id'), 'approval_requests', ['created_by_id'], unique=False)
+    op.create_index(op.f('ix_approval_requests_entity_id'), 'approval_requests', ['entity_id'], unique=False)
+    op.create_index(op.f('ix_approval_requests_entity_type'), 'approval_requests', ['entity_type'], unique=False)
     op.create_table('audit_logs',
     sa.Column('method', sa.String(length=10), nullable=False),
     sa.Column('path', sa.String(length=255), nullable=False),
@@ -249,15 +270,17 @@ def upgrade() -> None:
     sa.UniqueConstraint('code', name=op.f('uq_warehouses_code'))
     )
     op.create_table('assets',
+    sa.Column('name', sa.String(length=255), nullable=False),
+    sa.Column('type', sa.String(length=100), nullable=False),
     sa.Column('asset_tag', sa.String(length=255), nullable=True),
     sa.Column('serial_number', sa.String(length=255), nullable=True),
     sa.Column('model_id', sa.UUID(), nullable=False),
-    sa.Column('status', sa.Enum('ACTIVE', 'IN_STOCK', 'BROKEN', 'RETIRED', 'IN_REPAIR', 'IN_TRANSIT', name='asset_status'), nullable=False),
+    sa.Column('status', sa.Enum('active', 'assigned', 'in_repair', 'archived', name='asset_status'), nullable=False),
     sa.Column('class_id', sa.UUID(), nullable=True),
     sa.Column('service_id', sa.UUID(), nullable=True),
     sa.Column('region_id', sa.UUID(), nullable=True),
     sa.Column('current_warehouse_id', sa.UUID(), nullable=True),
-    sa.Column('responsible_user_id', sa.UUID(), nullable=True),
+    sa.Column('owner_id', sa.UUID(), nullable=True),
     sa.Column('commission_date', sa.Date(), nullable=True),
     sa.Column('warranty_end', sa.Date(), nullable=True),
     sa.Column('condition_percent', sa.Integer(), nullable=False),
@@ -275,8 +298,8 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['class_id'], ['asset_classes.id'], name=op.f('fk_assets_class_id_asset_classes'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['current_warehouse_id'], ['warehouses.id'], name=op.f('fk_assets_current_warehouse_id_warehouses'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['model_id'], ['asset_models.id'], name=op.f('fk_assets_model_id_asset_models'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['owner_id'], ['users.id'], name=op.f('fk_assets_owner_id_users'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['region_id'], ['regions.id'], name=op.f('fk_assets_region_id_regions'), ondelete='SET NULL'),
-    sa.ForeignKeyConstraint(['responsible_user_id'], ['users.id'], name=op.f('fk_assets_responsible_user_id_users'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['service_id'], ['services.id'], name=op.f('fk_assets_service_id_services'), ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_assets'))
     )
@@ -284,10 +307,12 @@ def upgrade() -> None:
     op.create_index(op.f('ix_assets_class_id'), 'assets', ['class_id'], unique=False)
     op.create_index(op.f('ix_assets_current_warehouse_id'), 'assets', ['current_warehouse_id'], unique=False)
     op.create_index(op.f('ix_assets_model_id'), 'assets', ['model_id'], unique=False)
+    op.create_index(op.f('ix_assets_name'), 'assets', ['name'], unique=False)
+    op.create_index(op.f('ix_assets_owner_id'), 'assets', ['owner_id'], unique=False)
     op.create_index(op.f('ix_assets_region_id'), 'assets', ['region_id'], unique=False)
-    op.create_index(op.f('ix_assets_responsible_user_id'), 'assets', ['responsible_user_id'], unique=False)
     op.create_index(op.f('ix_assets_serial_number'), 'assets', ['serial_number'], unique=True)
     op.create_index(op.f('ix_assets_service_id'), 'assets', ['service_id'], unique=False)
+    op.create_index(op.f('ix_assets_type'), 'assets', ['type'], unique=False)
     op.create_table('asset_assignments',
     sa.Column('asset_id', sa.UUID(), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=False),
@@ -296,11 +321,11 @@ def upgrade() -> None:
     sa.Column('id', sa.UUID(), nullable=False),
     sa.ForeignKeyConstraint(['asset_id'], ['assets.id'], name=op.f('fk_asset_assignments_asset_id_assets'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_asset_assignments_user_id_users'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_asset_assignments')),
-    sa.UniqueConstraint('asset_id', 'user_id', name=op.f('uq_asset_assignments_asset_id'))
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_asset_assignments'))
     )
     op.create_index(op.f('ix_asset_assignments_asset_id'), 'asset_assignments', ['asset_id'], unique=False)
     op.create_index(op.f('ix_asset_assignments_user_id'), 'asset_assignments', ['user_id'], unique=False)
+    op.create_index('uq_active_asset_assignment', 'asset_assignments', ['asset_id'], unique=True, postgresql_where=sa.text('unassigned_at IS NULL'))
     op.create_table('asset_history',
     sa.Column('asset_id', sa.UUID(), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=False),
@@ -316,7 +341,7 @@ def upgrade() -> None:
     op.create_table('asset_transfers',
     sa.Column('asset_id', sa.UUID(), nullable=False),
     sa.Column('created_by_id', sa.UUID(), nullable=False),
-    sa.Column('status', sa.String(length=20), nullable=False),
+    sa.Column('status', sa.Enum('pending', 'completed', 'cancelled', name='transferstatus'), nullable=False),
     sa.Column('from_warehouse_id', sa.UUID(), nullable=True),
     sa.Column('to_warehouse_id', sa.UUID(), nullable=True),
     sa.Column('from_service_id', sa.UUID(), nullable=True),
@@ -418,13 +443,16 @@ def downgrade() -> None:
     op.drop_table('asset_transfers')
     op.drop_index(op.f('ix_asset_history_asset_id'), table_name='asset_history')
     op.drop_table('asset_history')
+    op.drop_index('uq_active_asset_assignment', table_name='asset_assignments', postgresql_where=sa.text('unassigned_at IS NULL'))
     op.drop_index(op.f('ix_asset_assignments_user_id'), table_name='asset_assignments')
     op.drop_index(op.f('ix_asset_assignments_asset_id'), table_name='asset_assignments')
     op.drop_table('asset_assignments')
+    op.drop_index(op.f('ix_assets_type'), table_name='assets')
     op.drop_index(op.f('ix_assets_service_id'), table_name='assets')
     op.drop_index(op.f('ix_assets_serial_number'), table_name='assets')
-    op.drop_index(op.f('ix_assets_responsible_user_id'), table_name='assets')
     op.drop_index(op.f('ix_assets_region_id'), table_name='assets')
+    op.drop_index(op.f('ix_assets_owner_id'), table_name='assets')
+    op.drop_index(op.f('ix_assets_name'), table_name='assets')
     op.drop_index(op.f('ix_assets_model_id'), table_name='assets')
     op.drop_index(op.f('ix_assets_current_warehouse_id'), table_name='assets')
     op.drop_index(op.f('ix_assets_class_id'), table_name='assets')
@@ -443,6 +471,12 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_audit_logs_path'), table_name='audit_logs')
     op.drop_index(op.f('ix_audit_logs_created_at'), table_name='audit_logs')
     op.drop_table('audit_logs')
+    op.drop_index(op.f('ix_approval_requests_entity_type'), table_name='approval_requests')
+    op.drop_index(op.f('ix_approval_requests_entity_id'), table_name='approval_requests')
+    op.drop_index(op.f('ix_approval_requests_created_by_id'), table_name='approval_requests')
+    op.drop_index(op.f('ix_approval_requests_approved_by_id'), table_name='approval_requests')
+    op.drop_index(op.f('ix_approval_requests_action'), table_name='approval_requests')
+    op.drop_table('approval_requests')
     op.drop_table('users')
     op.drop_table('role_permissions')
     op.drop_table('region_services')

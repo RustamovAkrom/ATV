@@ -1,4 +1,4 @@
-from sqlalchemy import select, func, and_, or_, select
+from sqlalchemy import func, and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from collections.abc import Mapping
 from typing import Any

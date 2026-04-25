@@ -1,11 +1,11 @@
-from datetime import date
 from typing import TYPE_CHECKING, List, Optional
 from uuid import UUID
 
-from sqlalchemy import Enum as SAEnum
-from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint, Index, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from db.base import Base, TimestampMixin, UUIDMixing
+from db.models.mixins.slug_mixin import SlugMixin
+
 
 if TYPE_CHECKING:
     from .asset import Asset
@@ -13,14 +13,12 @@ if TYPE_CHECKING:
     from .manufacturer import Manufacturer
 
 
-class AssetModel(Base, UUIDMixing, TimestampMixin):
+class AssetModel(Base, UUIDMixing, TimestampMixin, SlugMixin):
     __tablename__ = "asset_models"
 
-    __table_args__ = (
-        UniqueConstraint("name", "manufacturer_id", name="uq_model_manufacturer"),
-    )
 
-    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    name: Mapped[str] = mapped_column(String(150), index=True)
+    code: Mapped[str] = mapped_column(String(150), unique=True)
 
     manufacturer_id: Mapped[UUID] = mapped_column(
         ForeignKey("manufacturers.id", ondelete="RESTRICT"),
@@ -67,3 +65,8 @@ class AssetModel(Base, UUIDMixing, TimestampMixin):
         if value is not None and value < 0:
             raise ValueError("warranty_months must be >= 0")
         return value
+
+    __table_args__ = (
+        UniqueConstraint("name", "manufacturer_id", name="uq_model_manufacturer"),
+        Index("uq_asset_model_name_lower", func.lower(name), manufacturer_id, unique=True),
+    )

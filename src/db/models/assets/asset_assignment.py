@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, UniqueConstraint, DateTime
+from sqlalchemy import ForeignKey, DateTime, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -11,9 +11,6 @@ from db.base import Base, UUIDMixing
 
 class AssetAssignment(Base, UUIDMixing):
     __tablename__ = "asset_assignments"
-    __table_args__ = (
-        UniqueConstraint("asset_id", "user_id"),
-    )
 
     asset_id: Mapped[UUID] = mapped_column(
         ForeignKey("assets.id", ondelete="CASCADE"),
@@ -32,6 +29,14 @@ class AssetAssignment(Base, UUIDMixing):
 
     unassigned_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
-    asset = relationship("Asset", lazy="selectin")
+    asset = relationship("Asset", back_populates="assignments", lazy="selectin")
     user = relationship("User", lazy="selectin")
 
+    __table_args__ = (
+        Index(
+            "uq_active_asset_assignment",
+            "asset_id",
+            unique=True,
+            postgresql_where=(unassigned_at.is_(None)),
+        ),
+    )

@@ -1,7 +1,6 @@
 # core/security/passwords.py
 
 import hashlib
-from typing import Optional
 
 from pwdlib import PasswordHash
 from pwdlib.hashers.bcrypt import BcryptHasher
@@ -56,6 +55,5 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
             hashed_password,
         )
     except Exception as exc:
-        print("Password verify failed")
         logger.warning("password_verify_failed", error=str(exc))
         return False

@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from core.exceptions.errors import NotFound, ValidationError, BadRequest, BadRequest
+from core.exceptions.errors import BadRequest, NotFound, ValidationError
 from db.models.users.permission import Role
 from repositories.rbac_repo import RBACRepository
 from schemas.rbac import RoleCreate, RoleUpdate
@@ -37,7 +37,7 @@ class RBACService:
         try:
             role = Role(
                 name=data.name.strip(),
-                code=data.code,
+                code=code,
                 description=(data.description or "").strip() or None,
             )
             return await self.rbac_repo.create_role(role)
@@ -57,7 +57,7 @@ class RBACService:
                 raise ValidationError("Role code already exists")
 
         if "name" in payload and payload["name"]:
-            payload["name"] = payload["codnamee"].lower().strip()
+            payload["name"] = payload["name"].strip()
             if await self.rbac_repo.exists_by_name(payload["name"], exclude_id=role_id):
                 raise ValidationError("Role name already exists")
 

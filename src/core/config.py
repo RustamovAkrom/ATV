@@ -65,12 +65,14 @@ class Settings(BaseSettings):
     # Passwords hash
     BCRYPT_ROUNDS: int = 12
 
-    # SlowAPI
+    # Rate limiting
     RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_STORAGE_URL: str = "memory://"
     RATE_LIMIT_DEFAULT: str = "10/minute"
     RATE_LIMIT_LOGIN: str = "10/minute"
     RATE_LIMIT_TRUSTED_PROXIES: str = ""
+    RATE_LIMIT_ANALYTICS: str = "20/minute"
+    RATE_LIMIT_ANALYTICS_DASHBOARD: str = "10/minute"
 
     # redis
     REDIS_URL: str = "redis://redis:6379/0"
@@ -102,7 +104,32 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     LOG_JSON: bool = False
     LOG_INCLUDE_REQUEST_ID: bool = True
+    LOG_ENQUEUE: bool = False
     SERVICE_NAME: str = "iib-backend"
+
+    # Analytics
+    ANALYTICS_SEARCH_MAX_LENGTH: int = 100
+
+    # Alerts
+    ALERT_TRANSFER_DAYS_LIMIT: int = 7
+    ALERT_REPAIR_LOOKBACK_DAYS: int = 90
+    ALERT_REPAIR_THRESHOLD: int = 3
+    ALERT_REPAIR_THRESHOLD_MULTIPLIER: int = 2
+    ALERT_INACTIVE_ASSET_DAYS: int = 60
+    ALERT_OVERLOADED_USER_THRESHOLD: int = 10
+
+    @field_validator("DEBUG", mode="before")
+    @classmethod
+    def parse_debug_flag(cls, value):
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"1", "true", "yes", "on", "debug"}:
+                return True
+            if normalized in {"0", "false", "no", "off", "release", "prod", "production"}:
+                return False
+        return bool(value)
 
 
     @property

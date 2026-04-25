@@ -37,7 +37,7 @@ def configure_logger():
     logger.add(
         sys.stdout,
         level=settings.LOG_LEVEL,
-        enqueue=True,
+        enqueue=settings.LOG_ENQUEUE,
         backtrace=settings.DEBUG,
         diagnose=settings.DEBUG,
         colorize=settings.DEBUG and not settings.LOG_JSON,

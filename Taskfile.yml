@@ -32,13 +32,19 @@ tasks:
     desc: Create migration
     cmds:
       - task: db-up
-      - "{{.RUNNER}} alembic -c src/alembic.ini revision --autogenerate -m '{{.MSG}}'"
+      - "{{.RUNNER}} alembic -c src/alembic.ini revision --autogenerate -m '{{.NAME | default .MSG}}'"
 
   db-migrate:
     desc: Apply database migrations
     cmds:
       - task: db-up
       - "{{.RUNNER}} alembic -c src/alembic.ini upgrade head"
+
+  db-downgrade:
+    desc: Roll back the latest migration
+    cmds:
+      - task: db-up
+      - "{{.RUNNER}} alembic -c src/alembic.ini downgrade -1"
 
   db-shell:
     desc: SQL database shell (Docker)

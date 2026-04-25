@@ -1,5 +1,4 @@
 import pytest
-from uuid import uuid4
 
 from schemas.audit import AuditCreate, AuditFilters
 from schemas.pagination import PaginationParams
