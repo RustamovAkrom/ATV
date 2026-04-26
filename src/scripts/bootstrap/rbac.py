@@ -4,8 +4,11 @@ from core.security.rbac.permissions import ROLE_PERMISSIONS, Permissions
 from db.models.enums import UserRole
 
 # 👉 импортируй свою association table
-from db.models.users.permission import role_permissions  # 👈 ВАЖНО
-from db.models.users.permission import Permission, Role
+from db.models.users.permission import (
+    Permission,
+    Role,
+    role_permissions,  # 👈 ВАЖНО
+)
 
 
 async def seed_rbac(db):

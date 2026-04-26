@@ -19,4 +19,4 @@ def process_audit_log_task(self, payload: dict):
     try:
         asyncio.run(_run())
     except Exception as exc:
-        raise self.retry(exc=exc, countdown=5)
+        raise self.retry(exc=exc, countdown=5) from exc

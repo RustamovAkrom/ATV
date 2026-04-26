@@ -80,5 +80,5 @@ class AssetModelService:
 
         try:
             await self.repo.delete(obj)
-        except Exception:
-            raise BadRequest("Failed to delete model")
+        except Exception as e:
+            raise BadRequest("Failed to delete model") from e

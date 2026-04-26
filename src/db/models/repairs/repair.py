@@ -5,9 +5,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import DateTime
-from sqlalchemy import Enum as SAEnum
-from sqlalchemy import ForeignKey, Numeric, String
+from sqlalchemy import DateTime, Enum as SAEnum, ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from db.base import Base, TimestampMixin, UUIDMixing

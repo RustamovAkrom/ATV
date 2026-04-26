@@ -35,5 +35,5 @@ class AssetClassService:
 
         try:
             await self.repo.delete(obj)
-        except Exception:
-            raise BadRequest("Failed to delete asset class")
+        except Exception as e:
+            raise BadRequest("Failed to delete asset class") from e

@@ -86,7 +86,6 @@ def test_match_filters_rejects_mismatches(kwargs, event):
     assert module._match_filters(event, **kwargs) is False
 
 
-
 async def test_stream_audit_emits_retry_and_event(monkeypatch):
     closed = {"value": False}
 
@@ -94,6 +93,7 @@ async def test_stream_audit_emits_retry_and_event(monkeypatch):
 
     async def empty_receive():
         return {"type": "http.request"}
+
     def make_request():
         scope = {
             "type": "http",
@@ -102,7 +102,6 @@ async def test_stream_audit_emits_retry_and_event(monkeypatch):
             "headers": [],
         }
         return Request(scope, receive=empty_receive)
-
 
     async def _subscriber():
         try:

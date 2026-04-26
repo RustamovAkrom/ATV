@@ -20,4 +20,4 @@ def send_password_reset_email_task(self, email: str, reset_link: str):
         )
 
     except Exception as e:
-        raise self.retry(exc=e, countdown=10)
+        raise self.retry(exc=e, countdown=10) from e

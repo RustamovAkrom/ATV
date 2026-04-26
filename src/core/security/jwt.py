@@ -77,8 +77,8 @@ async def decode_token(
             session_id=UUID(raw["session_id"]) if raw.get("session_id") else None,
         )
 
-    except jwt.ExpiredSignatureError:
-        raise TokenExpired()
+    except jwt.ExpiredSignatureError as e:
+        raise TokenExpired() from e
 
-    except (jwt.PyJWTError, ValidationError, KeyError, TypeError, ValueError):
-        raise InvalidToken()
+    except (jwt.PyJWTError, ValidationError, KeyError, TypeError, ValueError) as e:
+        raise InvalidToken() from e

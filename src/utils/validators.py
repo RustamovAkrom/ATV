@@ -1,5 +1,7 @@
 import re
+
 from sqlalchemy.exc import IntegrityError
+
 from core.exceptions.errors import BadRequest
 from utils.slug import slugify
 
@@ -40,10 +42,10 @@ async def ensure_unique_code(repo, code: str):
 async def safe_create(repo, obj):
     try:
         return await repo.create(obj)
-    except IntegrityError:
-        raise BadRequest("Already exists")
-    except Exception:
-        raise BadRequest("Failed to create")
+    except IntegrityError as e:
+        raise BadRequest("Already exists") from e
+    except Exception as e:
+        raise BadRequest("Failed to create") from e
 
 
 async def validate_and_prepare(repo, name: str):

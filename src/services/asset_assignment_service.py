@@ -22,7 +22,7 @@ class AssetAssignmentService:
             asset = await self.repo.get_asset_for_update(asset_id, nowait=True)
         except DBAPIError as e:
             if isinstance(e.orig, asyncpg.exceptions.LockNotAvailableError):
-                raise BadRequest("Asset is locked")
+                raise BadRequest("Asset is locked") from e
             raise
 
         if not asset:
@@ -70,8 +70,8 @@ class AssetAssignmentService:
     ) -> AssetAssignmentActionSchema:
         try:
             asset = await self.repo.get_asset_for_update(asset_id)
-        except DBAPIError:
-            raise BadRequest("Asset is locked")
+        except DBAPIError as e:
+            raise BadRequest("Asset is locked") from e
 
         if not asset:
             asset = await self.repo.get_asset_plain(asset_id)
@@ -115,8 +115,8 @@ class AssetAssignmentService:
     ) -> AssetAssignmentActionSchema:
         try:
             asset = await self.repo.get_asset_for_update(asset_id)
-        except DBAPIError:
-            raise BadRequest("Asset is locked")
+        except DBAPIError as e:
+            raise BadRequest("Asset is locked") from e
 
         if not asset:
             raise BadRequest("Asset is locked or not available")

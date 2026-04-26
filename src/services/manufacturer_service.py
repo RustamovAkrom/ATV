@@ -34,5 +34,5 @@ class ManufacturerService:
 
         try:
             await self.repo.delete(obj)
-        except Exception:
-            raise BadRequest("Failed to delete manufacturer")
+        except Exception as e:
+            raise BadRequest("Failed to delete manufacturer") from e

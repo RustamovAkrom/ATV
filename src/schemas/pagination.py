@@ -1,5 +1,5 @@
 from math import ceil
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,7 +14,7 @@ class PaginationParamsSchema(BaseModel):
         return (self.page - 1) * self.limit
 
 
-class PageSchema(BaseModel, Generic[T]):
+class PageSchema(BaseModel):
     items: list[T]
     total: int
     page: int
@@ -29,7 +29,7 @@ class PageMetaSchema(BaseModel):
     has_prev: bool
 
 
-class PageOutSchema(PageMetaSchema, Generic[T]):
+class PageOutSchema(PageMetaSchema):
     items: list[T]
     total: int
     page: int

@@ -28,5 +28,5 @@ class AssetCategoryService:
             raise NotFound("Category not found")
         try:
             await self.repo.delete(obj)
-        except Exception:
-            raise BadRequest("Failed to delete category")
+        except Exception as e:
+            raise BadRequest("Failed to delete category") from e

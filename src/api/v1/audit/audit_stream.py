@@ -49,7 +49,8 @@ async def stream_audit(
     status_min: int | None = Query(None),
     level: Literal["info", "warning", "critical"] | None = Query(None),
     method: str | None = Query(None),
-    # Здесь CurrentUser нам не нужен, так как CanViewAudit уже проверяет права на уровне роутера.
+    # Здесь CurrentUser нам не нужен, так как CanViewAudit уже проверяет права
+    # на уровне роутера.
     # Если же вам НУЖЕН объект юзера внутри функции, используйте:
     # current_user: CurrentUser = presets.CanViewAudit
 ):

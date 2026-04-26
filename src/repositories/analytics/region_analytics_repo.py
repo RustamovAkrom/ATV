@@ -196,7 +196,8 @@ class RegionAnalyticsRepository:
             )
             .outerjoin(repair_costs, repair_costs.c.asset_id == Asset.id)
             .where(Asset.region_id == region_id)
-            # Pre-aggregate repair costs per asset to prevent join fan-out from inflating totals.
+            # Pre-aggregate repair costs per asset to prevent
+            # join fan-out from inflating totals.
             .group_by(
                 Asset.id,
                 Asset.name,

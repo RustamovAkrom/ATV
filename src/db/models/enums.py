@@ -1,73 +1,73 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class UserRole(str, Enum):
+class UserRole(StrEnum):
     SUPERADMIN = "superadmin"
     ADMIN = "admin"
     MODERATOR = "moderator"
     ANALYTIC = "analytic"
 
 
-class UserStatus(str, Enum):
+class UserStatus(StrEnum):
     ACTIVE = "active"
     BLOCKED = "blocked"
     ARCHIVED = "archived"
 
 
-class AssetStatus(str, Enum):
+class AssetStatus(StrEnum):
     ACTIVE = "active"
     ASSIGNED = "assigned"
     IN_REPAIR = "in_repair"
     ARCHIVED = "archived"
 
 
-class TransferStatus(str, Enum):
+class TransferStatus(StrEnum):
     PENDING = "pending"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
 
 
-class LifecycleStage(str, Enum):
+class LifecycleStage(StrEnum):
     NEW = "new"
     NORMAL = "normal"
     OLD = "old"
     CRITICAL = "critical"
 
 
-class RepairStatus(str, Enum):
+class RepairStatus(StrEnum):
     REPORTED = "reported"
     IN_PROGRESS = "in_progress"
     DONE = "done"
     CANCELED = "canceled"
 
 
-class TaskStatus(str, Enum):
+class TaskStatus(StrEnum):
     OPEN = "open"
     IN_PROGRESS = "in_progress"
     DONE = "done"
     CANCELED = "canceled"
 
 
-class DocumentStatus(str, Enum):
+class DocumentStatus(StrEnum):
     DRAFT = "draft"
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
 
 
-class ApprovalStatus(str, Enum):
+class ApprovalStatus(StrEnum):
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
 
 
-class AuditAction(str, Enum):
+class AuditAction(StrEnum):
     CREATE = "create"
     UPDATE = "update"
     DELETE = "delete"
 
 
-class AuditEntity(str, Enum):
+class AuditEntity(StrEnum):
     USER = "user"
     ASSET = "asset"
     REPAIR = "repair"

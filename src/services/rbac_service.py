@@ -22,8 +22,8 @@ class RBACService:
             if not role:
                 raise NotFound("Role not found")
             return role
-        except IntegrityError:
-            raise BadRequest("Role with this code already exists")
+        except IntegrityError as e:
+            raise BadRequest("Role with this code already exists") from e
 
     async def create_role(self, data: RoleCreateSchema):
         # normalize
@@ -42,8 +42,8 @@ class RBACService:
                 description=(data.description or "").strip() or None,
             )
             return await self.rbac_repo.create_role(role)
-        except IntegrityError:
-            raise BadRequest("Role with this code already exists")
+        except IntegrityError as e:
+            raise BadRequest("Role with this code already exists") from e
 
     async def update_role(self, role_id: UUID, data: RoleUpdateSchema):
         role = await self.rbac_repo.get_role(role_id)

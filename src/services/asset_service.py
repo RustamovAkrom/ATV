@@ -216,7 +216,10 @@ class AssetService:
                 asset_id=asset.id,
                 user_id=actor_id,
                 action="status_changed",
-                description=f"Status changed from '{previous_status.value}' to '{AssetStatus.ASSIGNED.value}'",
+                description=(
+                    f"Status changed from '{previous_status.value}' "
+                    f"to '{AssetStatus.ASSIGNED.value}'",
+                ),
             )
 
         await self._publish_event(
@@ -262,7 +265,10 @@ class AssetService:
             asset_id=asset.id,
             user_id=actor_id,
             action="status_changed",
-            description=f"Status changed from '{previous_status.value}' to '{new_status.value}'",
+            description=(
+                f"Status changed from '{previous_status.value}' "
+                f"to '{new_status.value}'",
+            ),
         )
         await self._publish_event(
             "asset.status_changed",
@@ -371,7 +377,8 @@ class AssetService:
         allowed = self._ALLOWED_TRANSITIONS[asset.status]
         if new_status not in allowed:
             raise BadRequest(
-                f"Cannot change asset status from '{asset.status.value}' to '{new_status.value}'"
+                f"Cannot change asset status from '{asset.status.value}'"
+                f"to '{new_status.value}'"
             )
         if new_status == AssetStatus.ASSIGNED and asset.owner_id is None:
             raise BadRequest("Assigned status requires an owner")
