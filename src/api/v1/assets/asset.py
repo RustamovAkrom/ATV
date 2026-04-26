@@ -17,13 +17,13 @@ from core.cache.decorators import cached, invalidate_cache
 from core.security.auth.dependencies import get_current_user
 from core.security.rbac import presets
 from db.models.enums import AssetStatus
-from schemas.asset_assignments import AssetAssignmentRequest, AssetReassignmentRequest
-from schemas.asset_transfers import (
+from schemas.assets.asset_assignments import AssetAssignmentRequest, AssetReassignmentRequest
+from schemas.assets.asset_transfers import (
     AssetTransferCreate,
     AssetTransferDecision,
     AssetTransferSchema,
 )
-from schemas.assets import (
+from schemas.assets.assets import (
     AssetCreate,
     AssetDetailSchema,
     AssetFilters,
@@ -33,7 +33,7 @@ from schemas.assets import (
     AssetUpdate,
 )
 from schemas.auth import CurrentUserSchema
-from schemas.bulk import (
+from schemas.assets.bulk import (
     BulkAssignRequest,
     BulkResult,
     BulkStatusRequest,
@@ -41,22 +41,22 @@ from schemas.bulk import (
 )
 from schemas.documents import AssetDocumentCreate, AssetDocumentSchema
 from schemas.pagination import PaginationParamsSchema
-from schemas.repairs import (
+from schemas.assets.repairs import (
     RepairCancelRequest,
     RepairCompleteRequest,
     RepairReportRequest,
     RepairSchema,
     RepairStartRequest,
 )
-from schemas.warehouses import WarehouseMoveRequest
-from services.asset_assignment_service import AssetAssignmentService
-from services.asset_service import AssetService
-from services.asset_transfer_service import AssetTransferService
-from services.bulk_asset_service import BulkAssetService
-from services.document_service import DocumentService
-from services.export_service import ExportService
-from services.repair_service import RepairService
-from services.warehouse_service import WarehouseService
+from schemas.assets.warehouses import WarehouseMoveRequest
+from services.assets.asset_assignment_service import AssetAssignmentService
+from services.assets.asset_service import AssetService
+from services.assets.asset_transfer_service import AssetTransferService
+from services.assets.bulk_asset_service import BulkAssetService
+from services.documents.document_service import DocumentService
+from services.assets.export_service import ExportService
+from services.assets.repair_service import RepairService
+from services.assets.warehouse_service import WarehouseService
 
 router = APIRouter(prefix="/assets", tags=["Assets"])
 
@@ -197,54 +197,26 @@ async def delete_asset(
     return {"status": "deleted"}
 
 
-@router.post(
-    "/{asset_id}/assign",
-    response_model=AssetDetailSchema,
-    dependencies=[presets.CanUpdateAssets],
-)
-@invalidate_cache(tags=("assets:list",))
-async def assign_asset(
-    asset_id: UUID,
-    data: AssetAssignmentRequest,
-    current_user: CurrentUserSchema = Depends(get_current_user),
-    service: AssetAssignmentService = Depends(get_asset_assignment_service),
-    asset_service: AssetService = Depends(get_asset_service),
-):
-    await service.assign_asset(asset_id, data.user_id, current_user.id)
-    return await asset_service.get(asset_id)
-
-
-@router.post(
-    "/{asset_id}/unassign",
-    response_model=AssetDetailSchema,
-    dependencies=[presets.CanUpdateAssets],
-)
-@invalidate_cache(tags=("assets:list",))
-async def unassign_asset(
-    asset_id: UUID,
-    current_user: CurrentUserSchema = Depends(get_current_user),
-    service: AssetAssignmentService = Depends(get_asset_assignment_service),
-    asset_service: AssetService = Depends(get_asset_service),
-):
-    await service.unassign_asset(asset_id, current_user.id)
-    return await asset_service.get(asset_id)
-
-
-@router.post(
-    "/{asset_id}/reassign",
-    response_model=AssetDetailSchema,
-    dependencies=[presets.CanUpdateAssets],
-)
-@invalidate_cache(tags=("assets:list",))
-async def reassign_asset(
-    asset_id: UUID,
-    data: AssetReassignmentRequest,
-    current_user: CurrentUserSchema = Depends(get_current_user),
-    service: AssetAssignmentService = Depends(get_asset_assignment_service),
-    asset_service: AssetService = Depends(get_asset_service),
-):
-    await service.reassign_asset(asset_id, data.new_user_id, current_user.id)
-    return await asset_service.get(asset_id)
+# @router.post(
+#     "/{asset_id}/request-assignment",
+#     response_model=ApprovalSchema,
+#     dependencies=[presets.CanCreateApprovals],
+# )
+# async def request_asset_assignment(
+#     asset_id: UUID,
+#     data: AssetAssignmentRequest,
+#     current_user: CurrentUserSchema = Depends(get_current_user),
+#     approval_service: ApprovalService = Depends(get_approval_service),
+# ):
+#     return await approval_service.create(
+#         ApprovalCreate(
+#             entity_type="asset_assignment",
+#             entity_id=asset_id,
+#             action="assign",
+#             payload={"user_id": str(data.user_id)},
+#         ),
+#         current_user.id,
+#     )
 
 
 @router.post(
@@ -262,55 +234,26 @@ async def change_asset_status(
     return await service.change_status(asset_id, data, current_user.id)
 
 
-@router.post(
-    "/{asset_id}/transfer",
-    response_model=AssetTransferSchema,
-    dependencies=[presets.CanUpdateAssets],
-)
-@invalidate_cache(tags=("assets:list",))
-async def create_asset_transfer(
-    asset_id: UUID,
-    data: AssetTransferCreate,
-    current_user: CurrentUserSchema = Depends(get_current_user),
-    service: AssetTransferService = Depends(get_asset_transfer_service),
-):
-    return await service.create_transfer(asset_id, data, current_user.id)
-
-
-@router.post(
-    "/{asset_id}/transfer/{transfer_id}/approve",
-    response_model=AssetTransferSchema,
-    dependencies=[presets.CanUpdateAssets],
-)
-@invalidate_cache(tags=("assets:list",))
-async def approve_asset_transfer(
-    asset_id: UUID,
-    transfer_id: UUID,
-    data: AssetTransferDecision,
-    current_user: CurrentUserSchema = Depends(get_current_user),
-    service: AssetTransferService = Depends(get_asset_transfer_service),
-):
-    return await service.approve_transfer(
-        asset_id, transfer_id, current_user.id, data.comment
-    )
-
-
-@router.post(
-    "/{asset_id}/transfer/{transfer_id}/reject",
-    response_model=AssetTransferSchema,
-    dependencies=[presets.CanUpdateAssets],
-)
-@invalidate_cache(tags=("assets:list",))
-async def reject_asset_transfer(
-    asset_id: UUID,
-    transfer_id: UUID,
-    data: AssetTransferDecision,
-    current_user: CurrentUserSchema = Depends(get_current_user),
-    service: AssetTransferService = Depends(get_asset_transfer_service),
-):
-    return await service.reject_transfer(
-        asset_id, transfer_id, current_user.id, data.comment
-    )
+# @router.post(
+#     "/{asset_id}/request-transfer",
+#     response_model=ApprovalSchema,
+#     dependencies=[presets.CanCreateApprovals],
+# )
+# async def request_transfer(
+#     asset_id: UUID,
+#     data: AssetTransferCreate,
+#     current_user: CurrentUserSchema = Depends(get_current_user),
+#     approval_service: ApprovalService = Depends(get_approval_service),
+# ):
+#     return await approval_service.create(
+#         ApprovalCreate(
+#             entity_type="asset_transfer",
+#             entity_id=asset_id,
+#             action="create_transfer",
+#             payload=data.model_dump(exclude_none=True),
+#         ),
+#         current_user.id,
+#     )
 
 
 @router.post(
@@ -344,21 +287,30 @@ async def start_asset_repair(
     return await service.start_repair(asset_id, repair_id, data, current_user.id)
 
 
-@router.post(
-    "/{asset_id}/repair/{repair_id}/complete",
-    response_model=RepairSchema,
-    dependencies=[presets.CanUpdateAssets],
-)
-@invalidate_cache(tags=("assets:list",))
-async def complete_asset_repair(
-    asset_id: UUID,
-    repair_id: UUID,
-    data: RepairCompleteRequest,
-    current_user: CurrentUserSchema = Depends(get_current_user),
-    service: RepairService = Depends(get_repair_service),
-):
-    return await service.complete_repair(asset_id, repair_id, data, current_user.id)
+# @router.post(
+#     "/{asset_id}/request-repair-complete",
+#     response_model=ApprovalSchema,
+#     dependencies=[presets.CanCreateApprovals],
+# )
+# async def request_repair_complete(
+#     asset_id: UUID,
+#     repair_id: UUID,
+#     data: RepairCompleteRequest,
+#     current_user: CurrentUserSchema = Depends(get_current_user),
+#     approval_service: ApprovalService = Depends(get_approval_service),
+# ):
+#     payload = data.model_dump(exclude_none=True)
+#     payload["repair_id"] = str(repair_id)
 
+#     return await approval_service.create(
+#         ApprovalCreate(
+#             entity_type="repair",
+#             entity_id=asset_id,
+#             action="complete_repair",
+#             payload=payload,
+#         ),
+#         current_user.id,
+#     )
 
 @router.post(
     "/{asset_id}/repair/{repair_id}/cancel",

@@ -9,9 +9,9 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from core.audit.stream import audit_stream
 from core.config import get_settings
 from core.database.db_async import get_async_session_factory
-from repositories.audit_repo import AuditRepository
+from repositories.audit.audit_repo import AuditRepository
 from schemas.audit import AuditCreateSchema, AuditStreamSchema
-from services.audit_service import AuditService
+from services.audit.audit_service import AuditService
 from tasks.audit_task import process_audit_log_task
 
 

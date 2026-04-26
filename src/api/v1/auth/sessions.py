@@ -7,8 +7,8 @@ from core.exceptions.errors import PermissionDenied
 from core.security.auth.dependencies import get_current_user
 from db.models.enums import UserRole
 from schemas.auth import CurrentUserSchema
-from schemas.sessions import SessionOutSchema
-from services.session_service import SessionService
+from schemas.users.sessions import SessionOutSchema
+from services.users.session_service import SessionService
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
 

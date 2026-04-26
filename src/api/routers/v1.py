@@ -20,9 +20,10 @@ from api.v1.audit.audit import router as audit_log_router
 from api.v1.audit.audit_stream import router as audit_stream_router
 from api.v1.auth.auth import router as auth_router
 from api.v1.auth.sessions import router as sessions_router
-from api.v1.rbac import router as rbac_router
+from api.v1.rbac.rbac import router as rbac_router
 from api.v1.users.security import router as security_router
 from api.v1.users.user import router as users_router
+from api.v1.notifications import router as notifications_router
 
 router = APIRouter()
 
@@ -32,6 +33,9 @@ router.include_router(users_router)
 router.include_router(security_router)
 router.include_router(sessions_router)
 router.include_router(rbac_router)
+
+# User Notifications
+router.include_router(notifications_router)
 
 # Asset Domain (WRITE)
 router.include_router(approvals_router)

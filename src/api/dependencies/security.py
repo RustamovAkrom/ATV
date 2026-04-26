@@ -2,10 +2,10 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.dependencies import get_db_session
-from repositories.auth_repo import AuthRepository
-from repositories.password_reset_repo import PasswordResetRepository
-from repositories.user_repo import UserRepository
-from services.security_service import SecurityService
+from repositories.auth.auth_repo import AuthRepository
+from repositories.users.password_reset_repo import PasswordResetRepository
+from repositories.users.user_repo import UserRepository
+from services.auth.security_service import SecurityService
 
 from .auth import get_auth_repo
 from .users import get_user_repo

@@ -9,7 +9,7 @@ from db.base import Base, TimestampMixin, UUIDMixing
 if TYPE_CHECKING:
     from .user import User
 
-# MANY-TO-MANY TABLE
+# MANY-TO-MANY: Role ↔ Permission
 role_permissions = Table(
     "role_permissions",
     Base.metadata,
@@ -17,6 +17,24 @@ role_permissions = Table(
         "role_id",
         UUID(as_uuid=True),
         ForeignKey("roles.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "permission_id",
+        UUID(as_uuid=True),
+        ForeignKey("permissions.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
+# MANY-TO-MANY: User ↔ Permission (for user-specific overrides)
+user_permissions = Table(
+    "user_permissions",
+    Base.metadata,
+    Column(
+        "user_id",
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
         primary_key=True,
     ),
     Column(
@@ -59,12 +77,20 @@ class Permission(Base, UUIDMixing, TimestampMixin):
         String(50), nullable=False, unique=True, index=True
     )
     description: Mapped[str | None] = mapped_column(Text(), nullable=True)
+
+    # Relations
     roles: Mapped[list["Role"]] = relationship(
         "Role",
         secondary="role_permissions",
         back_populates="permissions",
         lazy="selectin",
     )
+    users: Mapped[list["User"]] = relationship(
+        "User",
+        secondary="user_permissions",
+        back_populates="direct_permissions",
+        lazy="selectin",
+    )
 
 
-__all__ = ["Role", "Permission", "role_permissions"]
+__all__ = ["Role", "Permission", "role_permissions", "user_permissions"]

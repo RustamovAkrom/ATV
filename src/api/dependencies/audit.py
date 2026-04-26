@@ -2,8 +2,8 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.dependencies import get_db_session
-from repositories.audit_repo import AuditRepository
-from services.audit_service import AuditService
+from repositories.audit.audit_repo import AuditRepository
+from services.audit.audit_service import AuditService
 
 
 def get_audit_repo(

@@ -89,7 +89,9 @@ class Asset(Base, UUIDMixing, TimestampMixin):
     warranty_end: Mapped[date | None] = mapped_column(Date)
 
     # State (0-100)
-    condition_percent: Mapped[int] = mapped_column(default=100)
+    condition_percent: Mapped[int] = mapped_column(
+        Integer, default=100, nullable=False
+    )
 
     # Finance
     purchase_date: Mapped[date | None] = mapped_column(Date)
@@ -97,11 +99,15 @@ class Asset(Base, UUIDMixing, TimestampMixin):
 
     # usage
     last_repair_date: Mapped[date | None] = mapped_column(Date)
-    failure_count: Mapped[int] = mapped_column(default=0)
-    usage_intensity: Mapped[int] = mapped_column(default=0)
+
+    failure_count: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False
+    )
+    usage_intensity: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False)
 
     # flags
-    is_transfer_locked: Mapped[bool] = mapped_column(default=False)
+    is_transfer_locked: Mapped[bool] = mapped_column(default=False, nullable=False)
 
     # flexible data
     meta: Mapped[dict] = mapped_column(
@@ -123,6 +129,7 @@ class Asset(Base, UUIDMixing, TimestampMixin):
     )
     region: Mapped[Optional["Region"]] = relationship("Region", lazy="selectin")
     service: Mapped[Optional["Service"]] = relationship("Service", lazy="joined")
+
     warehouse: Mapped[Optional["Warehouse"]] = relationship(
         "Warehouse",
         back_populates="assets",
@@ -167,6 +174,14 @@ class Asset(Base, UUIDMixing, TimestampMixin):
     def validate_condition(self, key, value):
         if not 0 <= value <= 100:
             raise ValueError("condition_percent must be between 0 and 100")
+        return value
+
+    @validates("status")
+    def validate_status(self, key, value):
+        if value == AssetStatus.ASSIGNED and self.owner_id is None:
+            raise ValueError("ASSIGNED asset must have owner_id")
+        if value == AssetStatus.ACTIVE and self.owner_id is not None:
+            raise ValueError("ACTIVE asset cannot have owner_id")
         return value
 
     __mapper_args__ = {"version_id_col": version}

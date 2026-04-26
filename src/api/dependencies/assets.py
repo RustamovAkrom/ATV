@@ -2,22 +2,22 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.dependencies import get_db_session
-from repositories.approval_repo import ApprovalRepository
-from repositories.asset_assignment_repo import AssetAssignmentRepository
-from repositories.asset_repo import AssetRepository
-from repositories.asset_transfer_repo import AssetTransferRepository
-from repositories.document_repo import DocumentRepository
-from repositories.repair_repo import RepairRepository
-from repositories.warehouse_repo import WarehouseRepository
-from services.approval_service import ApprovalService
-from services.asset_assignment_service import AssetAssignmentService
-from services.asset_service import AssetService
-from services.asset_transfer_service import AssetTransferService
-from services.bulk_asset_service import BulkAssetService
-from services.document_service import DocumentService
-from services.export_service import ExportService
-from services.repair_service import RepairService
-from services.warehouse_service import WarehouseService
+from repositories.assets.approval_repo import ApprovalRepository
+from repositories.assets.asset_assignment_repo import AssetAssignmentRepository
+from repositories.assets.asset_repo import AssetRepository
+from repositories.assets.asset_transfer_repo import AssetTransferRepository
+from repositories.documents.document_repo import DocumentRepository
+from repositories.assets.repair_repo import RepairRepository
+from repositories.warehouse.warehouse_repo import WarehouseRepository
+from services.approvals.approval_service import ApprovalService
+from services.assets.asset_assignment_service import AssetAssignmentService
+from services.assets.asset_service import AssetService
+from services.assets.asset_transfer_service import AssetTransferService
+from services.assets.bulk_asset_service import BulkAssetService
+from services.documents.document_service import DocumentService
+from services.assets.export_service import ExportService
+from services.assets.repair_service import RepairService
+from services.assets.warehouse_service import WarehouseService
 
 
 def get_asset_repo(

@@ -8,7 +8,7 @@ from core.cache.decorators import cached
 from core.security.rbac.presets import CanViewAudit
 from schemas.audit import AuditFiltersSchema, AuditSchema, AuditStatsSchema
 from schemas.pagination import PageSchema, PaginationParamsSchema
-from services.audit_service import AuditService
+from services.audit.audit_service import AuditService
 
 router = APIRouter(prefix="/audit", tags=["Audit"])
 

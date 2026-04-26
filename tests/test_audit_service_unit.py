@@ -2,7 +2,7 @@ import pytest
 
 from schemas.audit import AuditCreateSchema, AuditFiltersSchema
 from schemas.pagination import PaginationParamsSchema
-from services.audit_service import AuditService
+from services.audit.audit_service import AuditService
 
 
 @pytest.fixture
@@ -23,7 +23,7 @@ def sample_payload():
 
 @pytest.mark.anyio
 async def test_create_audit_log(dbsession, sample_payload):
-    from repositories.audit_repo import AuditRepository
+    from repositories.audit.audit_repo import AuditRepository
 
     service = AuditService(AuditRepository(dbsession))
 
@@ -37,7 +37,7 @@ async def test_create_audit_log(dbsession, sample_payload):
 
 @pytest.mark.anyio
 async def test_list_audit_logs_empty(dbsession):
-    from repositories.audit_repo import AuditRepository
+    from repositories.audit.audit_repo import AuditRepository
 
     service = AuditService(AuditRepository(dbsession))
 
@@ -52,7 +52,7 @@ async def test_list_audit_logs_empty(dbsession):
 
 @pytest.mark.anyio
 async def test_list_audit_logs_with_data(dbsession, sample_payload):
-    from repositories.audit_repo import AuditRepository
+    from repositories.audit.audit_repo import AuditRepository
 
     service = AuditService(AuditRepository(dbsession))
 
@@ -72,7 +72,7 @@ async def test_list_audit_logs_with_data(dbsession, sample_payload):
 async def test_filter_by_user_id(
     dbsession, sample_payload, create_user
 ):  # Добавили фикстуру create_user
-    from repositories.audit_repo import AuditRepository
+    from repositories.audit.audit_repo import AuditRepository
 
     service = AuditService(AuditRepository(dbsession))
 
@@ -95,7 +95,7 @@ async def test_filter_by_user_id(
 
 @pytest.mark.anyio
 async def test_filter_by_status_code(dbsession, sample_payload):
-    from repositories.audit_repo import AuditRepository
+    from repositories.audit.audit_repo import AuditRepository
 
     service = AuditService(AuditRepository(dbsession))
 
@@ -112,7 +112,7 @@ async def test_filter_by_status_code(dbsession, sample_payload):
 
 @pytest.mark.anyio
 async def test_filter_by_search(dbsession, sample_payload):
-    from repositories.audit_repo import AuditRepository
+    from repositories.audit.audit_repo import AuditRepository
 
     service = AuditService(AuditRepository(dbsession))
 
@@ -131,7 +131,7 @@ async def test_filter_by_search(dbsession, sample_payload):
 
 @pytest.mark.anyio
 async def test_get_by_request_id(dbsession, sample_payload):
-    from repositories.audit_repo import AuditRepository
+    from repositories.audit.audit_repo import AuditRepository
 
     service = AuditService(AuditRepository(dbsession))
 
@@ -148,7 +148,7 @@ async def test_get_by_request_id(dbsession, sample_payload):
 
 @pytest.mark.anyio
 async def test_get_errors(dbsession, sample_payload):
-    from repositories.audit_repo import AuditRepository
+    from repositories.audit.audit_repo import AuditRepository
 
     service = AuditService(AuditRepository(dbsession))
 
@@ -164,7 +164,7 @@ async def test_get_errors(dbsession, sample_payload):
 
 @pytest.mark.anyio
 async def test_get_stats(dbsession, sample_payload):
-    from repositories.audit_repo import AuditRepository
+    from repositories.audit.audit_repo import AuditRepository
 
     service = AuditService(AuditRepository(dbsession))
 
@@ -184,7 +184,7 @@ async def test_get_stats(dbsession, sample_payload):
 
 @pytest.mark.anyio
 async def test_pagination(dbsession, sample_payload):
-    from repositories.audit_repo import AuditRepository
+    from repositories.audit.audit_repo import AuditRepository
 
     service = AuditService(AuditRepository(dbsession))
 

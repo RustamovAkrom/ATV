@@ -50,7 +50,7 @@ async def _create_asset(client, token: str, deps: dict, name: str):
 
 
 @pytest.mark.anyio
-async def test_double_approve_fails(client, dbsession, superadmin_token):
+async def test_double_approve_fails(client, dbsession, superadmin_token, approver_token):
     deps = await _seed_asset_dependencies(dbsession)
     asset = await _create_asset(client, superadmin_token, deps, "DoubleApproveAsset")
 
@@ -70,7 +70,7 @@ async def test_double_approve_fails(client, dbsession, superadmin_token):
     first = await client.post(
         f"/approvals/{approval_id}/approve",
         json={"comment": "approve once"},
-        headers={"Authorization": f"Bearer {superadmin_token}"},
+        headers={"Authorization": f"Bearer {approver_token}"},
     )
     assert first.status_code == 200
     assert first.json()["executed"] is True
@@ -78,13 +78,13 @@ async def test_double_approve_fails(client, dbsession, superadmin_token):
     second = await client.post(
         f"/approvals/{approval_id}/approve",
         json={"comment": "approve twice"},
-        headers={"Authorization": f"Bearer {superadmin_token}"},
+        headers={"Authorization": f"Bearer {approver_token}"},
     )
     assert second.status_code == 400
 
 
 @pytest.mark.anyio
-async def test_replay_after_approve_fails(client, dbsession, superadmin_token):
+async def test_replay_after_approve_fails(client, dbsession, superadmin_token, approver_token):
     deps = await _seed_asset_dependencies(dbsession)
     asset = await _create_asset(client, superadmin_token, deps, "ReplayApprovalAsset")
 
@@ -104,14 +104,14 @@ async def test_replay_after_approve_fails(client, dbsession, superadmin_token):
     approved = await client.post(
         f"/approvals/{approval_id}/approve",
         json={"comment": "done"},
-        headers={"Authorization": f"Bearer {superadmin_token}"},
+        headers={"Authorization": f"Bearer {approver_token}"},
     )
     assert approved.status_code == 200
 
     replay = await client.post(
         f"/approvals/{approval_id}/reject",
         json={"comment": "too late"},
-        headers={"Authorization": f"Bearer {superadmin_token}"},
+        headers={"Authorization": f"Bearer {approver_token}"},
     )
     assert replay.status_code == 400
 

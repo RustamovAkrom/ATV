@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 
-from repositories.asset_assignment_repo import AssetAssignmentRepository
+from repositories.assets.asset_assignment_repo import AssetAssignmentRepository
 
 pytestmark = pytest.mark.anyio
 

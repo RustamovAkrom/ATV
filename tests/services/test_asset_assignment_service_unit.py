@@ -8,8 +8,8 @@ from sqlalchemy.exc import DBAPIError
 
 from core.exceptions.errors import BadRequest, NotFound
 from db.models.enums import AssetStatus, UserStatus
-from services import asset_assignment_service as module
-from services.asset_assignment_service import AssetAssignmentService
+from services.assets import asset_assignment_service as module
+from services.assets.asset_assignment_service import AssetAssignmentService
 
 pytestmark = pytest.mark.anyio
 

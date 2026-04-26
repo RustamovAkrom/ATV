@@ -2,8 +2,8 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.dependencies import get_db_session
-from repositories.user_repo import UserRepository
-from services.user_service import UserService
+from repositories.users.user_repo import UserRepository
+from services.users.user_service import UserService
 
 from .rbac import RBACRepository, get_rbac_repo
 

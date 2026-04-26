@@ -4,7 +4,7 @@ from api.dependencies.users import get_user_repo
 from core.exceptions.errors import InvalidToken
 from core.security.blacklist import get_blacklist
 from core.security.jwt import decode_token
-from repositories.user_repo import UserRepository
+from repositories.users.user_repo import UserRepository
 from schemas.auth import CurrentUserSchema
 
 from .extractor import extract_token
@@ -40,13 +40,12 @@ async def get_current_user(
         if payload.iat <= int(user.last_password_change.timestamp()):
             raise InvalidToken("Token outdated")
 
-    permissions = [
-        str(getattr(permission, "code", getattr(permission, "value", permission)))
-        for permission in (user.permissions or [])
-    ]
+    permissions = [str(p).lower() for p in (user.permissions or [])]
 
     return CurrentUserSchema(
         id=user.id,
-        role=user.role.code.lower() if user.role else None,
+        role = user.role.code.lower() if user.role and user.role.code else None,
         permissions=permissions,
+        assigned_region_id=user.assigned_region_id,
+        assigned_service_id=user.assigned_service_id,
     )

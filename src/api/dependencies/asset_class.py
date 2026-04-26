@@ -4,8 +4,8 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.dependencies import get_db_session
-from repositories.asset_class_repo import AssetClassRepository
-from services.asset_class_service import AssetClassService
+from repositories.assets.asset_class_repo import AssetClassRepository
+from services.assets.asset_class_service import AssetClassService
 
 
 def get_asset_class_repo(

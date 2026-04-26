@@ -14,7 +14,7 @@ from db.models.org.region import Region
 from db.models.org.service import Service
 
 if TYPE_CHECKING:
-    from .permission import Role
+    from .permission import Role, Permission
 
 
 class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
@@ -79,6 +79,13 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
         lazy="selectin",
         foreign_keys="Asset.owner_id",
     )
+    # User-specific permissions (overrides)
+    direct_permissions: Mapped[list["Permission"]] = relationship(
+        "Permission",
+        secondary="user_permissions",
+        back_populates="users",
+        lazy="selectin",
+    )
 
     @property
     def is_active(self) -> bool:
@@ -102,6 +109,20 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
 
     @property
     def permissions(self) -> list[str]:
-        return [p.code for p in self.role.permissions] if self.role else []
+        """
+        Returns aggregated permissions from role and user-specific overrides.
+        User permissions take precedence over role permissions.
+        """
+        perm_set = set()
+
+        # Add role permissions
+        if self.role and self.role.permissions:
+            perm_set.update(p.code for p in self.role.permissions)
+
+        # Add user-specific permissions (overrides)
+        if self.direct_permissions:
+            perm_set.update(p.code for p in self.direct_permissions)
+
+        return list(perm_set)
 
     __mapper_args__ = {"version_id_col": version}

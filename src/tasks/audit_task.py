@@ -2,9 +2,9 @@ import asyncio
 
 from core.celery import celery_app
 from core.database.db_async import get_async_session_factory
-from repositories.audit_repo import AuditRepository
+from repositories.audit.audit_repo import AuditRepository
 from schemas.audit import AuditCreateSchema
-from services.audit_service import AuditService
+from services.audit.audit_service import AuditService
 
 
 @celery_app.task(bind=True, max_retries=3)

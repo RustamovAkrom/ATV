@@ -2,8 +2,8 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.dependencies import get_db_session
-from repositories.manufacturer_repo import ManufacturerRepository
-from services.manufacturer_service import ManufacturerService
+from repositories.assets.manufacturer_repo import ManufacturerRepository
+from services.assets.manufacturer_service import ManufacturerService
 
 
 def get_manufacturer_repo(

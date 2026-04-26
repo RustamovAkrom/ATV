@@ -17,7 +17,7 @@ from schemas.users import (
     UserOutSchema,
     UserUpdateSchema,
 )
-from services.user_service import UserService
+from services.users.user_service import UserService
 
 router = APIRouter(prefix="/users", tags=["Users"])
 

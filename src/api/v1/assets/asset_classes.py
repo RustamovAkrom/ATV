@@ -5,8 +5,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from api.dependencies.asset_class import get_asset_class_service
-from schemas.asset_class import AssetClassCreateSchema, AssetClassOutSchema
-from services.asset_class_service import AssetClassService
+from schemas.assets.asset_class import AssetClassCreateSchema, AssetClassOutSchema
+from services.assets.asset_class_service import AssetClassService
 
 router = APIRouter(prefix="/asset-classes", tags=["Asset Classes"])
 

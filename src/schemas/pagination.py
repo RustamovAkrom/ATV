@@ -1,5 +1,5 @@
 from math import ceil
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Generic
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,7 +14,7 @@ class PaginationParamsSchema(BaseModel):
         return (self.page - 1) * self.limit
 
 
-class PageSchema(BaseModel):
+class PageSchema(BaseModel, Generic[T]):
     items: list[T]
     total: int
     page: int
@@ -23,17 +23,17 @@ class PageSchema(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-class PageMetaSchema(BaseModel):
-    pages: int
-    has_next: bool
-    has_prev: bool
-
-
-class PageOutSchema(PageMetaSchema):
+class PageOutSchema(BaseModel, Generic[T]):
     items: list[T]
     total: int
     page: int
     limit: int
+
+    pages: int
+    has_next: bool
+    has_prev: bool
+
+    aggregates: Any | None = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

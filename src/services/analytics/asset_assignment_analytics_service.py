@@ -18,7 +18,7 @@ from schemas.analytics.asset_assignment_analytics import (
     AssignmentTimelineEntry,
     UserAssignmentSummary,
 )
-from schemas.auth import CurrentUserSchema
+from schemas.auth.auth import CurrentUserSchema
 from schemas.pagination import PageOutSchema, PaginationParamsSchema, build_page
 from utils.helpers import utc_now
 

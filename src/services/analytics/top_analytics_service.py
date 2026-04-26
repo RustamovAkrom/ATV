@@ -6,7 +6,7 @@ from schemas.analytics.top import (
     TopServiceAnalyticsOut,
     TopUserAnalyticsOut,
 )
-from schemas.auth import CurrentUserSchema
+from schemas.auth.auth import CurrentUserSchema
 
 
 class TopAnalyticsService:

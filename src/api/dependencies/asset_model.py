@@ -2,10 +2,10 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.dependencies import get_db_session
-from repositories.asset_category_repo import AssetCategoryRepository
-from repositories.asset_model_repo import AssetModelRepository
-from repositories.manufacturer_repo import ManufacturerRepository
-from services.asset_model_service import AssetModelService
+from repositories.assets.asset_category_repo import AssetCategoryRepository
+from repositories.assets.asset_model_repo import AssetModelRepository
+from repositories.assets.manufacturer_repo import ManufacturerRepository
+from services.assets.asset_model_service import AssetModelService
 
 from .asset_category import get_asset_category_repo
 from .manufacturer import get_manufacturer_repo

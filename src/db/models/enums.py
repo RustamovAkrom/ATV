@@ -6,6 +6,12 @@ class UserRole(StrEnum):
     ADMIN = "admin"
     MODERATOR = "moderator"
     ANALYTIC = "analytic"
+    # Extended roles for enterprises
+    REGION_ADMIN = "region_admin"
+    SERVICE_MANAGER = "service_manager"
+    OPERATOR = "operator"
+    APPROVER = "approver"
+    AUDITOR = "auditor"
 
 
 class UserStatus(StrEnum):

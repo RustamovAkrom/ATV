@@ -3,8 +3,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from api.dependencies.asset_category import get_asset_category_service
-from schemas.asset_category import AssetCategoryCreateSchema, AssetCategoryOutSchema
-from services.asset_category_service import AssetCategoryService
+from schemas.assets.asset_category import AssetCategoryCreateSchema, AssetCategoryOutSchema
+from services.assets.asset_category_service import AssetCategoryService
 
 router = APIRouter(prefix="/asset-categories", tags=["Asset categories"])
 

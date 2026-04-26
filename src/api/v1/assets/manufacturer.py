@@ -3,8 +3,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from api.dependencies.manufacturer import get_manufacturer_service
-from schemas.manufacturer import ManufacturerCreateSchema, ManufacturerOutSchema
-from services.manufacturer_service import ManufacturerService
+from schemas.assets.manufacturer import ManufacturerCreateSchema, ManufacturerOutSchema
+from services.assets.manufacturer_service import ManufacturerService
 
 router = APIRouter(prefix="/manufacturer", tags=["Manufacturer"])
 

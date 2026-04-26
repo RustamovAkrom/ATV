@@ -65,5 +65,17 @@ CanUpdateAssets = Depends(require_permission(Permissions.ASSETS_UPDATE))
 CanDeleteAssets = Depends(require_permission(Permissions.ASSETS_DELETE))
 CanExportAssets = Depends(require_permission(Permissions.ASSETS_EXPORT))
 
+# --- Approvals ---
+CanViewApprovals = Depends(require_permission(Permissions.APPROVALS_VIEW))
+CanCreateApprovals = Depends(require_permission(Permissions.APPROVALS_CREATE))
+CanApproveApprovals = Depends(require_permission(Permissions.APPROVALS_APPROVE))
+CanRejectApprovals = Depends(require_permission(Permissions.APPROVALS_REJECT))
+CanManageApprovals = Depends(
+    require_permission(
+        Permissions.APPROVALS_APPROVE,
+        Permissions.APPROVALS_REJECT,
+    )
+)
+
 # --- System ---
 CanViewSystemHealth = Depends(require_permission(Permissions.SYSTEM_HEALTH))
