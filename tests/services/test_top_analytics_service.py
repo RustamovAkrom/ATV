@@ -3,9 +3,9 @@ from uuid import uuid4
 
 import pytest
 
-from schemas.auth import CurrentUserSchema
 from db.models.enums import UserRole
 from schemas.analytics.top import TopMetric
+from schemas.auth import CurrentUserSchema
 from services.analytics.top_analytics_service import TopAnalyticsService
 
 pytestmark = pytest.mark.anyio

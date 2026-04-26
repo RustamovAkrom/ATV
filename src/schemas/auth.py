@@ -1,4 +1,3 @@
-from typing import List, Optional, Set
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -8,11 +7,11 @@ from db.models.enums import UserRole
 
 class CurrentUserSchema(BaseModel):
     id: UUID
-    role: Optional[str]
-    permissions: List[str] = Field(default_factory=list)
+    role: str | None
+    permissions: list[str] = Field(default_factory=list)
 
     @property
-    def permission_set(self) -> Set[str]:
+    def permission_set(self) -> set[str]:
         if not hasattr(self, "_perm_set"):
             self._perm_set = set(self.permissions)
         return self._perm_set
@@ -42,9 +41,9 @@ class TokenPayloadSchema(BaseModel):
     exp: int
     iat: int
     type: str
-    iss: Optional[str] = None
-    aud: Optional[str] = None
-    session_id: Optional[UUID] = None
+    iss: str | None = None
+    aud: str | None = None
+    session_id: UUID | None = None
 
 
 class TokenPairSchema(BaseModel):

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, ForeignKey, String, Table, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -38,11 +38,11 @@ class Role(Base, UUIDMixing, TimestampMixin):
     )
     description: Mapped[str | None] = mapped_column(Text(), nullable=True)
 
-    users: Mapped[List["User"]] = relationship(
+    users: Mapped[list["User"]] = relationship(
         "User", back_populates="role", lazy="selectin"
     )
 
-    permissions: Mapped[List["Permission"]] = relationship(
+    permissions: Mapped[list["Permission"]] = relationship(
         "Permission",
         secondary=role_permissions,
         back_populates="roles",
@@ -59,7 +59,7 @@ class Permission(Base, UUIDMixing, TimestampMixin):
         String(50), nullable=False, unique=True, index=True
     )
     description: Mapped[str | None] = mapped_column(Text(), nullable=True)
-    roles: Mapped[List["Role"]] = relationship(
+    roles: Mapped[list["Role"]] = relationship(
         "Role",
         secondary="role_permissions",
         back_populates="permissions",

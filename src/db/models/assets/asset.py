@@ -2,7 +2,7 @@
 
 from datetime import date
 from decimal import Decimal
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from sqlalchemy import JSON, Date
@@ -34,10 +34,8 @@ class Asset(Base, UUIDMixing, TimestampMixin):
     type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
 
     # Identifiers
-    asset_tag: Mapped[Optional[str]] = mapped_column(
-        String(255), unique=True, index=True
-    )
-    serial_number: Mapped[Optional[str]] = mapped_column(
+    asset_tag: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
+    serial_number: Mapped[str | None] = mapped_column(
         String(255), unique=True, index=True
     )
 
@@ -64,43 +62,43 @@ class Asset(Base, UUIDMixing, TimestampMixin):
         index=True,
     )
 
-    service_id: Mapped[Optional[UUID]] = mapped_column(
+    service_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("services.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
 
-    region_id: Mapped[Optional[UUID]] = mapped_column(
+    region_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("regions.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
 
-    current_warehouse_id: Mapped[Optional[UUID]] = mapped_column(
+    current_warehouse_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("warehouses.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
 
-    owner_id: Mapped[Optional[UUID]] = mapped_column(
+    owner_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
 
     # datesr
-    commission_date: Mapped[Optional[date]] = mapped_column(Date)
-    warranty_end: Mapped[Optional[date]] = mapped_column(Date)
+    commission_date: Mapped[date | None] = mapped_column(Date)
+    warranty_end: Mapped[date | None] = mapped_column(Date)
 
     # State (0-100)
     condition_percent: Mapped[int] = mapped_column(default=100)
 
     # Finance
-    purchase_date: Mapped[Optional[date]] = mapped_column(Date)
-    purchase_cost: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 2))
+    purchase_date: Mapped[date | None] = mapped_column(Date)
+    purchase_cost: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
 
     # usage
-    last_repair_date: Mapped[Optional[date]] = mapped_column(Date)
+    last_repair_date: Mapped[date | None] = mapped_column(Date)
     failure_count: Mapped[int] = mapped_column(default=0)
     usage_intensity: Mapped[int] = mapped_column(default=0)
 
@@ -157,7 +155,7 @@ class Asset(Base, UUIDMixing, TimestampMixin):
         cascade="all, delete-orphan",
         order_by="AssetTransfer.transferred_at.desc()",
     )
-    documents: Mapped[List["Document"]] = relationship(
+    documents: Mapped[list["Document"]] = relationship(
         "Document",
         back_populates="asset",
         lazy="selectin",

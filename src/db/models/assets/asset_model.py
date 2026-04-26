@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import ForeignKey, Index, Integer, String, UniqueConstraint, func
@@ -29,8 +29,8 @@ class AssetModel(Base, UUIDMixing, TimestampMixin, SlugMixin):
         index=True,
     )
 
-    lifetime_years: Mapped[Optional[int]] = mapped_column(Integer)
-    warranty_months: Mapped[Optional[int]] = mapped_column(Integer)
+    lifetime_years: Mapped[int | None] = mapped_column(Integer)
+    warranty_months: Mapped[int | None] = mapped_column(Integer)
 
     manufacturer: Mapped["Manufacturer"] = relationship(
         "Manufacturer", back_populates="models", lazy="selectin"
@@ -38,7 +38,7 @@ class AssetModel(Base, UUIDMixing, TimestampMixin, SlugMixin):
     category: Mapped["AssetCategory"] = relationship(
         "AssetCategory", back_populates="models", lazy="selectin"
     )
-    assets: Mapped[List["Asset"]] = relationship(
+    assets: Mapped[list["Asset"]] = relationship(
         "Asset", back_populates="model", lazy="selectin"
     )
 

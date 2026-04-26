@@ -1,7 +1,6 @@
 # src/db/models/audit_log.py
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
@@ -19,7 +18,7 @@ class AuditLog(Base, UUIDMixing):
 
     status_code: Mapped[int] = mapped_column(Integer)
 
-    user_id: Mapped[Optional[UUID]] = mapped_column(
+    user_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), index=True
     )
 
@@ -27,9 +26,9 @@ class AuditLog(Base, UUIDMixing):
 
     latency_ms: Mapped[int] = mapped_column(Integer)
 
-    ip: Mapped[Optional[str]] = mapped_column(String(45))
-    user_agent: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    query: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    ip: Mapped[str | None] = mapped_column(String(45))
+    user_agent: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    query: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_suspicious: Mapped[bool] = mapped_column(Boolean, default=False)
 
     created_at: Mapped[datetime] = mapped_column(

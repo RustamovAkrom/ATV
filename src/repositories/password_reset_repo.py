@@ -22,7 +22,7 @@ class PasswordResetRepository:
             update(PasswordReset)
             .where(
                 PasswordReset.token_hash == token_hash,
-                PasswordReset.is_used == False,
+                PasswordReset.is_used.is_(False),
                 PasswordReset.expires_at > func.now(),
             )
             .values(is_used=True)
@@ -40,7 +40,7 @@ class PasswordResetRepository:
         result = await self.session.execute(
             select(func.count()).where(
                 PasswordReset.user_id == user_id,
-                PasswordReset.is_used == False,
+                PasswordReset.is_used.is_(False),
                 PasswordReset.expires_at > utc_now(),
             )
         )

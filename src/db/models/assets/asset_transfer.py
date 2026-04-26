@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import DateTime
@@ -30,19 +29,17 @@ class AssetTransfer(Base, UUIDMixing, TimestampMixin):
         default=TransferStatus.PENDING,
         nullable=False,
     )
-    from_warehouse_id: Mapped[Optional[UUID]] = mapped_column(
-        ForeignKey("warehouses.id")
-    )
-    to_warehouse_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("warehouses.id"))
+    from_warehouse_id: Mapped[UUID | None] = mapped_column(ForeignKey("warehouses.id"))
+    to_warehouse_id: Mapped[UUID | None] = mapped_column(ForeignKey("warehouses.id"))
 
-    from_service_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("services.id"))
-    to_service_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("services.id"))
+    from_service_id: Mapped[UUID | None] = mapped_column(ForeignKey("services.id"))
+    to_service_id: Mapped[UUID | None] = mapped_column(ForeignKey("services.id"))
 
     transferred_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
 
-    comment: Mapped[Optional[str]] = mapped_column(String(255))
+    comment: Mapped[str | None] = mapped_column(String(255))
 
     # relationships
     asset = relationship("Asset", back_populates="transfers", lazy="selectin")
@@ -63,7 +60,7 @@ class AssetTransfer(Base, UUIDMixing, TimestampMixin):
         lazy="selectin",
     )
 
-    received_by_id: Mapped[Optional[UUID]] = mapped_column(
+    received_by_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id"), nullable=True
     )
     created_by = relationship("User", foreign_keys=[created_by_id], lazy="selectin")

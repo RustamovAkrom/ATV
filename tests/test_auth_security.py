@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import update
@@ -143,9 +143,7 @@ async def test_expired_refresh_token(client, create_user, dbsession):
 
     # manually expire in DB
     await dbsession.execute(
-        update(RefreshToken).values(
-            expires_at=datetime.now(timezone.utc) - timedelta(days=1)
-        )
+        update(RefreshToken).values(expires_at=datetime.now(UTC) - timedelta(days=1))
     )
     await dbsession.commit()
 

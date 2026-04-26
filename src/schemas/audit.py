@@ -2,7 +2,6 @@
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -16,13 +15,13 @@ class AuditBaseSchema(BaseModel):
     method: str
     path: str
     status_code: int
-    user_id: Optional[uuid.UUID]
+    user_id: uuid.UUID | None
     request_id: str
     latency_ms: int
-    ip: Optional[str]
-    user_agent: Optional[str]
+    ip: str | None
+    user_agent: str | None
     is_suspicious: bool
-    query: Optional[str]
+    query: str | None
 
     @field_validator("method")
     @classmethod

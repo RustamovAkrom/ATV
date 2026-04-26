@@ -1,5 +1,3 @@
-from typing import Dict, Set
-
 from db.models.enums import UserRole
 
 
@@ -36,7 +34,7 @@ class Permissions:
     SYSTEM_HEALTH = "system.health"
 
     @classmethod
-    def all(cls) -> Set[str]:
+    def all(cls) -> set[str]:
         return {
             v
             for k, v in cls.__dict__.items()
@@ -63,7 +61,7 @@ ADMIN_BASE = MODERATOR_BASE | {
     Permissions.ASSETS_EXPORT,
 }
 
-ROLE_PERMISSIONS: Dict[str, Set[str]] = {
+ROLE_PERMISSIONS: dict[str, set[str]] = {
     # Божественный доступ
     UserRole.SUPERADMIN.value: Permissions.all(),
     # Полное управление операционкой, но без удаления системы и очистки аудита

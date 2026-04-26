@@ -1,6 +1,6 @@
 # src/db/models/documents/document_file.py
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import ForeignKey, Integer, String
@@ -23,7 +23,7 @@ class DocumentFile(Base, UUIDMixing):
 
     file_name: Mapped[str] = mapped_column(String(255))
     file_path: Mapped[str] = mapped_column(String(500))
-    file_size: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    content_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    file_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    content_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     document = relationship("Document", back_populates="files", lazy="selectin")

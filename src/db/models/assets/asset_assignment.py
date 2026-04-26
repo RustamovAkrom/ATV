@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import DateTime, ForeignKey, Index
@@ -26,7 +25,7 @@ class AssetAssignment(Base, UUIDMixing):
         DateTime(timezone=True), server_default=func.now()
     )
 
-    unassigned_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    unassigned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     asset = relationship("Asset", back_populates="assignments", lazy="selectin")
     user = relationship("User", lazy="selectin")

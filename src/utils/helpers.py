@@ -1,11 +1,11 @@
 import hashlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import Request
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def generate_device_id(request: Request) -> str:

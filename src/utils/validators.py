@@ -1,7 +1,5 @@
 import re
-
 from sqlalchemy.exc import IntegrityError
-
 from core.exceptions.errors import BadRequest
 from utils.slug import slugify
 
@@ -43,7 +41,6 @@ async def safe_create(repo, obj):
     try:
         return await repo.create(obj)
     except IntegrityError:
-        # 🔒 финальная защита от гонок
         raise BadRequest("Already exists")
     except Exception:
         raise BadRequest("Failed to create")

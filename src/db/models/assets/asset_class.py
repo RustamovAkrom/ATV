@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Index, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -17,7 +17,7 @@ class AssetClass(Base, UUIDMixing, TimestampMixin, SlugMixin):
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
 
-    assets: Mapped[List["Asset"]] = relationship(
+    assets: Mapped[list["Asset"]] = relationship(
         "Asset", back_populates="asset_class", lazy="selectin"
     )
 

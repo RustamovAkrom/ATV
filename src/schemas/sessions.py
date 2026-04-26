@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -7,9 +6,9 @@ from pydantic import BaseModel, ConfigDict
 
 class SessionOutSchema(BaseModel):
     id: UUID
-    ip_address: Optional[str]
-    user_agent: Optional[str]
-    device_id: Optional[str]
+    ip_address: str | None
+    user_agent: str | None
+    device_id: str | None
 
     is_revoked: bool
     is_active: bool

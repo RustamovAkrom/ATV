@@ -35,7 +35,7 @@ class SessionRepository:
             update(RefreshToken)
             .where(
                 RefreshToken.id == session_id,
-                RefreshToken.is_revoked == False,
+                RefreshToken.is_revoked.is_(False),
             )
             .values(is_revoked=True)
         )
@@ -46,7 +46,7 @@ class SessionRepository:
             update(RefreshToken)
             .where(
                 RefreshToken.user_id == user_id,
-                RefreshToken.is_revoked == False,
+                RefreshToken.is_revoked.is_(False),
             )
             .values(is_revoked=True)
         )
@@ -58,7 +58,7 @@ class SessionRepository:
         result = await self.session.execute(
             select(RefreshToken).where(
                 RefreshToken.user_id == user_id,
-                RefreshToken.is_revoked == False,
+                RefreshToken.is_revoked.is_(False),
                 RefreshToken.expires_at > now,
             )
         )

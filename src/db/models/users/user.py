@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, func
@@ -23,8 +23,8 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
 
     login: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    first_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    last_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    first_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    last_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     phone: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
 
@@ -35,31 +35,31 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
         String(50), default=UserStatus.ACTIVE.value, nullable=False
     )
 
-    assigned_region_id: Mapped[Optional[UUID]] = mapped_column(
+    assigned_region_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("regions.id", ondelete="SET NULL"), nullable=True
     )
-    assigned_service_id: Mapped[Optional[UUID]] = mapped_column(
+    assigned_service_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("services.id", ondelete="SET NULL"), nullable=True
     )
-    rank_id: Mapped[Optional[UUID]] = mapped_column(
+    rank_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("ranks.id", ondelete="SET NULL"), nullable=True
     )
 
-    position: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    badge_number: Mapped[Optional[str]] = mapped_column(
+    position: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    badge_number: Mapped[str | None] = mapped_column(
         String(50), unique=True, nullable=True
     )
-    passport_number: Mapped[Optional[str]] = mapped_column(
+    passport_number: Mapped[str | None] = mapped_column(
         String(50), unique=True, nullable=True
     )
 
-    hired_at: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    dismissed_at: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    hired_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    dismissed_at: Mapped[date | None] = mapped_column(Date, nullable=True)
 
-    last_login: Mapped[Optional[datetime]] = mapped_column(
+    last_login: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    last_password_change: Mapped[Optional[datetime]] = mapped_column(
+    last_password_change: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
 

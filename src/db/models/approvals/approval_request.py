@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import JSON, Boolean, DateTime
@@ -31,14 +30,14 @@ class ApprovalRequest(Base, UUIDMixing):
     created_by_id: Mapped[UUID] = mapped_column(
         ForeignKey("users.id"), nullable=False, index=True
     )
-    approved_by_id: Mapped[Optional[UUID]] = mapped_column(
+    approved_by_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id"), nullable=True, index=True
     )
     executed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    decided_at: Mapped[Optional[datetime]] = mapped_column(
+    decided_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
 

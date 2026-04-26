@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from api.dependencies.asset_model import get_asset_model_service
-from schemas.asset_model import *  # noqa
+from schemas.asset_model import AssetModelCreateSchema, AssetModelOutSchema
 from services.asset_model_service import AssetModelService
 
 router = APIRouter(prefix="/asset-models", tags=["Asset models"])

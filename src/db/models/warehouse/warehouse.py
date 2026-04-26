@@ -1,6 +1,6 @@
 # src/db/models/warehouse/warehouse.py
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from sqlalchemy import Boolean, ForeignKey, String
@@ -19,22 +19,22 @@ class Warehouse(Base, UUIDMixing, TimestampMixin):
     __tablename__ = "warehouses"
 
     name: Mapped[str] = mapped_column(String(150), nullable=False)
-    code: Mapped[Optional[str]] = mapped_column(String(50), unique=True)
+    code: Mapped[str | None] = mapped_column(String(50), unique=True)
 
     region_id: Mapped[UUID] = mapped_column(
         ForeignKey("regions.id", ondelete="RESTRICT"), nullable=False
     )
-    service_id: Mapped[Optional[UUID]] = mapped_column(
+    service_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("services.id", ondelete="SET NULL"),
         nullable=True,
     )
-    manager_user_id: Mapped[Optional[UUID]] = mapped_column(
+    manager_user_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id"), nullable=True
     )
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    assets: Mapped[List["Asset"]] = relationship(
+    assets: Mapped[list["Asset"]] = relationship(
         "Asset", back_populates="warehouse", lazy="selectin"
     )
     region: Mapped[Optional["Region"]] = relationship("Region", lazy="selectin")

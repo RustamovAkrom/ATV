@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -12,21 +11,21 @@ class UserCreateSchema(BaseModel):
     email: EmailStr
     phone: str
     password: str
-    first_name: Optional[str]
-    last_name: Optional[str]
-    status: Optional[UserStatus]
+    first_name: str | None
+    last_name: str | None
+    status: UserStatus | None
     role_id: UUID
 
 
 class UserUpdateSchema(BaseModel):
-    first_name: Optional[str]
-    last_name: Optional[str]
-    phone: Optional[str]
+    first_name: str | None
+    last_name: str | None
+    phone: str | None
 
 
 class AdminUserUpdateSchema(BaseModel):
-    role_id: Optional[UUID]
-    status: Optional[str]
+    role_id: UUID | None
+    status: str | None
 
 
 class ChangePasswordRequestSchema(BaseModel):
@@ -40,10 +39,10 @@ class UserOutSchema(BaseModel):
     email: str
     phone: str
     role: str
-    permissions: List[str]
-    first_name: Optional[str]
-    last_name: Optional[str]
+    permissions: list[str]
+    first_name: str | None
+    last_name: str | None
     status: UserStatus
-    created_at: Optional[datetime]
-    updated_at: Optional[datetime]
+    created_at: datetime | None
+    updated_at: datetime | None
     model_config = ConfigDict(from_attributes=True)

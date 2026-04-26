@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import DateTime
@@ -26,31 +26,31 @@ class Repair(Base, UUIDMixing, TimestampMixin):
         index=True,
     )
 
-    reported_by_id: Mapped[Optional[UUID]] = mapped_column(
+    reported_by_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id"),
         index=True,
     )
 
-    assigned_to_id: Mapped[Optional[UUID]] = mapped_column(
+    assigned_to_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id"),
         index=True,
     )
 
-    description: Mapped[Optional[str]] = mapped_column(String(500))
+    description: Mapped[str | None] = mapped_column(String(500))
 
     status: Mapped[RepairStatus] = mapped_column(
         SAEnum(RepairStatus), default=RepairStatus.REPORTED, nullable=False
     )
 
-    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
-    labor_cost: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 2))
+    labor_cost: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
 
     asset = relationship("Asset", back_populates="repairs", lazy="selectin")
     reported_by = relationship("User", foreign_keys=[reported_by_id], lazy="selectin")
     assigned_to = relationship("User", foreign_keys=[assigned_to_id], lazy="selectin")
-    parts: Mapped[List["RepairPart"]] = relationship(
+    parts: Mapped[list["RepairPart"]] = relationship(
         "RepairPart", back_populates="repair", lazy="selectin"
     )
 

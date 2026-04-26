@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,7 +9,7 @@ from db.models.refresh_token import RefreshToken
 
 async def cleanup_expired_tokens(db: AsyncSession) -> int:
     result = await db.execute(
-        delete(RefreshToken).where(RefreshToken.expires_at < datetime.now(timezone.utc))
+        delete(RefreshToken).where(RefreshToken.expires_at < datetime.now(UTC))
     )
 
     return result.rowcount or 0

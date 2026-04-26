@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -12,8 +12,8 @@ if TYPE_CHECKING:
 class Rank(Base, UUIDMixing, TimestampMixin):
     __tablename__ = "ranks"
     name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
-    code: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=True)
-    level: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    code: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=True)
+    level: Mapped[int | None] = mapped_column(Integer, nullable=True)
     description: Mapped[str | None] = mapped_column(Text(), nullable=True)
 
     users: Mapped[list["User"]] = relationship(

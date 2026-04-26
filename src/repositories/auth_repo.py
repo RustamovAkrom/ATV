@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import delete, select, update
@@ -64,8 +64,6 @@ class AuthRepository:
         """
 
         result = await self.session.execute(
-            delete(RefreshToken).where(
-                RefreshToken.expires_at < datetime.now(timezone.utc)
-            )
+            delete(RefreshToken).where(RefreshToken.expires_at < datetime.now(UTC))
         )
         return result.rowcount or 0

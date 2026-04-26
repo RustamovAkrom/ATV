@@ -2,6 +2,7 @@ import asyncio
 import time
 import uuid
 
+from fastapi.encoders import jsonable_encoder
 from starlette.requests import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 
@@ -101,10 +102,10 @@ class AuditMiddleware:
                     timestamp=time.time(),
                 )
 
-                asyncio.create_task(safe_publish(stream_payload.model_dump()))
+                asyncio.create_task(safe_publish(jsonable_encoder(stream_payload)))
 
                 if self.settings.ENV == "prod":
-                    process_audit_log_task.delay(db_payload.model_dump())
+                    process_audit_log_task.delay(jsonable_encoder(db_payload))
                 else:
                     asyncio.create_task(persist_dev(db_payload))
 

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from fastapi import Request
@@ -128,7 +128,7 @@ class AuthService:
 
         await get_blacklist().add(
             jti=payload.jti,
-            exp=datetime.fromtimestamp(payload.exp, tz=timezone.utc),
+            exp=datetime.fromtimestamp(payload.exp, tz=UTC),
         )
 
         try:
@@ -143,7 +143,7 @@ class AuthService:
         if payload:
             await get_blacklist().add(
                 jti=payload.jti,
-                exp=datetime.fromtimestamp(payload.exp, tz=timezone.utc),
+                exp=datetime.fromtimestamp(payload.exp, tz=UTC),
             )
 
         await self.auth_repo.revoke_all_by_user(user_id)

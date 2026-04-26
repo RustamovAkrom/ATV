@@ -1,9 +1,9 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import SimpleNamespace
+from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
-from unittest.mock import AsyncMock, Mock
 
 from repositories.asset_assignment_repo import AssetAssignmentRepository
 
@@ -23,7 +23,9 @@ async def test_get_asset_returns_scalar_one_or_none():
 
 
 async def test_get_asset_for_update_returns_none_when_row_missing(monkeypatch):
-    session = SimpleNamespace(execute=AsyncMock(return_value=SimpleNamespace(first=lambda: None)))
+    session = SimpleNamespace(
+        execute=AsyncMock(return_value=SimpleNamespace(first=lambda: None))
+    )
     repo = AssetAssignmentRepository(session)
     get_plain = AsyncMock()
     monkeypatch.setattr(repo, "get_asset_plain", get_plain)
@@ -67,7 +69,7 @@ async def test_create_assignment_adds_and_flushes():
 async def test_close_assignment_sets_unassigned_at():
     session = SimpleNamespace(flush=AsyncMock())
     repo = AssetAssignmentRepository(session)
-    timestamp = datetime.now(timezone.utc)
+    timestamp = datetime.now(UTC)
     assignment = SimpleNamespace(unassigned_at=None)
 
     closed = await repo.close_assignment(assignment, timestamp)

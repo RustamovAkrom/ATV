@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -19,7 +19,7 @@ class Manufacturer(Base, UUIDMixing, TimestampMixin, SlugMixin):
     country: Mapped[str | None] = mapped_column(String(100))
     website: Mapped[str | None] = mapped_column(String(255))
 
-    models: Mapped[List["AssetModel"]] = relationship(
+    models: Mapped[list["AssetModel"]] = relationship(
         "AssetModel", back_populates="manufacturer", lazy="selectin"
     )
 

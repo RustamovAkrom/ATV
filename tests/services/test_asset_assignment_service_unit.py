@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 from uuid import uuid4
@@ -25,12 +25,14 @@ async def test_assign_asset_success(monkeypatch):
     actor_id = uuid4()
     asset_id = uuid4()
     user_id = uuid4()
-    assigned_at = datetime.now(timezone.utc)
+    assigned_at = datetime.now(UTC)
     repo = _repo()
     repo.get_asset_for_update.return_value = SimpleNamespace(
         id=asset_id, owner_id=None, status=AssetStatus.ACTIVE
     )
-    repo.get_user.return_value = SimpleNamespace(id=user_id, status=UserStatus.ACTIVE.value)
+    repo.get_user.return_value = SimpleNamespace(
+        id=user_id, status=UserStatus.ACTIVE.value
+    )
     repo.get_active_assignment.return_value = None
     repo.create_assignment.return_value = SimpleNamespace(assigned_at=assigned_at)
 
@@ -69,7 +71,9 @@ async def test_assign_asset_maps_lock_error(monkeypatch):
         ("different", "Asset already assigned"),
     ],
 )
-async def test_assign_asset_rejects_when_active_assignment_exists(active_user_id, message):
+async def test_assign_asset_rejects_when_active_assignment_exists(
+    active_user_id, message
+):
     actor_id = uuid4()
     asset_id = uuid4()
     user_id = uuid4()
@@ -78,7 +82,9 @@ async def test_assign_asset_rejects_when_active_assignment_exists(active_user_id
     repo.get_asset_for_update.return_value = SimpleNamespace(
         id=asset_id, owner_id=None, status=AssetStatus.ACTIVE
     )
-    repo.get_user.return_value = SimpleNamespace(id=user_id, status=UserStatus.ACTIVE.value)
+    repo.get_user.return_value = SimpleNamespace(
+        id=user_id, status=UserStatus.ACTIVE.value
+    )
     repo.get_active_assignment.return_value = SimpleNamespace(user_id=current_user_id)
     service = AssetAssignmentService(repo)
 
@@ -99,13 +105,15 @@ async def test_unassign_asset_falls_back_to_plain_lookup(monkeypatch):
     actor_id = uuid4()
     asset_id = uuid4()
     owner_id = uuid4()
-    timestamp = datetime.now(timezone.utc)
+    timestamp = datetime.now(UTC)
     repo = _repo()
     repo.get_asset_for_update.return_value = None
     repo.get_asset_plain.return_value = SimpleNamespace(
         id=asset_id, owner_id=owner_id, status=AssetStatus.ASSIGNED
     )
-    repo.get_active_assignment.return_value = SimpleNamespace(asset_id=asset_id, user_id=owner_id)
+    repo.get_active_assignment.return_value = SimpleNamespace(
+        asset_id=asset_id, user_id=owner_id
+    )
     monkeypatch.setattr(module, "utc_now", lambda: timestamp)
     service = AssetAssignmentService(repo)
     monkeypatch.setattr(module.audit_stream, "publish", AsyncMock())
