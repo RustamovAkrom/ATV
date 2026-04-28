@@ -31,6 +31,7 @@ from services.assets.asset_assignment_service import AssetAssignmentService
 from core.notifications.builder import NotificationBuilder
 from core.notifications.dispatcher import NotificationDispatcher
 
+
 class ApprovalService:
     def __init__(
         self,
@@ -56,17 +57,20 @@ class ApprovalService:
         items, total = await self.approval_repo.list(status, pagination)
 
         return build_page(
-                schema=PageOutSchema[ApprovalSchema],
-                items=[
-                    ApprovalSchema.model_validate(i, from_attributes=True)
-                    for i in items
-                ],
-                total=total,
-                page=pagination.page,
-                limit=pagination.limit,
-            )
+            schema=PageOutSchema[ApprovalSchema],
+            items=[
+                ApprovalSchema.model_validate(i, from_attributes=True) for i in items
+            ],
+            total=total,
+            page=pagination.page,
+            limit=pagination.limit,
+        )
 
-    async def create(self, data: ApprovalCreate, actor: CurrentUserSchema) -> ApprovalSchema:
+    async def create(
+        self, data: ApprovalCreate, actor: CurrentUserSchema
+    ) -> ApprovalSchema:
+        check_permissions(actor, Permissions.APPROVALS_CREATE)
+
         validated_payload = self._validate_request(data)
 
         approval = ApprovalRequest(
@@ -80,6 +84,16 @@ class ApprovalService:
         )
 
         await self.approval_repo.create(approval)
+
+        await self.notification_dispatcher.dispatch(
+            NotificationBuilder.approval_requested(
+                user_id=approval.created_by_id,
+                entity_type=approval.entity_type,
+                entity_id=approval.entity_id,
+                action=approval.action,
+            )
+        )
+
         return ApprovalSchema.model_validate(approval, from_attributes=True)
 
     async def approve(
@@ -90,32 +104,31 @@ class ApprovalService:
         async with self.approval_repo.session.begin_nested():
 
             approval = await self._get_pending(approval_id, for_update=True)
-
-            AccessControl.check_not_creator(actor, approval.created_by_id)
-
-            if approval.status != ApprovalStatus.PENDING:
-                raise BadRequest("Already decided")
+            asset = await self.asset_service._get_asset(approval.entity_id)
+            AccessControl.check_region_access(actor, asset.region_id)
+            AccessControl.check_not_creator(actor, asset.service_id)
 
             approval.status = ApprovalStatus.APPROVED
             approval.approved_by_id = actor.id
             approval.decided_at = utc_now()
+            approval.executed = True
 
             await self.approval_repo.flush()
 
             await self._execute_approved_action(approval, actor)
 
-            approval.executed = True
-
             if comment:
                 payload = dict(approval.payload or {})
                 payload["approval_comment"] = comment.strip()
                 approval.payload = payload
-
             await self.approval_repo.flush()
 
         # Create Notification
         payload = NotificationBuilder.approval_approved(
-            user_id=approval.created_by_id
+            user_id=approval.created_by_id,
+            entity_type=approval.entity_type,
+            entity_id=approval.entity_id,
+            action=approval.action,
         )
         await self.notification_dispatcher.dispatch(payload)
 
@@ -146,7 +159,10 @@ class ApprovalService:
 
         # Create notification
         payload = NotificationBuilder.approval_rejected(
-            user_id=approval.created_by_id
+            user_id=approval.created_by_id,
+            entity_type=approval.entity_type,
+            entity_id=approval.entity_id,
+            action=approval.action,
         )
         await self.notification_dispatcher.dispatch(payload)
 
@@ -176,21 +192,27 @@ class ApprovalService:
     def _validate_request(self, data: ApprovalCreate) -> dict:
 
         supported = {
-            ("asset_assignment", "assign"),  # 🔥 ДОБАВИЛИ
+            ("asset_assignment", "assign"),
             ("asset_transfer", "create_transfer"),
             ("asset_archive", "archive"),
             ("asset_delete", "delete"),
             ("repair", "complete_repair"),
         }
 
-        key = (data.entity_type.strip(), data.action.strip())
+        entity_type = data.entity_type.strip().lower()
+        action = data.action.strip().lower()
+
+        key = (entity_type, action)
 
         if key not in supported:
             raise BadRequest("Unsupported approval request")
 
         try:
             if key == ("asset_assignment", "assign"):
-                return data.payload
+                user_id = data.payload.get("user_id")
+                if not user_id:
+                    raise BadRequest("user_id required in payload")
+                return {"user_id": str(user_id)}
 
             if key == ("asset_transfer", "create_transfer"):
                 return jsonable_encoder(
@@ -199,17 +221,23 @@ class ApprovalService:
 
             if key == ("asset_archive", "archive"):
                 return jsonable_encoder(
-                    AssetArchiveApprovalPayload(**data.payload).model_dump(exclude_none=True)
+                    AssetArchiveApprovalPayload(**data.payload).model_dump(
+                        exclude_none=True
+                    )
                 )
 
             if key == ("asset_delete", "delete"):
                 return jsonable_encoder(
-                    AssetDeleteApprovalPayload(**data.payload).model_dump(exclude_none=True)
+                    AssetDeleteApprovalPayload(**data.payload).model_dump(
+                        exclude_none=True
+                    )
                 )
 
             if key == ("repair", "complete_repair"):
                 return jsonable_encoder(
-                    RepairCompleteApprovalPayload(**data.payload).model_dump(exclude_none=True)
+                    RepairCompleteApprovalPayload(**data.payload).model_dump(
+                        exclude_none=True
+                    )
                 )
 
         except Exception as exc:
@@ -222,6 +250,9 @@ class ApprovalService:
     ) -> None:
 
         payload = dict(approval.payload or {})
+
+        if not isinstance(payload, dict):
+            raise BadRequest("Invalid payload format")
 
         if approval.entity_type == "asset_assignment":
             user_id = payload.get("user_id")

@@ -49,7 +49,9 @@ async def _create_asset(client, token: str, deps: dict, name: str):
 
 
 @pytest.mark.anyio
-async def test_create_and_approve_archive_request(client, dbsession, superadmin_token, approver_token):
+async def test_create_and_approve_archive_request(
+    client, dbsession, superadmin_token, approver_token
+):
     deps = await _seed_asset_dependencies(dbsession)
     asset = await _create_asset(client, superadmin_token, deps, "NeedsApprovalArchive")
 
@@ -84,7 +86,9 @@ async def test_create_and_approve_archive_request(client, dbsession, superadmin_
 
 
 @pytest.mark.anyio
-async def test_reject_transfer_approval_request(client, dbsession, superadmin_token, approver_token):
+async def test_reject_transfer_approval_request(
+    client, dbsession, superadmin_token, approver_token
+):
     deps = await _seed_asset_dependencies(dbsession)
     asset = await _create_asset(client, superadmin_token, deps, "NeedsApprovalTransfer")
 

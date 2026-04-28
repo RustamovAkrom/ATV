@@ -24,6 +24,17 @@ class RepairRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_active_assignment(self, asset_id: UUID):
+        result = await self.session.execute(
+            select(Asset)
+            .options(selectinload(Asset.assignments))
+            .where(
+                Asset.id == asset_id,
+                Asset.assignments.any(lambda a: a.active.is_(True)),  # type: ignore
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def get_asset_for_update(self, asset_id: UUID) -> Asset | None:
         result = await self.session.execute(
             select(Asset)

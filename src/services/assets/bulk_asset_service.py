@@ -94,14 +94,10 @@ class BulkAssetService:
                 success.append(asset_id)
 
             except APIException as exc:
-                failed.append(
-                    BulkFailedItem(id=asset_id, error=str(exc.detail))
-                )
+                failed.append(BulkFailedItem(id=asset_id, error=str(exc.detail)))
 
             except Exception as exc:
-                failed.append(
-                    BulkFailedItem(id=asset_id, error=str(exc))
-                )
+                failed.append(BulkFailedItem(id=asset_id, error=str(exc)))
 
         return BulkResult(success=success, failed=failed)
 
@@ -110,9 +106,7 @@ class BulkAssetService:
             raise BadRequest("asset_ids must not be empty")
 
         if len(asset_ids) > self.MAX_BATCH_SIZE:
-            raise BadRequest(
-                f"Maximum batch size is {self.MAX_BATCH_SIZE}"
-            )
+            raise BadRequest(f"Maximum batch size is {self.MAX_BATCH_SIZE}")
 
         if len(set(asset_ids)) != len(asset_ids):
             raise BadRequest("asset_ids must be unique")

@@ -50,7 +50,9 @@ async def _create_asset(client, token: str, deps: dict, name: str):
 
 
 @pytest.mark.anyio
-async def test_double_approve_fails(client, dbsession, superadmin_token, approver_token):
+async def test_double_approve_fails(
+    client, dbsession, superadmin_token, approver_token
+):
     deps = await _seed_asset_dependencies(dbsession)
     asset = await _create_asset(client, superadmin_token, deps, "DoubleApproveAsset")
 
@@ -84,7 +86,9 @@ async def test_double_approve_fails(client, dbsession, superadmin_token, approve
 
 
 @pytest.mark.anyio
-async def test_replay_after_approve_fails(client, dbsession, superadmin_token, approver_token):
+async def test_replay_after_approve_fails(
+    client, dbsession, superadmin_token, approver_token
+):
     deps = await _seed_asset_dependencies(dbsession)
     asset = await _create_asset(client, superadmin_token, deps, "ReplayApprovalAsset")
 

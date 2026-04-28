@@ -134,24 +134,23 @@ ADMIN_BASE = MODERATOR_BASE | {
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     # Supreme access - all permissions
     UserRole.SUPERADMIN.value: Permissions.all(),
-
     # Full operational control, but not system cleanup/audit cleanup
-    UserRole.ADMIN.value: ADMIN_BASE | {
+    UserRole.ADMIN.value: ADMIN_BASE
+    | {
         Permissions.SYSTEM_SETTINGS,
         Permissions.PERMISSIONS_MANAGE,
         Permissions.APPROVALS_VIEW,
         Permissions.APPROVALS_APPROVE,
         Permissions.APPROVALS_REJECT,
     },
-
     # Region-specific admin (usually MODERATOR)
-    UserRole.MODERATOR.value: MODERATOR_BASE | {
+    UserRole.MODERATOR.value: MODERATOR_BASE
+    | {
         Permissions.APPROVALS_VIEW,
         Permissions.APPROVALS_APPROVE,
         Permissions.REPAIRS_UPDATE,
         Permissions.REPAIRS_COMPLETE,
     },
-
     # Analyst / Officer
     UserRole.ANALYTIC.value: {
         Permissions.AUDIT_VIEW,
@@ -168,7 +167,6 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         Permissions.DOCUMENTS_VIEW,
         Permissions.WAREHOUSE_VIEW,
     },
-
     # Region Admin - manages region-scoped operations
     UserRole.REGION_ADMIN.value: {
         Permissions.USERS_VIEW,
@@ -186,7 +184,6 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         Permissions.DOCUMENTS_VIEW,
         Permissions.WAREHOUSE_VIEW,
     },
-
     # Service Manager - manages service-scoped operations
     UserRole.SERVICE_MANAGER.value: {
         Permissions.ASSETS_VIEW,
@@ -203,7 +200,6 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         Permissions.ANALYTICS_VIEW,
         Permissions.DOCUMENTS_VIEW,
     },
-
     # Operator - basic operational access
     UserRole.OPERATOR.value: {
         Permissions.ASSETS_VIEW,
@@ -214,7 +210,6 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         Permissions.DOCUMENTS_VIEW,
         Permissions.ANALYTICS_VIEW,
     },
-
     # Approver - focus on approvals
     UserRole.APPROVER.value: {
         Permissions.APPROVALS_VIEW,
@@ -224,7 +219,6 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         Permissions.REPAIRS_VIEW,
         Permissions.DOCUMENTS_VIEW,
     },
-
     # Auditor - read-only access to audit and analytics
     UserRole.AUDITOR.value: {
         Permissions.AUDIT_VIEW,
@@ -240,4 +234,3 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         Permissions.SYSTEM_LOGS,
     },
 }
-

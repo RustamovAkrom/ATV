@@ -89,9 +89,7 @@ class Asset(Base, UUIDMixing, TimestampMixin):
     warranty_end: Mapped[date | None] = mapped_column(Date)
 
     # State (0-100)
-    condition_percent: Mapped[int] = mapped_column(
-        Integer, default=100, nullable=False
-    )
+    condition_percent: Mapped[int] = mapped_column(Integer, default=100, nullable=False)
 
     # Finance
     purchase_date: Mapped[date | None] = mapped_column(Date)
@@ -100,11 +98,8 @@ class Asset(Base, UUIDMixing, TimestampMixin):
     # usage
     last_repair_date: Mapped[date | None] = mapped_column(Date)
 
-    failure_count: Mapped[int] = mapped_column(
-        Integer, default=0, nullable=False
-    )
-    usage_intensity: Mapped[int] = mapped_column(
-        Integer, default=0, nullable=False)
+    failure_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    usage_intensity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     # flags
     is_transfer_locked: Mapped[bool] = mapped_column(default=False, nullable=False)

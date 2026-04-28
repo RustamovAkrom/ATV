@@ -1,17 +1,24 @@
 from uuid import UUID
 
-from core.audit.stream import audit_stream
+from core.events.transfer_events import TransferEventService
 from core.exceptions.errors import BadRequest, NotFound
 from db.models.assets.asset_transfer import AssetTransfer
-from db.models.enums import TransferStatus
+from db.models.enums import TransferStatus, AssetStatus
 from repositories.assets.asset_transfer_repo import AssetTransferRepository
 from schemas.assets.asset_transfers import AssetTransferCreate, AssetTransferSchema
-from utils.helpers import utc_now
 from schemas.auth.auth import CurrentUserSchema
 
+from core.security.access_control import AccessControl
+
+
 class AssetTransferService:
-    def __init__(self, repo: AssetTransferRepository):
+    def __init__(
+        self,
+        repo: AssetTransferRepository,
+        transfer_events: TransferEventService,
+    ):
         self.repo = repo
+        self.transfer_events = transfer_events
 
     async def create_transfer(
         self,
@@ -22,6 +29,21 @@ class AssetTransferService:
         asset = await self.repo.get_asset_for_update(asset_id)
         if not asset:
             raise NotFound("Asset not found")
+
+        AccessControl.check_region_access(actor, asset.region_id)
+        AccessControl.check_service_access(actor, asset.service_id)
+
+        active_assignments = await self.repo.get_active_assignments(asset_id)
+        if active_assignments:
+            raise BadRequest("Cannot transfer assigned asset")
+
+        if asset.status == AssetStatus.IN_REPAIR:
+            raise BadRequest("Cannot transfer asset under repair")
+
+        existing = await self.repo.get_pending_transfer(asset_id)
+        if existing:
+            raise BadRequest("Asset already has pending transfer")
+
         if asset.is_transfer_locked:
             raise BadRequest("Asset transfer is locked")
 
@@ -30,6 +52,7 @@ class AssetTransferService:
             to_warehouse = await self.repo.get_warehouse(data.to_warehouse_id)
             if not to_warehouse:
                 raise BadRequest("Invalid target warehouse")
+
         if data.to_service_id is not None and not await self.repo.get_service(
             data.to_service_id
         ):
@@ -48,17 +71,14 @@ class AssetTransferService:
             comment=(data.comment or "").strip() or None,
         )
         await self.repo.create_transfer(transfer)
-        await self.repo.add_history(
-            asset.id, actor.id, "transfer_created", f"Transfer {transfer.id} created"
+
+        await self.repo.flush()
+        await self.transfer_events.created(
+            asset_id=asset.id,
+            transfer_id=transfer.id,
+            actor_id=actor.id,
         )
-        await self._publish(
-            "asset.transfer_created",
-            {
-                "asset_id": str(asset.id),
-                "actor_id": str(actor.id),
-                "transfer_id": str(transfer.id),
-            },
-        )
+
         return AssetTransferSchema.model_validate(transfer, from_attributes=True)
 
     async def approve_transfer(
@@ -72,9 +92,13 @@ class AssetTransferService:
         if not asset:
             raise NotFound("Asset not found")
 
+        AccessControl.check_region_access(actor, asset.region_id)
+        AccessControl.check_service_access(actor, asset.service_id)
+
         transfer = await self.repo.get_transfer_for_update(transfer_id)
         if not transfer or transfer.asset_id != asset.id:
             raise NotFound("Transfer not found")
+
         if transfer.status != TransferStatus.PENDING:
             raise BadRequest("Only pending transfers can be approved")
 
@@ -82,10 +106,13 @@ class AssetTransferService:
             warehouse = await self.repo.get_warehouse(transfer.to_warehouse_id)
             if not warehouse:
                 raise BadRequest("Invalid target warehouse")
+
             asset.current_warehouse_id = warehouse.id
             asset.region_id = warehouse.region_id
+
             if warehouse.service_id is not None:
                 asset.service_id = warehouse.service_id
+
         if transfer.to_service_id is not None:
             service = await self.repo.get_service(transfer.to_service_id)
             if not service:
@@ -94,21 +121,19 @@ class AssetTransferService:
 
         transfer.status = TransferStatus.COMPLETED
         transfer.received_by_id = actor.id
+
         if comment is not None:
             transfer.comment = comment.strip() or None
+
         await self.repo.flush()
 
-        await self.repo.add_history(
-            asset.id, actor.id, "transfer_approved", f"Transfer {transfer.id} approved"
+        await self.transfer_events.approved(
+            asset_id=asset.id,
+            transfer_id=transfer.id,
+            actor_id=actor.id,
+            created_by_id=transfer.created_by_id,
         )
-        await self._publish(
-            "asset.transfer_approved",
-            {
-                "asset_id": str(asset.id),
-                "actor_id": str(actor.id),
-                "transfer_id": str(transfer.id),
-            },
-        )
+
         return AssetTransferSchema.model_validate(transfer, from_attributes=True)
 
     async def reject_transfer(
@@ -122,6 +147,9 @@ class AssetTransferService:
         if not asset:
             raise NotFound("Asset not found")
 
+        AccessControl.check_region_access(actor, asset.region_id)
+        AccessControl.check_service_access(actor, asset.service_id)
+
         transfer = await self.repo.get_transfer_for_update(transfer_id)
         if not transfer or transfer.asset_id != asset.id:
             raise NotFound("Transfer not found")
@@ -132,25 +160,14 @@ class AssetTransferService:
         transfer.received_by_id = actor.id
         if comment is not None:
             transfer.comment = comment.strip() or None
+
         await self.repo.flush()
 
-        await self.repo.add_history(
-            asset.id, actor.id, "transfer_rejected", f"Transfer {transfer.id} rejected"
+        await self.transfer_events.rejected(
+            asset_id=asset.id,
+            transfer_id=transfer.id,
+            actor_id=actor.id,
+            created_by_id=transfer.created_by_id,
         )
-        await self._publish(
-            "asset.transfer_rejected",
-            {
-                "asset_id": str(asset.id),
-                "actor_id": str(actor.id),
-                "transfer_id": str(transfer.id),
-            },
-        )
-        return AssetTransferSchema.model_validate(transfer, from_attributes=True)
 
-    async def _publish(self, event: str, payload: dict) -> None:
-        try:
-            await audit_stream.publish(
-                {"event": event, **payload, "timestamp": utc_now().timestamp()}
-            )
-        except Exception:
-            return
+        return AssetTransferSchema.model_validate(transfer, from_attributes=True)

@@ -138,11 +138,13 @@ class AssetRepository:
         return result.scalar_one_or_none()
 
     async def get_by_id_for_update(
-        self, asset_id: UUID
+        self, asset_id: UUID, include_history: bool = False
     ) -> Asset | None:
+        options = self._detail_options() if include_history else self._list_options()
+
         result = await self.session.execute(
             select(Asset)
-            .options(lazyload("*"))
+            .options(*options)
             .where(Asset.id == asset_id)
             .with_for_update(nowait=True)
         )

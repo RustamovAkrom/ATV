@@ -3,24 +3,24 @@ from uuid import UUID
 import asyncpg
 from sqlalchemy.exc import DBAPIError
 
-from core.audit.stream import audit_stream
 from core.exceptions.errors import BadRequest, NotFound
 from db.models.enums import AssetStatus, UserStatus
 from repositories.assets.asset_assignment_repo import AssetAssignmentRepository
 from schemas.assets.asset_assignments import AssetAssignmentActionSchema
 from schemas.auth.auth import CurrentUserSchema
 from utils.helpers import utc_now
-from services.notifications.notification_service import NotificationService
+from core.security.access_control import AccessControl
+from core.events.asset_events import AssetEventService
 
 
 class AssetAssignmentService:
     def __init__(
         self,
         repo: AssetAssignmentRepository,
-        notification_service: NotificationService,
+        asset_events: AssetEventService,
     ):
         self.repo = repo
-        self.notification_service = notification_service
+        self.asset_events = asset_events
 
     async def assign_asset(
         self, asset_id: UUID, user_id: UUID, actor: CurrentUserSchema
@@ -35,52 +35,48 @@ class AssetAssignmentService:
         if not asset:
             raise NotFound("Asset not found")
 
-        if asset.owner_id is not None:
-            raise BadRequest("Asset already has owner (inconsistent state)")
+        AccessControl.check_region_access(actor, asset.region_id)
+        AccessControl.check_service_access(actor, asset.service_id)
 
         if asset.status == AssetStatus.ARCHIVED:
             raise BadRequest("Cannot assign archived asset")
 
-        user = await self.repo.get_user(user_id)
-        if not user:
-            raise NotFound("User not found")
-        if user.status != UserStatus.ACTIVE.value:
-            raise BadRequest("Cannot assign asset to inactive user")
+        if asset.status == AssetStatus.IN_REPAIR:
+            raise BadRequest("Cannot assign asset under repair")
 
         active_assignment = await self.repo.get_active_assignment(asset.id)
         if active_assignment:
-            if active_assignment.user_id == user.id:
-                raise BadRequest("Asset is already assigned to this user")
             raise BadRequest("Asset already assigned")
+
+        if asset.owner_id is not None:
+            raise BadRequest("Asset already has owner (inconsistent state)")
+
+        user = await self.repo.get_user(user_id)
+        if not user:
+            raise NotFound("User not found")
+
+        if user.status != UserStatus.ACTIVE.value:
+            raise BadRequest("Cannot assign asset to inactive user")
+
+        if user.assigned_region_id and asset.region_id != user.assigned_region_id:
+            raise BadRequest("User is assigned to a different region")
+
+        if user.assigned_service_id and asset.service_id != user.assigned_service_id:
+            raise BadRequest("User is assigned to a different service")
 
         asset.owner_id = user.id
         asset.status = AssetStatus.ASSIGNED
         await self.repo.flush()
 
         assignment = await self.repo.create_assignment(asset.id, user.id)
-        await self.repo.add_history(
-            asset.id, actor.id, "assigned", f"Asset assigned to user {user.id}"
-        )
-        await self._publish(
-            "asset.assigned",
-            {
-                "asset_id": str(asset.id),
-                "actor_id": str(actor.id),
-                "user_id": str(user.id),
-            },
-        )
+        await self.repo.flush()
 
-        # Create a notification
-        try:
-            await self.notification_service.create(
-                user_id=user.id,
-                type="asset.assigned",
-                title="Asset assigned",
-                message=f"You have been assigned asset {asset.name}",
-                data={"asset_id": str(asset.id)},
-            )
-        except Exception as e:
-            print("Notification error: ", e)
+        await self.asset_events.assigned(
+            asset_id=asset.id,
+            user_id=user.id,
+            actor_id=actor.id,
+            asset_name=asset.name,
+        )
 
         return AssetAssignmentActionSchema(
             asset_id=asset.id,
@@ -102,31 +98,30 @@ class AssetAssignmentService:
         if not asset:
             raise NotFound("Asset not found")
 
+        AccessControl.check_region_access(actor, asset.region_id)
+        AccessControl.check_service_access(actor, asset.service_id)
+
         active_assignment = await self.repo.get_active_assignment(asset.id)
         if not active_assignment:
             raise BadRequest("Asset is not currently assigned")
 
         timestamp = utc_now()
+
         await self.repo.close_assignment(active_assignment, timestamp)
+
         previous_user_id = asset.owner_id
         asset.owner_id = None
         asset.status = AssetStatus.ACTIVE
+
         await self.repo.flush()
 
-        await self.repo.add_history(
-            asset.id,
-            actor.id,
-            "unassigned",
-            f"Asset unassigned from user {previous_user_id}",
-        )
-        await self._publish(
-            "asset.unassigned",
-            {
-                "asset_id": str(asset.id),
-                "actor_id": str(actor.id),
-                "user_id": str(previous_user_id),
-            },
-        )
+        if previous_user_id:
+            await self.asset_events.unassigned(
+                asset_id=asset.id,
+                actor_id=actor.id,
+                user_id=previous_user_id,
+            )
+
         return AssetAssignmentActionSchema(
             asset_id=asset.id,
             user_id=previous_user_id,
@@ -144,17 +139,16 @@ class AssetAssignmentService:
         if not asset:
             raise BadRequest("Asset is locked or not available")
 
+        AccessControl.check_region_access(actor, asset.region_id)
+        AccessControl.check_service_access(actor, asset.service_id)
+
         active_assignment = await self.repo.get_active_assignment(asset_id)
 
         if active_assignment:
             await self.repo.close_assignment(active_assignment, utc_now())
 
-        return await self.assign_asset(asset_id, new_user_id, actor)
+            asset.owner_id = None
+            asset.status = AssetStatus.ACTIVE
+            await self.repo.flush()
 
-    async def _publish(self, event: str, payload: dict) -> None:
-        try:
-            await audit_stream.publish(
-                {"event": event, **payload, "timestamp": utc_now().timestamp()}
-            )
-        except Exception:
-            return
+        return await self.assign_asset(asset_id, new_user_id, actor)

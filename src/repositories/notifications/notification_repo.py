@@ -30,9 +30,7 @@ class NotificationRepository:
         query = query.order_by(Notification.created_at.desc())
 
         result = await self.session.execute(
-            query.order_by(Notification.created_at.desc())
-            .limit(limit)
-            .offset(offset)
+            query.order_by(Notification.created_at.desc()).limit(limit).offset(offset)
         )
         return result.scalars().all()
 

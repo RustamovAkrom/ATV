@@ -63,8 +63,11 @@ async def decode_token(
             },
         )
 
-        if expected_type and raw.get("type") != expected_type:
-            raise InvalidToken()
+        if not expected_type:
+            raise InvalidToken("Token type must be enforced")
+
+        if raw.get("type") != expected_type:
+            raise InvalidToken("Invalid token type")
 
         return TokenPayloadSchema(
             sub=UUID(raw["sub"]),
@@ -81,4 +84,4 @@ async def decode_token(
         raise TokenExpired() from e
 
     except (jwt.PyJWTError, ValidationError, KeyError, TypeError, ValueError) as e:
-        raise InvalidToken() from e
+        raise InvalidToken("Invalid token") from e

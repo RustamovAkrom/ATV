@@ -5,8 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import lazyload, selectinload
 
 from db.models.assets.asset import Asset
+from db.models.assets.asset_assignment import AssetAssignment
 from db.models.assets.asset_history import AssetHistory
 from db.models.assets.asset_transfer import AssetTransfer
+from db.models.enums import TransferStatus
 from db.models.org.service import Service
 from db.models.warehouse.warehouse import Warehouse
 
@@ -29,6 +31,24 @@ class AssetTransferRepository:
             .options(lazyload("*"))
             .where(Asset.id == asset_id)
             .with_for_update()
+        )
+        return result.scalar_one_or_none()
+
+    async def get_active_assignments(self, asset_id: UUID) -> list[AssetAssignment]:
+        result = await self.session.execute(
+            select(AssetAssignment).where(
+                AssetAssignment.asset_id == asset_id,
+                AssetAssignment.unassigned_at.is_(None),
+            )
+        )
+        return result.scalars().all()
+
+    async def get_pending_transfer(self, asset_id: UUID) -> AssetTransfer | None:
+        result = await self.session.execute(
+            select(AssetTransfer).where(
+                AssetTransfer.asset_id == asset_id,
+                AssetTransfer.status == TransferStatus.PENDING,
+            )
         )
         return result.scalar_one_or_none()
 

@@ -1,1 +1,1 @@
-from .approval import * # noqa
+from .approval import *  # noqa

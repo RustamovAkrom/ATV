@@ -11,6 +11,7 @@ from repositories.assets.repair_repo import RepairRepository
 from repositories.warehouse.warehouse_repo import WarehouseRepository
 from services.approvals.approval_service import ApprovalService
 from services.assets.asset_assignment_service import AssetAssignmentService
+from services.assets.asset_history_service import AssetHistoryService
 from services.assets.asset_service import AssetService
 from services.assets.asset_transfer_service import AssetTransferService
 from services.assets.bulk_asset_service import BulkAssetService
@@ -18,6 +19,17 @@ from services.documents.document_service import DocumentService
 from services.assets.export_service import ExportService
 from services.assets.repair_service import RepairService
 from services.assets.warehouse_service import WarehouseService
+from core.notifications.dispatcher import NotificationDispatcher
+from api.dependencies.notifications import (
+    get_notification_dispatcher,
+    get_notification_service,
+)
+
+
+def get_asset_history_service(
+    db: AsyncSession = Depends(get_db_session),
+) -> AssetHistoryService:
+    return AssetHistoryService(db)
 
 
 def get_asset_repo(
@@ -28,8 +40,11 @@ def get_asset_repo(
 
 def get_asset_service(
     asset_repo: AssetRepository = Depends(get_asset_repo),
+    notification_dispatcher: NotificationDispatcher = Depends(
+        get_notification_dispatcher
+    ),
 ) -> AssetService:
-    return AssetService(asset_repo)
+    return AssetService(asset_repo, notification_dispatcher)
 
 
 def get_export_service(
@@ -109,9 +124,20 @@ def get_approval_service(
     asset_service: AssetService = Depends(get_asset_service),
     transfer_service: AssetTransferService = Depends(get_asset_transfer_service),
     repair_service: RepairService = Depends(get_repair_service),
+    asset_assignment_service: AssetAssignmentService = Depends(
+        get_asset_assignment_service
+    ),
+    notification_dispatcher: NotificationDispatcher = Depends(
+        get_notification_dispatcher
+    ),
 ) -> ApprovalService:
     return ApprovalService(
-        approval_repo, asset_service, transfer_service, repair_service
+        approval_repo,
+        asset_service,
+        transfer_service,
+        repair_service,
+        asset_assignment_service,
+        notification_dispatcher,
     )
 
 

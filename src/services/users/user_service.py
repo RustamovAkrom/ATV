@@ -7,7 +7,11 @@ from db.models.users import User
 from repositories.rbac.rbac_repo import RBACRepository
 from repositories.users.user_repo import UserRepository
 from schemas.pagination import PaginationParamsSchema
-from schemas.users.users import AdminUserUpdateSchema, UserCreateSchema, UserUpdateSchema
+from schemas.users.users import (
+    AdminUserUpdateSchema,
+    UserCreateSchema,
+    UserUpdateSchema,
+)
 from utils.helpers import utc_now
 
 

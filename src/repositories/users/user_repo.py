@@ -69,9 +69,7 @@ class UserRepository:
         return result.scalars().all()
 
     async def exists_by_email(self, email: str) -> bool:
-        result = await self.session.execute(
-            select(exists().where(User.email == email))
-        )
+        result = await self.session.execute(select(exists().where(User.email == email)))
         return result.scalar_one_or_none() is not None
 
     async def exists_by_login(self, login: str) -> bool:

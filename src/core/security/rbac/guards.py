@@ -10,9 +10,7 @@ def check_role(user: CurrentUserSchema, *roles: str):
         raise PermissionDenied(detail=f"Access denied. Required roles: {roles}")
 
 
-def check_permissions(
-    user: CurrentUserSchema, *permissions: str, any_of: bool = False
-):
+def check_permissions(user: CurrentUserSchema, *permissions: str, any_of: bool = False):
     if not user.has_permission(*permissions, any_of=any_of):
         raise PermissionDenied(detail="Missing required permissions")
 

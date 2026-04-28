@@ -24,8 +24,7 @@ from schemas.pagination import PageSchema, PaginationParamsSchema, build_page
 from utils.helpers import utc_now
 from schemas.auth.auth import CurrentUserSchema
 from core.security.access_control import AccessControl
-from core.notifications.dispatcher import NotificationDispatcher
-from core.notifications.builder import NotificationBuilder
+from core.events.asset_events import AssetEventService
 
 
 class AssetService:
@@ -43,10 +42,10 @@ class AssetService:
     def __init__(
         self,
         asset_repo: AssetRepository,
-        notification_dispatcher: NotificationDispatcher
+        asset_events: AssetEventService,
     ):
         self.asset_repo = asset_repo
-        self.notification_dispatcher = notification_dispatcher
+        self.asset_events = asset_events
 
     async def list(
         self,
@@ -79,7 +78,9 @@ class AssetService:
 
         return AssetDetailSchema.model_validate(asset, from_attributes=True)
 
-    async def get_history(self, asset_id: UUID, actor: CurrentUserSchema) -> list[AssetHistorySchema]:
+    async def get_history(
+        self, asset_id: UUID, actor: CurrentUserSchema
+    ) -> list[AssetHistorySchema]:
         asset = await self._get_asset(asset_id)
 
         AccessControl.check_region_access(actor, asset.region_id)
@@ -90,9 +91,11 @@ class AssetService:
             for entry in asset.history_entries
         ]
 
-    async def create(self, data: AssetCreate, actor: CurrentUserSchema) -> AssetDetailSchema:
+    async def create(
+        self, data: AssetCreate, actor: CurrentUserSchema
+    ) -> AssetDetailSchema:
         if data.owner_id:
-            owner = self.asset_repo.get_user(data.owner_id)
+            owner = await self.asset_repo.get_user(data.owner_id)
             if not owner:
                 raise BadRequest("Invalid owner")
 
@@ -131,47 +134,15 @@ class AssetService:
         )
 
         await self.asset_repo.create(asset)
+        await self.asset_repo.flush()
 
-        # Create Asset History
-        await self._add_history(
+        await self.asset_events.created(
             asset_id=asset.id,
-            user_id=actor.id,
-            action="created",
-            description=f"Asset created with status '{asset.status.value}'",
+            actor_id=actor.id,
+            user_id=asset.owner_id,
+            asset_name=asset.name,
+            status=asset.status.value,
         )
-
-        if asset.owner_id:
-            # Create Asset History
-            await self._add_history(
-                asset_id=asset.id,
-                user_id=actor.id,
-                action="owner_changed",
-                description=f"Owner assigned to user {asset.owner_id}",
-            )
-
-            # Create Notification
-            payload = NotificationBuilder.asset_assigned(
-                user_id=actor.id,
-                asset_id=asset.id,
-                name=asset.name,
-            )
-            await self.notification_dispatcher.dispatch(payload)
-
-        await self._publish_event(
-            "asset.created",
-            {
-                "asset_id": str(asset.id),
-                "actor_id": str(actor.id),
-            },
-        )
-
-        # Create notification
-        payload = NotificationBuilder.asset_created(
-            user_id=actor.id,
-            asset_id=asset.id,
-            name=asset.name,
-        )
-        await self.notification_dispatcher.dispatch(payload)
 
         return await self.get(asset.id, actor)
 
@@ -211,31 +182,14 @@ class AssetService:
             return await self.get(asset.id, actor)
 
         await self.asset_repo.flush()
-        await self._add_history(
-            asset_id=asset.id,
-            user_id=actor.id,
-            action="updated",
-            description=f"Updated fields: {', '.join(sorted(changes))}",
-        )
-        await self._publish_event(
-            "asset.updated",
-            {
-                "asset_id": str(asset.id),
-                "actor_id": str(actor.id),
-                "fields": sorted(changes),
-            },
-        )
 
-        try:
-            await self.notification_service.create(
-                user_id=actor.id,
-                type="asset.updated",
-                title="Asset updated",
-                message=f"Asset '{asset.name}' updated",
-                data={"asset_id": str(asset.id), "fields": changes},
-            )
-        except Exception as e:
-            print("Notification error: ", e)
+        await self.asset_events.updated(
+            asset_id=asset.id,
+            actor_id=actor.id,
+            user_id=asset.owner_id,
+            asset_name=asset.name,
+            fields=sorted(changes),
+        )
 
         return await self.get(asset.id, actor)
 
@@ -259,33 +213,13 @@ class AssetService:
         asset.status = new_status
         await self.asset_repo.flush()
 
-        await self._add_history(
+        await self.asset_events.status_changed(
             asset_id=asset.id,
-            user_id=actor.id,
-            action="status_changed",
-            description=(
-                f"Status changed from '{previous_status.value}' "
-                f"to '{new_status.value}'"
-            ),
-        )
-        await self._publish_event(
-            "asset.status_changed",
-            {
-                "asset_id": str(asset.id),
-                "actor_id": str(actor.id),
-                "from_status": previous_status.value,
-                "to_status": new_status.value,
-            },
-        )
-
-        # Create Notification
-        payload = NotificationBuilder.asset_status_changed(
-            user_id=actor.id,
-            asset_id=asset.id,
+            actor_id=actor.id,
+            user_id=asset.owner_id,
             from_status=previous_status.value,
             to_status=new_status.value,
         )
-        await self.notification_dispatcher.dispatch(payload)
 
         return await self.get(asset.id, actor)
 
@@ -302,31 +236,12 @@ class AssetService:
         }:
             raise BadRequest("Only archived assets can be deleted")
 
-        await self._add_history(
+        await self.asset_events.deleted(
             asset_id=asset.id,
-            user_id=actor.id,
-            action="deleted",
-            description="Asset deleted",
+            actor_id=actor.id,
+            owner_id=asset.owner_id,
+            asset_name=asset.name,
         )
-        await self._publish_event(
-            "asset.deleted",
-            {
-                "asset_id": str(asset.id),
-                "actor_id": str(actor.id),
-            },
-        )
-
-        try:
-            await self.notification_service.create(
-                user_id=actor.id,
-                type="asset.deleted",
-                title="Asset deleted",
-                message=f"Asset '{asset.name}' deleted",
-                data={"asset_id": str(asset.id)},
-            )
-        except Exception as e:
-            print("Notification error: ", e)
-
         await self.asset_repo.delete(asset)
 
     async def _get_asset(
@@ -412,26 +327,6 @@ class AssetService:
             )
         if new_status == AssetStatus.ARCHIVED and asset.owner_id is not None:
             raise BadRequest("Cannot archive assigned asset")
-
-    async def _add_history(
-        self, asset_id: UUID, user_id: UUID, action: str, description: str
-    ) -> None:
-        await self.asset_repo.add_history(
-            AssetHistory(
-                asset_id=asset_id,
-                user_id=user_id,
-                action=action,
-                description=description,
-            )
-        )
-
-    async def _publish_event(self, event: str, payload: dict) -> None:
-        try:
-            await audit_stream.publish(
-                {"event": event, **payload, "timestamp": utc_now().timestamp()}
-            )
-        except Exception:
-            return
 
     @staticmethod
     def _clean_optional(value):

@@ -119,4 +119,3 @@ async def seed_rbac(db):
     print("✅ RBAC Bootstrap Complete!")
     print(f"   - Permissions: {len(permissions_map)}")
     print(f"   - Roles: {len(existing_roles)}")
-

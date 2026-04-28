@@ -33,6 +33,4 @@ class Notification(Base, UUIDMixing):
 
     user = relationship("User", lazy="selectin")
 
-    __table_args__ = (
-        Index("idx_notifications_user_unread", "user_id", "is_read"),
-    )
+    __table_args__ = (Index("idx_notifications_user_unread", "user_id", "is_read"),)

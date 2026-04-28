@@ -77,18 +77,5 @@ class AssetAssignmentRepository:
         await self.session.flush()
         return assignment
 
-    async def add_history(
-        self, asset_id: UUID, user_id: UUID, action: str, description: str
-    ) -> AssetHistory:
-        entry = AssetHistory(
-            asset_id=asset_id,
-            user_id=user_id,
-            action=action,
-            description=description,
-        )
-        self.session.add(entry)
-        await self.session.flush()
-        return entry
-
     async def flush(self) -> None:
         await self.session.flush()
