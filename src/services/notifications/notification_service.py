@@ -5,6 +5,7 @@ from core.exceptions.errors import NotFound, PermissionDenied
 from db.models.notifications.notification import Notification
 from repositories.notifications.notification_repo import NotificationRepository
 from schemas.notifications.notification import NotificationSchema
+from schemas.pagination import PaginationParamsSchema
 from utils.helpers import utc_now
 
 
@@ -42,10 +43,9 @@ class NotificationService:
         *,
         user_id: UUID,
         is_read: bool | None,
-        limit: int,
-        offset: int,
+        pagination: PaginationParamsSchema,
     ):
-        items = await self.repo.list_by_user(user_id, is_read, limit, offset)
+        items = await self.repo.list_by_user(user_id, is_read, pagination.limit, pagination.offset())
 
         return [NotificationSchema.model_validate(i) for i in items]
 

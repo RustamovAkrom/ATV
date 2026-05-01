@@ -17,3 +17,9 @@ class SessionOutSchema(BaseModel):
     expires_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CleanupResponseSchema(BaseModel):
+    deleted: int
+    message: str = "Old sessions removed"
+    model_config = ConfigDict(from_attributes=True)

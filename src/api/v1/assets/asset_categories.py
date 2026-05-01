@@ -8,6 +8,7 @@ from schemas.assets.asset_category import (
     AssetCategoryOutSchema,
 )
 from services.assets.asset_category_service import AssetCategoryService
+from schemas.common import StatusResponse
 
 router = APIRouter(prefix="/asset-categories", tags=["Asset categories"])
 
@@ -33,4 +34,4 @@ async def delete_category(
     service: AssetCategoryService = Depends(get_asset_category_service),
 ):
     await service.delete(category_id)
-    return {"status": "deleted"}
+    return StatusResponse(status="deleted", message="Asset category deleted successfully")

@@ -27,3 +27,8 @@ class NotificationCreate(BaseModel):
 
 class NotificationFilter(BaseModel):
     is_read: bool | None = None
+
+
+class UnreadCountResponseSchema(BaseModel):
+    count: int
+    model_config = ConfigDict(from_attributes=True)

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 
 from api.dependencies.assets.asset_model import get_asset_model_service
 from schemas.assets.asset_model import AssetModelCreateSchema, AssetModelOutSchema
+from schemas.common import StatusResponse
 from services.assets.asset_model_service import AssetModelService
 
 router = APIRouter(prefix="/asset-models", tags=["Asset models"])
@@ -22,9 +23,10 @@ async def create_model(
     return await service.create(data)
 
 
-@router.delete("/{model_id}")
+@router.delete("/{model_id}", response_model=StatusResponse)
 async def delete_model(
     model_id: UUID,
     service: AssetModelService = Depends(get_asset_model_service),
 ):
-    return await service.delete(model_id)
+    await service.delete(model_id)
+    return StatusResponse(status="deleted", message="Asset model deleted successfully")

@@ -18,6 +18,7 @@ from schemas.users import (
     UserUpdateSchema,
 )
 from services.users.user_service import UserService
+from schemas.common import StatusResponse
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -77,7 +78,7 @@ async def change_password(
         data.old_password,
         data.new_password,
     )
-    return {"status": "ok"}
+    return StatusResponse(status="ok", message="Password changed successfully")
 
 
 @router.get(
@@ -154,7 +155,7 @@ async def archive_user(
         raise BadRequest("Cannot delete yourself")
 
     await service.archive(user_id)
-    return {"status": "archived"}
+    return StatusResponse(status="archived", message="User archived successfully")
 
 
 @router.post("/{user_id}/block")
@@ -168,7 +169,7 @@ async def block_user(
         raise BadRequest("Cannot block yourself")
 
     await service.block(user_id)
-    return {"status": "blocked"}
+    return StatusResponse(status="blocked", message="User blocked successfully")
 
 
 @router.post("/{user_id}/activate")
@@ -182,4 +183,4 @@ async def activate_user(
         raise BadRequest("Cannot activate yourself")
 
     await service.activate(user_id)
-    return {"status": "active"}
+    return StatusResponse(status="active", message="User activated successfully")

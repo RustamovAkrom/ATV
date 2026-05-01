@@ -38,7 +38,7 @@ class UserOutSchema(BaseModel):
     login: str
     email: str
     phone: str
-    role: str
+    role: str | None
     permissions: list[str]
     first_name: str | None
     last_name: str | None
