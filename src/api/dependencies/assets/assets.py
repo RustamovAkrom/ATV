@@ -7,11 +7,8 @@ from services.assets.asset_assignment_service import AssetAssignmentService
 from services.assets.asset_service import AssetService
 from services.assets.asset_transfer_service import AssetTransferService
 from services.assets.bulk_asset_service import BulkAssetService
-from core.notifications.dispatcher import NotificationDispatcher
-from api.dependencies.notifications.notification import (
-    get_notification_dispatcher,
-    get_notification_service,
-)
+from core.events.asset_events import AssetEventService
+from api.dependencies.events.asset import get_asset_event_service
 from api.dependencies.assets.asset_assignment import get_asset_assignment_service
 from api.dependencies.assets.asset_transfer import get_asset_transfer_service
 
@@ -24,11 +21,9 @@ def get_asset_repo(
 
 def get_asset_service(
     asset_repo: AssetRepository = Depends(get_asset_repo),
-    notification_dispatcher: NotificationDispatcher = Depends(
-        get_notification_dispatcher
-    ),
+    asset_events: AssetEventService = Depends(get_asset_event_service),
 ) -> AssetService:
-    return AssetService(asset_repo, notification_dispatcher)
+    return AssetService(asset_repo, asset_events)
 
 
 def get_bulk_asset_service(

@@ -16,9 +16,10 @@ from db.models.users.permission import Role
 from db.models.users.user import User
 from schemas.assets.assets import AssetFilters
 from schemas.pagination import PaginationParamsSchema
+from repositories.base import BaseRepository
 
 
-class AssetRepository:
+class AssetRepository(BaseRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
@@ -55,8 +56,8 @@ class AssetRepository:
             .offset(pagination.offset())
         )
 
-        result = await self.session.execute(query)
-        return result.scalars().unique().all(), int(total or 0)
+        result = await self.scalars_unique_all(query)
+        return result, int(total or 0)
 
     async def iter_for_export(self, filters: AssetFilters, chunk_size: int = 100):
         offset = 0
@@ -70,8 +71,7 @@ class AssetRepository:
                 .offset(offset)
             )
 
-            result = await self.session.execute(query)
-            items = result.scalars().unique().all()
+            items = await self.scalars_unique_all(query)
 
             if not items:
                 break
@@ -134,21 +134,19 @@ class AssetRepository:
 
         options = self._detail_options() if include_history else self._list_options()
 
-        result = await self.session.execute(query.options(*options))
-        return result.scalar_one_or_none()
+        return await self.scalar(query.options(*options))
 
     async def get_by_id_for_update(
         self, asset_id: UUID, include_history: bool = False
     ) -> Asset | None:
         options = self._detail_options() if include_history else self._list_options()
 
-        result = await self.session.execute(
+        return await self.scalar(
             select(Asset)
             .options(*options)
             .where(Asset.id == asset_id)
             .with_for_update(nowait=True)
         )
-        return result.scalar_one_or_none()
 
     async def get_asset_class(self, class_id: UUID) -> AssetClass | None:
         return await self.session.get(AssetClass, class_id)
@@ -163,12 +161,11 @@ class AssetRepository:
         return await self.session.get(Service, service_id)
 
     async def get_user(self, user_id: UUID) -> User | None:
-        result = await self.session.execute(
+        return await self.scalar(
             select(User)
             .options(selectinload(User.role).selectinload(Role.permissions))
             .where(User.id == user_id)
         )
-        return result.scalar_one_or_none()
 
     async def asset_tag_exists(
         self, asset_tag: str, exclude_id: UUID | None = None
@@ -178,8 +175,7 @@ class AssetRepository:
         if exclude_id:
             query = query.where(Asset.id != exclude_id)
 
-        result = await self.session.execute(query.limit(1))
-        return result.scalar_one_or_none() is not None
+        return await self.scalar(query.limit(1)) is not None
 
     async def serial_number_exists(
         self, serial_number: str, exclude_id: UUID | None = None
@@ -189,23 +185,20 @@ class AssetRepository:
         if exclude_id:
             query = query.where(Asset.id != exclude_id)
 
-        result = await self.session.execute(query.limit(1))
-        return result.scalar_one_or_none() is not None
+        return await self.scalar(query.limit(1)) is not None
 
     async def create(self, asset: Asset) -> Asset:
-        self.session.add(asset)
-        await self.session.flush()
+        self.add(asset)
+        await self.flush()
         return asset
 
+    # Overrided
     async def delete(self, asset: Asset) -> None:
         await self.session.delete(asset)
-        await self.session.flush()
-
-    async def flush(self) -> None:
-        await self.session.flush()
+        await self.flush()
 
     async def get_active_assignment(self, asset_id: UUID) -> AssetAssignment | None:
-        result = await self.session.execute(
+        return await self.scalar(
             select(AssetAssignment)
             .where(
                 AssetAssignment.asset_id == asset_id,
@@ -213,20 +206,19 @@ class AssetRepository:
             )
             .limit(1)
         )
-        return result.scalar_one_or_none()
 
     async def close_active_assignment(
         self, assignment: AssetAssignment, timestamp: datetime
     ) -> None:
         assignment.unassigned_at = timestamp
-        await self.session.flush()
+        await self.flush()
 
     async def add_assignment(self, assignment: AssetAssignment) -> AssetAssignment:
-        self.session.add(assignment)
-        await self.session.flush()
+        self.add(assignment)
+        await self.flush()
         return assignment
 
     async def add_history(self, history_entry: AssetHistory) -> AssetHistory:
-        self.session.add(history_entry)
-        await self.session.flush()
+        self.add(history_entry)
+        await self.flush()
         return history_entry

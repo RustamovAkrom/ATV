@@ -7,9 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models.audit.audit_log import AuditLog
 from schemas.audit import AuditCreateSchema, AuditFiltersSchema
+from repositories.base import BaseRepository
 
 
-class AuditRepository:
+class AuditRepository(BaseRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
@@ -86,16 +87,15 @@ class AuditRepository:
     async def create(self, data: AuditCreateSchema | Mapping[str, Any]):
         payload = self._normalize_payload(data)
         audit = AuditLog(**payload)
-        self.session.add(audit)
-        await self.session.flush()
+        self.add(audit)
+        await self.flush()
         return audit
 
     async def list(self, filters: AuditFiltersSchema | None, limit: int, offset: int):
         query = self._apply_filters(self._base_query(), filters).order_by(
             AuditLog.created_at.desc()
         )
-        result = await self.session.execute(query.limit(limit).offset(offset))
-        items = result.scalars().all()
+        items = await self.scalars(query.limit(limit).offset(offset))
 
         total = await self.session.scalar(self._count_query(query))
         return items, int(total or 0)
@@ -103,8 +103,7 @@ class AuditRepository:
     async def get_recent(self, limit: int, offset: int):
         query = self._base_query().order_by(AuditLog.created_at.desc())
 
-        result = await self.session.execute(query.limit(limit).offset(offset))
-        items = result.scalars().all()
+        items = await self.scalars(query.limit(limit).offset(offset))
 
         total = await self.session.scalar(select(func.count()).select_from(AuditLog))
         return items, int(total or 0)
@@ -116,8 +115,7 @@ class AuditRepository:
             .order_by(AuditLog.created_at.asc())
         )
 
-        result = await self.session.execute(query.limit(limit).offset(offset))
-        items = result.scalars().all()
+        items = await self.scalars(query.limit(limit).offset(offset))
 
         total = await self.session.scalar(
             select(func.count()).select_from(
@@ -133,8 +131,7 @@ class AuditRepository:
             .order_by(AuditLog.created_at.desc())
         )
 
-        result = await self.session.execute(query.limit(limit).offset(offset))
-        items = result.scalars().all()
+        items = await self.scalars(query.limit(limit).offset(offset))
 
         total = await self.session.scalar(
             select(func.count()).select_from(
@@ -150,8 +147,7 @@ class AuditRepository:
             .order_by(AuditLog.created_at.desc())
         )
 
-        result = await self.session.execute(query.limit(limit).offset(offset))
-        items = result.scalars().all()
+        items = await self.scalars(query.limit(limit).offset(offset))
 
         total = await self.session.scalar(
             select(func.count()).select_from(
@@ -167,8 +163,7 @@ class AuditRepository:
             .order_by(AuditLog.created_at.desc())
         )
 
-        result = await self.session.execute(query.limit(limit).offset(offset))
-        items = result.scalars().all()
+        items = await self.scalars(query.limit(limit).offset(offset))
 
         total = await self.session.scalar(
             select(func.count()).select_from(

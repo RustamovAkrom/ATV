@@ -3,10 +3,13 @@
 from uuid import UUID
 
 from fastapi.encoders import jsonable_encoder
-
+from sqlalchemy import or_, select
+from typing import List
 from core.exceptions.errors import BadRequest, NotFound, PermissionDenied
 from db.models.approvals.approval_request import ApprovalRequest
-from db.models.enums import ApprovalStatus, AssetStatus
+from db.models.enums import ApprovalStatus, AssetStatus, UserStatus
+from db.models.users.permission import Role
+from db.models.users.user import User
 from repositories.assets.approval_repo import ApprovalRepository
 from schemas.assets.approvals import (
     ApprovalCreate,
@@ -87,7 +90,8 @@ class ApprovalService:
         await self.approval_repo.create(approval)
 
         approvers = await self._get_approvers(
-            await self.asset_service._get_asset(data.entity_id)
+            await self.asset_service._get_asset(data.entity_id),
+            requester_id=actor.id,
         )
 
         for uid in approvers:
@@ -138,7 +142,7 @@ class ApprovalService:
 
         # Create Notification
         payload = NotificationBuilder.approval_approved(
-            user_id=actor.id,
+            user_id=approval.created_by_id,
             entity_type=approval.entity_type,
             entity_id=approval.entity_id,
             action=approval.action,
@@ -313,6 +317,30 @@ class ApprovalService:
 
         raise BadRequest("Unsupported execution")
 
-    async def _get_approvers(self, asset):
-        return [] # TODO implement approver retrieval logic based on asset's region and service
-
+    async def _get_approvers(self, asset, requester_id: UUID) -> List[UUID]:
+        result = await self.approval_repo.session.execute(
+            select(User)
+            .join(Role, User.role_id == Role.id)
+            .where(
+                User.status == UserStatus.ACTIVE.value,
+                User.id != requester_id,
+                or_(
+                    User.assigned_region_id.is_(None),
+                    User.assigned_region_id == asset.region_id,
+                ),
+                or_(
+                    User.assigned_service_id.is_(None),
+                    User.assigned_service_id == asset.service_id,
+                ),
+            )
+        )
+        users = result.scalars().all()
+        return [
+            user.id
+            for user in users
+            if user.role
+            and any(
+                str(getattr(p, "code", "")).lower() == Permissions.APPROVALS_APPROVE
+                for p in (user.role.permissions or [])
+            )
+        ]

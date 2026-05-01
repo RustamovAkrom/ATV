@@ -186,7 +186,7 @@ class AssetService:
         await self.asset_events.updated(
             asset_id=asset.id,
             actor_id=actor.id,
-            user_id=asset.owner_id,
+            owner_id=asset.owner_id,
             asset_name=asset.name,
             fields=sorted(changes),
         )
@@ -216,7 +216,7 @@ class AssetService:
         await self.asset_events.status_changed(
             asset_id=asset.id,
             actor_id=actor.id,
-            user_id=asset.owner_id,
+            owner_id=asset.owner_id,
             from_status=previous_status.value,
             to_status=new_status.value,
         )

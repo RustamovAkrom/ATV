@@ -12,6 +12,8 @@ from repositories.notifications.notification_repo import NotificationRepository
 from core.notifications.dispatcher import NotificationDispatcher
 from core.config import get_settings
 
+_memory_ws_backend = None
+
 
 def get_notification_repo(
     db: AsyncSession = Depends(get_db_session),
@@ -38,6 +40,7 @@ def get_redis_client():
 
 
 def get_ws_backend(redis=Depends(get_redis_client)):
+    global _memory_ws_backend
     settings = get_settings()
 
     if settings.ENV == "prod":
@@ -47,7 +50,9 @@ def get_ws_backend(redis=Depends(get_redis_client)):
 
     from core.notifications.ws.backends.memory import InMemoryWSBackend
 
-    return InMemoryWSBackend()
+    if _memory_ws_backend is None:
+        _memory_ws_backend = InMemoryWSBackend()
+    return _memory_ws_backend
 
 
 def get_notification_dispatcher(
@@ -66,12 +71,13 @@ def get_notification_dispatcher(
 
 
 def get_ws_memory_backend():
-    from core.notifications.ws.backends.memory import InMemoryWSBackend
-
-    return InMemoryWSBackend()
+    return get_ws_backend()
 
 
-def get_redis_listener(redis=Depends(get_redis_client)):
+def get_redis_listener(
+    redis=Depends(get_redis_client),
+    memory_backend=Depends(get_ws_memory_backend),
+):
     from core.notifications.ws.redis_listener import RedisListener
 
-    return RedisListener(redis, memory_backend=get_ws_memory_backend())
+    return RedisListener(redis, memory_backend=memory_backend)

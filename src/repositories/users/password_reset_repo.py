@@ -6,15 +6,16 @@ from sqlalchemy.sql import func
 
 from db.models.auth.password_reset import PasswordReset
 from utils.helpers import utc_now
+from repositories.base import BaseRepository
 
 
-class PasswordResetRepository:
+class PasswordResetRepository(BaseRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
     async def create(self, obj: PasswordReset):
-        self.session.add(obj)
-        await self.session.flush()
+        self.add(obj)
+        await self.flush()
         return obj
 
     async def use_token(self, token_hash: str) -> PasswordReset | None:
@@ -28,23 +29,21 @@ class PasswordResetRepository:
             .values(is_used=True)
             .returning(PasswordReset)
         )
-        result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
+        return await self.scalar(stmt)
 
     async def clean_old(self, user_id: UUID):
-        await self.session.execute(
+        await self.execute(
             delete(PasswordReset).where(PasswordReset.user_id == user_id)
         )
 
     async def count_active_resets(self, user_id: UUID) -> int:
-        result = await self.session.execute(
+        return await self.scalar_one(
             select(func.count()).where(
                 PasswordReset.user_id == user_id,
                 PasswordReset.is_used.is_(False),
                 PasswordReset.expires_at > utc_now(),
             )
         )
-        return result.scalar_one()
 
     # async def get_valid(self, token_hash: str) -> PasswordReset | None:
     #     result = await self.session.execute(

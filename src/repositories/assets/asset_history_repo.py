@@ -1,11 +1,14 @@
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
+from core.exceptions.errors import Conflict
 
 from db.models.assets.asset_history import AssetHistory
+from repositories.base import BaseRepository
 
 
-class AssetHistoryRepository:
+class AssetHistoryRepository(BaseRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
@@ -22,6 +25,6 @@ class AssetHistoryRepository:
             action=action,
             description=description,
         )
-        self.session.add(history)
-        await self.session.flush()
+        self.add(history)
+        await self.flush()
         return history

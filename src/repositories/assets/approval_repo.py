@@ -2,25 +2,28 @@ from uuid import UUID
 
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from db.models.approvals.approval_request import ApprovalRequest
 from db.models.enums import ApprovalStatus
 
 from schemas.pagination import PaginationParamsSchema
+from core.exceptions.errors import Conflict
+from repositories.base import BaseRepository
 
 
-class ApprovalRepository:
+class ApprovalRepository(BaseRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
     async def create(self, approval: ApprovalRequest) -> ApprovalRequest:
-        self.session.add(approval)
-        await self.session.flush()
+        self.add(approval)
+        await self.flush()
         return approval
 
     async def get_by_id(self, approval_id: UUID) -> ApprovalRequest | None:
-        result = await self.session.execute(
+        return await self.scalar(
             select(ApprovalRequest)
             .options(
                 selectinload(ApprovalRequest.created_by),
@@ -28,10 +31,9 @@ class ApprovalRepository:
             )
             .where(ApprovalRequest.id == approval_id)
         )
-        return result.scalar_one_or_none()
 
     async def get_by_id_for_update(self, approval_id: UUID) -> ApprovalRequest | None:
-        result = await self.session.execute(
+        return await self.scalar(
             select(ApprovalRequest)
             .options(
                 selectinload(ApprovalRequest.created_by),
@@ -40,7 +42,6 @@ class ApprovalRepository:
             .where(ApprovalRequest.id == approval_id)
             .with_for_update()
         )
-        return result.scalar_one_or_none()
 
     async def list(
         self,
@@ -67,9 +68,6 @@ class ApprovalRepository:
             .offset(pagination.offset())
         )
 
-        result = await self.session.execute(query)
+        result = await self.scalars(query)
 
-        return result.scalars().all(), int(total or 0)
-
-    async def flush(self) -> None:
-        await self.session.flush()
+        return result, int(total or 0)

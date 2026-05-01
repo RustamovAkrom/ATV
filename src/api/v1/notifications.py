@@ -1,7 +1,7 @@
 from uuid import UUID
 import asyncio
 
-from fastapi import APIRouter, WebSocket, Depends
+from fastapi import APIRouter, WebSocket, Depends, WebSocketDisconnect
 
 from core.security.auth.dependencies import get_current_user
 from schemas.auth import CurrentUserSchema
@@ -43,8 +43,12 @@ async def ws_notifications(
         while True:
             await websocket.receive_text()
 
+    except WebSocketDisconnect:
+        await memory_backend.disconnect(user_id, websocket)
+
     except Exception:
-        memory_backend.disconnect(user_id, websocket)
+        await memory_backend.disconnect(user_id, websocket)
+        raise
 
     finally:
         if task:

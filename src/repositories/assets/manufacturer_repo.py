@@ -2,39 +2,36 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models.assets.manufacturer import Manufacturer
+from repositories.base import BaseRepository
 
 
-class ManufacturerRepository:
+class ManufacturerRepository(BaseRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
     async def list(self):
-        result = await self.session.execute(
+        return await self.scalars(
             select(Manufacturer).order_by(Manufacturer.name)
         )
-        return result.scalars().all()
 
     async def get(self, manufacturer_id):
-        result = await self.session.execute(
+        return await self.scalar(
             select(Manufacturer).where(Manufacturer.id == manufacturer_id)
         )
-        return result.scalar_one_or_none()
 
     async def get_by_code(self, code: str):
-        result = await self.session.execute(
+        return await self.scalar(
             select(Manufacturer).where(Manufacturer.code == code)
         )
-        return result.scalar_one_or_none()
 
     async def get_by_normalized_name(self, normalized: str):
-        result = await self.session.execute(
+        return await self.scalars_first(
             select(Manufacturer).where(func.lower(Manufacturer.name) == normalized)
         )
-        return result.scalars().first()
 
     async def create(self, obj: Manufacturer):
-        self.session.add(obj)
-        await self.session.flush()
+        self.add(obj)
+        await self.flush()
         return obj
 
     async def delete(self, obj: Manufacturer):

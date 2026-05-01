@@ -10,22 +10,22 @@ from db.models.repairs.repair import Repair
 from db.models.repairs.repair_part import RepairPart
 from db.models.users.permission import Role
 from db.models.users.user import User
+from repositories.base import BaseRepository
 
 
-class RepairRepository:
+class RepairRepository(BaseRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
     async def get_asset(self, asset_id: UUID) -> Asset | None:
-        result = await self.session.execute(
+        return await self.scalar(
             select(Asset)
             .options(selectinload(Asset.repairs).selectinload(Repair.parts))
             .where(Asset.id == asset_id)
         )
-        return result.scalar_one_or_none()
 
     async def get_active_assignment(self, asset_id: UUID):
-        result = await self.session.execute(
+        return await self.scalar(
             select(Asset)
             .options(selectinload(Asset.assignments))
             .where(
@@ -33,44 +33,39 @@ class RepairRepository:
                 Asset.assignments.any(lambda a: a.active.is_(True)),  # type: ignore
             )
         )
-        return result.scalar_one_or_none()
 
     async def get_asset_for_update(self, asset_id: UUID) -> Asset | None:
-        result = await self.session.execute(
+        return await self.scalar(
             select(Asset)
             .options(lazyload("*"))
             .where(Asset.id == asset_id)
             .with_for_update()
         )
-        return result.scalar_one_or_none()
 
     async def get_user(self, user_id: UUID) -> User | None:
-        result = await self.session.execute(
+        return await self.scalar(
             select(User)
             .options(selectinload(User.role).selectinload(Role.permissions))
             .where(User.id == user_id)
         )
-        return result.scalar_one_or_none()
 
     async def get_repair(self, repair_id: UUID) -> Repair | None:
-        result = await self.session.execute(
+        return await self.scalar(
             select(Repair)
             .options(selectinload(Repair.parts))
             .where(Repair.id == repair_id)
         )
-        return result.scalar_one_or_none()
 
     async def get_repair_for_update(self, repair_id: UUID) -> Repair | None:
-        result = await self.session.execute(
+        return await self.scalar(
             select(Repair)
             .options(selectinload(Repair.parts))
             .where(Repair.id == repair_id)
             .with_for_update()
         )
-        return result.scalar_one_or_none()
 
     async def get_active_repair(self, asset_id: UUID) -> Repair | None:
-        result = await self.session.execute(
+        return await self.scalar(
             select(Repair)
             .options(selectinload(Repair.parts))
             .where(
@@ -80,18 +75,17 @@ class RepairRepository:
             .order_by(Repair.created_at.desc())
             .limit(1)
         )
-        return result.scalar_one_or_none()
 
     async def create_repair(self, repair: Repair) -> Repair:
-        self.session.add(repair)
-        await self.session.flush()
+        self.add(repair)
+        await self.flush()
         return repair
 
     async def replace_parts(self, repair: Repair, parts: list[RepairPart]) -> Repair:
         repair.parts.clear()
-        await self.session.flush()
+        await self.flush()
         repair.parts.extend(parts)
-        await self.session.flush()
+        await self.flush()
         return repair
 
     async def add_history(
@@ -103,9 +97,6 @@ class RepairRepository:
             action=action,
             description=description,
         )
-        self.session.add(entry)
-        await self.session.flush()
+        self.add(entry)
+        await self.flush()
         return entry
-
-    async def flush(self) -> None:
-        await self.session.flush()
