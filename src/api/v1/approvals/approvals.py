@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from db.models.enums import ApprovalStatus
 
-from api.dependencies.assets import get_approval_service
+from api.dependencies.assets.asset_approval import get_approval_service
 from core.security.auth.dependencies import get_current_user
 from core.security.rbac import presets
 from schemas.assets.approvals import ApprovalCreate, ApprovalDecision, ApprovalSchema

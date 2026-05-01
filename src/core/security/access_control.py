@@ -26,23 +26,10 @@ class AccessControl:
     def _is_superadmin(user: CurrentUserSchema) -> bool:
         return user.role == UserRole.SUPERADMIN.value
 
-    @staticmethod
-    def _is_global_role(user: CurrentUserSchema) -> bool:
-        """
-        Roles that are NOT restricted by region/service.
-        """
-
-        return user.role in {
-            UserRole.SUPERADMIN.value,
-            UserRole.ADMIN.value,
-            UserRole.ANALYTIC.value,
-            UserRole.AUDITOR.value,
-        }
-
     # REGION ACCESS
     @staticmethod
     def check_region_access(user: CurrentUserSchema, resource_region_id: UUID | None):
-        if AccessControl._is_global_role(user):
+        if AccessControl._is_superadmin(user):
             return
 
         if not user.assigned_region_id:
@@ -57,7 +44,7 @@ class AccessControl:
     # SERVICE ACCESS
     @staticmethod
     def check_service_access(user: CurrentUserSchema, resource_service_id: UUID | None):
-        if AccessControl._is_global_role(user):
+        if AccessControl._is_superadmin(user):
             return
 
         if not user.assigned_service_id:
@@ -83,6 +70,9 @@ class AccessControl:
         user: CurrentUserSchema,
         resource_creator_id: UUID,
     ):
+        if AccessControl._is_superadmin(user):
+            return
+
         if user.id == resource_creator_id:
             raise PermissionDenied("You cannot approve/reject your own requests.")
 
@@ -107,7 +97,7 @@ class AccessControl:
             raise PermissionDenied("Already decided")
 
         # role restriction
-        if required_role and user.role != required_role:
+        if required_role and not user.has_role(required_role):
             raise PermissionDenied(f"This approval requires '{required_role}' role.")
 
 

@@ -33,6 +33,7 @@ from core.notifications.dispatcher import NotificationDispatcher
 
 
 class ApprovalService:
+
     def __init__(
         self,
         approval_repo: ApprovalRepository,
@@ -85,14 +86,19 @@ class ApprovalService:
 
         await self.approval_repo.create(approval)
 
-        await self.notification_dispatcher.dispatch(
-            NotificationBuilder.approval_requested(
-                user_id=approval.created_by_id,
-                entity_type=approval.entity_type,
-                entity_id=approval.entity_id,
-                action=approval.action,
-            )
+        approvers = await self._get_approvers(
+            await self.asset_service._get_asset(data.entity_id)
         )
+
+        for uid in approvers:
+            await self.notification_dispatcher.dispatch(
+                NotificationBuilder.approval_requested(
+                    user_id=uid,
+                    entity_type=approval.entity_type,
+                    entity_id=approval.entity_id,
+                    action=approval.action,
+                )
+            )
 
         return ApprovalSchema.model_validate(approval, from_attributes=True)
 
@@ -104,18 +110,25 @@ class ApprovalService:
         async with self.approval_repo.session.begin_nested():
 
             approval = await self._get_pending(approval_id, for_update=True)
+
+            AccessControl.check_not_creator(actor, approval.created_by_id)
+
             asset = await self.asset_service._get_asset(approval.entity_id)
+
             AccessControl.check_region_access(actor, asset.region_id)
-            AccessControl.check_not_creator(actor, asset.service_id)
+            AccessControl.check_service_access(actor, asset.service_id)
 
             approval.status = ApprovalStatus.APPROVED
             approval.approved_by_id = actor.id
             approval.decided_at = utc_now()
-            approval.executed = True
 
             await self.approval_repo.flush()
 
             await self._execute_approved_action(approval, actor)
+
+            approval.executed = True
+
+            await self.approval_repo.flush()
 
             if comment:
                 payload = dict(approval.payload or {})
@@ -125,7 +138,7 @@ class ApprovalService:
 
         # Create Notification
         payload = NotificationBuilder.approval_approved(
-            user_id=approval.created_by_id,
+            user_id=actor.id,
             entity_type=approval.entity_type,
             entity_id=approval.entity_id,
             action=approval.action,
@@ -299,3 +312,7 @@ class ApprovalService:
             return
 
         raise BadRequest("Unsupported execution")
+
+    async def _get_approvers(self, asset):
+        return [] # TODO implement approver retrieval logic based on asset's region and service
+

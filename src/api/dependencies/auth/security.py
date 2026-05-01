@@ -7,8 +7,8 @@ from repositories.users.password_reset_repo import PasswordResetRepository
 from repositories.users.user_repo import UserRepository
 from services.auth.security_service import SecurityService
 
-from .auth import get_auth_repo
-from .users import get_user_repo
+from api.dependencies.auth.auth import get_auth_repo
+from ..users import get_user_repo
 
 
 def get_reset_repo(

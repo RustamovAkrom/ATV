@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request, status
 
-from api.dependencies.security import get_security_service
+from api.dependencies.auth.security import get_security_service
 from core.slowapi import limiter
 from schemas.common import StatusResponse
 from schemas.auth.security import (

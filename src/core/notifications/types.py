@@ -26,3 +26,6 @@ class NotificationType(StrEnum):
     APPROVAL_FAILED = "approval.failed"
     APPROVAL_CANCELED = "approval.canceled"
     APPROVAL_EXECUTION_FAILED = "approval.execution_failed"
+
+    DOCUMENT_ATTACHED = "asset.document_attached"
+    DOCUMENT_DELETED = "asset.document_deleted"

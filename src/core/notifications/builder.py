@@ -314,3 +314,30 @@ class NotificationBuilder:
                 "action": action,
             },
         )
+
+    @classmethod
+    def document_attached(cls, *, user_id: UUID, asset_id: UUID, document_id: UUID):
+        return cls._base(
+            user_id=user_id,
+            type=NotificationType.DOCUMENT_ATTACHED,  # или новый тип
+            title="Document attached",
+            message="A document has been attached to the asset",
+            data={
+                "asset_id": str(asset_id),
+                "document_id": str(document_id),
+            },
+        )
+
+
+    @classmethod
+    def document_deleted(cls, *, user_id: UUID, asset_id: UUID, document_id: UUID):
+        return cls._base(
+            user_id=user_id,
+            type=NotificationType.DOCUMENT_DELETED,
+            title="Document deleted",
+            message="A document has been removed from the asset",
+            data={
+                "asset_id": str(asset_id),
+                "document_id": str(document_id),
+            },
+        )

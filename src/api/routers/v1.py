@@ -24,6 +24,10 @@ from api.v1.rbac.rbac import router as rbac_router
 from api.v1.users.security import router as security_router
 from api.v1.users.user import router as users_router
 from api.v1.notifications import router as notifications_router
+from api.v1.assets.asset_documents import router as documents_router
+from api.v1.assets.asset_repairs import router as asset_repairs_router
+from api.v1.assets.asset_warehouse import router as asset_warehouse_router
+from api.v1.approvals.requests import router as approval_requests_router
 
 router = APIRouter()
 
@@ -40,6 +44,14 @@ router.include_router(notifications_router)
 # Asset Domain (WRITE)
 router.include_router(approvals_router)
 router.include_router(assets_router)
+router.include_router(asset_repairs_router)
+router.include_router(asset_warehouse_router)
+
+# Asset approval requests
+router.include_router(approval_requests_router)
+
+# Document Management
+router.include_router(documents_router, prefix="/documents", tags=["Documents"])
 
 # Reference Data
 router.include_router(asset_category_router)

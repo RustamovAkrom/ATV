@@ -207,7 +207,7 @@ class RepairService:
                 repair_id=repair.id,
                 actor_id=actor.id,
                 reported_by_id=repair.reported_by_id,
-                message=data.reason,
+                reason=data.reason,
             )
 
         return self._to_schema(repair)

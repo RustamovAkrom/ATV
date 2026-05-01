@@ -1,14 +1,45 @@
 from uuid import UUID
+import asyncio
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, WebSocket, Depends
 
 from core.security.auth.dependencies import get_current_user
 from schemas.auth import CurrentUserSchema
 from schemas.notifications.notification import NotificationSchema
 from services.notifications.notification_service import NotificationService
-from api.dependencies.notifications import get_notification_service
+
+from core.security.auth.ws_dependencies import get_current_user_ws
+from core.notifications.channels.websocket import WebSocketManager, get_ws_manager
+from api.dependencies.notifications.notification import (
+    get_notification_service,
+    get_redis_listener,
+    get_ws_memory_backend,
+)
+from core.notifications.ws.redis_listener import RedisListener
+
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
+
+
+@router.websocket("/ws/notifications")
+async def ws_notifications(
+    websocket: WebSocket,
+    user: CurrentUserSchema = Depends(get_current_user_ws),
+    memory_backend: WebSocketManager = Depends(get_ws_memory_backend),
+    redis_listener: RedisListener = Depends(get_redis_listener),
+):
+    user_id = user.id
+
+    await memory_backend.connect(user_id, websocket)
+
+    if redis_listener:
+        task = asyncio.create_task(redis_listener.listen_user(user_id))
+
+    try:
+        while True:
+            await websocket.receive_text()
+    except:
+        memory_backend.disconnect(user_id, websocket)
 
 
 @router.get("/", response_model=list[NotificationSchema])

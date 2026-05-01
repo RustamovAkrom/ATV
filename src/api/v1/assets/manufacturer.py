@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from api.dependencies.manufacturer import get_manufacturer_service
+from api.dependencies.assets.manufacturer import get_manufacturer_service
 from schemas.assets.manufacturer import ManufacturerCreateSchema, ManufacturerOutSchema
 from services.assets.manufacturer_service import ManufacturerService
 

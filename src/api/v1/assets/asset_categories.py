@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from api.dependencies.asset_category import get_asset_category_service
+from api.dependencies.assets.asset_category import get_asset_category_service
 from schemas.assets.asset_category import (
     AssetCategoryCreateSchema,
     AssetCategoryOutSchema,

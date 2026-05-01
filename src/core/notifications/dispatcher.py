@@ -1,13 +1,16 @@
-from services.notifications.notification_service import NotificationService
+from typing import Sequence
 
 
 class NotificationDispatcher:
-    def __init__(self, notification_service: NotificationService):
-        self.notification_service = notification_service
+    def __init__(self, channels: Sequence):
+        self.channels = channels
 
-    async def dispatch(self, payload: dict):
-        try:
-            await self.notification_service.create(**payload)
-        except Exception:
-            # NEVER ломаем бизнес-логику
-            pass
+    async def dispatch(self, payload: dict | None):
+        if not payload:
+            return
+
+        for channel in self.channels:
+            try:
+                await channel.send(payload)
+            except Exception:
+                continue

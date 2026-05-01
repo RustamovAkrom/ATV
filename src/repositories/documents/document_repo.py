@@ -13,6 +13,14 @@ class DocumentRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    async def list_documents_by_asset(self, asset_id: UUID) -> list[Document]:
+        result = await self.session.execute(
+            select(Document)
+            .options(selectinload(Document.files))
+            .where(Document.asset_id == asset_id)
+        )
+        return result.scalars().all()
+
     async def get_asset(self, asset_id: UUID) -> Asset | None:
         result = await self.session.execute(
             select(Asset)

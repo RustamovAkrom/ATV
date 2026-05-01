@@ -5,14 +5,14 @@ from core.exceptions.errors import BadRequest, NotFound
 from repositories.warehouse.warehouse_repo import WarehouseRepository
 from schemas.assets.warehouses import WarehouseMoveRequest
 from utils.helpers import utc_now
-
+from schemas.auth.auth import CurrentUserSchema
 
 class WarehouseService:
     def __init__(self, repo: WarehouseRepository):
         self.repo = repo
 
     async def move_asset_to_warehouse(
-        self, asset_id: UUID, data: WarehouseMoveRequest, actor_id: UUID
+        self, asset_id: UUID, data: WarehouseMoveRequest, actor: CurrentUserSchema
     ) -> UUID:
         asset = await self.repo.get_asset(asset_id)
         if not asset:
@@ -35,7 +35,7 @@ class WarehouseService:
         await self.repo.flush()
         await self.repo.add_history(
             asset.id,
-            actor_id,
+            actor.id,
             "warehouse_moved",
             f"Asset moved to warehouse {warehouse.id}",
         )
@@ -44,7 +44,7 @@ class WarehouseService:
             {
                 "asset_id": str(asset.id),
                 "warehouse_id": str(warehouse.id),
-                "actor_id": str(actor_id),
+                "actor_id": str(actor.id),
             },
         )
         return warehouse.id

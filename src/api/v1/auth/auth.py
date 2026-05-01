@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 
-from api.dependencies.auth import get_auth_service
+from api.dependencies.auth.auth import get_auth_service
 from core.config import get_settings
 from core.security.auth.dependencies import get_current_user
 from core.slowapi import limiter

@@ -1,0 +1,40 @@
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from db.dependencies import get_db_session
+from repositories.assets.asset_repo import AssetRepository
+from services.assets.asset_assignment_service import AssetAssignmentService
+from services.assets.asset_service import AssetService
+from services.assets.asset_transfer_service import AssetTransferService
+from services.assets.bulk_asset_service import BulkAssetService
+from core.notifications.dispatcher import NotificationDispatcher
+from api.dependencies.notifications.notification import (
+    get_notification_dispatcher,
+    get_notification_service,
+)
+from api.dependencies.assets.asset_assignment import get_asset_assignment_service
+from api.dependencies.assets.asset_transfer import get_asset_transfer_service
+
+
+def get_asset_repo(
+    db: AsyncSession = Depends(get_db_session),
+) -> AssetRepository:
+    return AssetRepository(db)
+
+
+def get_asset_service(
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+    notification_dispatcher: NotificationDispatcher = Depends(
+        get_notification_dispatcher
+    ),
+) -> AssetService:
+    return AssetService(asset_repo, notification_dispatcher)
+
+
+def get_bulk_asset_service(
+    db: AsyncSession = Depends(get_db_session),
+    assignment_service: AssetAssignmentService = Depends(get_asset_assignment_service),
+    transfer_service: AssetTransferService = Depends(get_asset_transfer_service),
+    asset_service: AssetService = Depends(get_asset_service),
+) -> BulkAssetService:
+    return BulkAssetService(db, assignment_service, transfer_service, asset_service)
