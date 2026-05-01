@@ -34,14 +34,25 @@ async def ws_notifications(
 
     await memory_backend.connect(user_id, websocket)
 
+    task = None
+
     if redis_listener:
         task = asyncio.create_task(redis_listener.listen_user(user_id))
 
     try:
         while True:
             await websocket.receive_text()
-    except:
+
+    except Exception:
         memory_backend.disconnect(user_id, websocket)
+
+    finally:
+        if task:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
 
 @router.get("/", response_model=list[NotificationSchema])
@@ -64,7 +75,10 @@ async def mark_as_read(
     service: NotificationService = Depends(get_notification_service),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
-    await service.mark_as_read(notification_id, current_user.id)
+    await service.mark_as_read(
+        notification_id=notification_id,
+        actor_id=current_user.id,
+    )
     return {"status": "ok"}
 
 
@@ -73,7 +87,7 @@ async def mark_all_as_read(
     service: NotificationService = Depends(get_notification_service),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
-    await service.mark_all_as_read(current_user.id)
+    await service.mark_all_as_read(actor_id=current_user.id)
     return {"status": "ok"}
 
 
@@ -82,5 +96,5 @@ async def unread_count(
     service: NotificationService = Depends(get_notification_service),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
-    count = await service.get_unread_count(current_user.id)
+    count = await service.get_unread_count(actor_id=current_user.id)
     return UnreadCountResponseSchema(count=count)
