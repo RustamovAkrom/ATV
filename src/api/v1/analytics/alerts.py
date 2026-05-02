@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Depends, Query, Request
 
-from api.dependencies.analytics import get_alert_analytics_service
+from api.dependencies.analytics import (
+    get_alert_analytics_service,
+    get_analytics_alert_service,
+)
 from api.v1.analytics._utils import (
     enforce_rate_limit,
     parse_rate_limit,
@@ -11,6 +14,7 @@ from core.config import get_settings
 from core.security.rbac import presets
 from schemas.analytics.alerts import AlertOut
 from services.analytics.alert_analytics_service import AlertAnalyticsService
+from services.analytics.alert_service import AnalyticsAlertService
 
 router = APIRouter(prefix="/analytics/alerts", tags=["Analytics - Alerts"])
 settings = get_settings()
@@ -49,4 +53,24 @@ async def get_alerts(
             assignment_threshold=assignment_threshold,
         ),
         lambda: [],
+    )
+
+
+@router.post(
+    "/dispatch",
+    dependencies=[presets.CanManageApprovals],
+)
+async def dispatch_analytics_alerts(
+    request: Request,
+    service: AnalyticsAlertService = Depends(get_analytics_alert_service),
+):
+    await enforce_rate_limit(
+        request, "analytics:alerts:dispatch", ANALYTICS_LIMIT, ANALYTICS_WINDOW
+    )
+    return await run_analytics_operation(
+        request,
+        "analytics.alerts.dispatch",
+        {},
+        lambda: service.dispatch(),
+        lambda: 0,
     )
