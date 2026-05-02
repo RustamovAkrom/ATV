@@ -16,6 +16,8 @@ from middlewares.logging import LoggingMiddleware
 from middlewares.metrics import MetricsMiddleware
 from middlewares.request_id import RequestIDMiddleware
 
+from core.admin.registry import setup_admin
+
 
 def custom_generate_unique_id(route: APIRoute):
     return f"{route.tags[0]}-{route.name}"
@@ -41,6 +43,9 @@ def create_app() -> FastAPI:
     configure_routes(app, settings)
     configure_middlewares(app, settings)
     configure_exception_handlers(app)
+
+    # Admin Panel
+    setup_admin(app, settings)
 
     return app
 

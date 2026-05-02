@@ -44,9 +44,12 @@ class AssetAssignmentService:
         if asset.status == AssetStatus.IN_REPAIR:
             raise BadRequest("Cannot assign asset under repair")
 
-        # active_assignment = await self.repo.get_active_assignment(asset.id)
-        # if active_assignment:
-        #     raise BadRequest("Asset already assigned")
+        active_assignment = await self.repo.get_active_assignment(asset.id)
+        if active_assignment:
+            if active_assignment.user_id == user_id:
+                raise BadRequest("Asset is already assigned to this user")
+            else:
+                raise BadRequest("Asset already assigned")
 
         if asset.owner_id is not None:
             raise BadRequest("Asset already has owner (inconsistent state)")
