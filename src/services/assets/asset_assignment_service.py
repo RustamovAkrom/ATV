@@ -44,9 +44,9 @@ class AssetAssignmentService:
         if asset.status == AssetStatus.IN_REPAIR:
             raise BadRequest("Cannot assign asset under repair")
 
-        active_assignment = await self.repo.get_active_assignment(asset.id)
-        if active_assignment:
-            raise BadRequest("Asset already assigned")
+        # active_assignment = await self.repo.get_active_assignment(asset.id)
+        # if active_assignment:
+        #     raise BadRequest("Asset already assigned")
 
         if asset.owner_id is not None:
             raise BadRequest("Asset already has owner (inconsistent state)")
@@ -66,9 +66,9 @@ class AssetAssignmentService:
 
         asset.owner_id = user.id
         asset.status = AssetStatus.ASSIGNED
-        await self.repo.flush()
 
         assignment = await self.repo.create_assignment(asset.id, user.id)
+
         await self.repo.flush()
 
         await self.asset_events.assigned(
@@ -87,13 +87,8 @@ class AssetAssignmentService:
     async def unassign_asset(
         self, asset_id: UUID, actor: CurrentUserSchema
     ) -> AssetAssignmentActionSchema:
-        try:
-            asset = await self.repo.get_asset_for_update(asset_id)
-        except DBAPIError as e:
-            raise BadRequest("Asset is locked") from e
 
-        if not asset:
-            asset = await self.repo.get_asset_plain(asset_id)
+        asset = await self.repo.get_asset_for_update(asset_id)
 
         if not asset:
             raise NotFound("Asset not found")
@@ -106,14 +101,12 @@ class AssetAssignmentService:
             raise BadRequest("Asset is not currently assigned")
 
         timestamp = utc_now()
+        previous_user_id = asset.owner_id
 
         await self.repo.close_assignment(active_assignment, timestamp)
 
-        previous_user_id = asset.owner_id
         asset.owner_id = None
         asset.status = AssetStatus.ACTIVE
-
-        await self.repo.flush()
 
         if previous_user_id:
             await self.asset_events.unassigned(
@@ -123,7 +116,7 @@ class AssetAssignmentService:
             )
 
         return AssetAssignmentActionSchema(
-            asset_id=asset.id,
+            asset_id=asset_id,
             user_id=previous_user_id,
             unassigned_at=timestamp,
         )

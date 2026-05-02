@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -22,7 +22,7 @@ class DocumentRepository(BaseRepository):
         )
 
     async def get_asset(self, asset_id: UUID) -> Asset | None:
-        return self.scalar(
+        return await self.scalar(
             select(Asset)
             .options(selectinload(Asset.documents).selectinload(Document.files))
             .where(Asset.id == asset_id)
@@ -42,7 +42,7 @@ class DocumentRepository(BaseRepository):
         return document
 
     async def delete_document(self, document: Document) -> None:
-        await self.delete(document)
+        await self.session.execute(delete(Document).where(Document.id == document.id))
         await self.flush()
 
     async def add_history(

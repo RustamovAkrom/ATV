@@ -54,6 +54,7 @@ class DocumentService:
             asset_id=asset.id,
             document_id=document.id,
             actor_id=actor.id,
+            asset_name=asset.name,
         )
 
         return AssetDocumentSchema.model_validate(document, from_attributes=True)

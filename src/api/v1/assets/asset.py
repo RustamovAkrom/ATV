@@ -8,10 +8,6 @@ from api.dependencies.assets.assets import (
     get_bulk_asset_service,
 )
 from api.dependencies.assets.asset_export import get_export_service
-from api.dependencies.assets.asset_repair import get_repair_service
-from api.dependencies.assets.asset_warehouse import get_warehouse_service
-from api.dependencies.documents.document import get_document_service
-
 from core.cache.decorators import cached, invalidate_cache
 from core.security.auth.dependencies import get_current_user
 from core.security.rbac import presets
@@ -32,21 +28,11 @@ from schemas.assets.bulk import (
     BulkStatusRequest,
     BulkTransferRequest,
 )
-from schemas.documents import AssetDocumentCreate, AssetDocumentSchema
 from schemas.pagination import PaginationParamsSchema
-from schemas.assets.repairs import (
-    RepairCancelRequest,
-    RepairReportRequest,
-    RepairSchema,
-    RepairStartRequest,
-)
-from schemas.assets.warehouses import WarehouseMoveRequest
 from services.assets.asset_service import AssetService
 from services.assets.bulk_asset_service import BulkAssetService
-from services.documents.document_service import DocumentService
 from services.assets.export_service import ExportService
-from services.assets.repair_service import RepairService
-from services.assets.warehouse_service import WarehouseService
+
 
 router = APIRouter(prefix="/assets", tags=["Assets"])
 

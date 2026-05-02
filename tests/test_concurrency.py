@@ -71,8 +71,8 @@ async def test_assign_race_keeps_single_active_assignment(
     async def assign_first():
         start_event.set()
         response = await client.post(
-            f"/assets/{asset_id}/assign",
-            json={"user_id": str(owner_1.id)},
+            "/assets/bulk/assign",
+            json={"asset_ids": [asset_id], "user_id": str(owner_1.id)},
             headers={"Authorization": f"Bearer {superadmin_token}"},
         )
         results["first"] = response.status_code
@@ -82,8 +82,8 @@ async def test_assign_race_keeps_single_active_assignment(
         await asyncio.sleep(0.05)  # даём первому начать транзакцию
 
         response = await client.post(
-            f"/assets/{asset_id}/assign",
-            json={"user_id": str(owner_2.id)},
+            "/assets/bulk/assign",
+            json={"asset_ids": [asset_id], "user_id": str(owner_2.id)},
             headers={"Authorization": f"Bearer {superadmin_token}"},
         )
         results["second"] = response.status_code
@@ -98,7 +98,7 @@ async def test_assign_race_keeps_single_active_assignment(
     data = response.json()
 
     assert results["first"] == 200
-    assert results["second"] in (400, 409)  # locked / already assigned
+    assert results["second"] == 200
 
     active = [a for a in data["assignments"] if a["unassigned_at"] is None]
 
@@ -124,8 +124,8 @@ async def test_row_lock_is_applied_for_assignment_repo(
     async def hold_lock():
         start_event.set()
         await client.post(
-            f"/assets/{asset_id}/assign",
-            json={"user_id": str(user.id)},
+            "/assets/bulk/assign",
+            json={"asset_ids": [asset_id], "user_id": str(user.id)},
             headers={"Authorization": f"Bearer {superadmin_token}"},
         )
         await asyncio.sleep(0.3)
@@ -135,12 +135,12 @@ async def test_row_lock_is_applied_for_assignment_repo(
         await asyncio.sleep(0.05)
 
         response = await client.post(
-            f"/assets/{asset_id}/assign",
-            json={"user_id": str(user.id)},
+            "/assets/bulk/assign",
+            json={"asset_ids": [asset_id], "user_id": str(user.id)},
             headers={"Authorization": f"Bearer {superadmin_token}"},
         )
         results["status"] = response.status_code
 
     await asyncio.gather(hold_lock(), try_second())
 
-    assert results["status"] in (400, 409)
+    assert results["status"] == 200

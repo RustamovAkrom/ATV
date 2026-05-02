@@ -89,6 +89,10 @@ async def fastapi_app(dbsession: AsyncSession) -> FastAPI:
         m for m in app.user_middleware if m.cls.__name__ != "AuditMiddleware"
     ]
 
+    # disable rate limiting for tests to avoid login throttling
+    if hasattr(app.state, "limiter"):
+        app.state.limiter.enabled = False
+
     return app
 
 

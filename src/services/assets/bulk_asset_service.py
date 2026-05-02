@@ -40,7 +40,7 @@ class BulkAssetService:
             lambda asset_id: self.assignment_service.assign_asset(
                 asset_id,
                 user_id,
-                actor.id,
+                actor,
             ),
         )
 

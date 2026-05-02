@@ -32,7 +32,7 @@ async def analytics_users(dbsession):
     moderator = await create_user_with_role(
         dbsession, login_prefix="moderator", role_code=UserRole.MODERATOR.value
     )
-    await dbsession.commit()
+    # Removed commit - let test session handle transaction
     return {
         "superadmin": superadmin,
         "admin": admin,
@@ -160,7 +160,7 @@ async def analytics_seed(dbsession, analytics_users):
         created_at=now - timedelta(days=2),
     )
 
-    await dbsession.commit()
+    # Removed commit - let test session handle transaction
     return {
         "graph": graph,
         "asset_primary": asset_primary,

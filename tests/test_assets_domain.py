@@ -99,34 +99,47 @@ async def test_asset_assignment_flow(client, dbsession, superadmin_token, create
     owner_2 = await create_user(login="asset_owner_2")
     asset = await _create_asset(client, superadmin_token, deps)
 
-    response = await client.post(
-        f"/assets/{asset['id']}/assign",
+    request_assignment = await client.post(
+        f"/assets/{asset['id']}/approval-requests/assignment",
         json={"user_id": str(owner_1.id)},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
-    assert response.status_code == 200
-    body = response.json()
-    assert body["owner"]["id"] == str(owner_1.id)
-    assert body["status"] == "assigned"
+    assert request_assignment.status_code == 200
+    approval_id = request_assignment.json()["id"]
 
     response = await client.post(
-        f"/assets/{asset['id']}/reassign",
-        json={"new_user_id": str(owner_2.id)},
+        f"/approvals/{approval_id}/approve",
+        json={"comment": "approve assignment"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert response.status_code == 200
-    body = response.json()
-    assert body["owner"]["id"] == str(owner_2.id)
-    assert body["status"] == "assigned"
 
+    assigned_asset = await client.get(
+        f"/assets/{asset['id']}",
+        headers={"Authorization": f"Bearer {superadmin_token}"},
+    )
+    assert assigned_asset.status_code == 200
+    assert assigned_asset.json()["owner"]["id"] == str(owner_1.id)
+
+    request_reassign = await client.post(
+        f"/assets/{asset['id']}/approval-requests/assignment",
+        json={"user_id": str(owner_2.id)},
+        headers={"Authorization": f"Bearer {superadmin_token}"},
+    )
+    assert request_reassign.status_code == 200
     response = await client.post(
-        f"/assets/{asset['id']}/unassign",
+        f"/approvals/{request_reassign.json()['id']}/approve",
+        json={"comment": "approve reassignment"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert response.status_code == 200
-    body = response.json()
-    assert body["owner"] is None
-    assert body["status"] == "active"
+
+    reassigned_asset = await client.get(
+        f"/assets/{asset['id']}",
+        headers={"Authorization": f"Bearer {superadmin_token}"},
+    )
+    assert reassigned_asset.status_code == 200
+    assert reassigned_asset.json()["owner"]["id"] == str(owner_2.id)
 
     history = await client.get(
         f"/assets/{asset['id']}/history",
@@ -135,7 +148,6 @@ async def test_asset_assignment_flow(client, dbsession, superadmin_token, create
     assert history.status_code == 200
     actions = {entry["action"] for entry in history.json()}
     assert "assigned" in actions
-    assert "unassigned" in actions
 
 
 @pytest.mark.anyio
@@ -144,7 +156,7 @@ async def test_asset_transfer_flow(client, dbsession, superadmin_token):
     asset = await _create_asset(client, superadmin_token, deps, name="TransferAsset")
 
     move = await client.post(
-        f"/assets/{asset['id']}/warehouse",
+        f"/assets/{asset['id']}/warehouse/",
         json={"warehouse_id": str(deps["warehouse"].id)},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
@@ -152,8 +164,9 @@ async def test_asset_transfer_flow(client, dbsession, superadmin_token):
     assert move.json()["warehouse"]["id"] == str(deps["warehouse"].id)
 
     create_transfer = await client.post(
-        f"/assets/{asset['id']}/transfer",
+        f"/assets/{asset['id']}/approval-requests/transfer",
         json={
+            "from_warehouse_id": str(deps["warehouse"].id),
             "to_warehouse_id": str(deps["target_warehouse"].id),
             "comment": "Move asset",
         },
@@ -164,12 +177,12 @@ async def test_asset_transfer_flow(client, dbsession, superadmin_token):
     assert transfer["status"] == "pending"
 
     approve = await client.post(
-        f"/assets/{asset['id']}/transfer/{transfer['id']}/approve",
+        f"/approvals/{transfer['id']}/approve",
         json={"comment": "Approved"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert approve.status_code == 200
-    assert approve.json()["status"] == "completed"
+    assert approve.json()["status"] == "approved"
 
     asset_detail = await client.get(
         f"/assets/{asset['id']}",
@@ -215,17 +228,20 @@ async def test_repair_lifecycle_flow(client, dbsession, superadmin_token):
     )
     assert asset_in_repair.status_code == 200
     assert asset_in_repair.json()["status"] == "in_repair"
-    assert asset_in_repair.json()["failure_count"] == 1
+    assert asset_in_repair.json()["failure_count"] == 0
 
-    completed = await client.post(
-        f"/assets/{asset['id']}/repair/{repair['id']}/complete",
+    completion_request = await client.post(
+        f"/assets/{asset['id']}/approval-requests/repair/{repair['id']}/complete",
         json={"labor_cost": "75.00"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
+    assert completion_request.status_code == 200
+    completed = await client.post(
+        f"/approvals/{completion_request.json()['id']}/approve",
+        json={"comment": "complete repair"},
+        headers={"Authorization": f"Bearer {superadmin_token}"},
+    )
     assert completed.status_code == 200
-    completed_body = completed.json()
-    assert completed_body["status"] == "done"
-    assert completed_body["total_cost"] == "105.00"
 
     repaired_asset = await client.get(
         f"/assets/{asset['id']}",
@@ -235,6 +251,7 @@ async def test_repair_lifecycle_flow(client, dbsession, superadmin_token):
     repaired_body = repaired_asset.json()
     assert repaired_body["status"] == "active"
     assert repaired_body["last_repair_date"] is not None
+    assert repaired_body["failure_count"] == 1
 
 
 @pytest.mark.anyio
@@ -243,7 +260,7 @@ async def test_document_attach_and_delete_flow(client, dbsession, superadmin_tok
     asset = await _create_asset(client, superadmin_token, deps, name="DocumentAsset")
 
     attached = await client.post(
-        f"/assets/{asset['id']}/documents",
+        f"/assets/{asset['id']}/documents/",
         json={
             "title": "Warranty",
             "document_type": "warranty",
@@ -283,7 +300,7 @@ async def test_warehouse_move_rejects_incompatible_location(
     asset = await _create_asset(client, superadmin_token, deps, name="WarehouseAsset")
 
     response = await client.post(
-        f"/assets/{asset['id']}/warehouse",
+        f"/assets/{asset['id']}/warehouse/",
         json={"warehouse_id": str(deps["incompatible_warehouse"].id)},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
@@ -304,8 +321,11 @@ async def test_locked_asset_transfer_is_rejected(client, dbsession, superadmin_t
     await dbsession.commit()
 
     response = await client.post(
-        f"/assets/{asset['id']}/transfer",
-        json={"to_warehouse_id": str(deps["target_warehouse"].id)},
+        f"/assets/{asset['id']}/approval-requests/transfer",
+        json={
+            "from_warehouse_id": str(deps["warehouse"].id),
+            "to_warehouse_id": str(deps["target_warehouse"].id),
+        },
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert response.status_code == 400

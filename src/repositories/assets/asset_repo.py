@@ -130,7 +130,9 @@ class AssetRepository(BaseRepository):
     async def get_by_id(
         self, asset_id: UUID, include_history: bool = True
     ) -> Asset | None:
-        query = select(Asset).where(Asset.id == asset_id)
+        query = select(Asset).where(Asset.id == asset_id).execution_options(
+            populate_existing=True
+        )
 
         options = self._detail_options() if include_history else self._list_options()
 
@@ -146,6 +148,7 @@ class AssetRepository(BaseRepository):
             .options(*options)
             .where(Asset.id == asset_id)
             .with_for_update(nowait=True)
+            .execution_options(populate_existing=True)
         )
 
     async def get_asset_class(self, class_id: UUID) -> AssetClass | None:

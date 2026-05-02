@@ -53,7 +53,7 @@ async def test_get_asset_for_update_fetches_plain_row(monkeypatch):
 
 
 async def test_create_assignment_adds_and_flushes():
-    session = SimpleNamespace(add=Mock(), flush=AsyncMock())
+    session = SimpleNamespace(add=Mock(), flush=AsyncMock(), refresh=AsyncMock())
     repo = AssetAssignmentRepository(session)
     asset_id = uuid4()
     user_id = uuid4()
@@ -67,7 +67,7 @@ async def test_create_assignment_adds_and_flushes():
 
 
 async def test_close_assignment_sets_unassigned_at():
-    session = SimpleNamespace(flush=AsyncMock())
+    session = SimpleNamespace(flush=AsyncMock(), refresh=AsyncMock())
     repo = AssetAssignmentRepository(session)
     timestamp = datetime.now(UTC)
     assignment = SimpleNamespace(unassigned_at=None)
@@ -77,17 +77,3 @@ async def test_close_assignment_sets_unassigned_at():
     assert closed.unassigned_at == timestamp
     session.flush.assert_awaited_once()
 
-
-async def test_add_history_adds_and_flushes():
-    session = SimpleNamespace(add=Mock(), flush=AsyncMock())
-    repo = AssetAssignmentRepository(session)
-    asset_id = uuid4()
-    user_id = uuid4()
-
-    entry = await repo.add_history(asset_id, user_id, "assigned", "desc")
-
-    assert entry.asset_id == asset_id
-    assert entry.user_id == user_id
-    assert entry.action == "assigned"
-    session.add.assert_called_once()
-    session.flush.assert_awaited_once()

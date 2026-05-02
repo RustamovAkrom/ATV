@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import lazyload, selectinload
 
 from db.models.assets.asset import Asset
+from db.models.assets.asset_assignment import AssetAssignment
 from db.models.assets.asset_history import AssetHistory
 from db.models.repairs.repair import Repair
 from db.models.repairs.repair_part import RepairPart
@@ -26,12 +27,12 @@ class RepairRepository(BaseRepository):
 
     async def get_active_assignment(self, asset_id: UUID):
         return await self.scalar(
-            select(Asset)
-            .options(selectinload(Asset.assignments))
+            select(AssetAssignment)
             .where(
-                Asset.id == asset_id,
-                Asset.assignments.any(lambda a: a.active.is_(True)),  # type: ignore
+                AssetAssignment.asset_id == asset_id,
+                AssetAssignment.unassigned_at.is_(None),
             )
+            .limit(1)
         )
 
     async def get_asset_for_update(self, asset_id: UUID) -> Asset | None:

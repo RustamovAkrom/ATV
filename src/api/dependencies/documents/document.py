@@ -2,6 +2,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies.assets.asset_history import get_asset_history_service
+from api.dependencies.notifications.notification import get_notification_dispatcher
 from core.events.document_events import DocumentEventService
 from db.dependencies import get_db_session
 from repositories.documents.document_repo import DocumentRepository
@@ -16,8 +17,9 @@ def get_document_repo(
 
 def get_document_event_service(
     history=Depends(get_asset_history_service),
+    notifications=Depends(get_notification_dispatcher),
 ):
-    return DocumentEventService(history)
+    return DocumentEventService(history, notifications)
 
 
 def get_document_service(

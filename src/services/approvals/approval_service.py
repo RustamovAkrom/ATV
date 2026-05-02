@@ -77,6 +77,17 @@ class ApprovalService:
 
         validated_payload = self._validate_request(data)
 
+        asset = await self.asset_service._get_asset(data.entity_id)
+        if not asset:
+            raise NotFound("Asset not found")
+
+        if (
+            data.entity_type.strip().lower() == "asset_transfer"
+            and data.action.strip().lower() == "create_transfer"
+            and asset.is_transfer_locked
+        ):
+            raise BadRequest("Asset transfer is locked")
+
         approval = ApprovalRequest(
             entity_type=data.entity_type.strip(),
             entity_id=data.entity_id,
@@ -89,10 +100,7 @@ class ApprovalService:
 
         await self.approval_repo.create(approval)
 
-        approvers = await self._get_approvers(
-            await self.asset_service._get_asset(data.entity_id),
-            requester_id=actor.id,
-        )
+        approvers = await self._get_approvers(asset, requester_id=actor.id)
 
         for uid in approvers:
             await self.notification_dispatcher.dispatch(
@@ -276,18 +284,32 @@ class ApprovalService:
             if not user_id:
                 raise BadRequest("user_id required")
 
-            await self.asset_assignment_service.assign_asset(
-                approval.entity_id,
-                UUID(str(user_id)),
-                actor,
-            )
+            asset = await self.asset_service._get_asset(approval.entity_id)
+            if asset.owner_id is not None:
+                await self.asset_assignment_service.reassign_asset(
+                    approval.entity_id,
+                    UUID(str(user_id)),
+                    actor,
+                )
+            else:
+                await self.asset_assignment_service.assign_asset(
+                    approval.entity_id,
+                    UUID(str(user_id)),
+                    actor,
+                )
             return
 
         if approval.entity_type == "asset_transfer":
-            await self.transfer_service.create_transfer(
+            transfer = await self.transfer_service.create_transfer(
                 approval.entity_id,
                 AssetTransferCreate(**payload),
                 actor,
+            )
+            await self.transfer_service.approve_transfer(
+                approval.entity_id,
+                transfer.id,
+                actor,
+                comment=payload.get("comment"),
             )
             return
 
