@@ -70,17 +70,5 @@ class AssetTransferRepository(BaseRepository):
     async def create_transfer(self, transfer: AssetTransfer) -> AssetTransfer:
         self.add(transfer)
         await self.flush()
+        await self.refresh(transfer)
         return transfer
-
-    async def add_history(
-        self, asset_id: UUID, user_id: UUID, action: str, description: str
-    ) -> AssetHistory:
-        entry = AssetHistory(
-            asset_id=asset_id,
-            user_id=user_id,
-            action=action,
-            description=description,
-        )
-        self.add(entry)
-        await self.flush()
-        return entry

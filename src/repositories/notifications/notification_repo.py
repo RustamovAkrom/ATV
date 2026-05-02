@@ -14,6 +14,7 @@ class NotificationRepository(BaseRepository):
     async def create(self, notification: Notification) -> Notification:
         self.add(notification)
         await self.flush()
+        await self.refresh(notification)
         return notification
 
     async def list_by_user(

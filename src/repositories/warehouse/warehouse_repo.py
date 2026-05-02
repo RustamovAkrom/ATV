@@ -23,16 +23,3 @@ class WarehouseRepository(BaseRepository):
 
     async def get_warehouse(self, warehouse_id: UUID) -> Warehouse | None:
         return await self.session.get(Warehouse, warehouse_id)
-
-    async def add_history(
-        self, asset_id: UUID, user_id: UUID, action: str, description: str
-    ) -> AssetHistory:
-        entry = AssetHistory(
-            asset_id=asset_id,
-            user_id=user_id,
-            action=action,
-            description=description,
-        )
-        self.add(entry)
-        await self.flush()
-        return entry

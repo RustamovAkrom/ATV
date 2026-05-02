@@ -8,18 +8,22 @@ class BaseRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def add(self, obj):
+    def add(self, obj):
         self.session.add(obj)
         return obj
 
-    async def delete(self, obj):
-        await self.session.delete(obj)
+    def delete(self, obj):
+        self.session.delete(obj)
 
+    # DB Operations (Async)
     async def flush(self) -> None:
         try:
             await self.session.flush()
         except IntegrityError as e:
             raise Conflict("Database constraint violated") from e
+
+    async def refresh(self, obj):
+        await self.session.refresh(obj)
 
     async def execute(self, stmt) -> Result:
         return await self.session.execute(stmt)

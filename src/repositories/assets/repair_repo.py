@@ -79,6 +79,7 @@ class RepairRepository(BaseRepository):
     async def create_repair(self, repair: Repair) -> Repair:
         self.add(repair)
         await self.flush()
+        await self.refresh(repair)
         return repair
 
     async def replace_parts(self, repair: Repair, parts: list[RepairPart]) -> Repair:
@@ -86,6 +87,7 @@ class RepairRepository(BaseRepository):
         await self.flush()
         repair.parts.extend(parts)
         await self.flush()
+        await self.refresh(repair)
         return repair
 
     async def add_history(
@@ -99,4 +101,5 @@ class RepairRepository(BaseRepository):
         )
         self.add(entry)
         await self.flush()
+        await self.refresh(entry)
         return entry

@@ -89,6 +89,7 @@ class AuditRepository(BaseRepository):
         audit = AuditLog(**payload)
         self.add(audit)
         await self.flush()
+        await self.refresh(audit)
         return audit
 
     async def list(self, filters: AuditFiltersSchema | None, limit: int, offset: int):

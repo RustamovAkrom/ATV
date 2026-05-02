@@ -1,6 +1,6 @@
 # API Audit Summary
 
-**Date:** May 1, 2026  
+**Date:** May 1, 2026
 **Audited Components:**
 - `src/api/v1/` (all router files)
 - `src/schemas/` (all schema files)
@@ -26,7 +26,7 @@ async def delete_category(...):
     return StatusResponse(status="deleted", message=None)
 ```
 
-**Impact:** 
+**Impact:**
 - API clients receive unexpected field names
 - OpenAPI docs don't show actual response structure
 - No validation of response data
@@ -47,7 +47,7 @@ Different endpoints use different field names:
 
 **Example mismatch:**
 ```python
-# Line 40 in auth/sessions.py - uses "detail" 
+# Line 40 in auth/sessions.py - uses "detail"
 return {"detail": "All sessions revoked"}
 
 # Line 31 in auth/sessions.py - uses "status"

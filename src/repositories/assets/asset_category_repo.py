@@ -40,6 +40,7 @@ class AssetCategoryRepository(BaseRepository):
     async def create(self, obj: AssetCategory):
         self.add(obj)
         await self.flush()
+        await self.refresh(obj)
         return obj
 
     # Overrided

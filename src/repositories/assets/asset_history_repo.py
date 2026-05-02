@@ -21,10 +21,11 @@ class AssetHistoryRepository(BaseRepository):
     ):
         history = AssetHistory(
             asset_id=asset_id,
-            created_by_id=actor_id,
+            user_id=actor_id,
             action=action,
             description=description,
         )
         self.add(history)
         await self.flush()
+        await self.refresh(history)
         return history

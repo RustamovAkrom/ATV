@@ -8,7 +8,6 @@ from sqlalchemy.exc import IntegrityError
 from core.exceptions.errors import Conflict
 from db.models.assets.asset import Asset
 from db.models.assets.asset_assignment import AssetAssignment
-from db.models.assets.asset_history import AssetHistory
 from db.models.users.permission import Role
 from db.models.users.user import User
 from repositories.base import BaseRepository
@@ -68,6 +67,7 @@ class AssetAssignmentRepository(BaseRepository):
         assignment = AssetAssignment(asset_id=asset_id, user_id=user_id)
         self.add(assignment)
         await self.flush()
+        await self.refresh(assignment)
         return assignment
 
     async def close_assignment(
@@ -75,4 +75,5 @@ class AssetAssignmentRepository(BaseRepository):
     ) -> AssetAssignment:
         assignment.unassigned_at = timestamp
         await self.flush()
+        await self.refresh(assignment)
         return assignment

@@ -14,12 +14,13 @@ from repositories.base import BaseRepository
 
 
 class ApprovalRepository(BaseRepository):
-    def __init__(self, session: AsyncSession):
-        self.session = session
+    def __init__(self, session):
+        super().__init__(session)
 
     async def create(self, approval: ApprovalRequest) -> ApprovalRequest:
         self.add(approval)
         await self.flush()
+        await self.refresh(approval)
         return approval
 
     async def get_by_id(self, approval_id: UUID) -> ApprovalRequest | None:

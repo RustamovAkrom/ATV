@@ -39,6 +39,7 @@ class AssetModelRepository(BaseRepository):
     async def create(self, obj: AssetModel):
         self.add(obj)
         await self.flush()
+        await self.refresh(obj)
         return obj
 
     # Ovverrided

@@ -6,7 +6,7 @@
 
 **Files to modify:**
 1. `src/api/v1/assets/asset_categories.py` - line 30
-2. `src/api/v1/assets/asset_classes.py` - line 25  
+2. `src/api/v1/assets/asset_classes.py` - line 25
 3. `src/api/v1/assets/manufacturer.py` - line 27
 4. `src/api/v1/assets/asset_documents.py` - line 47
 5. `src/api/v1/assets/asset.py` - line 182
@@ -270,7 +270,7 @@ from pydantic import BaseModel, ConfigDict
 class StatusResponse(BaseModel):
     status: str
     message: str | None = None
-    
+
     model_config = ConfigDict(from_attributes=True)
 ```
 

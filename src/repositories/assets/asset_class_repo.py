@@ -34,6 +34,7 @@ class AssetClassRepository(BaseRepository):
     async def create(self, obj: AssetClass):
         self.add(obj)
         await self.flush()
+        await self.refresh(obj)
         return obj
 
     async def delete(self, obj: AssetClass):

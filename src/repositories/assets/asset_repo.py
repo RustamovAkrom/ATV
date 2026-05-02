@@ -190,6 +190,7 @@ class AssetRepository(BaseRepository):
     async def create(self, asset: Asset) -> Asset:
         self.add(asset)
         await self.flush()
+        await self.refresh(asset)
         return asset
 
     # Overrided
@@ -216,9 +217,6 @@ class AssetRepository(BaseRepository):
     async def add_assignment(self, assignment: AssetAssignment) -> AssetAssignment:
         self.add(assignment)
         await self.flush()
+        await self.refresh(assignment)
         return assignment
 
-    async def add_history(self, history_entry: AssetHistory) -> AssetHistory:
-        self.add(history_entry)
-        await self.flush()
-        return history_entry

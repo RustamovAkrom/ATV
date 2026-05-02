@@ -38,6 +38,7 @@ class DocumentRepository(BaseRepository):
     async def create_document(self, document: Document) -> Document:
         self.add(document)
         await self.flush()
+        await self.refresh(document)
         return document
 
     async def delete_document(self, document: Document) -> None:
@@ -55,4 +56,5 @@ class DocumentRepository(BaseRepository):
         )
         self.add(entry)
         await self.flush()
+        await self.refresh(entry)
         return entry

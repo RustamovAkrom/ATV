@@ -73,6 +73,7 @@ class UserRepository(BaseRepository):
     async def create(self, user: User) -> User:
         self.add(user)
         await self.flush()
+        await self.refresh(user)
         return user
 
     async def update(self, user_id: UUID, data: dict) -> None:
@@ -105,3 +106,4 @@ class UserRepository(BaseRepository):
     async def set_permissions(self, user: User, permissions: list) -> None:
         user.direct_permissions = permissions
         await self.flush()
+        await self.refresh(user)

@@ -32,6 +32,7 @@ class ManufacturerRepository(BaseRepository):
     async def create(self, obj: Manufacturer):
         self.add(obj)
         await self.flush()
+        await self.refresh(obj)
         return obj
 
     async def delete(self, obj: Manufacturer):

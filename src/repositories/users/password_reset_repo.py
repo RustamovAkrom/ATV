@@ -16,6 +16,7 @@ class PasswordResetRepository(BaseRepository):
     async def create(self, obj: PasswordReset):
         self.add(obj)
         await self.flush()
+        await self.refresh(obj)
         return obj
 
     async def use_token(self, token_hash: str) -> PasswordReset | None:

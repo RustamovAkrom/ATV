@@ -67,7 +67,7 @@ async def logout(
     request: Request,
     data: RefreshRequestSchema,
     response: Response,
-    current_user: CurrentUserSchema = Depends(get_current_user),
+    _: CurrentUserSchema = Depends(get_current_user),
     service: AuthService = Depends(get_auth_service),
 ):
     await service.logout(request, data.refresh_token)
