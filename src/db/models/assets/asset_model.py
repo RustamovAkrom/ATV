@@ -60,3 +60,6 @@ class AssetModel(Base, UUIDMixing, TimestampMixin, SlugMixin):
             "uq_asset_model_name_lower", func.lower(name), manufacturer_id, unique=True
         ),
     )
+
+    def __repr__(self):
+        return self.name

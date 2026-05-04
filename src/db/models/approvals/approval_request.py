@@ -1,5 +1,6 @@
 from datetime import datetime
 from uuid import UUID
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     JSON,
@@ -17,6 +18,9 @@ from sqlalchemy.sql import func
 
 from db.base import Base, UUIDMixing, TimestampMixin
 from db.models.enums import ApprovalStatus
+
+if TYPE_CHECKING:
+    from db.models.users.user import User
 
 
 class ApprovalRequest(Base, UUIDMixing, TimestampMixin):
@@ -48,12 +52,7 @@ class ApprovalRequest(Base, UUIDMixing, TimestampMixin):
         DateTime(timezone=True), nullable=True
     )
 
-    created_by = relationship("User", foreign_keys=[created_by_id], lazy="selectin")
-    approved_by = relationship("User", foreign_keys=[approved_by_id], lazy="selectin")
+    created_by: Mapped["User"] = relationship("User", foreign_keys=[created_by_id], lazy="selectin")
+    approved_by: Mapped["User"] = relationship("User", foreign_keys=[approved_by_id], lazy="selectin")
 
-    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
-
-    __mapper_args__ = {
-        "version_id_col": version,
-    }
     __table_args__ = (Index("ix_approval_status_created", "status", "created_at"),)

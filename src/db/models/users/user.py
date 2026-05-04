@@ -9,7 +9,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from db.base import Base, StatusMixin, TimestampMixin, UUIDMixing
 from db.models.assets.asset import Asset
 from db.models.enums import UserStatus
-from db.models.org.rank import Rank
 from db.models.org.region import Region
 from db.models.org.service import Service
 
@@ -41,9 +40,6 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
     assigned_service_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("services.id", ondelete="SET NULL"), nullable=True
     )
-    rank_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("ranks.id", ondelete="SET NULL"), nullable=True
-    )
 
     position: Mapped[str | None] = mapped_column(String(255), nullable=True)
     badge_number: Mapped[str | None] = mapped_column(
@@ -63,8 +59,6 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
         DateTime(timezone=True), nullable=True
     )
 
-    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
-
     @validates
     def validate_status(self, value):
         return super().validate_status(value)
@@ -72,7 +66,6 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
     role: Mapped["Role"] = relationship("Role", back_populates="users", lazy="selectin")
     region: Mapped["Region"] = relationship("Region", lazy="selectin")
     service: Mapped["Service"] = relationship("Service", lazy="selectin")
-    rank: Mapped["Rank"] = relationship("Rank", lazy="selectin")
     owned_assets: Mapped[list["Asset"]] = relationship(
         "Asset",
         back_populates="owner",
@@ -125,4 +118,5 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
 
         return list(perm_set)
 
-    __mapper_args__ = {"version_id_col": version}
+    def __repr__(self):
+        return self.login

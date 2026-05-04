@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from datetime import datetime
 from uuid import UUID
 
@@ -6,6 +8,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from db.base import Base, UUIDMixing
+
+if TYPE_CHECKING:
+    from db.models.assets.asset import Asset
+    from db.models.users.user import User
 
 
 class AssetAssignment(Base, UUIDMixing):
@@ -27,8 +33,8 @@ class AssetAssignment(Base, UUIDMixing):
 
     unassigned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
-    asset = relationship("Asset", back_populates="assignments", lazy="selectin")
-    user = relationship("User", lazy="selectin")
+    asset: Mapped["Asset"] = relationship("Asset", back_populates="assignments", lazy="selectin")
+    user: Mapped["User"] = relationship("User", lazy="selectin")
 
     __table_args__ = (
         Index(
@@ -38,3 +44,6 @@ class AssetAssignment(Base, UUIDMixing):
             postgresql_where=(unassigned_at.is_(None)),
         ),
     )
+
+    def __repr__(self):
+        return f"Asset(id={self.asset_id}) assigned to User(id={self.user_id})"

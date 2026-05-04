@@ -41,3 +41,6 @@ class Warehouse(Base, UUIDMixing, TimestampMixin):
 
     manager_user: Mapped[Optional["User"]] = relationship("User", lazy="selectin")
     service: Mapped[Optional["Service"]] = relationship("Service", lazy="selectin")
+
+    def __repr__(self):
+        return self.name

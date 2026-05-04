@@ -21,10 +21,6 @@ class AuditLogAdmin(BaseAdmin, model=AuditLog):
         "created_at",
     ]
 
-    can_create = False
-    can_edit = False
-    can_delete = False
-
 
 class NotificationAdmin(BaseAdmin, model=Notification):
     name = "Notification"
@@ -69,6 +65,10 @@ class SystemConfigAdmin(BaseAdmin, model=SystemConfig):
     name = "System Config"
     name_plural = "System Configs"
     icon = "fa-solid fa-cog"
+
+    can_edit = True
+    can_create = True
+    can_delete = True
 
     column_list = [
         "id",

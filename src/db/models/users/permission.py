@@ -67,6 +67,9 @@ class Role(Base, UUIDMixing, TimestampMixin):
         lazy="selectin",
     )
 
+    def __repr__(self):
+        return self.name
+
 
 class Permission(Base, UUIDMixing, TimestampMixin):
     __tablename__ = "permissions"
@@ -92,5 +95,7 @@ class Permission(Base, UUIDMixing, TimestampMixin):
         lazy="selectin",
     )
 
+    def __repr__(self):
+        return self.name
 
 __all__ = ["Role", "Permission", "role_permissions", "user_permissions"]

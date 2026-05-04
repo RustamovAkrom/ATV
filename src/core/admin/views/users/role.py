@@ -8,3 +8,7 @@ class RoleAdmin(BaseAdmin, model=Role):
     icon = "fa-solid fa-user-tag"
 
     column_list = ["id", "name", "code", "created_at"]
+
+    can_edit = True
+    can_create = True
+    can_delete = True

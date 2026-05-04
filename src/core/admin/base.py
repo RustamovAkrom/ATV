@@ -2,10 +2,11 @@ from sqladmin import ModelView
 
 
 class BaseAdmin(ModelView):
-    can_create = True
-    can_edit = True
-    can_delete = True
+    can_create = False
+    can_edit = False
+    can_delete = False
     can_view_details = True
+    can_export = True
 
     page_size = 50
 

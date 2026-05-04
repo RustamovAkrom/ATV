@@ -15,7 +15,7 @@ from core.admin.views.assets import (
     WarehouseAdmin,
 )
 from core.admin.views.assets.documents import DocumentAdmin, DocumentFileAdmin
-from core.admin.views.assets.org import RankAdmin, RegionAdmin, ServiceAdmin
+from core.admin.views.assets.org import RegionAdmin, ServiceAdmin
 from core.admin.views.assets.repairs import RepairAdmin, RepairPartAdmin
 from core.admin.views.assets.misc import AuditLogAdmin, NotificationAdmin, RefreshTokenAdmin, SystemConfigAdmin
 from core.admin.views.assets.approvals import ApprovalRequestAdmin
@@ -57,7 +57,6 @@ def setup_admin(app: FastAPI, settings: Settings):
     admin.add_view(DocumentFileAdmin)
 
     # Org
-    admin.add_view(RankAdmin)
     admin.add_view(RegionAdmin)
     admin.add_view(ServiceAdmin)
 

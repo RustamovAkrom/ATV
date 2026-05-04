@@ -21,6 +21,9 @@ class AssetClass(Base, UUIDMixing, TimestampMixin, SlugMixin):
         "Asset", back_populates="asset_class", lazy="selectin"
     )
 
+    def __repr__(self):
+        return self.name
+
     __table_args__ = (
         Index("uq_asset_class_name_lower", func.lower(name), unique=True),
     )

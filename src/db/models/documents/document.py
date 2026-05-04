@@ -3,14 +3,16 @@
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import JSON, Enum as SAEnum, ForeignKey, String
+from sqlalchemy import JSON, Enum as SAEnum, ForeignKey, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from sqlalchemy.dialects.postgresql import JSONB
 from db.base import Base, TimestampMixin, UUIDMixing
 from db.models.enums import DocumentStatus
 
 if TYPE_CHECKING:
     from db.models.documents.document_file import DocumentFile
+    from db.models.assets.asset import Asset
+    from db.models.users.user import User
 
 
 # ASSET DOCUMENT
@@ -34,9 +36,15 @@ class Document(Base, UUIDMixing, TimestampMixin):
         SAEnum(DocumentStatus), default=DocumentStatus.DRAFT, nullable=False
     )
 
-    meta: Mapped[dict] = mapped_column("metadata", JSON, default=dict, nullable=False)
+    meta: Mapped[dict] = mapped_column(
+        "meta_data",
+        JSONB,
+        nullable=False,
+        default=dict,
+        server_default=text("'{}'::jsonb")
+    )
 
-    created_by = relationship("User", lazy="selectin")
+    created_by: Mapped["User"] = relationship("User", lazy="selectin")
 
     files: Mapped[list["DocumentFile"]] = relationship(
         "DocumentFile",
@@ -45,4 +53,7 @@ class Document(Base, UUIDMixing, TimestampMixin):
         cascade="all, delete-orphan",
     )
 
-    asset = relationship("Asset", back_populates="documents", lazy="joined")
+    asset: Mapped["Asset"] = relationship("Asset", back_populates="documents", lazy="joined")
+
+    def __repr__(self):
+        return self.title

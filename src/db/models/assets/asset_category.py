@@ -40,3 +40,6 @@ class AssetCategory(Base, UUIDMixing, TimestampMixin, SlugMixin):
         back_populates="category",
         lazy="selectin",
     )
+
+    def __repr__(self):
+        return self.name

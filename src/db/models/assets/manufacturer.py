@@ -23,6 +23,9 @@ class Manufacturer(Base, UUIDMixing, TimestampMixin, SlugMixin):
         "AssetModel", back_populates="manufacturer", lazy="selectin"
     )
 
+    def __repr__(self):
+        return self.name
+
     __table_args__ = (
         Index("uq_manufacturer_name_lower", func.lower(name), unique=True),
     )

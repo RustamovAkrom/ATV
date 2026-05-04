@@ -8,12 +8,19 @@ from db.models.assets.asset_model import AssetModel
 from db.models.assets.asset_transfer import AssetTransfer
 from db.models.assets.manufacturer import Manufacturer
 from db.models.warehouse.warehouse import Warehouse
-
+import json
+from wtforms import TextAreaField
 
 class AssetAdmin(BaseAdmin, model=Asset):
     name = "Asset"
     name_plural = "Assets"
     icon = "fa-solid fa-box"
+
+    can_edit = True
+    can_create = True
+    can_delete = True
+
+    form_excluded_columns = ["meta"]
 
     column_list = [
         "id",
@@ -38,6 +45,7 @@ class AssetAdmin(BaseAdmin, model=Asset):
         "warehouse": lambda m, _: m.warehouse.name if m.warehouse else None,
         "region": lambda m, _: m.region.name if m.region else None,
         "service": lambda m, _: m.service.name if m.service else None,
+        "meta": lambda m, _: json.dumps(m.meta, indent=2) if m.meta else "{}"
     }
 
 
@@ -45,6 +53,10 @@ class AssetAssignmentAdmin(BaseAdmin, model=AssetAssignment):
     name = "Asset Assignment"
     name_plural = "Asset Assignments"
     icon = "fa-solid fa-user-check"
+
+    can_edit = True
+    can_create = True
+    can_delete = True
 
     column_list = [
         "id",
@@ -65,6 +77,10 @@ class AssetCategoryAdmin(BaseAdmin, model=AssetCategory):
     name_plural = "Asset Categories"
     icon = "fa-solid fa-tags"
 
+    can_edit = True
+    can_create = True
+    can_delete = True
+
     column_list = ["id", "name", "code", "created_at"]
 
 
@@ -72,6 +88,10 @@ class AssetClassAdmin(BaseAdmin, model=AssetClass):
     name = "Asset Class"
     name_plural = "Asset Classes"
     icon = "fa-solid fa-layer-group"
+
+    can_edit = True
+    can_create = True
+    can_delete = True
 
     column_list = ["id", "name", "code", "created_at"]
 

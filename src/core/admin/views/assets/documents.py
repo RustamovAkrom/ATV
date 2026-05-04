@@ -8,6 +8,8 @@ class DocumentAdmin(BaseAdmin, model=Document):
     name_plural = "Documents"
     icon = "fa-solid fa-file"
 
+    form_excluded_columns = ["meta"]
+
     column_list = [
         "id",
         "title",

@@ -7,6 +7,10 @@ class UserAdmin(BaseAdmin, model=User):
     name_plural = "Users"
     icon = "fa-solid fa-user"
 
+    can_edit = True
+    can_create = True
+    can_delete = True
+
     column_list = [
         "id",
         "login",

@@ -5,7 +5,8 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from sqlalchemy import JSON, Date, Enum as SAEnum, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Date, Enum as SAEnum, ForeignKey, Integer, Numeric, String, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship, synonym, validates
 
 from db.base import Base, TimestampMixin, UUIDMixing
@@ -106,11 +107,12 @@ class Asset(Base, UUIDMixing, TimestampMixin):
 
     # flexible data
     meta: Mapped[dict] = mapped_column(
-        "metadata", JSON, default=lambda: {}, nullable=False
+        "meta_data",
+        JSONB,
+        nullable=False,
+        default=dict,
+        server_default=text("'{}'::jsonb")
     )
-
-    # versioning
-    version: Mapped[int] = mapped_column(Integer, default=1)
 
     # relationships
     repairs: Mapped[list["Repair"]] = relationship(
@@ -179,4 +181,5 @@ class Asset(Base, UUIDMixing, TimestampMixin):
             raise ValueError("ACTIVE asset cannot have owner_id")
         return value
 
-    __mapper_args__ = {"version_id_col": version}
+    def __repr__(self):
+        return self.name
