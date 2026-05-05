@@ -10,7 +10,7 @@ from api.v1.analytics._utils import (
 )
 from core.cache.decorators import cached
 from core.config import get_settings
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetPermissions
 from schemas.analytics.regions import (
     RegionDetailsOut,
     RegionHeatmapPointOut,
@@ -26,7 +26,7 @@ ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTI
 @router.get(
     "/overview",
     response_model=list[RegionOverviewOut],
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=300, tags=("analytics:regions:overview",))
 async def get_regions_overview(
@@ -48,7 +48,7 @@ async def get_regions_overview(
 @router.get(
     "/{region_id}/details",
     response_model=RegionDetailsOut | None,
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=180, tags=("analytics:regions:details",))
 async def get_region_details(
@@ -90,7 +90,7 @@ async def get_region_details(
 @router.get(
     "/heatmap",
     response_model=list[RegionHeatmapPointOut],
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=300, tags=("analytics:regions:heatmap",))
 async def get_region_heatmap(

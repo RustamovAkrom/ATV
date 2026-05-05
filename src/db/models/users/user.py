@@ -1,20 +1,19 @@
 from datetime import date, datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
-
+from sqlalchemy import Enum as SAEnum
 from db.base import Base, StatusMixin, TimestampMixin, UUIDMixing
 from db.models.assets.asset import Asset
 from db.models.enums import UserStatus
-from db.models.org.rank import Rank
 from db.models.org.region import Region
 from db.models.org.service import Service
 
 if TYPE_CHECKING:
-    from .permission import Role
+    from .permission import Role, Permission
 
 
 class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
@@ -23,47 +22,48 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
 
     login: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    first_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    last_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    first_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    last_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     phone: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
 
     role_id: Mapped[UUID] = mapped_column(
         ForeignKey("roles.id", ondelete="RESTRICT"), nullable=False
     )
-    status: Mapped[str] = mapped_column(
-        String(50), default=UserStatus.ACTIVE.value, nullable=False
+    status: Mapped[UserStatus] = mapped_column(
+        SAEnum(
+            UserStatus,
+            name="user_status",
+            values_callable=lambda enum_cls: [e.value for e in enum_cls]
+        ),
+        default=UserStatus.ACTIVE,
+        nullable=False,
     )
 
-    assigned_region_id: Mapped[Optional[UUID]] = mapped_column(
+    assigned_region_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("regions.id", ondelete="SET NULL"), nullable=True
     )
-    assigned_service_id: Mapped[Optional[UUID]] = mapped_column(
+    assigned_service_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("services.id", ondelete="SET NULL"), nullable=True
     )
-    rank_id: Mapped[Optional[UUID]] = mapped_column(
-        ForeignKey("ranks.id", ondelete="SET NULL"), nullable=True
-    )
 
-    position: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    badge_number: Mapped[Optional[str]] = mapped_column(
+    position: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    badge_number: Mapped[str | None] = mapped_column(
         String(50), unique=True, nullable=True
     )
-    passport_number: Mapped[Optional[str]] = mapped_column(
+    passport_number: Mapped[str | None] = mapped_column(
         String(50), unique=True, nullable=True
     )
 
-    hired_at: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    dismissed_at: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    hired_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    dismissed_at: Mapped[date | None] = mapped_column(Date, nullable=True)
 
-    last_login: Mapped[Optional[datetime]] = mapped_column(
+    last_login: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    last_password_change: Mapped[Optional[datetime]] = mapped_column(
+    last_password_change: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-
-    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
     @validates
     def validate_status(self, value):
@@ -72,12 +72,18 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
     role: Mapped["Role"] = relationship("Role", back_populates="users", lazy="selectin")
     region: Mapped["Region"] = relationship("Region", lazy="selectin")
     service: Mapped["Service"] = relationship("Service", lazy="selectin")
-    rank: Mapped["Rank"] = relationship("Rank", lazy="selectin")
     owned_assets: Mapped[list["Asset"]] = relationship(
         "Asset",
         back_populates="owner",
         lazy="selectin",
         foreign_keys="Asset.owner_id",
+    )
+    # User-specific permissions (overrides)
+    direct_permissions: Mapped[list["Permission"]] = relationship(
+        "Permission",
+        secondary="user_permissions",
+        back_populates="users",
+        lazy="selectin",
     )
 
     @property
@@ -102,6 +108,21 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
 
     @property
     def permissions(self) -> list[str]:
-        return [p.code for p in self.role.permissions] if self.role else []
+        """
+        Returns aggregated permissions from role and user-specific overrides.
+        User permissions take precedence over role permissions.
+        """
+        perm_set = set()
 
-    __mapper_args__ = {"version_id_col": version}
+        # Add role permissions
+        if self.role and self.role.permissions:
+            perm_set.update(p.code for p in self.role.permissions)
+
+        # Add user-specific permissions (overrides)
+        if self.direct_permissions:
+            perm_set.update(p.code for p in self.direct_permissions)
+
+        return list(perm_set)
+
+    def __repr__(self):
+        return self.login

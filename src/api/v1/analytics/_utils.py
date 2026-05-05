@@ -1,6 +1,6 @@
 import time
 from collections.abc import Awaitable, Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, Request
 from loguru import logger
@@ -24,9 +24,9 @@ def parse_optional_datetime(value: str | None) -> datetime | None:
 
     # Normalize naive inputs to UTC to keep analytics ranges deterministic.
     if parsed.tzinfo is None:
-        return parsed.replace(tzinfo=timezone.utc)
+        return parsed.replace(tzinfo=UTC)
 
-    return parsed.astimezone(timezone.utc)
+    return parsed.astimezone(UTC)
 
 
 def sanitize_search(value: str | None) -> str | None:

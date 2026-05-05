@@ -3,7 +3,6 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
-from typing import List
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -145,7 +144,7 @@ class AssetAssignmentPageOut(BaseModel):
     Includes list + aggregates for dashboards.
     """
 
-    items: List[AssetAssignmentDetailOut]
+    items: list[AssetAssignmentDetailOut]
 
     # pagination
     total: int

@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 
-from api.dependencies.auth import get_auth_service
+from api.dependencies.auth.auth import get_auth_service
 from core.config import get_settings
 from core.security.auth.dependencies import get_current_user
 from core.slowapi import limiter
 from schemas.auth import CurrentUserSchema, RefreshRequestSchema, TokenResponseSchema
-from services.auth_service import AuthService
+from services.auth.auth_service import AuthService
+from schemas.common import StatusResponse
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 settings = get_settings()
@@ -62,22 +63,22 @@ async def refresh(
     return tokens
 
 
-@router.post("/logout")
+@router.post("/logout", response_model=StatusResponse)
 async def logout(
     request: Request,
     data: RefreshRequestSchema,
     response: Response,
-    current_user: CurrentUserSchema = Depends(get_current_user),
+    _: CurrentUserSchema = Depends(get_current_user),
     service: AuthService = Depends(get_auth_service),
 ):
     await service.logout(request, data.refresh_token)
 
     response.delete_cookie("access_token", path="/")
 
-    return {"status": "ok"}
+    return StatusResponse(status="ok", message="Logged out successfully")
 
 
-@router.post("/logout-all")
+@router.post("/logout-all", response_model=StatusResponse)
 async def logout_all(
     request: Request,
     response: Response,
@@ -86,4 +87,4 @@ async def logout_all(
 ):
     await service.logout_all(request, current_user.id)
     response.delete_cookie("access_token", path="/")
-    return {"status": "ok"}
+    return StatusResponse(status="ok", message="All sessions logged out")

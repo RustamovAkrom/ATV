@@ -14,13 +14,13 @@ if TYPE_CHECKING:
 class Region(Base, UUIDMixing, TimestampMixin):
     __tablename__ = "regions"
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    parent_id: Mapped[Optional[UUID]] = mapped_column(
+    parent_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("regions.id", ondelete="SET NULL")
     )
 
-    latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    geojson: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    geojson: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     children: Mapped[list["Region"]] = relationship(
         "Region", back_populates="parent", lazy="selectin"

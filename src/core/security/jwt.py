@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import jwt
@@ -12,7 +12,7 @@ settings = get_settings()
 
 
 def _base_payload(user_id: str, token_type: str) -> dict[str, object]:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     return {
         "sub": str(user_id),
@@ -25,7 +25,7 @@ def _base_payload(user_id: str, token_type: str) -> dict[str, object]:
 
 
 def create_access_token(user_id: str, session_id: str) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     payload = _base_payload(user_id, "access")
     payload["exp"] = int(
@@ -37,7 +37,7 @@ def create_access_token(user_id: str, session_id: str) -> str:
 
 
 def create_refresh_token(user_id: str):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     payload = _base_payload(user_id, "refresh")
     payload["exp"] = int(
@@ -63,8 +63,11 @@ async def decode_token(
             },
         )
 
-        if expected_type and raw.get("type") != expected_type:
-            raise InvalidToken()
+        if not expected_type:
+            raise InvalidToken("Token type must be enforced")
+
+        if raw.get("type") != expected_type:
+            raise InvalidToken("Invalid token type")
 
         return TokenPayloadSchema(
             sub=UUID(raw["sub"]),
@@ -77,8 +80,8 @@ async def decode_token(
             session_id=UUID(raw["session_id"]) if raw.get("session_id") else None,
         )
 
-    except jwt.ExpiredSignatureError:
-        raise TokenExpired()
+    except jwt.ExpiredSignatureError as e:
+        raise TokenExpired() from e
 
-    except (jwt.PyJWTError, ValidationError, KeyError, TypeError, ValueError):
-        raise InvalidToken()
+    except (jwt.PyJWTError, ValidationError, KeyError, TypeError, ValueError) as e:
+        raise InvalidToken("Invalid token") from e

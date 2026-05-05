@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from decimal import Decimal
-from typing import List
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -65,7 +64,7 @@ class AssetTransferOut(BaseModel):
 
 
 class AssetTransferPageOut(BaseModel):
-    items: List[AssetTransferOut]
+    items: list[AssetTransferOut]
 
     total: int
     page: int

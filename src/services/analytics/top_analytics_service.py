@@ -6,7 +6,7 @@ from schemas.analytics.top import (
     TopServiceAnalyticsOut,
     TopUserAnalyticsOut,
 )
-from schemas.auth import CurrentUserSchema
+from schemas.auth.auth import CurrentUserSchema
 
 
 class TopAnalyticsService:
@@ -23,7 +23,8 @@ class TopAnalyticsService:
 
     @staticmethod
     def _filter_email(email: str, current_user: CurrentUserSchema) -> str:
-        # Limit sensitive fields to privileged roles without changing the response schema.
+        # Limit sensitive fields to privileged roles without
+        # changing the response schema.
         if current_user.has_role(UserRole.ADMIN.value, UserRole.SUPERADMIN.value):
             return email
         return ""

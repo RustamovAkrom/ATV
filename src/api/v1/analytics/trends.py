@@ -8,7 +8,7 @@ from api.v1.analytics._utils import (
 )
 from core.cache.decorators import cached
 from core.config import get_settings
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetPermissions
 from schemas.analytics.trends import RepairTrendSeriesOut, TrendInterval, TrendSeriesOut
 from services.analytics.trend_analytics_service import TrendAnalyticsService
 
@@ -18,7 +18,7 @@ ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTI
 
 
 @router.get(
-    "/assignments", response_model=TrendSeriesOut, dependencies=[presets.CanViewAssets]
+    "/assignments", response_model=TrendSeriesOut, dependencies=[Depends(AssetPermissions.CanViewAssets)]
 )
 @cached(ttl=300, tags=("analytics:trends:assignments",))
 async def get_assignment_trends(
@@ -40,7 +40,7 @@ async def get_assignment_trends(
 
 
 @router.get(
-    "/transfers", response_model=TrendSeriesOut, dependencies=[presets.CanViewAssets]
+    "/transfers", response_model=TrendSeriesOut, dependencies=[Depends(AssetPermissions.CanViewAssets)]
 )
 @cached(ttl=300, tags=("analytics:trends:transfers",))
 async def get_transfer_trends(
@@ -64,7 +64,7 @@ async def get_transfer_trends(
 @router.get(
     "/repairs",
     response_model=RepairTrendSeriesOut,
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=300, tags=("analytics:trends:repairs",))
 async def get_repair_trends(

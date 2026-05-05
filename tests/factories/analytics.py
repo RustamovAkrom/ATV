@@ -140,6 +140,10 @@ async def create_asset(
     purchase_cost: Decimal | int = 1000,
 ) -> Asset:
     suffix = uuid4().hex[:6]
+    normalized_status = status
+    if owner and status == AssetStatus.ACTIVE:
+        normalized_status = AssetStatus.ASSIGNED
+
     asset = Asset(
         name=f"{name}-{suffix}",
         type="laptop",
@@ -149,7 +153,7 @@ async def create_asset(
         service_id=graph["service"].id,
         current_warehouse_id=graph["warehouse"].id,
         owner_id=owner.id if owner else None,
-        status=status,
+        status=normalized_status,
         asset_tag=f"AT-{suffix}",
         serial_number=f"SN-{uuid4().hex[:10]}",
         condition_percent=95,

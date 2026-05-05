@@ -1,5 +1,5 @@
 import time
-from typing import Any, Optional, Protocol
+from typing import Any, Protocol
 
 from core.redis import redis_client
 
@@ -16,7 +16,7 @@ class CacheBackend(Protocol):
 
 class MemoryBackend:
     def __init__(self):
-        self.storage: dict[str, tuple[Any, Optional[float]]] = {}
+        self.storage: dict[str, tuple[Any, float | None]] = {}
 
     async def get(self, key: str) -> str | None:
         data = self.storage.get(key)

@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IIB ATV | Audit Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/event-source-polyfill@1.0.31/src/eventsource.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #07111f;
+            --bg-2: #0b1629;
+            --panel: rgba(16, 24, 43, 0.92);
+            --panel-2: rgba(20, 30, 52, 0.92);
+            --border: rgba(64, 80, 112, 0.42);
+            --text: #ecf3ff;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-2: #60a5fa;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --critical: #ef4444;
+            --info: #3b82f6;
+            --shadow: 0 18px 45px rgba(0, 0, 0, 0.38);
+            --radius-xl: 24px;
+            --radius-lg: 18px;
+            --radius-md: 14px;
+            --radius-sm: 10px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top, rgba(56, 189, 248, 0.14), transparent 30%),
+                radial-gradient(circle at 20% 20%, rgba(96, 165, 250, 0.12), transparent 35%),
+                linear-gradient(180deg, var(--bg-2), var(--bg));
+            overflow: hidden;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .scrollbar::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        .scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.35);
+            border-radius: 999px;
+        }
+
+        .scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .btn,
+        .input,
+        .select {
+            border: 1px solid var(--border);
+            outline: none;
+            transition: 0.18s ease;
+        }
+
+        .btn {
+            appearance: none;
+            background: rgba(15, 23, 42, 0.96);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 11px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(56, 189, 248, 0.65);
+            background: rgba(22, 32, 58, 0.98);
+        }
+
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.65;
+            transform: none;
+        }
+
+        .btn-primary {
+            border: none;
+            color: #02101b;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        }
+
+        .btn-danger {
+            color: #fecaca;
+            border-color: rgba(239, 68, 68, 0.35);
+            background: rgba(40, 18, 24, 0.95);
+        }
+
+        .btn-ghost {
+            background: transparent;
+        }
+
+        .input,
+        .select {
+            width: 100%;
+            border-radius: 12px;
+            background: rgba(12, 19, 34, 0.96);
+            color: var(--text);
+            padding: 12px 14px;
+            font-size: 14px;
+        }
+
+        .input:focus,
+        .select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.16);
+        }
+
+        .login-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: grid;
+            place-items: center;
+            padding: 22px;
+            background:
+                radial-gradient(circle at top, rgba(56, 189, 248, 0.13), transparent 32%),
+                linear-gradient(180deg, rgba(4, 10, 18, 0.96), rgba(4, 10, 18, 0.99));
+        }
+
+        .login-card {
+            width: min(520px, 100%);
+            background: rgba(16, 24, 43, 0.95);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow);
+            padding: 28px;
+            backdrop-filter: blur(18px);
+        }
+
+        .login-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            margin-bottom: 10px;
+        }
+
+        .login-title span {
+            color: var(--accent);
+        }
+
+        .login-subtitle {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .login-grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        .field {
+            display: grid;
+            gap: 8px;
+        }
+
+        .field label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            font-weight: 800;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--muted);
+            user-select: none;
+        }
+
+        .login-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+
+        .login-message {
+            min-height: 20px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .login-message.error {
+            color: #fecaca;
+        }
+
+        .login-message.ok {
+            color: #bbf7d0;
+        }
+
+        .app {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        header {
+            height: 68px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            background: rgba(16, 24, 43, 0.92);
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+            backdrop-filter: blur(14px);
+            z-index: 20;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            white-space: nowrap;
+        }
+
+        .brand span {
+            color: var(--accent);
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: rgba(10, 16, 29, 0.92);
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #64748b;
+        }
+
+        .badge.online .dot {
+            background: var(--success);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.55);
+        }
+
+        .badge.warn .dot {
+            background: var(--warning);
+        }
+
+        .badge.crit .dot {
+            background: var(--critical);
+        }
+
+        .main {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            min-height: 0;
+            background: rgba(16, 24, 43, 0.88);
+            border-right: 1px solid var(--border);
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .content {
+            min-width: 0;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: rgba(8, 13, 25, 0.74);
+        }
+
+        .panel {
+            background: rgba(12, 19, 34, 0.92);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 14px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .stat-card {
+            background: rgba(12, 19, 34, 0.92);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 14px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            font-weight: 900;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 950;
+            letter-spacing: -0.05em;
+            line-height: 1;
+        }
+
+        .stat-sub {
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+
+        .filter-grid,
+        .legend,
+        .selected-box {
+            display: grid;
+            gap: 12px;
+        }
+
+        .filter-row {
+            display: grid;
+            gap: 8px;
+        }
+
+        .filter-row label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--muted);
+            font-weight: 800;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(10, 16, 29, 0.74);
+            border: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        .legend-item .k {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 800;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.success {
+            background: var(--success);
+        }
+
+        .legend-dot.warning {
+            background: var(--warning);
+        }
+
+        .legend-dot.critical {
+            background: var(--critical);
+        }
+
+        .legend-dot.info {
+            background: var(--info);
+        }
+
+        .selected-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .selected-title {
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+        }
+
+        .selected-meta {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .selected-pre {
+            margin: 0;
+            padding: 12px;
+            border-radius: 12px;
+            background: #07101f;
+            border: 1px solid var(--border);
+            color: #bde3ff;
+            font-size: 12px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 280px;
+            overflow: auto;
+        }
+
+        .content-top {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(16, 24, 43, 0.86);
+            backdrop-filter: blur(14px);
+        }
+
+        .content-title {
+            font-size: 18px;
+            font-weight: 950;
+            letter-spacing: -0.03em;
+        }
+
+        .content-sub {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .content-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .logs {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 18px;
+            display: grid;
+            gap: 10px;
+            scroll-behavior: smooth;
+        }
+
+        .empty {
+            min-height: 100%;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            color: var(--muted);
+            padding: 30px;
+        }
+
+        .log-card {
+            position: relative;
+            background: rgba(12, 19, 34, 0.95);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 14px 16px;
+            cursor: pointer;
+            overflow: hidden;
+            transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+        }
+
+        .log-card:hover {
+            transform: translateY(-1px);
+            border-color: rgba(56, 189, 248, 0.58);
+            background: rgba(17, 26, 48, 0.96);
+        }
+
+        .log-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--info);
+        }
+
+        .log-card.success::before {
+            background: var(--success);
+        }
+
+        .log-card.warning::before {
+            background: var(--warning);
+        }
+
+        .log-card.critical::before {
+            background: var(--critical);
+        }
+
+        .log-card.info::before {
+            background: var(--info);
+        }
+
+        .log-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .log-left {
+            min-width: 0;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .method-pill {
+            min-width: 60px;
+            text-align: center;
+            padding: 5px 9px;
+            border-radius: 9px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            font-size: 11px;
+            font-weight: 950;
+            letter-spacing: 0.06em;
+        }
+
+        .path {
+            min-width: 0;
+            flex: 1;
+            color: var(--accent);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            font-size: 13px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .status-pill {
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 950;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+
+        .status-pill.success {
+            color: #bbf7d0;
+            background: rgba(16, 185, 129, 0.12);
+            border-color: rgba(16, 185, 129, 0.22);
+        }
+
+        .status-pill.warning {
+            color: #fde68a;
+            background: rgba(245, 158, 11, 0.12);
+            border-color: rgba(245, 158, 11, 0.22);
+        }
+
+        .status-pill.critical {
+            color: #fecaca;
+            background: rgba(239, 68, 68, 0.12);
+            border-color: rgba(239, 68, 68, 0.22);
+        }
+
+        .status-pill.info {
+            color: #bfdbfe;
+            background: rgba(59, 130, 246, 0.12);
+            border-color: rgba(59, 130, 246, 0.22);
+        }
+
+        .log-body {
+            display: grid;
+            gap: 10px;
+        }
+
+        .log-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .log-message {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .log-message .muted {
+            color: var(--muted);
+        }
+
+        .log-preview {
+            display: none;
+            margin: 0;
+            padding: 12px;
+            border-radius: 12px;
+            background: #07101f;
+            border: 1px solid var(--border);
+            color: #bde3ff;
+            font-size: 12px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 280px;
+            overflow: auto;
+        }
+
+        .log-card.open .log-preview {
+            display: block;
+        }
+
+        .toast {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            min-width: 280px;
+            max-width: min(520px, calc(100vw - 36px));
+            background: rgba(12, 19, 34, 0.97);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            border-radius: 14px;
+            padding: 14px 16px;
+            z-index: 1200;
+            transform: translateY(18px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .toast.success {
+            border-color: rgba(16, 185, 129, 0.35);
+        }
+
+        .toast.warning {
+            border-color: rgba(245, 158, 11, 0.35);
+        }
+
+        .toast.critical {
+            border-color: rgba(239, 68, 68, 0.35);
+        }
+
+        .toast.info {
+            border-color: rgba(56, 189, 248, 0.35);
+        }
+
+        .toast-title {
+            font-weight: 950;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .toast-text {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 1100px) {
+
+            html,
+            body {
+                overflow: auto;
+            }
+
+            .app {
+                height: auto;
+                min-height: 100vh;
+            }
+
+            .main {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                max-height: 54vh;
+            }
+
+            .content {
+                min-height: 60vh;
+            }
+        }
+
+        @media (max-width: 720px) {
+            body {
+                overflow: auto;
+            }
+
+            header {
+                height: auto;
+                padding: 14px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .topbar {
+                width: 100%;
+            }
+
+            .content-top {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .login-card {
+                padding: 22px;
+                border-radius: 20px;
+            }
+
+            .login-title {
+                font-size: 22px;
+            }
+
+            .content,
+            .sidebar {
+                min-height: auto;
+            }
+
+            .logs {
+                padding: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="login-screen" class="login-screen">
+        <div class="login-card">
+            <div class="login-title">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                IIB ATV <span>SECURE AUDIT</span>
+            </div>
+            <div class="login-subtitle">
+                Enter your credentials to open the live audit dashboard. The interface supports HTTP status coloring,
+                message previews, filters, pause/resume, and JSON export.
+            </div>
+
+            <form id="login-form" class="login-grid">
+                <div class="field">
+                    <label for="login-input">Login</label>
+                    <input id="login-input" class="input" type="text" autocomplete="username" placeholder="Enter login"
+                        required />
+                </div>
+
+                <div class="field">
+                    <label for="password-input">Password</label>
+                    <input id="password-input" class="input" type="password" autocomplete="current-password"
+                        placeholder="Enter password" required />
+                </div>
+
+                <label class="checkbox-row">
+                    <input id="remember-me" type="checkbox" />
+                    Remember token on this device
+                </label>
+
+                <div class="login-actions">
+                    <button id="login-btn" class="btn btn-primary" type="submit">Login & Open Dashboard</button>
+                    <button id="login-clear-token" class="btn btn-ghost" type="button">Forget token</button>
+                </div>
+
+                <div id="login-message" class="login-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="app" class="app hidden">
+        <header>
+            <div class="brand">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                IIB ATV <span>AUDIT DASHBOARD</span>
+            </div>
+
+            <div class="topbar">
+                <div id="connection-badge" class="badge">
+                    <span class="dot"></span>
+                    <span id="connection-text">Disconnected</span>
+                </div>
+                <div id="auth-badge" class="badge">
+                    <span class="dot"></span>
+                    <span id="auth-text">Not authenticated</span>
+                </div>
+                <button class="btn btn-ghost" id="refresh-btn" type="button">Reconnect</button>
+                <button class="btn btn-danger" id="logout-btn" type="button">Logout</button>
+            </div>
+        </header>
+
+        <div class="main">
+            <aside class="sidebar scrollbar">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total</div>
+                        <div id="stat-total" class="stat-value">0</div>
+                        <div class="stat-sub">All received events</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Success</div>
+                        <div id="stat-success" class="stat-value" style="color: var(--success)">0</div>
+                        <div class="stat-sub">2xx responses</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Warnings</div>
+                        <div id="stat-warning" class="stat-value" style="color: var(--warning)">0</div>
+                        <div class="stat-sub">4xx responses</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Critical</div>
+                        <div id="stat-critical" class="stat-value" style="color: var(--critical)">0</div>
+                        <div class="stat-sub">5xx responses</div>
+                    </div>
+
+                    <div class="stat-card" style="grid-column: 1 / -1;">
+                        <div class="stat-label">Live RPS</div>
+                        <div id="stat-rps" class="stat-value" style="color: var(--accent)">0</div>
+                        <div class="stat-sub">Sliding 1-second window</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="section-title">Server-side filters</div>
+                    <div class="filter-grid">
+                        <div class="filter-row">
+                            <label for="f-level">Severity</label>
+                            <select id="f-level" class="select">
+                                <option value="">All severities</option>
+                                <option value="info">Info</option>
+                                <option value="warning">Warning</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-row">
+                            <label for="f-method">Method</label>
+                            <select id="f-method" class="select">
+                                <option value="">All methods</option>
+                                <option>GET</option>
+                                <option>POST</option>
+                                <option>PUT</option>
+                                <option>PATCH</option>
+                                <option>DELETE</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-row">
+                            <label for="f-status-min">Minimum status</label>
+                            <input id="f-status-min" class="input" type="number" min="100" max="599"
+                                placeholder="e.g. 400" />
+                        </div>
+
+                        <div class="filter-row">
+                            <label for="f-user">User ID</label>
+                            <input id="f-user" class="input" type="text" placeholder="UUID" />
+                        </div>
+
+                        <div class="filter-row">
+                            <label for="f-request">Request ID</label>
+                            <input id="f-request" class="input" type="text" placeholder="UUID" />
+                        </div>
+
+                        <div class="filter-row">
+                            <label for="f-search">Client search</label>
+                            <input id="f-search" class="input" type="text" placeholder="Search path, ip, or message" />
+                        </div>
+
+                        <div class="filter-actions">
+                            <button id="apply-filters" class="btn btn-primary" type="button">Apply filters</button>
+                            <button id="reset-filters" class="btn" type="button">Reset</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="section-title">HTTP code guide</div>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="k"><span class="legend-dot success"></span>2xx</div><span>Success</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="k"><span class="legend-dot warning"></span>4xx</div><span>Client warning</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="k"><span class="legend-dot critical"></span>5xx</div><span>Critical error</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="k"><span class="legend-dot info"></span>422</div><span>Validation issue</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="k"><span class="legend-dot warning"></span>429</div><span>Rate limited</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="section-title">Selected event</div>
+                    <div class="selected-box">
+                        <div class="selected-heading">
+                            <div class="selected-title" id="selected-title">No event selected</div>
+                            <div class="status-pill info" id="selected-status">—</div>
+                        </div>
+                        <div class="selected-meta" id="selected-meta">
+                            Click any event to inspect the full JSON payload and the status explanation.
+                        </div>
+                        <pre id="selected-json" class="selected-pre">{}</pre>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="content">
+                <div class="content-top">
+                    <div class="left">
+                        <div class="content-title">Live Audit Stream</div>
+                        <div class="content-sub" id="content-subtitle">Waiting for connection...</div>
+                    </div>
+
+                    <div class="content-actions">
+                        <button id="pause-btn" class="btn" type="button">Pause</button>
+                        <button id="clear-btn" class="btn btn-danger" type="button">Clear</button>
+                        <button id="export-btn" class="btn" type="button">Export JSON</button>
+                    </div>
+                </div>
+
+                <div id="logs" class="logs scrollbar">
+                    <div class="empty" id="empty-state">
+                        <div>
+                            <div style="font-size: 18px; font-weight: 900; margin-bottom: 8px;">No events yet</div>
+                            <div style="color: var(--muted);">Log in, connect, and events will appear here in real time.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">
+        <div id="toast-title" class="toast-title">Notice</div>
+        <div id="toast-text" class="toast-text"></div>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:8000";
+        const AUTH_TOKEN_KEY = "iib_atv_access_token";
+
+        const state = {
+            token: null,
+            remember: false,
+            es: null,
+            paused: false,
+            reconnectTimer: null,
+            reconnectAttempts: 0,
+            logs: [],
+            counters: { total: 0, success: 0, warning: 0, critical: 0, rps: 0 },
+        };
+
+        const el = {
+            loginScreen: document.getElementById("login-screen"),
+            app: document.getElementById("app"),
+            loginForm: document.getElementById("login-form"),
+            loginInput: document.getElementById("login-input"),
+            passwordInput: document.getElementById("password-input"),
+            rememberMe: document.getElementById("remember-me"),
+            loginMessage: document.getElementById("login-message"),
+            loginBtn: document.getElementById("login-btn"),
+            loginClearToken: document.getElementById("login-clear-token"),
+
+            connectionBadge: document.getElementById("connection-badge"),
+            connectionText: document.getElementById("connection-text"),
+            authBadge: document.getElementById("auth-badge"),
+            authText: document.getElementById("auth-text"),
+            refreshBtn: document.getElementById("refresh-btn"),
+            logoutBtn: document.getElementById("logout-btn"),
+
+            statTotal: document.getElementById("stat-total"),
+            statSuccess: document.getElementById("stat-success"),
+            statWarning: document.getElementById("stat-warning"),
+            statCritical: document.getElementById("stat-critical"),
+            statRps: document.getElementById("stat-rps"),
+
+            fLevel: document.getElementById("f-level"),
+            fMethod: document.getElementById("f-method"),
+            fStatusMin: document.getElementById("f-status-min"),
+            fUser: document.getElementById("f-user"),
+            fRequest: document.getElementById("f-request"),
+            fSearch: document.getElementById("f-search"),
+            applyFilters: document.getElementById("apply-filters"),
+            resetFilters: document.getElementById("reset-filters"),
+
+            pauseBtn: document.getElementById("pause-btn"),
+            clearBtn: document.getElementById("clear-btn"),
+            exportBtn: document.getElementById("export-btn"),
+
+            logs: document.getElementById("logs"),
+            emptyState: document.getElementById("empty-state"),
+            contentSubtitle: document.getElementById("content-subtitle"),
+
+            selectedTitle: document.getElementById("selected-title"),
+            selectedStatus: document.getElementById("selected-status"),
+            selectedMeta: document.getElementById("selected-meta"),
+            selectedJson: document.getElementById("selected-json"),
+
+            toast: document.getElementById("toast"),
+            toastTitle: document.getElementById("toast-title"),
+            toastText: document.getElementById("toast-text"),
+        };
+
+        function escapeHtml(str) {
+            return String(str ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function formatTimestamp(value) {
+            if (value === null || value === undefined || value === "") return "—";
+            const date = typeof value === "number"
+                ? new Date(value < 1e12 ? value * 1000 : value)
+                : new Date(value);
+            if (Number.isNaN(date.getTime())) return String(value);
+            return date.toLocaleString();
+        }
+
+        function statusInfo(code) {
+            const status = Number(code || 0);
+            if (status >= 500) {
+                return { severity: "critical", label: "Critical error", message: "Server-side failure. Check backend logs immediately." };
+            }
+            if (status === 429) {
+                return { severity: "warning", label: "Rate limited", message: "Request throttled. The backend is protecting itself." };
+            }
+            if (status === 422) {
+                return { severity: "warning", label: "Validation error", message: "Request payload or filters were rejected by validation." };
+            }
+            if (status === 403) {
+                return { severity: "warning", label: "Forbidden", message: "Authenticated, but the user does not have access." };
+            }
+            if (status === 401) {
+                return { severity: "warning", label: "Unauthorized", message: "Token is missing, expired, or invalid." };
+            }
+            if (status >= 400) {
+                return { severity: "warning", label: "Client warning", message: "Client-side issue that should be reviewed." };
+            }
+            if (status >= 200 && status < 300) {
+                return { severity: "success", label: "Success", message: "Request completed successfully." };
+            }
+            return { severity: "info", label: "Info", message: "Non-standard status or informational event." };
+        }
+
+        function setToast(title, text, kind = "info") {
+            el.toast.className = `toast show ${kind}`;
+            el.toastTitle.textContent = title;
+            el.toastText.textContent = text;
+            clearTimeout(setToast._timer);
+            setToast._timer = setTimeout(() => { el.toast.className = "toast"; }, 3200);
+        }
+
+        function setConnectionUI(stateName, online = false) {
+            el.connectionBadge.className = `badge ${online ? "online" : ""} ${stateName === "warn" ? "warn" : ""} ${stateName === "crit" ? "crit" : ""}`;
+            el.connectionText.textContent =
+                stateName === "live" ? "Streaming live" :
+                    stateName === "connecting" ? "Connecting..." :
+                        stateName === "warn" ? "Connection unstable" :
+                            "Disconnected";
+        }
+
+        function setAuthUI(authenticated) {
+            el.authBadge.className = authenticated ? "badge online" : "badge";
+            el.authText.textContent = authenticated ? "Authenticated" : "Not authenticated";
+        }
+
+        function getStoredToken() {
+            return localStorage.getItem(AUTH_TOKEN_KEY) || sessionStorage.getItem(AUTH_TOKEN_KEY) || "";
+        }
+
+        function saveToken(token, remember) {
+            localStorage.removeItem(AUTH_TOKEN_KEY);
+            sessionStorage.removeItem(AUTH_TOKEN_KEY);
+            if (remember) localStorage.setItem(AUTH_TOKEN_KEY, token);
+            else sessionStorage.setItem(AUTH_TOKEN_KEY, token);
+        }
+
+        function clearToken() {
+            localStorage.removeItem(AUTH_TOKEN_KEY);
+            sessionStorage.removeItem(AUTH_TOKEN_KEY);
+        }
+
+        function extractToken(data) {
+            return data?.access_token || data?.token || data?.data?.access_token || data?.data?.token || "";
+        }
+
+        function showLoginMessage(text, kind = "") {
+            el.loginMessage.textContent = text || "";
+            el.loginMessage.className = `login-message ${kind}`.trim();
+        }
+
+        function showLogin() {
+            el.loginScreen.classList.remove("hidden");
+            el.app.classList.add("hidden");
+            setAuthUI(false);
+            setConnectionUI("crit", false);
+        }
+
+        function showApp() {
+            el.loginScreen.classList.add("hidden");
+            el.app.classList.remove("hidden");
+        }
+
+        function closeStream() {
+            if (state.es) {
+                try { state.es.close(); } catch (_) { }
+                state.es = null;
+            }
+            if (state.reconnectTimer) {
+                clearTimeout(state.reconnectTimer);
+                state.reconnectTimer = null;
+            }
+        }
+
+        function resetCounters() {
+            state.counters = { total: 0, success: 0, warning: 0, critical: 0, rps: 0 };
+            renderCounters();
+        }
+
+        function renderCounters() {
+            el.statTotal.textContent = state.counters.total;
+            el.statSuccess.textContent = state.counters.success;
+            el.statWarning.textContent = state.counters.warning;
+            el.statCritical.textContent = state.counters.critical;
+            el.statRps.textContent = state.counters.rps;
+        }
+
+        function updateSubtitle() {
+            const activeFilters = [];
+            if (el.fLevel.value) activeFilters.push(`severity=${el.fLevel.value}`);
+            if (el.fMethod.value) activeFilters.push(`method=${el.fMethod.value}`);
+            if (el.fStatusMin.value) activeFilters.push(`status>=${el.fStatusMin.value}`);
+            if (el.fUser.value) activeFilters.push(`user=${el.fUser.value}`);
+            if (el.fRequest.value) activeFilters.push(`request=${el.fRequest.value}`);
+            if (el.fSearch.value) activeFilters.push(`search="${el.fSearch.value}"`);
+
+            el.contentSubtitle.textContent = activeFilters.length
+                ? `Live SSE stream • ${activeFilters.join(" • ")}`
+                : "Live SSE stream • no filters applied";
+        }
+
+        function currentServerFilters() {
+            const params = new URLSearchParams();
+            if (el.fLevel.value.trim()) params.set("level", el.fLevel.value.trim());
+            if (el.fMethod.value.trim()) params.set("method", el.fMethod.value.trim());
+            if (el.fStatusMin.value.trim()) params.set("status_min", el.fStatusMin.value.trim());
+            if (el.fUser.value.trim()) params.set("user_id", el.fUser.value.trim());
+            if (el.fRequest.value.trim()) params.set("request_id", el.fRequest.value.trim());
+            return params;
+        }
+
+        function currentClientSearch() {
+            return el.fSearch.value.trim().toLowerCase();
+        }
+
+        function matchesClientFilters(log) {
+            const q = currentClientSearch();
+            if (!q) return true;
+
+            const haystack = [
+                log.method,
+                log.path,
+                log.user_id,
+                log.request_id,
+                log.ip,
+                log.user_agent,
+                log.query,
+                log.message,
+                log.level,
+                String(log.status_code ?? ""),
+            ].filter(Boolean).join(" ").toLowerCase();
+
+            return haystack.includes(q);
+        }
+
+        function clearLogs(keepState = false) {
+            state.logs = [];
+            el.logs.innerHTML = "";
+            el.logs.appendChild(el.emptyState);
+
+            if (!keepState) {
+                resetCounters();
+                el.selectedTitle.textContent = "No event selected";
+                el.selectedStatus.textContent = "—";
+                el.selectedStatus.className = "status-pill info";
+                el.selectedMeta.textContent = "Click any event to inspect the full JSON payload and the status explanation.";
+                el.selectedJson.textContent = "{}";
+            }
+        }
+
+        function updateSelectedEvent(log) {
+            const info = statusInfo(log.status_code);
+            el.selectedTitle.textContent = `${String(log.method || "UNK").toUpperCase()} ${log.path || ""}`.trim();
+            el.selectedStatus.textContent = `${log.status_code ?? "—"}`;
+            el.selectedStatus.className = `status-pill ${info.severity}`;
+            el.selectedMeta.textContent = `${info.label} • ${info.message} • ${formatTimestamp(log.timestamp || Date.now())}`;
+            el.selectedJson.textContent = JSON.stringify(log, null, 2);
+        }
+
+        function createLogCard(log) {
+            const info = statusInfo(log.status_code);
+            const card = document.createElement("article");
+            card.className = `log-card ${info.severity}`;
+
+            const method = escapeHtml(String(log.method || "UNK").toUpperCase());
+            const path = escapeHtml(log.path || "/");
+            const userId = escapeHtml(log.user_id || "anonymous");
+            const requestId = escapeHtml(log.request_id || "—");
+            const ip = escapeHtml(log.ip || "—");
+            const latency = escapeHtml(`${log.latency_ms ?? "—"}ms`);
+            const userAgent = escapeHtml(log.user_agent || "—");
+            const query = escapeHtml(log.query || "—");
+            const time = escapeHtml(formatTimestamp(log.timestamp || Date.now()));
+
+            card.innerHTML = `
+        <div class="log-head">
+          <div class="log-left">
+            <span class="method-pill">${method}</span>
+            <div class="path">${path}</div>
+          </div>
+          <span class="status-pill ${info.severity}">${log.status_code ?? "—"}</span>
+        </div>
+
+        <div class="log-body">
+          <div class="log-meta">
+            <span>🕒 ${time}</span>
+            <span>🌐 ${ip}</span>
+            <span>⚡ ${latency}</span>
+            <span>👤 ${userId}</span>
+            <span>🧾 ${requestId}</span>
+          </div>
+
+          <div class="log-message">
+            <strong>${escapeHtml(info.label)}:</strong>
+            <span class="muted">${escapeHtml(info.message)}</span>
+          </div>
+
+          <div class="log-meta">
+            <span>Agent: ${userAgent}</span>
+            <span>Query: ${query}</span>
+          </div>
+
+          <pre class="log-preview"></pre>
+        </div>
+      `;
+
+            card.querySelector(".log-preview").textContent = JSON.stringify(log, null, 2);
+
+            card.addEventListener("click", () => {
+                card.classList.toggle("open");
+                updateSelectedEvent(log);
+            });
+
+            return card;
+        }
+
+        function renderLogs() {
+            const visible = state.logs.filter(matchesClientFilters);
+            el.logs.innerHTML = "";
+
+            if (visible.length === 0) {
+                el.logs.appendChild(el.emptyState);
+                return;
+            }
+
+            visible.forEach((log) => el.logs.appendChild(createLogCard(log)));
+        }
+
+        function pushLog(log) {
+            state.logs.push(log);
+            state.counters.total++;
+
+            const status = Number(log.status_code || 0);
+            if (status >= 500) state.counters.critical++;
+            else if (status >= 400) state.counters.warning++;
+            else if (status >= 200 && status < 300) state.counters.success++;
+
+            state.counters.rps++;
+            renderCounters();
+
+            if (!state.paused && matchesClientFilters(log)) {
+                if (el.logs.contains(el.emptyState)) el.logs.innerHTML = "";
+                el.logs.appendChild(createLogCard(log));
+
+                if (el.logs.children.length > 300) {
+                    el.logs.removeChild(el.logs.firstElementChild);
+                }
+
+                el.logs.scrollTop = el.logs.scrollHeight;
+            }
+        }
+
+        function parseLoginError(response, data) {
+            if (response.status === 401) return "Invalid login or password.";
+            if (response.status === 403) return "Access is forbidden for this account.";
+            if (response.status === 422) return "Validation error. Check login/password format.";
+            if (response.status === 429) return "Too many attempts. Try again later.";
+            if (response.status >= 500) return "Authentication service error.";
+            return data?.detail || data?.message || `Login failed with status ${response.status}.`;
+        }
+
+        async function loginAndConnect(event) {
+            event.preventDefault();
+
+            const login = el.loginInput.value.trim();
+            const password = el.passwordInput.value;
+
+            if (!login || !password) {
+                showLoginMessage("Login and password are required.", "error");
+                return;
+            }
+
+            el.loginBtn.disabled = true;
+            showLoginMessage("Authenticating...", "");
+
+            try {
+                const formData = new URLSearchParams();
+                formData.append("username", login);
+                formData.append("password", password);
+
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    body: formData,
+                });
+
+                let data = {};
+                try {
+                    data = await response.json();
+                } catch (_) { }
+
+                if (!response.ok) {
+                    const msg = parseLoginError(response, data);
+                    showLoginMessage(msg, "error");
+                    setToast("Login failed", msg, "critical");
+                    return;
+                }
+
+                const token = extractToken(data);
+                if (!token) {
+                    showLoginMessage("Login succeeded, but token was not found in response.", "error");
+                    setToast("Login error", "Token missing in auth response.", "critical");
+                    return;
+                }
+
+                state.token = token;
+                state.remember = el.rememberMe.checked;
+                saveToken(token, state.remember);
+
+                setAuthUI(true);
+                showLoginMessage("Login successful. Opening dashboard...", "ok");
+                setToast("Authenticated", "Live audit dashboard is now connected.", "success");
+
+                showApp();
+                await connectStream(true);
+            } catch (err) {
+                const text = err?.message || "Network error while logging in.";
+                showLoginMessage(text, "error");
+                setToast("Network error", text, "critical");
+            } finally {
+                el.loginBtn.disabled = false;
+            }
+        }
+
+        async function connectStream(manual = false) {
+            closeStream();
+
+            state.token = state.token || getStoredToken();
+            if (!state.token) {
+                showLogin();
+                showLoginMessage("Please log in first.", "error");
+                return;
+            }
+
+            setAuthUI(true);
+            setConnectionUI("connecting", true);
+            el.contentSubtitle.textContent = manual ? "Connecting to audit stream..." : "Reconnecting to audit stream...";
+
+            const params = currentServerFilters();
+            const url = new URL(`${API_BASE}/audit/stream/`);
+            for (const [key, value] of params.entries()) {
+                url.searchParams.set(key, value);
+            }
+
+            const SSE = window.EventSourcePolyfill || window.EventSource;
+            if (!window.EventSourcePolyfill && SSE === window.EventSource) {
+                setToast(
+                    "SSE unsupported",
+                    "This dashboard needs EventSourcePolyfill to send Authorization headers.",
+                    "warning"
+                );
+            }
+
+            try {
+                state.es = new SSE(url.toString(), {
+                    headers: { Authorization: `Bearer ${state.token}` },
+                    heartbeatTimeout: 60000,
+                });
+
+                state.es.onopen = () => {
+                    state.reconnectAttempts = 0;
+                    setConnectionUI("live", true);
+                    el.contentSubtitle.textContent = "Connected to audit stream in real time.";
+                    setToast("Connected", "Streaming audit events live.", "success");
+                };
+
+                state.es.onmessage = (event) => {
+                    if (!event?.data) return;
+                    if (event.data.startsWith(":")) return;
+
+                    try {
+                        const parsed = JSON.parse(event.data);
+                        pushLog(parsed);
+                    } catch (_) {
+                        setToast("Parse error", "Received audit event is not valid JSON.", "warning");
+                    }
+                };
+
+                state.es.onerror = () => {
+                    setConnectionUI("warn", false);
+                    el.contentSubtitle.textContent = "Connection lost. Reconnecting...";
+
+                    if (state.es) {
+                        try { state.es.close(); } catch (_) { }
+                        state.es = null;
+                    }
+
+                    if (state.reconnectTimer) clearTimeout(state.reconnectTimer);
+                    state.reconnectAttempts += 1;
+
+                    if (state.reconnectAttempts > 5) {
+                        setConnectionUI("crit", false);
+                        setToast(
+                            "Disconnected",
+                            "Too many reconnect attempts. Please log in again.",
+                            "critical"
+                        );
+                        return;
+                    }
+
+                    const delay = Math.min(3000 * state.reconnectAttempts, 10000);
+                    state.reconnectTimer = setTimeout(() => connectStream(false), delay);
+                };
+            } catch (err) {
+                setConnectionUI("crit", false);
+                setToast("Connection error", err.message || "Failed to connect to stream.", "critical");
+            }
+        }
+
+        function logout() {
+            closeStream();
+            state.token = null;
+            state.reconnectAttempts = 0;
+            clearToken();
+            showLogin();
+            showLoginMessage("Logged out successfully.", "ok");
+            clearLogs();
+            setConnectionUI("crit", false);
+            setAuthUI(false);
+        }
+
+        function exportLogs() {
+            const blob = new Blob([JSON.stringify(state.logs, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `audit-logs-${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            setToast("Exported", "Audit logs downloaded as JSON.", "success");
+        }
+
+        function pauseToggle() {
+            state.paused = !state.paused;
+            el.pauseBtn.textContent = state.paused ? "Resume" : "Pause";
+            setToast(
+                state.paused ? "Paused" : "Resumed",
+                state.paused ? "Live rendering is paused." : "Live rendering resumed.",
+                "info"
+            );
+            if (!state.paused) renderLogs();
+        }
+
+        function applyFilters() {
+            updateSubtitle();
+            renderLogs();
+            connectStream(true);
+        }
+
+        function resetFilters() {
+            el.fLevel.value = "";
+            el.fMethod.value = "";
+            el.fStatusMin.value = "";
+            el.fUser.value = "";
+            el.fRequest.value = "";
+            el.fSearch.value = "";
+            updateSubtitle();
+            renderLogs();
+            connectStream(true);
+        }
+
+        function init() {
+            updateSubtitle();
+
+            el.loginForm.addEventListener("submit", loginAndConnect);
+
+            el.loginClearToken.addEventListener("click", () => {
+                clearToken();
+                showLoginMessage("Stored token cleared.", "ok");
+                setToast("Token cleared", "Stored credentials removed from browser storage.", "info");
+            });
+
+            el.refreshBtn.addEventListener("click", () => connectStream(true));
+            el.logoutBtn.addEventListener("click", logout);
+
+            el.pauseBtn.addEventListener("click", pauseToggle);
+            el.clearBtn.addEventListener("click", () => {
+                clearLogs();
+                setToast("Cleared", "Audit log list has been cleared from the view.", "info");
+            });
+            el.exportBtn.addEventListener("click", exportLogs);
+
+            el.applyFilters.addEventListener("click", applyFilters);
+            el.resetFilters.addEventListener("click", resetFilters);
+
+            [el.fLevel, el.fMethod, el.fStatusMin, el.fUser, el.fRequest].forEach((input) => {
+                input.addEventListener("change", updateSubtitle);
+            });
+
+            el.fSearch.addEventListener("input", () => {
+                updateSubtitle();
+                renderLogs();
+            });
+
+            setInterval(() => {
+                el.statRps.textContent = state.counters.rps;
+                state.counters.rps = 0;
+            }, 1000);
+
+            const token = getStoredToken();
+            if (token) {
+                state.token = token;
+                showApp();
+                setAuthUI(true);
+                connectStream(true);
+            } else {
+                showLogin();
+            }
+
+            window.addEventListener("beforeunload", closeStream);
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

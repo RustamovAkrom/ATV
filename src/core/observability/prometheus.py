@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import os
 
-from prometheus_client import CONTENT_TYPE_LATEST
-from prometheus_client import REGISTRY as DEFAULT_REGISTRY
 from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    REGISTRY as DEFAULT_REGISTRY,
     CollectorRegistry,
     Counter,
     Gauge,

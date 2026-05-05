@@ -2,20 +2,21 @@ import asyncio
 import json
 from typing import Literal
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request, Depends
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 
 from core.audit.stream import audit_stream
 
 # CanViewAudit — это уже готовый объект зависимости (variable)
-from core.security.rbac import presets
+from core.security.rbac.presets import AuditPermissions
 
 router = APIRouter(
     prefix="/audit/stream",
     tags=["Audit Stream"],
     # Если CanViewAudit — это переменная (например, CanViewAudit = Depends(...)),
     # то в список dependencies мы кладем её напрямую.
-    dependencies=[presets.CanViewAudit],
+    dependencies=[Depends(AuditPermissions.CanViewAudit)],
 )
 
 
@@ -40,40 +41,65 @@ def _match_filters(
     return True
 
 
-@router.get("/", include_in_schema=False)
+@router.get("/", include_in_schema=False, dependencies=[Depends(AuditPermissions.CanViewAudit)])
 async def stream_audit(
+    request: Request,
     user_id: str | None = Query(None),
     request_id: str | None = Query(None),
     status_min: int | None = Query(None),
     level: Literal["info", "warning", "critical"] | None = Query(None),
     method: str | None = Query(None),
-    # Здесь CurrentUser нам не нужен, так как CanViewAudit уже проверяет права на уровне роутера.
+    # Здесь CurrentUser нам не нужен, так как CanViewAudit уже проверяет права
+    # на уровне роутера.
     # Если же вам НУЖЕН объект юзера внутри функции, используйте:
     # current_user: CurrentUser = presets.CanViewAudit
 ):
     async def event_generator():
         subscriber = audit_stream.subscribe()
+
         try:
             yield "retry: 3000\n\n"
 
-            while True:
-                try:
-                    event = await asyncio.wait_for(anext(subscriber), timeout=15)
-                except asyncio.TimeoutError:
-                    yield ": keep-alive\n\n"
-                    continue
+            try:
 
-                if not _match_filters(
-                    event, user_id, status_min, level, method, request_id
-                ):
-                    continue
+                while True:
+                    if await request.is_disconnected():
+                        break
 
-                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+                    try:
+                        event = await asyncio.wait_for(anext(subscriber), timeout=15)
+                    except TimeoutError:
+                        yield ": keep-alive\n\n"
+                        continue
+
+                    except StopAsyncIteration:
+                        # Sbuscriber is die
+                        break
+
+                    if not _match_filters(
+                        event, user_id, status_min, level, method, request_id
+                    ):
+                        continue
+                    try:
+                        payload = json.dumps(
+                            jsonable_encoder(event),
+                            ensure_ascii=False,
+                        )
+                        yield f"data: {payload}\n\n"
+
+                    except Exception:
+                        yield ": serialization-error\n\n"
+            except StopAsyncIteration:
+                pass
 
         except asyncio.CancelledError:
             pass
+
         finally:
-            await subscriber.aclose()
+            try:
+                await subscriber.aclose()
+            except Exception:
+                pass
 
     return StreamingResponse(
         event_generator(),

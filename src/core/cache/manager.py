@@ -1,10 +1,11 @@
 import hashlib
 import inspect
 import json
+from collections.abc import Callable
 from dataclasses import asdict, is_dataclass
 from datetime import date, datetime
 from enum import Enum
-from typing import Any, Callable
+from typing import Any
 from uuid import UUID
 
 from fastapi.encoders import jsonable_encoder

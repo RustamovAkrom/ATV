@@ -14,7 +14,7 @@ from db.models.org.region import Region
 from db.models.org.service import Service
 from db.models.users.permission import Permission, Role
 from db.models.users.user import User
-from services.export_service import ExportService
+from services.assets.export_service import ExportService
 
 
 async def _seed_asset_dependencies(dbsession):

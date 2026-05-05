@@ -147,7 +147,7 @@ async def test_audit_stats_returns_expected_counters(client, create_user, dbsess
 #         "request_id": "req-ignored",
 #     }
 
-#     async with client.stream("GET", "/audit/stream/", params={"method": "POST"}) as response:
+#     async with client.stream("GET", "/audit/stream/", params={"method": "POST"}) as response: # noqa
 #         assert response.status_code == 200
 
 #         async def publish_events():

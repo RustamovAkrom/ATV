@@ -49,7 +49,9 @@ async def _create_asset(client, token: str, deps: dict, name: str):
 
 
 @pytest.mark.anyio
-async def test_create_and_approve_archive_request(client, dbsession, superadmin_token):
+async def test_create_and_approve_archive_request(
+    client, dbsession, superadmin_token, approver_token
+):
     deps = await _seed_asset_dependencies(dbsession)
     asset = await _create_asset(client, superadmin_token, deps, "NeedsApprovalArchive")
 
@@ -70,21 +72,23 @@ async def test_create_and_approve_archive_request(client, dbsession, superadmin_
     approved = await client.post(
         f"/approvals/{approval['id']}/approve",
         json={"comment": "Approved archive"},
-        headers={"Authorization": f"Bearer {superadmin_token}"},
+        headers={"Authorization": f"Bearer {approver_token}"},
     )
     assert approved.status_code == 200
     assert approved.json()["status"] == "approved"
 
     asset_response = await client.get(
         f"/assets/{asset['id']}",
-        headers={"Authorization": f"Bearer {superadmin_token}"},
+        headers={"Authorization": f"Bearer {approver_token}"},
     )
     assert asset_response.status_code == 200
     assert asset_response.json()["status"] == "archived"
 
 
 @pytest.mark.anyio
-async def test_reject_transfer_approval_request(client, dbsession, superadmin_token):
+async def test_reject_transfer_approval_request(
+    client, dbsession, superadmin_token, approver_token
+):
     deps = await _seed_asset_dependencies(dbsession)
     asset = await _create_asset(client, superadmin_token, deps, "NeedsApprovalTransfer")
 
@@ -106,7 +110,7 @@ async def test_reject_transfer_approval_request(client, dbsession, superadmin_to
     rejected = await client.post(
         f"/approvals/{created.json()['id']}/reject",
         json={"comment": "Not needed"},
-        headers={"Authorization": f"Bearer {superadmin_token}"},
+        headers={"Authorization": f"Bearer {approver_token}"},
     )
     assert rejected.status_code == 200
     assert rejected.json()["status"] == "rejected"

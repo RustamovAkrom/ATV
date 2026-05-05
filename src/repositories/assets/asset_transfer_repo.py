@@ -1,0 +1,74 @@
+from uuid import UUID
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import lazyload, selectinload
+
+from db.models.assets.asset import Asset
+from db.models.assets.asset_assignment import AssetAssignment
+from db.models.assets.asset_history import AssetHistory
+from db.models.assets.asset_transfer import AssetTransfer
+from db.models.enums import TransferStatus
+from db.models.org.service import Service
+from db.models.warehouse.warehouse import Warehouse
+from repositories.base import BaseRepository
+
+
+class AssetTransferRepository(BaseRepository):
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def get_asset(self, asset_id: UUID) -> Asset | None:
+        return await self.scalar(
+            select(Asset)
+            .options(selectinload(Asset.transfers), selectinload(Asset.warehouse))
+            .where(Asset.id == asset_id)
+        )
+
+    async def get_asset_for_update(self, asset_id: UUID) -> Asset | None:
+        return await self.scalar(
+            select(Asset)
+            .options(lazyload("*"))
+            .where(Asset.id == asset_id)
+            .with_for_update()
+        )
+
+    async def get_active_assignments(self, asset_id: UUID) -> list[AssetAssignment]:
+        return await self.scalars(
+            select(AssetAssignment).where(
+                AssetAssignment.asset_id == asset_id,
+                AssetAssignment.unassigned_at.is_(None),
+            )
+        )
+
+    async def get_pending_transfer(self, asset_id: UUID) -> AssetTransfer | None:
+        return await self.scalar(
+            select(AssetTransfer).where(
+                AssetTransfer.asset_id == asset_id,
+                AssetTransfer.status == TransferStatus.PENDING,
+            )
+        )
+
+    async def get_transfer(self, transfer_id: UUID) -> AssetTransfer | None:
+        return await self.scalar(
+            select(AssetTransfer).where(AssetTransfer.id == transfer_id)
+        )
+
+    async def get_transfer_for_update(self, transfer_id: UUID) -> AssetTransfer | None:
+        return await self.scalar(
+            select(AssetTransfer)
+            .where(AssetTransfer.id == transfer_id)
+            .with_for_update()
+        )
+
+    async def get_warehouse(self, warehouse_id: UUID) -> Warehouse | None:
+        return await self.session.get(Warehouse, warehouse_id)
+
+    async def get_service(self, service_id: UUID) -> Service | None:
+        return await self.session.get(Service, service_id)
+
+    async def create_transfer(self, transfer: AssetTransfer) -> AssetTransfer:
+        self.add(transfer)
+        await self.flush()
+        await self.refresh(transfer)
+        return transfer

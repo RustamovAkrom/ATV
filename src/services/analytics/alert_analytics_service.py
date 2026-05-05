@@ -55,7 +55,8 @@ class AlertAnalyticsService:
         alerts.extend(
             AlertOut(
                 alert_type=AlertType.EXCESSIVE_REPAIRS,
-                # Use settings-driven multipliers so the alert policy can change without code edits.
+                # Use settings-driven multipliers so the alert policy can
+                # change without code edits.
                 severity=(
                     AlertSeverity.CRITICAL
                     if row.repair_count
@@ -64,7 +65,9 @@ class AlertAnalyticsService:
                 ),
                 entity_id=row.id,
                 entity_name=row.name,
-                message=f"Asset exceeded {repair_threshold} repairs in the review window",
+                message=(
+                    f"Asset exceeded {repair_threshold} repairs in the review window"
+                ),
                 metric_value=float(row.repair_count),
                 threshold=float(repair_threshold),
                 detected_at=now,
@@ -95,7 +98,9 @@ class AlertAnalyticsService:
                 ),
                 entity_id=row.id,
                 entity_name=row.full_name,
-                message=f"User holds more than {assignment_threshold} active assignments",
+                message=(
+                    f"User holds more than {assignment_threshold} active assignments"
+                ),
                 metric_value=float(row.active_assignments),
                 threshold=float(assignment_threshold),
                 detected_at=now,

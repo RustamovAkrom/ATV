@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import update
@@ -143,9 +143,7 @@ async def test_expired_refresh_token(client, create_user, dbsession):
 
     # manually expire in DB
     await dbsession.execute(
-        update(RefreshToken).values(
-            expires_at=datetime.now(timezone.utc) - timedelta(days=1)
-        )
+        update(RefreshToken).values(expires_at=datetime.now(UTC) - timedelta(days=1))
     )
     await dbsession.commit()
 
@@ -183,6 +181,7 @@ async def test_revoke_single_session(client, create_user):
 
     # revoke ONE session
     revoke_resp = await client.delete(f"/sessions/{session_id}")
+    print("DEBUG REVOKE", revoke_resp.status_code, revoke_resp.text)
     assert revoke_resp.status_code == 200, revoke_resp.text
 
     # refresh → should fail because revoked session triggers security response

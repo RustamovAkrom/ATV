@@ -92,7 +92,7 @@ async def create_superadmin(db: AsyncSession):
     except Exception as e:
         await db.rollback()
         print(f"❌ Unexpected error: {e}")
-        raise InternalError()
+        raise InternalError() from e
 
     print("✅ SuperAdmin created successfully")
     return user

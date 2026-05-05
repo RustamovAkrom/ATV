@@ -2,12 +2,11 @@
 
 from datetime import date
 from decimal import Decimal
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from sqlalchemy import JSON, Date
-from sqlalchemy import Enum as SAEnum
-from sqlalchemy import ForeignKey, Integer, Numeric, String
+from sqlalchemy import Date, Enum as SAEnum, ForeignKey, Integer, Numeric, String, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship, synonym, validates
 
 from db.base import Base, TimestampMixin, UUIDMixing
@@ -34,10 +33,8 @@ class Asset(Base, UUIDMixing, TimestampMixin):
     type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
 
     # Identifiers
-    asset_tag: Mapped[Optional[str]] = mapped_column(
-        String(255), unique=True, index=True
-    )
-    serial_number: Mapped[Optional[str]] = mapped_column(
+    asset_tag: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
+    serial_number: Mapped[str | None] = mapped_column(
         String(255), unique=True, index=True
     )
 
@@ -64,56 +61,58 @@ class Asset(Base, UUIDMixing, TimestampMixin):
         index=True,
     )
 
-    service_id: Mapped[Optional[UUID]] = mapped_column(
+    service_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("services.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
 
-    region_id: Mapped[Optional[UUID]] = mapped_column(
+    region_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("regions.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
 
-    current_warehouse_id: Mapped[Optional[UUID]] = mapped_column(
+    current_warehouse_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("warehouses.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
 
-    owner_id: Mapped[Optional[UUID]] = mapped_column(
+    owner_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
 
     # datesr
-    commission_date: Mapped[Optional[date]] = mapped_column(Date)
-    warranty_end: Mapped[Optional[date]] = mapped_column(Date)
+    commission_date: Mapped[date | None] = mapped_column(Date)
+    warranty_end: Mapped[date | None] = mapped_column(Date)
 
     # State (0-100)
-    condition_percent: Mapped[int] = mapped_column(default=100)
+    condition_percent: Mapped[int] = mapped_column(Integer, default=100, nullable=False)
 
     # Finance
-    purchase_date: Mapped[Optional[date]] = mapped_column(Date)
-    purchase_cost: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 2))
+    purchase_date: Mapped[date | None] = mapped_column(Date)
+    purchase_cost: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
 
     # usage
-    last_repair_date: Mapped[Optional[date]] = mapped_column(Date)
-    failure_count: Mapped[int] = mapped_column(default=0)
-    usage_intensity: Mapped[int] = mapped_column(default=0)
+    last_repair_date: Mapped[date | None] = mapped_column(Date)
+
+    failure_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    usage_intensity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     # flags
-    is_transfer_locked: Mapped[bool] = mapped_column(default=False)
+    is_transfer_locked: Mapped[bool] = mapped_column(default=False, nullable=False)
 
     # flexible data
     meta: Mapped[dict] = mapped_column(
-        "metadata", JSON, default=lambda: {}, nullable=False
+        "meta_data",
+        JSONB,
+        nullable=False,
+        default=dict,
+        server_default=text("'{}'::jsonb")
     )
-
-    # versioning
-    version: Mapped[int] = mapped_column(Integer, default=1)
 
     # relationships
     repairs: Mapped[list["Repair"]] = relationship(
@@ -127,6 +126,7 @@ class Asset(Base, UUIDMixing, TimestampMixin):
     )
     region: Mapped[Optional["Region"]] = relationship("Region", lazy="selectin")
     service: Mapped[Optional["Service"]] = relationship("Service", lazy="joined")
+
     warehouse: Mapped[Optional["Warehouse"]] = relationship(
         "Warehouse",
         back_populates="assets",
@@ -157,7 +157,7 @@ class Asset(Base, UUIDMixing, TimestampMixin):
         cascade="all, delete-orphan",
         order_by="AssetTransfer.transferred_at.desc()",
     )
-    documents: Mapped[List["Document"]] = relationship(
+    documents: Mapped[list["Document"]] = relationship(
         "Document",
         back_populates="asset",
         lazy="selectin",
@@ -173,4 +173,13 @@ class Asset(Base, UUIDMixing, TimestampMixin):
             raise ValueError("condition_percent must be between 0 and 100")
         return value
 
-    __mapper_args__ = {"version_id_col": version}
+    @validates("status")
+    def validate_status(self, key, value):
+        if value == AssetStatus.ASSIGNED and self.owner_id is None:
+            raise ValueError("ASSIGNED asset must have owner_id")
+        if value == AssetStatus.ACTIVE and self.owner_id is not None:
+            raise ValueError("ACTIVE asset cannot have owner_id")
+        return value
+
+    def __repr__(self):
+        return self.name

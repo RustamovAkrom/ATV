@@ -142,5 +142,4 @@ tasks:
   fix-imports:
     desc: Check import sorting
     cmds:
-      - "{{.RUNNER}} isort ."
       - "{{.RUNNER}} ruff check --select I {{.SOURCES}}"

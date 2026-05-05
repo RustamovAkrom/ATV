@@ -40,10 +40,10 @@ def send_email(to: str, subject: str, body: str) -> None:
                 raise Exception(f"SMTP rejected recipients: {result}")
 
     except smtplib.SMTPRecipientsRefused as e:
-        raise Exception(f"Recipients refused: {e.recipients}")
+        raise Exception(f"Recipients refused: {e.recipients}") from e
 
-    except smtplib.SMTPAuthenticationError:
-        raise Exception("SMTP authentication failed")
+    except smtplib.SMTPAuthenticationError as e:
+        raise Exception("SMTP authentication failed") from e
 
     except smtplib.SMTPException as e:
-        raise Exception(f"SMTP error: {str(e)}")
+        raise Exception(f"SMTP error: {str(e)}") from e

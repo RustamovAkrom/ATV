@@ -1,24 +1,37 @@
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
+from typing import TYPE_CHECKING
 
-from sqlalchemy import JSON, Boolean, DateTime
-from sqlalchemy import Enum as SAEnum
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    Enum as SAEnum,
+    ForeignKey,
+    String,
+    Integer,
+    Index,
+)
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
-from db.base import Base, UUIDMixing
+from db.base import Base, UUIDMixing, TimestampMixin
 from db.models.enums import ApprovalStatus
 
+if TYPE_CHECKING:
+    from db.models.users.user import User
 
-class ApprovalRequest(Base, UUIDMixing):
+
+class ApprovalRequest(Base, UUIDMixing, TimestampMixin):
     __tablename__ = "approval_requests"
 
     entity_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     entity_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
     action: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    payload: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    payload: Mapped[dict] = mapped_column(
+        MutableDict.as_mutable(JSON), default=lambda: {}, nullable=False
+    )
     status: Mapped[ApprovalStatus] = mapped_column(
         SAEnum(
             ApprovalStatus,
@@ -31,16 +44,15 @@ class ApprovalRequest(Base, UUIDMixing):
     created_by_id: Mapped[UUID] = mapped_column(
         ForeignKey("users.id"), nullable=False, index=True
     )
-    approved_by_id: Mapped[Optional[UUID]] = mapped_column(
+    approved_by_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id"), nullable=True, index=True
     )
     executed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-    decided_at: Mapped[Optional[datetime]] = mapped_column(
+    decided_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
 
-    created_by = relationship("User", foreign_keys=[created_by_id], lazy="selectin")
-    approved_by = relationship("User", foreign_keys=[approved_by_id], lazy="selectin")
+    created_by: Mapped["User"] = relationship("User", foreign_keys=[created_by_id], lazy="selectin")
+    approved_by: Mapped["User"] = relationship("User", foreign_keys=[approved_by_id], lazy="selectin")
+
+    __table_args__ = (Index("ix_approval_status_created", "status", "created_at"),)

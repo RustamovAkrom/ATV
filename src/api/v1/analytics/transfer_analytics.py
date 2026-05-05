@@ -14,7 +14,7 @@ from api.v1.analytics._utils import (
 )
 from core.cache.decorators import cached
 from core.config import get_settings
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetPermissions
 from db.models.enums import TransferStatus
 from schemas.analytics.asset_transfer_analytics import (
     AssetTransferFilterInput,
@@ -40,7 +40,7 @@ ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTI
 @router.get(
     "/",
     response_model=PageOutSchema[AssetTransferOut],
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=60, tags=("analytics:transfers:list",))
 async def list_transfers(
@@ -102,7 +102,7 @@ async def list_transfers(
 @router.get(
     "/pending",
     response_model=PageOutSchema[AssetTransferOut],
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=30, tags=("analytics:transfers:pending",))
 async def list_pending_transfers(
@@ -134,7 +134,7 @@ async def list_pending_transfers(
 @router.get(
     "/asset/{asset_id}/history",
     response_model=AssetTransferHistory,
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=300, tags=("analytics:transfers:history",))
 async def get_asset_transfer_history(
@@ -168,7 +168,7 @@ async def get_asset_transfer_history(
 @router.get(
     "/metrics",
     response_model=TransferMetrics,
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=600, tags=("analytics:transfers:metrics",))
 async def get_transfer_metrics(
@@ -222,7 +222,7 @@ async def get_transfer_metrics(
 @router.get(
     "/bottlenecks",
     response_model=BottleneckReportOut,
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=300, tags=("analytics:transfers:bottlenecks",))
 async def get_transfer_bottlenecks(
@@ -251,7 +251,7 @@ async def get_transfer_bottlenecks(
 @router.get(
     "/warehouse/{warehouse_id}/metrics",
     response_model=WarehouseTransferMetrics,
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=600, tags=("analytics:transfers:warehouse",))
 async def get_warehouse_transfer_metrics(

@@ -1,3 +1,5 @@
+from datetime import UTC
+
 import pytest
 
 from core.security.jwt import decode_token
@@ -46,7 +48,7 @@ async def test_revoke_session(client, create_user):
     user = await create_user()
 
     r1 = await login_user(client, user.login)
-    r2 = await login_user(client, user.login)
+    _ = await login_user(client, user.login)
 
     t1 = r1.json()
     access = r1.cookies.get("access_token")
@@ -152,7 +154,7 @@ async def test_logout_all_sessions(client, create_user):
 @pytest.mark.anyio
 async def test_cleanup_sessions(client, create_user, dbsession):
     # Arrange
-    from datetime import datetime, timedelta, timezone
+    from datetime import datetime, timedelta
 
     from sqlalchemy import update
 
@@ -167,9 +169,7 @@ async def test_cleanup_sessions(client, create_user, dbsession):
 
     # expire sessions manually
     await dbsession.execute(
-        update(RefreshToken).values(
-            expires_at=datetime.now(timezone.utc) - timedelta(days=1)
-        )
+        update(RefreshToken).values(expires_at=datetime.now(UTC) - timedelta(days=1))
     )
     await dbsession.commit()
 

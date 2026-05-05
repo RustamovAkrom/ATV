@@ -1,0 +1,418 @@
+{
+  "audit_metadata": {
+    "timestamp": "2026-05-01",
+    "workspace": "e:\\IIB ATV",
+    "total_issues": 36
+  },
+  "issues": [
+    {
+      "id": "DELETE_001",
+      "category": "Missing response_model",
+      "severity": "HIGH",
+      "file": "src/api/v1/assets/asset_categories.py",
+      "line": 30,
+      "endpoint": "DELETE /{category_id}",
+      "current_behavior": "No response_model; returns {\"status\": \"deleted\"}",
+      "expected": "response_model=StatusResponse",
+      "status_code_issue": false
+    },
+    {
+      "id": "DELETE_002",
+      "category": "Missing response_model",
+      "severity": "HIGH",
+      "file": "src/api/v1/assets/asset_classes.py",
+      "line": 25,
+      "endpoint": "DELETE /{class_id}",
+      "current_behavior": "No response_model; returns {\"status\": \"deleted\"}",
+      "expected": "response_model=StatusResponse",
+      "status_code_issue": false
+    },
+    {
+      "id": "DELETE_003",
+      "category": "Missing response_model",
+      "severity": "HIGH",
+      "file": "src/api/v1/assets/asset_model.py",
+      "line": 24,
+      "endpoint": "DELETE /{model_id}",
+      "current_behavior": "Returns unvalidated result from service.delete()",
+      "expected": "response_model=StatusResponse or validate return type",
+      "status_code_issue": false
+    },
+    {
+      "id": "DELETE_004",
+      "category": "Missing response_model",
+      "severity": "HIGH",
+      "file": "src/api/v1/assets/manufacturer.py",
+      "line": 27,
+      "endpoint": "DELETE /{manufacturer_id}",
+      "current_behavior": "No response_model; returns {\"status\": \"deleted\"}",
+      "expected": "response_model=StatusResponse",
+      "status_code_issue": false
+    },
+    {
+      "id": "DELETE_005",
+      "category": "Missing response_model",
+      "severity": "HIGH",
+      "file": "src/api/v1/assets/asset_documents.py",
+      "line": 47,
+      "endpoint": "DELETE /{document_id}",
+      "current_behavior": "No response_model; returns {\"status\": \"deleted\"}",
+      "expected": "response_model=StatusResponse",
+      "status_code_issue": false
+    },
+    {
+      "id": "DELETE_006",
+      "category": "Missing response_model",
+      "severity": "HIGH",
+      "file": "src/api/v1/assets/asset.py",
+      "line": 182,
+      "endpoint": "DELETE /{asset_id}",
+      "current_behavior": "No response_model; returns {\"status\": \"deleted\"}",
+      "expected": "response_model=StatusResponse",
+      "status_code_issue": false
+    },
+    {
+      "id": "DELETE_007",
+      "category": "Missing response_model",
+      "severity": "HIGH",
+      "file": "src/api/v1/rbac/rbac.py",
+      "line": 66,
+      "endpoint": "DELETE /roles/{role_id}",
+      "current_behavior": "No response_model; returns {\"status\": \"deleted\"}",
+      "expected": "response_model=StatusResponse",
+      "status_code_issue": false
+    },
+    {
+      "id": "DELETE_008",
+      "category": "Missing response_model",
+      "severity": "HIGH",
+      "file": "src/api/v1/users/user.py",
+      "line": 146,
+      "endpoint": "DELETE /{user_id}",
+      "current_behavior": "No response_model; returns {\"status\": \"archived\"}",
+      "expected": "response_model=StatusResponse",
+      "status_code_issue": false
+    },
+    {
+      "id": "DELETE_009",
+      "category": "Missing response_model",
+      "severity": "HIGH",
+      "file": "src/api/v1/auth/sessions.py",
+      "line": 24,
+      "endpoint": "DELETE /{session_id}",
+      "current_behavior": "Has status_code but no response_model; returns {\"status\": \"Session revoked\"}",
+      "expected": "response_model=StatusResponse",
+      "status_code_issue": true,
+      "status_code_note": "Should return 204 No Content or 200 with typed response"
+    },
+    {
+      "id": "POST_001",
+      "category": "Missing response_model on POST",
+      "severity": "HIGH",
+      "file": "src/api/v1/users/user.py",
+      "line": 68,
+      "endpoint": "POST /me/change-password",
+      "current_behavior": "No response_model; returns {\"status\": \"ok\"}",
+      "expected": "response_model=StatusResponse",
+      "status_code_issue": false
+    },
+    {
+      "id": "POST_002",
+      "category": "Missing response_model on POST",
+      "severity": "HIGH",
+      "file": "src/api/v1/users/user.py",
+      "line": 160,
+      "endpoint": "POST /{user_id}/block",
+      "current_behavior": "No response_model; returns {\"status\": \"blocked\"}",
+      "expected": "response_model=StatusResponse",
+      "status_code_issue": false
+    },
+    {
+      "id": "POST_003",
+      "category": "Missing response_model on POST",
+      "severity": "HIGH",
+      "file": "src/api/v1/users/user.py",
+      "line": 174,
+      "endpoint": "POST /{user_id}/activate",
+      "current_behavior": "No response_model; returns {\"status\": \"active\"}",
+      "expected": "response_model=StatusResponse",
+      "status_code_issue": false
+    },
+    {
+      "id": "POST_004",
+      "category": "Missing response_model on POST",
+      "severity": "HIGH",
+      "file": "src/api/v1/auth/auth.py",
+      "line": 65,
+      "endpoint": "POST /logout",
+      "current_behavior": "No response_model; returns {\"status\": \"ok\"}",
+      "expected": "response_model=StatusResponse",
+      "status_code_issue": false
+    },
+    {
+      "id": "POST_005",
+      "category": "Missing response_model on POST",
+      "severity": "HIGH",
+      "file": "src/api/v1/auth/auth.py",
+      "line": 80,
+      "endpoint": "POST /logout-all",
+      "current_behavior": "No response_model; returns {\"status\": \"ok\"}",
+      "expected": "response_model=StatusResponse",
+      "status_code_issue": false
+    },
+    {
+      "id": "POST_006",
+      "category": "Missing response_model on POST",
+      "severity": "HIGH",
+      "file": "src/api/v1/auth/sessions.py",
+      "line": 34,
+      "endpoint": "POST /logout-all",
+      "current_behavior": "Has status_code but no response_model; returns {\"detail\": \"All sessions revoked\"}",
+      "expected": "response_model=StatusResponse",
+      "status_code_issue": true,
+      "status_code_note": "Field name mismatch: 'detail' should be 'status'"
+    },
+    {
+      "id": "POST_007",
+      "category": "Missing response_model on POST",
+      "severity": "HIGH",
+      "file": "src/api/v1/auth/sessions.py",
+      "line": 43,
+      "endpoint": "POST /cleanup",
+      "current_behavior": "Has status_code but no response_model; returns {\"deleted\": deleted}",
+      "expected": "response_model with typed 'deleted' field",
+      "status_code_issue": false
+    },
+    {
+      "id": "POST_008",
+      "category": "Missing response_model on POST",
+      "severity": "HIGH",
+      "file": "src/api/v1/notifications.py",
+      "line": 59,
+      "endpoint": "POST /{notification_id}/read",
+      "current_behavior": "No response_model; returns {\"status\": \"ok\"}",
+      "expected": "response_model=StatusResponse",
+      "status_code_issue": false
+    },
+    {
+      "id": "POST_009",
+      "category": "Missing response_model on POST",
+      "severity": "HIGH",
+      "file": "src/api/v1/notifications.py",
+      "line": 69,
+      "endpoint": "POST /read-all",
+      "current_behavior": "No response_model; returns {\"status\": \"ok\"}",
+      "expected": "response_model=StatusResponse",
+      "status_code_issue": false
+    },
+    {
+      "id": "PAGINATION_001",
+      "category": "Pagination inconsistency",
+      "severity": "MEDIUM",
+      "file": "src/api/v1/notifications.py",
+      "line": 51,
+      "endpoint": "GET /",
+      "current_behavior": "Hardcoded limit=50, offset=0; not respecting client pagination",
+      "expected": "Use PaginationParamsSchema dependency or return PageOutSchema",
+      "issue": "Client cannot control pagination; should be PageOutSchema[NotificationSchema]"
+    },
+    {
+      "id": "PAGINATION_002",
+      "category": "Pagination response schema",
+      "severity": "MEDIUM",
+      "file": "src/api/v1/audit/audit.py",
+      "line": 46,
+      "endpoint": "GET /",
+      "current_behavior": "Uses PageSchema[AuditSchema] - minimal fields (no pages, has_next, has_prev)",
+      "expected": "PageOutSchema[AuditSchema] - complete pagination metadata",
+      "issue": "Inconsistent with other paginated endpoints"
+    },
+    {
+      "id": "PAGINATION_003",
+      "category": "Pagination dependency usage",
+      "severity": "MEDIUM",
+      "file": "src/api/v1/approvals/approvals.py",
+      "line": 20,
+      "endpoint": "GET /",
+      "current_behavior": "Uses Depends(get_pagination) wrapper instead of direct PaginationParamsSchema",
+      "expected": "pagination: PaginationParamsSchema = Depends()",
+      "issue": "Inconsistent pattern; other endpoints don't use this wrapper"
+    },
+    {
+      "id": "STATUS_CODE_001",
+      "category": "Status code inconsistency",
+      "severity": "MEDIUM",
+      "file": "src/api/v1/users/security.py",
+      "line": 16,
+      "endpoint": "POST /forgot-password",
+      "current_behavior": "status_code=status.HTTP_200_OK for password reset request",
+      "expected": "status_code=status.HTTP_202_ACCEPTED (async action)",
+      "issue": "Password reset is an async action, should use 202 or 201"
+    },
+    {
+      "id": "STATUS_CODE_002",
+      "category": "Status code inconsistency",
+      "severity": "MEDIUM",
+      "file": "src/api/v1/auth/sessions.py",
+      "line": 24,
+      "endpoint": "DELETE /{session_id}",
+      "current_behavior": "DELETE returns 200 with response body",
+      "expected": "status_code=status.HTTP_204_NO_CONTENT (if no body)",
+      "issue": "DELETE with response should document this inconsistency"
+    },
+    {
+      "id": "VALIDATION_001",
+      "category": "Schema validation issue",
+      "severity": "MEDIUM",
+      "file": "src/schemas/users/users.py",
+      "line": 36,
+      "field": "UserOutSchema.role",
+      "current_behavior": "role: str (non-optional) but can be null in database",
+      "expected": "role: str | None",
+      "issue": "Will cause validation errors when user has no role"
+    },
+    {
+      "id": "VALIDATION_002",
+      "category": "DateTime parsing inconsistency",
+      "severity": "MEDIUM",
+      "file": "src/api/v1/analytics/assignment_analytics.py",
+      "line": 50,
+      "field": "date_from parameter",
+      "current_behavior": "Accepts str, manually parsed with parse_optional_datetime()",
+      "expected": "date_from: datetime | None = Query(None)",
+      "issue": "Manual parsing is error-prone; use Pydantic's built-in parsing"
+    },
+    {
+      "id": "CONFIG_001",
+      "category": "ConfigDict inconsistency",
+      "severity": "LOW",
+      "file": "src/schemas/common.py",
+      "line": 4,
+      "schema": "StatusResponse",
+      "current_behavior": "Missing ConfigDict(from_attributes=True)",
+      "expected": "model_config = ConfigDict(from_attributes=True)",
+      "issue": "Inconsistent with other response schemas; affects ORM integration"
+    },
+    {
+      "id": "ERROR_RESPONSES_001",
+      "category": "Missing error response documentation",
+      "severity": "LOW",
+      "file": "src/api/v1/ (ALL FILES)",
+      "affected_endpoints": "All endpoints",
+      "current_behavior": "No 'responses' parameter documenting error cases",
+      "expected": "responses={401: {...}, 403: {...}, 404: {...}, 500: {...}}",
+      "issue": "OpenAPI/Swagger documentation lacks error response schemas"
+    },
+    {
+      "id": "TYPE_MISMATCH_001",
+      "category": "Service return type ambiguity",
+      "severity": "MEDIUM",
+      "file": "src/api/v1/rbac/rbac.py",
+      "line": 31,
+      "endpoint": "GET /roles",
+      "current_behavior": "Returns result of service.list_roles() (likely raw models)",
+      "expected": "response_model=list[RoleOutSchema] enforces conversion in service",
+      "issue": "Service should explicitly return List[RoleOutSchema], not ORM models"
+    },
+    {
+      "id": "TYPE_MISMATCH_002",
+      "category": "Service return type ambiguity",
+      "severity": "MEDIUM",
+      "file": "src/api/v1/rbac/rbac.py",
+      "line": 40,
+      "endpoint": "GET /permissions",
+      "current_behavior": "Returns result of service.list_permissions() (likely raw models)",
+      "expected": "response_model=list[PermissionOutSchema] enforces conversion in service",
+      "issue": "Service should explicitly return List[PermissionOutSchema], not ORM models"
+    },
+    {
+      "id": "RESPONSE_MISMATCH_001",
+      "category": "Response dict field mismatch",
+      "severity": "HIGH",
+      "file": "src/api/v1/auth/sessions.py",
+      "line": 40,
+      "endpoint": "POST /logout-all",
+      "current_behavior": "Returns {\"detail\": \"All sessions revoked\"} but no response_model",
+      "expected": "Define schema or use StatusResponse with 'status' field",
+      "issue": "Field name 'detail' is non-standard; should use 'status' and 'message'"
+    },
+    {
+      "id": "RESPONSE_MISMATCH_002",
+      "category": "Response dict field mismatch",
+      "severity": "HIGH",
+      "file": "src/api/v1/auth/sessions.py",
+      "line": 52,
+      "endpoint": "POST /cleanup",
+      "current_behavior": "Returns {\"deleted\": int} but no response_model",
+      "expected": "Define schema with typed 'deleted' field",
+      "issue": "Non-standard response format; should use typed schema"
+    },
+    {
+      "id": "RESPONSE_MISMATCH_003",
+      "category": "Response dict field mismatch",
+      "severity": "MEDIUM",
+      "file": "src/api/v1/notifications.py",
+      "line": 84,
+      "endpoint": "GET /unread-count",
+      "current_behavior": "Returns {\"count\": int} but no response_model",
+      "expected": "Define CountResponse or UnreadCountResponse schema",
+      "issue": "Non-standard response format"
+    },
+    {
+      "id": "CIRCULAR_REF_001",
+      "category": "Potential circular reference",
+      "severity": "LOW",
+      "file": "src/schemas/assets/assets.py",
+      "affected_schemas": "AssetSchema references nested schemas",
+      "current_behavior": "Heavy nesting of Ref schemas but no observed circular refs",
+      "expected": "Monitor for lazy reference issues in future updates",
+      "issue": "Complex schema relationships - use forward references if needed"
+    },
+    {
+      "id": "DOCUMENTATION_001",
+      "category": "Missing docstrings",
+      "severity": "LOW",
+      "file": "src/api/v1/ (MULTIPLE)",
+      "affected_files": ["src/api/v1/notifications.py", "src/api/v1/auth/sessions.py"],
+      "current_behavior": "Some endpoints lack docstrings",
+      "expected": "All endpoints should have docstrings explaining purpose and security",
+      "issue": "OpenAPI documentation will be incomplete"
+    }
+  ],
+  "summary_by_category": {
+    "Missing response_model": 17,
+    "Pagination inconsistency": 3,
+    "Status code inconsistency": 2,
+    "Schema validation issue": 2,
+    "Service return type ambiguity": 2,
+    "Response dict field mismatch": 3,
+    "ConfigDict inconsistency": 1,
+    "DateTime parsing": 1,
+    "Error response documentation": 1,
+    "Potential circular reference": 1,
+    "Missing docstrings": 1
+  },
+  "severity_summary": {
+    "HIGH": 17,
+    "MEDIUM": 16,
+    "LOW": 3
+  },
+  "recommendations": {
+    "immediate_fixes": [
+      "Add response_model=StatusResponse to all 17 DELETE/POST endpoints",
+      "Create custom schemas for non-standard responses (e.g., CountResponse, CleanupResponse)",
+      "Standardize pagination: use PageOutSchema consistently",
+      "Fix UserOutSchema.role to accept None"
+    ],
+    "short_term": [
+      "Standardize status codes: 201 for creates, 200 for updates/state changes, 204 for deletes",
+      "Add comprehensive error response documentation with @router responses parameter",
+      "Add ConfigDict to StatusResponse and all response schemas"
+    ],
+    "long_term": [
+      "Implement automated schema validation tests",
+      "Create API style guide documenting pagination, response formats, status codes",
+      "Add pre-commit hooks to validate response_model definitions"
+    ]
+  }
+}

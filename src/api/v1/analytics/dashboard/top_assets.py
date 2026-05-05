@@ -8,7 +8,7 @@ from api.v1.analytics._utils import (
 )
 from core.cache.decorators import cached
 from core.config import get_settings
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetPermissions
 from schemas.analytics.dashboard.top_assets import TopAssetOut
 from services.analytics.dashboard.top_assets_service import TopAssetsService
 
@@ -22,7 +22,7 @@ DASHBOARD_LIMIT, DASHBOARD_WINDOW = parse_rate_limit(
 @router.get(
     "/",
     response_model=list[TopAssetOut],
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=300, tags=("analytics:dashboard:top-assets",))
 async def get_top_assets(

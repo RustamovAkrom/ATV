@@ -6,7 +6,7 @@ from api.dependencies.users import get_user_service
 from core.cache.decorators import cached, invalidate_cache
 from core.exceptions.errors import BadRequest
 from core.security.auth.dependencies import get_current_user
-from core.security.rbac import presets
+from core.security.rbac.presets import UserPermissions
 from db.models.users.user import User
 from schemas.auth import CurrentUserSchema
 from schemas.pagination import PaginationParamsSchema
@@ -17,7 +17,8 @@ from schemas.users import (
     UserOutSchema,
     UserUpdateSchema,
 )
-from services.user_service import UserService
+from services.users.user_service import UserService
+from schemas.common import StatusResponse
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -77,11 +78,11 @@ async def change_password(
         data.old_password,
         data.new_password,
     )
-    return {"status": "ok"}
+    return StatusResponse(status="ok", message="Password changed successfully")
 
 
 @router.get(
-    "/", response_model=list[UserOutSchema], dependencies=[presets.CanViewUsers]
+    "/", response_model=list[UserOutSchema], dependencies=[Depends(UserPermissions.CanViewUsers)]
 )
 @cached(ttl=60, tags=("users:list",))
 async def list_users(
@@ -92,7 +93,7 @@ async def list_users(
     return [_to_user_out(user) for user in users]
 
 
-@router.post("/", response_model=UserOutSchema, dependencies=[presets.CanCreateUsers])
+@router.post("/", response_model=UserOutSchema, dependencies=[Depends(UserPermissions.CanCreateUsers)])
 @invalidate_cache(tags=("users:list", "users:search"))
 async def create_user(
     data: UserCreateSchema,
@@ -104,7 +105,7 @@ async def create_user(
 
 
 @router.get(
-    "/search", response_model=list[UserOutSchema], dependencies=[presets.CanViewUsers]
+    "/search", response_model=list[UserOutSchema], dependencies=[Depends(UserPermissions.CanViewUsers)]
 )
 @cached(ttl=30, tags=("users:search",))
 async def search_users(
@@ -117,7 +118,7 @@ async def search_users(
 
 
 @router.get(
-    "/{user_id}", response_model=UserOutSchema, dependencies=[presets.CanViewUsers]
+    "/{user_id}", response_model=UserOutSchema, dependencies=[Depends(UserPermissions.CanViewUsers)]
 )
 @cached(ttl=60, tags=("users:detail",))
 async def get_user(
@@ -133,7 +134,7 @@ async def get_user(
 async def update_user(
     user_id: UUID,
     data: AdminUserUpdateSchema,
-    current_user: CurrentUserSchema = presets.CanManageUsers,
+    current_user: CurrentUserSchema = Depends(UserPermissions.CanManageUsers),
     service: UserService = Depends(get_user_service),
 ):
     if user_id == current_user.id:
@@ -147,39 +148,39 @@ async def update_user(
 @invalidate_cache(tags=("users:list", "users:search", "users:detail"))
 async def archive_user(
     user_id: UUID,
-    current_user: CurrentUserSchema = presets.CanDeleteUsers,
+    current_user: CurrentUserSchema = Depends(UserPermissions.CanDeleteUsers),
     service: UserService = Depends(get_user_service),
 ):
     if user_id == current_user.id:
         raise BadRequest("Cannot delete yourself")
 
     await service.archive(user_id)
-    return {"status": "archived"}
+    return StatusResponse(status="archived", message="User archived successfully")
 
 
 @router.post("/{user_id}/block")
 @invalidate_cache(tags=("users:list", "users:search", "users:detail"))
 async def block_user(
     user_id: UUID,
-    current_user: CurrentUserSchema = presets.CanManageUsers,
+    current_user: CurrentUserSchema = Depends(UserPermissions.CanManageUsers),
     service: UserService = Depends(get_user_service),
 ):
     if user_id == current_user.id:
         raise BadRequest("Cannot block yourself")
 
     await service.block(user_id)
-    return {"status": "blocked"}
+    return StatusResponse(status="blocked", message="User blocked successfully")
 
 
 @router.post("/{user_id}/activate")
 @invalidate_cache(tags=("users:list", "users:search", "users:detail"))
 async def activate_user(
     user_id: UUID,
-    current_user: CurrentUserSchema = presets.CanManageUsers,
+    current_user: CurrentUserSchema = Depends(UserPermissions.CanManageUsers),
     service: UserService = Depends(get_user_service),
 ):
     if user_id == current_user.id:
         raise BadRequest("Cannot activate yourself")
 
     await service.activate(user_id)
-    return {"status": "active"}
+    return StatusResponse(status="active", message="User activated successfully")

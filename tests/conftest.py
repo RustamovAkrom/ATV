@@ -89,6 +89,10 @@ async def fastapi_app(dbsession: AsyncSession) -> FastAPI:
         m for m in app.user_middleware if m.cls.__name__ != "AuditMiddleware"
     ]
 
+    # disable rate limiting for tests to avoid login throttling
+    if hasattr(app.state, "limiter"):
+        app.state.limiter.enabled = False
+
     return app
 
 
@@ -210,3 +214,23 @@ async def role_with_users(dbsession):
     await dbsession.commit()
 
     return role.id
+
+
+@pytest.fixture
+async def approver_token(create_user, client):
+    """
+    Create separate user for approval actions.
+    This prevents creator == approver violation.
+    """
+    user = await create_user(login="approver_user")
+
+    response = await client.post(
+        "/auth/login",
+        data={
+            "username": user.login,
+            "password": "password",  # если у тебя дефолт
+        },
+    )
+    assert response.status_code == 200
+
+    return response.json()["access_token"]
