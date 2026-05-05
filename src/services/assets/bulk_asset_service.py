@@ -88,8 +88,7 @@ class BulkAssetService:
 
         for asset_id in asset_ids:
             try:
-                async with self.session.begin_nested():
-                    await callback(asset_id)
+                await callback(asset_id)
 
                 success.append(asset_id)
 

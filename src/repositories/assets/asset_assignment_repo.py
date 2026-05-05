@@ -3,7 +3,7 @@ from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, lazyload
 from sqlalchemy.exc import IntegrityError
 from core.exceptions.errors import Conflict
 from db.models.assets.asset import Asset
@@ -34,17 +34,17 @@ class AssetAssignmentRepository(BaseRepository):
 
     async def get_asset_for_update(self, asset_id: UUID, nowait: bool = False):
         stmt = (
-            select(Asset.id).where(Asset.id == asset_id).with_for_update(nowait=nowait)
+            select(Asset)
+            .options(
+                lazyload(Asset.model),
+                lazyload(Asset.asset_class),
+                lazyload(Asset.service),
+            )
+            .where(Asset.id == asset_id)
+            .with_for_update(nowait=nowait)
         )
 
-        result = await self.session.execute(stmt)
-        row = result.first()
-
-        if not row:
-            return None
-
-        # второй запрос БЕЗ lock
-        return await self.get_asset_plain(asset_id)
+        return await self.scalar(stmt)
 
     async def get_user(self, user_id: UUID) -> User | None:
         return await self.scalar(
@@ -60,6 +60,7 @@ class AssetAssignmentRepository(BaseRepository):
                 AssetAssignment.asset_id == asset_id,
                 AssetAssignment.unassigned_at.is_(None),
             )
+            .with_for_update()
             .limit(1)
         )
 
@@ -67,7 +68,6 @@ class AssetAssignmentRepository(BaseRepository):
         assignment = AssetAssignment(asset_id=asset_id, user_id=user_id)
         self.add(assignment)
         await self.flush()
-        await self.refresh(assignment)
         return assignment
 
     async def close_assignment(
@@ -75,5 +75,4 @@ class AssetAssignmentRepository(BaseRepository):
     ) -> AssetAssignment:
         assignment.unassigned_at = timestamp
         await self.flush()
-        await self.refresh(assignment)
         return assignment

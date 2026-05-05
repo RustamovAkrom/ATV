@@ -145,6 +145,7 @@ class AssetSchema(BaseModel):
     region: RegionRef | None
     service: ServiceRef | None
     warehouse: WarehouseRef | None
+    assignments: list[AssetAssignmentSchema] = Field(default_factory=list)
     metadata: dict = Field(alias="meta")
     condition_percent: int
     commission_date: date | None

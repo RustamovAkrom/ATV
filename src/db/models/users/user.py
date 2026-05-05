@@ -5,7 +5,7 @@ from uuid import UUID
 from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
-
+from sqlalchemy import Enum as SAEnum
 from db.base import Base, StatusMixin, TimestampMixin, UUIDMixing
 from db.models.assets.asset import Asset
 from db.models.enums import UserStatus
@@ -30,8 +30,14 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
     role_id: Mapped[UUID] = mapped_column(
         ForeignKey("roles.id", ondelete="RESTRICT"), nullable=False
     )
-    status: Mapped[str] = mapped_column(
-        String(50), default=UserStatus.ACTIVE.value, nullable=False
+    status: Mapped[UserStatus] = mapped_column(
+        SAEnum(
+            UserStatus,
+            name="user_status",
+            values_callable=lambda enum_cls: [e.value for e in enum_cls]
+        ),
+        default=UserStatus.ACTIVE,
+        nullable=False,
     )
 
     assigned_region_id: Mapped[UUID | None] = mapped_column(

@@ -1,11 +1,26 @@
+from __future__ import annotations
+
+from enum import StrEnum
+
 from db.models.enums import UserRole
+
+
+def _set(*permissions: str) -> frozenset[str]:
+    return frozenset(permissions)
 
 
 class Permissions:
     """
-    Centralized permission registry for the entire application.
-    All permissions must be defined here for consistency and validation.
-    Format: "resource.action" (e.g., "asset.view", "user.delete")
+    Centralized permission registry for the whole application.
+
+    Convention:
+        <resource>.<action>
+
+    Examples:
+        users.view
+        users.create
+        assets.transfer
+        audit.export
     """
 
     # ======================== USERS & PROFILE ========================
@@ -13,32 +28,32 @@ class Permissions:
     USERS_CREATE = "users.create"
     USERS_EDIT = "users.edit"
     USERS_DELETE = "users.delete"
-    USERS_PASSWORD_RESET = "users.password_reset"  # Reset other user passwords
+    USERS_PASSWORD_RESET = "users.password_reset"
     USERS_BULK_EDIT = "users.bulk_edit"
     USERS_BULK_DELETE = "users.bulk_delete"
 
-    # ======================== RBAC (Roles & Permissions) ========================
+    # ======================== RBAC ========================
     ROLES_VIEW = "roles.view"
-    ROLES_MANAGE = "roles.manage"  # Create, update, delete roles
-    PERMISSIONS_MANAGE = "permissions.manage"  # Assign permissions to roles
+    ROLES_MANAGE = "roles.manage"
+    PERMISSIONS_MANAGE = "permissions.manage"
 
-    # ======================== AUDIT & SECURITY LOGS ========================
+    # ======================== AUDIT & SECURITY ========================
     AUDIT_VIEW = "audit.view"
     AUDIT_EXPORT = "audit.export"
-    AUDIT_CLEANUP = "audit.cleanup"  # Only for SuperAdmin
+    AUDIT_CLEANUP = "audit.cleanup"
 
     # ======================== SESSIONS ========================
     SESSIONS_VIEW = "sessions.view"
     SESSIONS_REVOKE = "sessions.revoke"
     SESSIONS_REVOKE_ALL = "sessions.revoke_all"
 
-    # ======================== ASSETS & INVENTORY ========================
+    # ======================== ASSETS ========================
     ASSETS_VIEW = "assets.view"
     ASSETS_CREATE = "assets.create"
     ASSETS_UPDATE = "assets.update"
     ASSETS_DELETE = "assets.delete"
-    ASSETS_ASSIGN = "assets.assign"  # Assign to users
-    ASSETS_TRANSFER = "assets.transfer"  # Transfer ownership
+    ASSETS_ASSIGN = "assets.assign"
+    ASSETS_TRANSFER = "assets.transfer"
     ASSETS_EXPORT = "assets.export"
     ASSETS_ARCHIVE = "assets.archive"
 
@@ -48,7 +63,7 @@ class Permissions:
     APPROVALS_APPROVE = "approvals.approve"
     APPROVALS_REJECT = "approvals.reject"
 
-    # ======================== REPAIRS & MAINTENANCE ========================
+    # ======================== REPAIRS ========================
     REPAIRS_VIEW = "repairs.view"
     REPAIRS_CREATE = "repairs.create"
     REPAIRS_UPDATE = "repairs.update"
@@ -62,13 +77,13 @@ class Permissions:
     DOCUMENTS_DELETE = "documents.delete"
     DOCUMENTS_EXPORT = "documents.export"
 
-    # ======================== ANALYTICS & REPORTING ========================
+    # ======================== ANALYTICS ========================
     ANALYTICS_VIEW = "analytics.view"
     ANALYTICS_DASHBOARD = "analytics.dashboard"
     ANALYTICS_EXPORT = "analytics.export"
     ANALYTICS_FORECAST = "analytics.forecast"
 
-    # ======================== ORGANIZATION (Regions, Services) ========================
+    # ======================== ORGANIZATION ========================
     ORG_REGIONS_VIEW = "org.regions.view"
     ORG_REGIONS_CREATE = "org.regions.create"
     ORG_REGIONS_UPDATE = "org.regions.update"
@@ -79,7 +94,7 @@ class Permissions:
     ORG_SERVICES_UPDATE = "org.services.update"
     ORG_SERVICES_DELETE = "org.services.delete"
 
-    # ======================== WAREHOUSE & INVENTORY ========================
+    # ======================== WAREHOUSE ========================
     WAREHOUSE_VIEW = "warehouse.view"
     WAREHOUSE_MANAGE = "warehouse.manage"
     WAREHOUSE_EXPORT = "warehouse.export"
@@ -89,116 +104,205 @@ class Permissions:
     SYSTEM_HEALTH = "system.health"
     SYSTEM_LOGS = "system.logs"
 
-    # ======================= Expenses =========================
-    EXPENSES_READ = "expenses.view"
-    EXPENSES_CREATE = "expenses.manage"
+    # ======================== EXPENSES ========================
+    EXPENSES_VIEW = "expenses.view"
+    EXPENSES_CREATE = "expenses.create"
     EXPENSES_UPDATE = "expenses.update"
     EXPENSES_DELETE = "expenses.delete"
+    EXPENSES_EXPORT = "expenses.export"
 
     @classmethod
     def all(cls) -> set[str]:
-        """Returns all defined permissions as a set."""
         return {
-            v
-            for k, v in cls.__dict__.items()
-            if isinstance(v, str) and not k.startswith("_") and "." in v
+            value
+            for name, value in vars(cls).items()
+            if name.isupper() and isinstance(value, str) and "." in value
         }
 
+    @classmethod
+    def by_prefix(cls, prefix: str) -> set[str]:
+        prefix = prefix.rstrip(".") + "."
+        return {p for p in cls.all() if p.startswith(prefix)}
 
-# ======================== PERMISSION SETS FOR ROLES ========================
+    @classmethod
+    def validate(cls) -> None:
+        seen: dict[str, str] = {}
+        duplicates: list[str] = []
 
-# Base permissions for all staff
-BASE_STAFF = {
+        for name, value in vars(cls).items():
+            if not name.isupper() or not isinstance(value, str) or "." not in value:
+                continue
+
+            if value in seen and seen[value] != name:
+                duplicates.append(f"{seen[value]} and {name} -> {value}")
+            else:
+                seen[value] = name
+
+        if duplicates:
+            raise ValueError(
+                "Duplicate permission values found: " + ", ".join(duplicates)
+            )
+
+
+# ======================== ROLE DEFAULT SETS ========================
+
+BASE_STAFF = _set(
     Permissions.USERS_VIEW,
     Permissions.SESSIONS_VIEW,
     Permissions.SYSTEM_HEALTH,
-}
+    Permissions.DOCUMENTS_VIEW,
+)
 
-# Moderator base permissions
-MODERATOR_BASE = BASE_STAFF | {
+OPERATIONAL_BASE = _set(
+    *BASE_STAFF,
     Permissions.ASSETS_VIEW,
     Permissions.REPAIRS_VIEW,
     Permissions.REPAIRS_CREATE,
-    Permissions.ANALYTICS_VIEW,
-}
+    Permissions.APPROVALS_VIEW,
+    Permissions.WAREHOUSE_VIEW,
+)
 
-# Admin base permissions
-ADMIN_BASE = MODERATOR_BASE | {
+MANAGER_BASE = _set(
+    *OPERATIONAL_BASE,
+    Permissions.ASSETS_UPDATE,
+    Permissions.ASSETS_ASSIGN,
+    Permissions.ASSETS_TRANSFER,
+    Permissions.REPAIRS_UPDATE,
+    Permissions.REPAIRS_COMPLETE,
+    Permissions.APPROVALS_APPROVE,
+    Permissions.APPROVALS_REJECT,
+    Permissions.ANALYTICS_VIEW,
+)
+
+ADMIN_BASE = _set(
+    *MANAGER_BASE,
     Permissions.USERS_CREATE,
     Permissions.USERS_EDIT,
     Permissions.USERS_PASSWORD_RESET,
     Permissions.SESSIONS_REVOKE,
     Permissions.ROLES_VIEW,
     Permissions.ASSETS_CREATE,
-    Permissions.ASSETS_UPDATE,
     Permissions.ASSETS_DELETE,
     Permissions.ASSETS_EXPORT,
-    Permissions.AUDIT_VIEW,
-    Permissions.DOCUMENTS_VIEW,
+    Permissions.REPAIRS_EXPORT,
     Permissions.DOCUMENTS_CREATE,
     Permissions.DOCUMENTS_UPDATE,
-}
+    Permissions.DOCUMENTS_DELETE,
+    Permissions.DOCUMENTS_EXPORT,
+    Permissions.AUDIT_VIEW,
+    Permissions.WAREHOUSE_MANAGE,
+    Permissions.WAREHOUSE_EXPORT,
+    Permissions.ORG_REGIONS_VIEW,
+    Permissions.ORG_REGIONS_CREATE,
+    Permissions.ORG_REGIONS_UPDATE,
+    Permissions.ORG_REGIONS_DELETE,
+    Permissions.ORG_SERVICES_VIEW,
+    Permissions.ORG_SERVICES_CREATE,
+    Permissions.ORG_SERVICES_UPDATE,
+    Permissions.ORG_SERVICES_DELETE,
+    Permissions.EXPENSES_VIEW,
+    Permissions.EXPENSES_CREATE,
+    Permissions.EXPENSES_UPDATE,
+    Permissions.EXPENSES_DELETE,
+    Permissions.EXPENSES_EXPORT,
+)
 
-# Mapping of roles to their default permissions
-ROLE_PERMISSIONS: dict[str, set[str]] = {
-    # Supreme access - all permissions
-    UserRole.SUPERADMIN.value: Permissions.all(),
-    # Full operational control, but not system cleanup/audit cleanup
-    UserRole.ADMIN.value: ADMIN_BASE
-    | {
+AUDIT_BASE = _set(
+    Permissions.AUDIT_VIEW,
+    Permissions.AUDIT_EXPORT,
+    Permissions.USERS_VIEW,
+    Permissions.ASSETS_VIEW,
+    Permissions.REPAIRS_VIEW,
+    Permissions.DOCUMENTS_VIEW,
+    Permissions.WAREHOUSE_VIEW,
+    Permissions.ANALYTICS_VIEW,
+    Permissions.ANALYTICS_DASHBOARD,
+    Permissions.ANALYTICS_EXPORT,
+    Permissions.SYSTEM_HEALTH,
+    Permissions.SYSTEM_LOGS,
+)
+
+APPROVER_BASE = _set(
+    Permissions.APPROVALS_VIEW,
+    Permissions.APPROVALS_APPROVE,
+    Permissions.APPROVALS_REJECT,
+    Permissions.ASSETS_VIEW,
+    Permissions.REPAIRS_VIEW,
+    Permissions.DOCUMENTS_VIEW,
+)
+
+# ======================== ROLE -> PERMISSIONS ========================
+# Keep keys as role values so the map is stable across StrEnum usage.
+ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
+    UserRole.SUPERADMIN.value: frozenset(Permissions.all()),
+
+    UserRole.ADMIN.value: _set(
+        *ADMIN_BASE,
         Permissions.SYSTEM_SETTINGS,
         Permissions.PERMISSIONS_MANAGE,
+        Permissions.APPROVALS_CREATE,
         Permissions.APPROVALS_VIEW,
         Permissions.APPROVALS_APPROVE,
         Permissions.APPROVALS_REJECT,
-    },
-    # Region-specific admin (usually MODERATOR)
-    UserRole.MODERATOR.value: MODERATOR_BASE
-    | {
-        Permissions.APPROVALS_VIEW,
-        Permissions.APPROVALS_APPROVE,
+        Permissions.SESSIONS_REVOKE_ALL,
+    ),
+
+    UserRole.MODERATOR.value: _set(
+        *OPERATIONAL_BASE,
+        Permissions.ASSETS_UPDATE,
         Permissions.REPAIRS_UPDATE,
         Permissions.REPAIRS_COMPLETE,
-    },
-    # Analyst / Officer
-    UserRole.ANALYTIC.value: {
-        Permissions.AUDIT_VIEW,
-        Permissions.AUDIT_EXPORT,
-        Permissions.USERS_VIEW,
-        Permissions.ASSETS_VIEW,
-        Permissions.ASSETS_EXPORT,
-        Permissions.REPAIRS_VIEW,
-        Permissions.REPAIRS_EXPORT,
-        Permissions.ANALYTICS_VIEW,
-        Permissions.ANALYTICS_EXPORT,
-        Permissions.ANALYTICS_DASHBOARD,
-        Permissions.SYSTEM_HEALTH,
-        Permissions.DOCUMENTS_VIEW,
-        Permissions.WAREHOUSE_VIEW,
-    },
-    # Region Admin - manages region-scoped operations
-    UserRole.REGION_ADMIN.value: {
-        Permissions.USERS_VIEW,
-        Permissions.USERS_EDIT,
-        Permissions.ASSETS_VIEW,
-        Permissions.ASSETS_CREATE,
-        Permissions.ASSETS_UPDATE,
-        Permissions.ASSETS_ASSIGN,
-        Permissions.APPROVALS_VIEW,
         Permissions.APPROVALS_APPROVE,
-        Permissions.REPAIRS_VIEW,
-        Permissions.REPAIRS_CREATE,
-        Permissions.REPAIRS_UPDATE,
-        Permissions.ANALYTICS_VIEW,
-        Permissions.DOCUMENTS_VIEW,
-        Permissions.WAREHOUSE_VIEW,
-    },
-    # Service Manager - manages service-scoped operations
-    UserRole.SERVICE_MANAGER.value: {
+        Permissions.APPROVALS_REJECT,
+        Permissions.DOCUMENTS_EXPORT,
+    ),
+
+    UserRole.ANALYTIC.value: _set(
+        *AUDIT_BASE,
+        Permissions.ASSETS_EXPORT,
+        Permissions.REPAIRS_EXPORT,
+        Permissions.DOCUMENTS_EXPORT,
+        Permissions.ANALYTICS_FORECAST,
+        Permissions.WAREHOUSE_EXPORT,
+    ),
+
+    UserRole.REGION_ADMIN.value: _set(
+        *MANAGER_BASE,
+        Permissions.USERS_EDIT,
+        Permissions.USERS_PASSWORD_RESET,
+        Permissions.ASSETS_CREATE,
+        Permissions.ASSETS_DELETE,
+        Permissions.DOCUMENTS_CREATE,
+        Permissions.DOCUMENTS_UPDATE,
+        Permissions.DOCUMENTS_EXPORT,
+        Permissions.ORG_REGIONS_VIEW,
+        Permissions.ORG_SERVICES_VIEW,
+        Permissions.WAREHOUSE_EXPORT,
+        Permissions.EXPENSES_VIEW,
+        Permissions.EXPENSES_CREATE,
+        Permissions.EXPENSES_UPDATE,
+    ),
+
+    UserRole.REGION_MANAGER.value: _set(
+        *MANAGER_BASE,
+        Permissions.ASSETS_CREATE,
+        Permissions.ASSETS_DELETE,
+        Permissions.DOCUMENTS_CREATE,
+        Permissions.DOCUMENTS_UPDATE,
+        Permissions.DOCUMENTS_EXPORT,
+        Permissions.WAREHOUSE_EXPORT,
+        Permissions.EXPENSES_VIEW,
+        Permissions.EXPENSES_CREATE,
+        Permissions.EXPENSES_UPDATE,
+    ),
+
+    UserRole.SERVICE_MANAGER.value: _set(
+        Permissions.USERS_VIEW,
         Permissions.ASSETS_VIEW,
         Permissions.ASSETS_CREATE,
         Permissions.ASSETS_UPDATE,
         Permissions.ASSETS_ASSIGN,
+        Permissions.ASSETS_TRANSFER,
         Permissions.REPAIRS_VIEW,
         Permissions.REPAIRS_CREATE,
         Permissions.REPAIRS_UPDATE,
@@ -206,40 +310,50 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         Permissions.APPROVALS_VIEW,
         Permissions.APPROVALS_CREATE,
         Permissions.APPROVALS_APPROVE,
-        Permissions.ANALYTICS_VIEW,
         Permissions.DOCUMENTS_VIEW,
-    },
-    # Operator - basic operational access
-    UserRole.OPERATOR.value: {
+        Permissions.DOCUMENTS_CREATE,
+        Permissions.DOCUMENTS_UPDATE,
+        Permissions.DOCUMENTS_EXPORT,
+        Permissions.WAREHOUSE_VIEW,
+        Permissions.ANALYTICS_VIEW,
+        Permissions.EXPENSES_VIEW,
+        Permissions.EXPENSES_CREATE,
+        Permissions.EXPENSES_UPDATE,
+    ),
+
+    UserRole.OPERATOR.value: _set(
+        Permissions.USERS_VIEW,
         Permissions.ASSETS_VIEW,
         Permissions.ASSETS_UPDATE,
         Permissions.REPAIRS_VIEW,
         Permissions.REPAIRS_CREATE,
         Permissions.APPROVALS_VIEW,
         Permissions.DOCUMENTS_VIEW,
+        Permissions.WAREHOUSE_VIEW,
         Permissions.ANALYTICS_VIEW,
-    },
-    # Approver - focus on approvals
-    UserRole.APPROVER.value: {
-        Permissions.APPROVALS_VIEW,
-        Permissions.APPROVALS_APPROVE,
-        Permissions.APPROVALS_REJECT,
-        Permissions.ASSETS_VIEW,
-        Permissions.REPAIRS_VIEW,
-        Permissions.DOCUMENTS_VIEW,
-    },
-    # Auditor - read-only access to audit and analytics
-    UserRole.AUDITOR.value: {
-        Permissions.AUDIT_VIEW,
-        Permissions.AUDIT_EXPORT,
-        Permissions.ANALYTICS_VIEW,
-        Permissions.ANALYTICS_EXPORT,
-        Permissions.ANALYTICS_DASHBOARD,
-        Permissions.USERS_VIEW,
-        Permissions.ASSETS_VIEW,
-        Permissions.REPAIRS_VIEW,
-        Permissions.DOCUMENTS_VIEW,
-        Permissions.SYSTEM_HEALTH,
-        Permissions.SYSTEM_LOGS,
-    },
+    ),
+
+    UserRole.APPROVER.value: _set(
+        *APPROVER_BASE,
+    ),
+
+    UserRole.AUDITOR.value: _set(
+        *AUDIT_BASE,
+    ),
 }
+
+
+def normalize_role(role: UserRole | str) -> str:
+    return role.value if isinstance(role, UserRole) else role
+
+
+def get_permissions_for_role(role: UserRole | str) -> frozenset[str]:
+    return ROLE_PERMISSIONS.get(normalize_role(role), frozenset())
+
+
+def has_permission(role: UserRole | str, permission: str) -> bool:
+    return permission in get_permissions_for_role(role)
+
+
+def is_valid_permission(permission: str) -> bool:
+    return permission in Permissions.all()

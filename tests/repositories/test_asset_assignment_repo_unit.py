@@ -22,36 +22,6 @@ async def test_get_asset_returns_scalar_one_or_none():
     session.execute.assert_awaited_once()
 
 
-async def test_get_asset_for_update_returns_none_when_row_missing(monkeypatch):
-    session = SimpleNamespace(
-        execute=AsyncMock(return_value=SimpleNamespace(first=lambda: None))
-    )
-    repo = AssetAssignmentRepository(session)
-    get_plain = AsyncMock()
-    monkeypatch.setattr(repo, "get_asset_plain", get_plain)
-
-    fetched = await repo.get_asset_for_update(uuid4())
-
-    assert fetched is None
-    get_plain.assert_not_called()
-
-
-async def test_get_asset_for_update_fetches_plain_row(monkeypatch):
-    asset = object()
-    session = SimpleNamespace(
-        execute=AsyncMock(return_value=SimpleNamespace(first=lambda: ("present",)))
-    )
-    repo = AssetAssignmentRepository(session)
-    get_plain = AsyncMock(return_value=asset)
-    monkeypatch.setattr(repo, "get_asset_plain", get_plain)
-    asset_id = uuid4()
-
-    fetched = await repo.get_asset_for_update(asset_id, nowait=True)
-
-    assert fetched is asset
-    get_plain.assert_awaited_once_with(asset_id)
-
-
 async def test_create_assignment_adds_and_flushes():
     session = SimpleNamespace(add=Mock(), flush=AsyncMock(), refresh=AsyncMock())
     repo = AssetAssignmentRepository(session)

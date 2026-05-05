@@ -96,7 +96,7 @@ class SystemPermission:
 
 class ExpensePermission:
     # Expenses
-    CanViewExpenses = require_permission(Permissions.EXPENSES_READ)
+    CanViewExpenses = require_permission(Permissions.EXPENSES_VIEW)
     CanCreateExpenses = require_permission(Permissions.EXPENSES_CREATE)
     CanUpdateExpenses = require_permission(Permissions.EXPENSES_UPDATE)
     CanDeleteExpenses = require_permission(Permissions.EXPENSES_DELETE)
