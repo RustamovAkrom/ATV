@@ -8,7 +8,7 @@ from api.v1.analytics._utils import (
 )
 from core.cache.decorators import cached
 from core.config import get_settings
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetPermissions
 from schemas.analytics.costs import (
     AssetCostAnalyticsOut,
     RegionCostAnalyticsOut,
@@ -25,7 +25,7 @@ ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTI
 @router.get(
     "/repairs",
     response_model=PageOutSchema[RepairCostAnalyticsOut],
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=300, tags=("analytics:costs:repairs",))
 async def get_repair_costs(
@@ -54,7 +54,7 @@ async def get_repair_costs(
 @router.get(
     "/assets",
     response_model=PageOutSchema[AssetCostAnalyticsOut],
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=300, tags=("analytics:costs:assets",))
 async def get_asset_costs(
@@ -83,7 +83,7 @@ async def get_asset_costs(
 @router.get(
     "/regions",
     response_model=PageOutSchema[RegionCostAnalyticsOut],
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=300, tags=("analytics:costs:regions",))
 async def get_region_costs(

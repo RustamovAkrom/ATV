@@ -9,7 +9,7 @@ from api.v1.analytics._utils import (
 from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.auth.dependencies import get_current_user
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetPermissions
 from schemas.analytics.top import (
     TopAssetAnalyticsOut,
     TopMetric,
@@ -27,7 +27,7 @@ ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTI
 @router.get(
     "/assets",
     response_model=list[TopAssetAnalyticsOut],
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=300, tags=("analytics:top:assets",))
 async def get_top_assets(
@@ -51,7 +51,7 @@ async def get_top_assets(
 @router.get(
     "/users",
     response_model=list[TopUserAnalyticsOut],
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=300, tags=("analytics:top:users",))
 async def get_top_users(
@@ -76,7 +76,7 @@ async def get_top_users(
 @router.get(
     "/services",
     response_model=list[TopServiceAnalyticsOut],
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=300, tags=("analytics:top:services",))
 async def get_top_services(

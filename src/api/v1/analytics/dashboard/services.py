@@ -8,7 +8,7 @@ from api.v1.analytics._utils import (
 )
 from core.cache.decorators import cached
 from core.config import get_settings
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetPermissions
 from schemas.analytics.dashboard.services import ServiceBreakdownOut
 from services.analytics.dashboard.service_service import ServiceAnalyticsService
 
@@ -22,7 +22,7 @@ DASHBOARD_LIMIT, DASHBOARD_WINDOW = parse_rate_limit(
 @router.get(
     "/",
     response_model=list[ServiceBreakdownOut],
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=120, tags=("analytics:dashboard:services",))
 async def get_service_breakdown(

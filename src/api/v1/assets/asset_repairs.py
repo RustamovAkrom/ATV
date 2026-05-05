@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from api.dependencies.assets.asset_repair import get_repair_service
 from core.cache.decorators import invalidate_cache
 from core.security.auth.dependencies import get_current_user
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetPermissions
 
 from schemas.auth import CurrentUserSchema
 from schemas.assets.repairs import (
@@ -27,7 +27,7 @@ router = APIRouter(
 @router.post(
     "/report",
     response_model=RepairSchema,
-    dependencies=[presets.CanUpdateAssets],
+    dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
 )
 @invalidate_cache(tags=("assets:list",))
 async def report_asset_repair(
@@ -42,7 +42,7 @@ async def report_asset_repair(
 @router.post(
     "/{repair_id}/start",
     response_model=RepairSchema,
-    dependencies=[presets.CanUpdateAssets],
+    dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
 )
 @invalidate_cache(tags=("assets:list",))
 async def start_asset_repair(
@@ -58,7 +58,7 @@ async def start_asset_repair(
 @router.post(
     "/{repair_id}/cancel",
     response_model=RepairSchema,
-    dependencies=[presets.CanUpdateAssets],
+    dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
 )
 @invalidate_cache(tags=("assets:list",))
 async def cancel_asset_repair(

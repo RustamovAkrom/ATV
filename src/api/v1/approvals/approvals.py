@@ -5,7 +5,7 @@ from db.models.enums import ApprovalStatus
 
 from api.dependencies.assets.asset_approval import get_approval_service
 from core.security.auth.dependencies import get_current_user
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetApprovalPermissions
 from schemas.assets.approvals import ApprovalCreate, ApprovalDecision, ApprovalSchema
 from schemas.auth import CurrentUserSchema
 from services.approvals.approval_service import ApprovalService
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/approvals", tags=["Approvals"])
 @router.get(
     "/",
     response_model=PageOutSchema[ApprovalSchema],
-    dependencies=[presets.CanViewApprovals],
+    dependencies=[Depends(AssetApprovalPermissions.CanViewApprovals)],
 )
 async def list_approvals(
     status: ApprovalStatus | None = Query(None),
@@ -35,7 +35,7 @@ async def list_approvals(
 
 
 @router.post(
-    "/", response_model=ApprovalSchema, dependencies=[presets.CanCreateApprovals]
+    "/", response_model=ApprovalSchema, dependencies=[Depends(AssetApprovalPermissions.CanCreateApprovals)]
 )
 async def create_approval(
     data: ApprovalCreate,
@@ -52,7 +52,7 @@ async def create_approval(
 @router.post(
     "/{approval_id}/approve",
     response_model=ApprovalSchema,
-    dependencies=[presets.CanApproveApprovals],
+    dependencies=[Depends(AssetApprovalPermissions.CanApproveApprovals)],
 )
 async def approve_approval(
     approval_id: UUID,
@@ -77,7 +77,7 @@ async def approve_approval(
 @router.post(
     "/{approval_id}/reject",
     response_model=ApprovalSchema,
-    dependencies=[presets.CanRejectApprovals],
+    dependencies=[Depends(AssetApprovalPermissions.CanRejectApprovals)],
 )
 async def reject_approval(
     approval_id: UUID,

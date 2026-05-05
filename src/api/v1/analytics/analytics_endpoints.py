@@ -13,7 +13,7 @@ from api.dependencies.analytics import (
     get_utilization_analytics_domain_service,
 )
 from core.security.auth.dependencies import get_current_user
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetPermissions, AssetApprovalPermissions
 from schemas.analytics.common import AnalyticsFilters, AnalyticsMetaSchema, AnalyticsResponseSchema
 from schemas.auth import CurrentUserSchema
 from services.analytics.approval_analytics_service import ApprovalAnalyticsDomainService
@@ -45,7 +45,11 @@ def _resp(data: dict, filters: AnalyticsFilters):
     )
 
 
-@router.get("/overview", response_model=AnalyticsResponseSchema, dependencies=[presets.CanViewAssets])
+@router.get(
+    "/overview",
+    response_model=AnalyticsResponseSchema,
+    dependencies=[Depends(AssetPermissions.CanViewAssets)]
+)
 async def overview(
     region_id: UUID | None = Query(default=None),
     service_id: UUID | None = Query(default=None),
@@ -58,7 +62,11 @@ async def overview(
     return _resp(await service.overview(f, current_user), f)
 
 
-@router.get("/assets/distribution", response_model=AnalyticsResponseSchema, dependencies=[presets.CanViewAssets])
+@router.get(
+    "/assets/distribution",
+    response_model=AnalyticsResponseSchema,
+    dependencies=[Depends(AssetPermissions.CanViewAssets)]
+)
 async def assets_distribution(
     region_id: UUID | None = Query(default=None),
     service_id: UUID | None = Query(default=None),
@@ -71,7 +79,11 @@ async def assets_distribution(
     return _resp(await service.distribution(f, current_user), f)
 
 
-@router.get("/assets/lifecycle", response_model=AnalyticsResponseSchema, dependencies=[presets.CanViewAssets])
+@router.get(
+    "/assets/lifecycle",
+    response_model=AnalyticsResponseSchema,
+    dependencies=[Depends(AssetPermissions.CanViewAssets)]
+)
 async def assets_lifecycle(
     region_id: UUID | None = Query(default=None),
     service_id: UUID | None = Query(default=None),
@@ -84,7 +96,11 @@ async def assets_lifecycle(
     return _resp(await service.lifecycle(f, current_user), f)
 
 
-@router.get("/repairs", response_model=AnalyticsResponseSchema, dependencies=[presets.CanViewAssets])
+@router.get(
+    "/repairs",
+    response_model=AnalyticsResponseSchema,
+    dependencies=[Depends(AssetPermissions.CanViewAssets)]
+)
 async def repairs(
     region_id: UUID | None = Query(default=None),
     service_id: UUID | None = Query(default=None),
@@ -97,7 +113,10 @@ async def repairs(
     return _resp(await service.get(f, current_user), f)
 
 
-@router.get("/transfers", response_model=AnalyticsResponseSchema, dependencies=[presets.CanViewAssets])
+@router.get(
+    "/transfers",
+    response_model=AnalyticsResponseSchema,
+    dependencies=[Depends(AssetPermissions.CanViewAssets)])
 async def transfers(
     region_id: UUID | None = Query(default=None),
     service_id: UUID | None = Query(default=None),
@@ -110,7 +129,10 @@ async def transfers(
     return _resp(await service.get(f, current_user), f)
 
 
-@router.get("/approvals", response_model=AnalyticsResponseSchema, dependencies=[presets.CanViewApprovals])
+@router.get(
+    "/approvals",
+    response_model=AnalyticsResponseSchema,
+    dependencies=[Depends(AssetApprovalPermissions.CanViewApprovals)])
 async def approvals(
     region_id: UUID | None = Query(default=None),
     service_id: UUID | None = Query(default=None),
@@ -123,7 +145,11 @@ async def approvals(
     return _resp(await service.get(f, current_user), f)
 
 
-@router.get("/documents", response_model=AnalyticsResponseSchema, dependencies=[presets.CanViewAssets])
+@router.get(
+    "/documents",
+    response_model=AnalyticsResponseSchema,
+    dependencies=[Depends(AssetPermissions.CanViewAssets)]
+)
 async def documents(
     region_id: UUID | None = Query(default=None),
     service_id: UUID | None = Query(default=None),
@@ -136,7 +162,11 @@ async def documents(
     return _resp(await service.get(f, current_user), f)
 
 
-@router.get("/utilization", response_model=AnalyticsResponseSchema, dependencies=[presets.CanViewAssets])
+@router.get(
+    "/utilization",
+    response_model=AnalyticsResponseSchema,
+    dependencies=[Depends(AssetPermissions.CanViewAssets)]
+)
 async def utilization(
     region_id: UUID | None = Query(default=None),
     service_id: UUID | None = Query(default=None),
@@ -149,7 +179,11 @@ async def utilization(
     return _resp(await service.get(f, current_user), f)
 
 
-@router.get("/report", response_model=AnalyticsResponseSchema, dependencies=[presets.CanViewAssets])
+@router.get(
+    "/report",
+    response_model=AnalyticsResponseSchema,
+    dependencies=[Depends(AssetPermissions.CanViewAssets)]
+)
 async def report(
     region_id: UUID | None = Query(default=None),
     service_id: UUID | None = Query(default=None),

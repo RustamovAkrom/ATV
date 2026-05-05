@@ -8,7 +8,7 @@ from api.dependencies.analytics import (
     get_report_service,
 )
 from core.security.auth.dependencies import get_current_user
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetPermissions
 from schemas.analytics.common import AnalyticsFilters, AnalyticsMetaSchema, AnalyticsResponseSchema
 from schemas.auth import CurrentUserSchema
 from services.analytics.asset_analytics_service import AssetAnalyticsService
@@ -33,7 +33,7 @@ def _meta(filters: AnalyticsFilters):
     return AnalyticsMetaSchema(generated_at=utc_now(), filters=filters)
 
 
-@router.get("/distribution", response_model=AnalyticsResponseSchema, dependencies=[presets.CanViewAssets])
+@router.get("/distribution", response_model=AnalyticsResponseSchema, dependencies=[Depends(AssetPermissions.CanViewAssets)])
 async def get_distribution(
     region_id: UUID | None = Query(default=None),
     service_id: UUID | None = Query(default=None),
@@ -46,7 +46,7 @@ async def get_distribution(
     return AnalyticsResponseSchema(data=await service.distribution(filters, current_user), meta=_meta(filters))
 
 
-@router.get("/lifecycle", response_model=AnalyticsResponseSchema, dependencies=[presets.CanViewAssets])
+@router.get("/lifecycle", response_model=AnalyticsResponseSchema, dependencies=[Depends(AssetPermissions.CanViewAssets)])
 async def get_lifecycle(
     region_id: UUID | None = Query(default=None),
     service_id: UUID | None = Query(default=None),
@@ -59,7 +59,7 @@ async def get_lifecycle(
     return AnalyticsResponseSchema(data=await service.lifecycle(filters, current_user), meta=_meta(filters))
 
 
-@router.get("/overview", response_model=AnalyticsResponseSchema, dependencies=[presets.CanViewAssets])
+@router.get("/overview", response_model=AnalyticsResponseSchema, dependencies=[Depends(AssetPermissions.CanViewAssets)])
 async def get_assets_overview(
     region_id: UUID | None = Query(default=None),
     service_id: UUID | None = Query(default=None),

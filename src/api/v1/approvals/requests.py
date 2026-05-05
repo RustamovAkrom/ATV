@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from core.security.auth.dependencies import get_current_user
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetApprovalPermissions
 
 from schemas.auth import CurrentUserSchema
 from schemas.assets.asset_transfers import AssetTransferCreate
@@ -25,7 +25,7 @@ router = APIRouter(
 @router.post(
     "/assignment",
     response_model=ApprovalSchema,
-    dependencies=[presets.CanCreateApprovals],
+    dependencies=[Depends(AssetApprovalPermissions.CanCreateApprovals)],
 )
 async def request_assignment(
     asset_id: UUID,
@@ -47,7 +47,7 @@ async def request_assignment(
 @router.post(
     "/transfer",
     response_model=ApprovalSchema,
-    dependencies=[presets.CanCreateApprovals],
+    dependencies=[Depends(AssetApprovalPermissions.CanCreateApprovals)],
 )
 async def request_transfer(
     asset_id: UUID,
@@ -69,7 +69,7 @@ async def request_transfer(
 @router.post(
     "/repair/{repair_id}/complete",
     response_model=ApprovalSchema,
-    dependencies=[presets.CanCreateApprovals],
+    dependencies=[Depends(AssetApprovalPermissions.CanCreateApprovals)],
 )
 async def request_repair_complete(
     asset_id: UUID,
@@ -95,7 +95,7 @@ async def request_repair_complete(
 @router.post(
     "/warehouse-move",
     response_model=ApprovalSchema,
-    dependencies=[presets.CanCreateApprovals],
+    dependencies=[Depends(AssetApprovalPermissions.CanCreateApprovals)],
 )
 async def request_warehouse_move(
     asset_id: UUID,

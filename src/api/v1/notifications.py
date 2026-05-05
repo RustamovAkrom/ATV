@@ -18,6 +18,7 @@ from api.dependencies.notifications.notification import (
 )
 from core.notifications.ws.redis_listener import RedisListener
 from schemas.notifications.notification import UnreadCountResponseSchema
+from schemas.common import StatusResponse
 
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
@@ -73,7 +74,7 @@ async def get_notifications(
     )
 
 
-@router.post("/{notification_id}/read")
+@router.post("/{notification_id}/read", response_model=StatusResponse)
 async def mark_as_read(
     notification_id: UUID,
     service: NotificationService = Depends(get_notification_service),
@@ -83,16 +84,16 @@ async def mark_as_read(
         notification_id=notification_id,
         actor_id=current_user.id,
     )
-    return {"status": "ok"}
+    return StatusResponse(status="ok", message="Notification marked as read")
 
 
-@router.post("/read-all")
+@router.post("/read-all", response_model=StatusResponse)
 async def mark_all_as_read(
     service: NotificationService = Depends(get_notification_service),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
     await service.mark_all_as_read(actor_id=current_user.id)
-    return {"status": "ok"}
+    return StatusResponse(status="ok", message="All notifications marked as read")
 
 
 @router.get("/unread-count", response_model=UnreadCountResponseSchema)

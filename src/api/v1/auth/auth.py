@@ -7,6 +7,7 @@ from core.security.auth.dependencies import get_current_user
 from core.slowapi import limiter
 from schemas.auth import CurrentUserSchema, RefreshRequestSchema, TokenResponseSchema
 from services.auth.auth_service import AuthService
+from schemas.common import StatusResponse
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 settings = get_settings()
@@ -62,7 +63,7 @@ async def refresh(
     return tokens
 
 
-@router.post("/logout")
+@router.post("/logout", response_model=StatusResponse)
 async def logout(
     request: Request,
     data: RefreshRequestSchema,
@@ -74,10 +75,10 @@ async def logout(
 
     response.delete_cookie("access_token", path="/")
 
-    return {"status": "ok"}
+    return StatusResponse(status="ok", message="Logged out successfully")
 
 
-@router.post("/logout-all")
+@router.post("/logout-all", response_model=StatusResponse)
 async def logout_all(
     request: Request,
     response: Response,
@@ -86,4 +87,4 @@ async def logout_all(
 ):
     await service.logout_all(request, current_user.id)
     response.delete_cookie("access_token", path="/")
-    return {"status": "ok"}
+    return StatusResponse(status="ok", message="All sessions logged out")

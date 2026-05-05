@@ -1,8 +1,8 @@
 """
 
-Revision ID: 31c6372d020c
+Revision ID: 28fd9a2c7d4f
 Revises: 
-Create Date: 2026-05-03 22:09:51.251018
+Create Date: 2026-05-05 14:57:05.533465
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '31c6372d020c'
+revision: str = '28fd9a2c7d4f'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -67,18 +67,6 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_permissions_code'), 'permissions', ['code'], unique=True)
     op.create_index(op.f('ix_permissions_name'), 'permissions', ['name'], unique=True)
-    op.create_table('ranks',
-    sa.Column('name', sa.String(length=100), nullable=False),
-    sa.Column('code', sa.String(length=50), nullable=True),
-    sa.Column('level', sa.Integer(), nullable=True),
-    sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_ranks')),
-    sa.UniqueConstraint('code', name=op.f('uq_ranks_code')),
-    sa.UniqueConstraint('name', name=op.f('uq_ranks_name'))
-    )
     op.create_table('regions',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('parent_id', sa.UUID(), nullable=True),
@@ -169,7 +157,6 @@ def upgrade() -> None:
     sa.Column('status', sa.String(length=50), nullable=False),
     sa.Column('assigned_region_id', sa.UUID(), nullable=True),
     sa.Column('assigned_service_id', sa.UUID(), nullable=True),
-    sa.Column('rank_id', sa.UUID(), nullable=True),
     sa.Column('position', sa.String(length=255), nullable=True),
     sa.Column('badge_number', sa.String(length=50), nullable=True),
     sa.Column('passport_number', sa.String(length=50), nullable=True),
@@ -177,13 +164,11 @@ def upgrade() -> None:
     sa.Column('dismissed_at', sa.Date(), nullable=True),
     sa.Column('last_login', sa.DateTime(timezone=True), nullable=True),
     sa.Column('last_password_change', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('version', sa.Integer(), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['assigned_region_id'], ['regions.id'], name=op.f('fk_users_assigned_region_id_regions'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['assigned_service_id'], ['services.id'], name=op.f('fk_users_assigned_service_id_services'), ondelete='SET NULL'),
-    sa.ForeignKeyConstraint(['rank_id'], ['ranks.id'], name=op.f('fk_users_rank_id_ranks'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['role_id'], ['roles.id'], name=op.f('fk_users_role_id_roles'), ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_users')),
     sa.UniqueConstraint('badge_number', name=op.f('uq_users_badge_number')),
@@ -202,7 +187,6 @@ def upgrade() -> None:
     sa.Column('approved_by_id', sa.UUID(), nullable=True),
     sa.Column('executed', sa.Boolean(), nullable=False),
     sa.Column('decided_at', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('version', sa.Integer(), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -326,7 +310,6 @@ def upgrade() -> None:
     sa.Column('usage_intensity', sa.Integer(), nullable=False),
     sa.Column('is_transfer_locked', sa.Boolean(), nullable=False),
     sa.Column('meta_data', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'{}'::jsonb"), nullable=False),
-    sa.Column('version', sa.Integer(), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -447,6 +430,36 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id', name=op.f('pk_document_files'))
     )
     op.create_index(op.f('ix_document_files_document_id'), 'document_files', ['document_id'], unique=False)
+    op.create_table('expenses',
+    sa.Column('asset_id', sa.UUID(), nullable=True),
+    sa.Column('repair_id', sa.UUID(), nullable=True),
+    sa.Column('region_id', sa.UUID(), nullable=True),
+    sa.Column('service_id', sa.UUID(), nullable=True),
+    sa.Column('created_by', sa.UUID(), nullable=True),
+    sa.Column('expense_type_code', sa.String(length=50), nullable=False),
+    sa.Column('amount', sa.Numeric(precision=18, scale=2), nullable=False),
+    sa.Column('currency', sa.String(length=10), nullable=False),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('file_url', sa.String(length=2048), nullable=True),
+    sa.Column('occurred_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.ForeignKeyConstraint(['asset_id'], ['assets.id'], name=op.f('fk_expenses_asset_id_assets'), ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by'], ['users.id'], name=op.f('fk_expenses_created_by_users'), ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['region_id'], ['regions.id'], name=op.f('fk_expenses_region_id_regions'), ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['repair_id'], ['repairs.id'], name=op.f('fk_expenses_repair_id_repairs'), ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['service_id'], ['services.id'], name=op.f('fk_expenses_service_id_services'), ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_expenses'))
+    )
+    op.create_index(op.f('ix_expenses_asset_id'), 'expenses', ['asset_id'], unique=False)
+    op.create_index('ix_expenses_asset_region', 'expenses', ['asset_id', 'region_id'], unique=False)
+    op.create_index('ix_expenses_created_by', 'expenses', ['created_by'], unique=False)
+    op.create_index(op.f('ix_expenses_expense_type_code'), 'expenses', ['expense_type_code'], unique=False)
+    op.create_index(op.f('ix_expenses_region_id'), 'expenses', ['region_id'], unique=False)
+    op.create_index(op.f('ix_expenses_repair_id'), 'expenses', ['repair_id'], unique=False)
+    op.create_index(op.f('ix_expenses_service_id'), 'expenses', ['service_id'], unique=False)
+    op.create_index('ix_expenses_type_date', 'expenses', ['expense_type_code', 'occurred_at'], unique=False)
     op.create_table('repair_parts',
     sa.Column('repair_id', sa.UUID(), nullable=False),
     sa.Column('part_name', sa.String(length=150), nullable=False),
@@ -465,6 +478,15 @@ def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_index(op.f('ix_repair_parts_repair_id'), table_name='repair_parts')
     op.drop_table('repair_parts')
+    op.drop_index('ix_expenses_type_date', table_name='expenses')
+    op.drop_index(op.f('ix_expenses_service_id'), table_name='expenses')
+    op.drop_index(op.f('ix_expenses_repair_id'), table_name='expenses')
+    op.drop_index(op.f('ix_expenses_region_id'), table_name='expenses')
+    op.drop_index(op.f('ix_expenses_expense_type_code'), table_name='expenses')
+    op.drop_index('ix_expenses_created_by', table_name='expenses')
+    op.drop_index('ix_expenses_asset_region', table_name='expenses')
+    op.drop_index(op.f('ix_expenses_asset_id'), table_name='expenses')
+    op.drop_table('expenses')
     op.drop_index(op.f('ix_document_files_document_id'), table_name='document_files')
     op.drop_table('document_files')
     op.drop_index(op.f('ix_repairs_reported_by_id'), table_name='repairs')
@@ -535,7 +557,6 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_roles_code'), table_name='roles')
     op.drop_table('roles')
     op.drop_table('regions')
-    op.drop_table('ranks')
     op.drop_index(op.f('ix_permissions_name'), table_name='permissions')
     op.drop_index(op.f('ix_permissions_code'), table_name='permissions')
     op.drop_table('permissions')

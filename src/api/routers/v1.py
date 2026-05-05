@@ -35,6 +35,9 @@ from api.v1.assets.asset_documents import router as documents_router
 from api.v1.assets.asset_repairs import router as asset_repairs_router
 from api.v1.assets.asset_warehouse import router as asset_warehouse_router
 from api.v1.approvals.requests import router as approval_requests_router
+from api.v1.expenses import router as expenses_router
+from api.v1.organization.regions import router as regions_router
+from api.v1.organization.services import router as services_router
 
 router = APIRouter()
 
@@ -65,6 +68,13 @@ router.include_router(asset_category_router)
 router.include_router(manufacturer_router)
 router.include_router(asset_model_router)
 router.include_router(asset_classes_router)
+
+# Organization Management
+router.include_router(regions_router)
+router.include_router(services_router)
+
+# Financial Management
+router.include_router(expenses_router)
 
 # Analytics (READ) - CQRS Read Layer
 router.include_router(intelligence_analytics_router)

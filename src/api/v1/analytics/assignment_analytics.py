@@ -15,7 +15,7 @@ from api.v1.analytics._utils import (
 from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.auth.dependencies import get_current_user
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetPermissions
 from schemas.analytics.asset_assignment_analytics import (
     AssetAssignmentDetailOut,
     AssetAssignmentFilterInput,
@@ -41,7 +41,7 @@ ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTI
 @router.get(
     "/",
     response_model=PageOutSchema[AssetAssignmentDetailOut],
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=60, tags=("analytics:assignments:list",))
 async def list_assignments(
@@ -101,7 +101,7 @@ async def list_assignments(
 @router.get(
     "/active",
     response_model=PageOutSchema[AssetAssignmentDetailOut],
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=30, tags=("analytics:assignments:active",))
 async def list_active_assignments(
@@ -134,7 +134,7 @@ async def list_active_assignments(
 @router.get(
     "/user/{user_id}/summary",
     response_model=UserAssignmentSummary,
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=300, tags=("analytics:assignments:user",))
 async def get_user_assignment_summary(
@@ -170,7 +170,7 @@ async def get_user_assignment_summary(
 @router.get(
     "/asset/{asset_id}/timeline",
     response_model=AssetAssignmentTimeline,
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=300, tags=("analytics:assignments:timeline",))
 async def get_asset_assignment_timeline(
@@ -203,7 +203,7 @@ async def get_asset_assignment_timeline(
 @router.get(
     "/aggregates",
     response_model=AssignmentAggregates,
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=600, tags=("analytics:assignments:aggregates",))
 async def get_assignment_aggregates(

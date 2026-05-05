@@ -70,11 +70,14 @@ class Permissions:
 
     # ======================== ORGANIZATION (Regions, Services) ========================
     ORG_REGIONS_VIEW = "org.regions.view"
-    ORG_REGIONS_MANAGE = "org.regions.manage"
+    ORG_REGIONS_CREATE = "org.regions.create"
+    ORG_REGIONS_UPDATE = "org.regions.update"
+    ORG_REGIONS_DELETE = "org.regions.delete"
+
     ORG_SERVICES_VIEW = "org.services.view"
-    ORG_SERVICES_MANAGE = "org.services.manage"
-    ORG_RANKS_VIEW = "org.ranks.view"
-    ORG_RANKS_MANAGE = "org.ranks.manage"
+    ORG_SERVICES_CREATE = "org.services.create"
+    ORG_SERVICES_UPDATE = "org.services.update"
+    ORG_SERVICES_DELETE = "org.services.delete"
 
     # ======================== WAREHOUSE & INVENTORY ========================
     WAREHOUSE_VIEW = "warehouse.view"
@@ -85,6 +88,12 @@ class Permissions:
     SYSTEM_SETTINGS = "system.settings"
     SYSTEM_HEALTH = "system.health"
     SYSTEM_LOGS = "system.logs"
+
+    # ======================= Expenses =========================
+    EXPENSES_READ = "expenses.view"
+    EXPENSES_CREATE = "expenses.manage"
+    EXPENSES_UPDATE = "expenses.update"
+    EXPENSES_DELETE = "expenses.delete"
 
     @classmethod
     def all(cls) -> set[str]:

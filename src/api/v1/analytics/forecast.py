@@ -8,7 +8,7 @@ from api.v1.analytics._utils import (
 )
 from core.cache.decorators import cached
 from core.config import get_settings
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetPermissions
 from schemas.analytics.forecast import ForecastSeriesOut
 from schemas.analytics.trends import TrendInterval
 from services.analytics.forecast_analytics_service import ForecastAnalyticsService
@@ -19,7 +19,7 @@ ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTI
 
 
 @router.get(
-    "/repairs", response_model=ForecastSeriesOut, dependencies=[presets.CanViewAssets]
+    "/repairs", response_model=ForecastSeriesOut, dependencies=[Depends(AssetPermissions.CanViewAssets)]
 )
 @cached(ttl=300, tags=("analytics:forecast:repairs",))
 async def get_repair_forecast(
@@ -48,7 +48,7 @@ async def get_repair_forecast(
 
 
 @router.get(
-    "/failures", response_model=ForecastSeriesOut, dependencies=[presets.CanViewAssets]
+    "/failures", response_model=ForecastSeriesOut, dependencies=[Depends(AssetPermissions.CanViewAssets)]
 )
 @cached(ttl=300, tags=("analytics:forecast:failures",))
 async def get_failure_forecast(

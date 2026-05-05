@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 
 from api.dependencies.analytics import get_report_service
 from core.security.auth.dependencies import get_current_user
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetPermissions
 from schemas.analytics.common import AnalyticsFilters, AnalyticsMetaSchema, AnalyticsResponseSchema
 from schemas.auth import CurrentUserSchema
 from services.analytics.report_service import ReportService
@@ -14,7 +14,7 @@ from utils.helpers import utc_now
 router = APIRouter(prefix="/analytics/reports", tags=["Analytics - Reports"])
 
 
-@router.get("/", response_model=AnalyticsResponseSchema, dependencies=[presets.CanViewAssets])
+@router.get("/", response_model=AnalyticsResponseSchema, dependencies=[Depends(AssetPermissions.CanViewAssets)])
 async def get_report(
     region_id: UUID | None = Query(default=None),
     service_id: UUID | None = Query(default=None),

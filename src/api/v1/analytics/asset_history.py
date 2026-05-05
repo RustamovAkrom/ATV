@@ -13,7 +13,7 @@ from api.v1.analytics._utils import (
 )
 from core.cache.decorators import cached
 from core.config import get_settings
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetPermissions
 from schemas.analytics.asset_history import (
     AssetHistoryAggregates,
     AssetHistoryFilter,
@@ -35,7 +35,7 @@ ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTI
 @router.get(
     "/",
     response_model=PageOutSchema[AssetHistoryOut],
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=60, tags=("analytics:asset-history:list",))
 async def list_asset_history(
@@ -92,7 +92,7 @@ async def list_asset_history(
 @router.get(
     "/aggregates",
     response_model=AssetHistoryAggregates,
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=600, tags=("analytics:asset-history:aggregates",))
 async def get_asset_history_aggregates(
@@ -150,7 +150,7 @@ async def get_asset_history_aggregates(
 @router.post(
     "/search",
     response_model=PageOutSchema[AssetHistoryOut],
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=60, tags=("analytics:asset-history:search",))
 async def search_asset_history(

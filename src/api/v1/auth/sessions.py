@@ -24,7 +24,7 @@ async def list_sessions(
     return await service.list_user_sessions(current_user.id)
 
 
-@router.delete("/{session_id}", status_code=status.HTTP_200_OK)
+@router.delete("/{session_id}", response_model=StatusResponse, status_code=status.HTTP_200_OK)
 async def revoke_session(
     session_id: UUID,
     current_user: CurrentUserSchema = Depends(get_current_user),

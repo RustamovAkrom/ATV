@@ -2,21 +2,21 @@ import asyncio
 import json
 from typing import Literal
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Query, Request, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 
 from core.audit.stream import audit_stream
 
 # CanViewAudit — это уже готовый объект зависимости (variable)
-from core.security.rbac import presets
+from core.security.rbac.presets import AuditPermissions
 
 router = APIRouter(
     prefix="/audit/stream",
     tags=["Audit Stream"],
     # Если CanViewAudit — это переменная (например, CanViewAudit = Depends(...)),
     # то в список dependencies мы кладем её напрямую.
-    dependencies=[presets.CanViewAudit],
+    dependencies=[Depends(AuditPermissions.CanViewAudit)],
 )
 
 
@@ -41,7 +41,7 @@ def _match_filters(
     return True
 
 
-@router.get("/", include_in_schema=False)
+@router.get("/", include_in_schema=False, dependencies=[Depends(AuditPermissions.CanViewAudit)])
 async def stream_audit(
     request: Request,
     user_id: str | None = Query(None),

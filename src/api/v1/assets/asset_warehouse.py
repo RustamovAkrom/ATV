@@ -6,7 +6,7 @@ from api.dependencies.assets.asset_warehouse import get_warehouse_service
 from api.dependencies.assets.assets import get_asset_service
 from core.cache.decorators import invalidate_cache
 from core.security.auth.dependencies import get_current_user
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetPermissions
 
 from schemas.auth import CurrentUserSchema
 from schemas.assets.warehouses import WarehouseMoveRequest
@@ -25,7 +25,7 @@ router = APIRouter(
 @router.post(
     "/",
     response_model=AssetDetailSchema,
-    dependencies=[presets.CanUpdateAssets],
+    dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
 )
 @invalidate_cache(tags=("assets:list",))
 async def move_asset_to_warehouse(

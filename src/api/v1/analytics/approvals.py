@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 
 from api.dependencies.analytics import get_approval_analytics_domain_service
 from core.security.auth.dependencies import get_current_user
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetApprovalPermissions
 from schemas.analytics.common import AnalyticsFilters, AnalyticsMetaSchema, AnalyticsResponseSchema
 from schemas.auth import CurrentUserSchema
 from services.analytics.approval_analytics_service import ApprovalAnalyticsDomainService
@@ -14,7 +14,11 @@ from utils.helpers import utc_now
 router = APIRouter(prefix="/analytics/approvals", tags=["Analytics - Approvals"])
 
 
-@router.get("/", response_model=AnalyticsResponseSchema, dependencies=[presets.CanViewApprovals])
+@router.get(
+    "/",
+    response_model=AnalyticsResponseSchema,
+    dependencies=[Depends(AssetApprovalPermissions.CanViewApprovals)]
+)
 async def get_approvals(
     region_id: UUID | None = Query(default=None),
     service_id: UUID | None = Query(default=None),

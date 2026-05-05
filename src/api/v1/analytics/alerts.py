@@ -11,7 +11,7 @@ from api.v1.analytics._utils import (
 )
 from core.cache.decorators import cached
 from core.config import get_settings
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetPermissions, AssetApprovalPermissions
 from schemas.analytics.alerts import AlertOut
 from services.analytics.alert_analytics_service import AlertAnalyticsService
 from services.analytics.alert_service import AnalyticsAlertService
@@ -21,7 +21,11 @@ settings = get_settings()
 ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTICS)
 
 
-@router.get("/", response_model=list[AlertOut], dependencies=[presets.CanViewAssets])
+@router.get(
+    "/",
+    response_model=list[AlertOut],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)]
+)
 @cached(ttl=120, tags=("analytics:alerts",))
 async def get_alerts(
     request: Request,
@@ -58,7 +62,7 @@ async def get_alerts(
 
 @router.post(
     "/dispatch",
-    dependencies=[presets.CanManageApprovals],
+    dependencies=[Depends(AssetApprovalPermissions.CanManageApprovals)],
 )
 async def dispatch_analytics_alerts(
     request: Request,

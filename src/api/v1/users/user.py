@@ -6,7 +6,7 @@ from api.dependencies.users import get_user_service
 from core.cache.decorators import cached, invalidate_cache
 from core.exceptions.errors import BadRequest
 from core.security.auth.dependencies import get_current_user
-from core.security.rbac import presets
+from core.security.rbac.presets import UserPermissions
 from db.models.users.user import User
 from schemas.auth import CurrentUserSchema
 from schemas.pagination import PaginationParamsSchema
@@ -82,7 +82,7 @@ async def change_password(
 
 
 @router.get(
-    "/", response_model=list[UserOutSchema], dependencies=[presets.CanViewUsers]
+    "/", response_model=list[UserOutSchema], dependencies=[Depends(UserPermissions.CanViewUsers)]
 )
 @cached(ttl=60, tags=("users:list",))
 async def list_users(
@@ -93,7 +93,7 @@ async def list_users(
     return [_to_user_out(user) for user in users]
 
 
-@router.post("/", response_model=UserOutSchema, dependencies=[presets.CanCreateUsers])
+@router.post("/", response_model=UserOutSchema, dependencies=[Depends(UserPermissions.CanCreateUsers)])
 @invalidate_cache(tags=("users:list", "users:search"))
 async def create_user(
     data: UserCreateSchema,
@@ -105,7 +105,7 @@ async def create_user(
 
 
 @router.get(
-    "/search", response_model=list[UserOutSchema], dependencies=[presets.CanViewUsers]
+    "/search", response_model=list[UserOutSchema], dependencies=[Depends(UserPermissions.CanViewUsers)]
 )
 @cached(ttl=30, tags=("users:search",))
 async def search_users(
@@ -118,7 +118,7 @@ async def search_users(
 
 
 @router.get(
-    "/{user_id}", response_model=UserOutSchema, dependencies=[presets.CanViewUsers]
+    "/{user_id}", response_model=UserOutSchema, dependencies=[Depends(UserPermissions.CanViewUsers)]
 )
 @cached(ttl=60, tags=("users:detail",))
 async def get_user(
@@ -134,7 +134,7 @@ async def get_user(
 async def update_user(
     user_id: UUID,
     data: AdminUserUpdateSchema,
-    current_user: CurrentUserSchema = presets.CanManageUsers,
+    current_user: CurrentUserSchema = Depends(UserPermissions.CanManageUsers),
     service: UserService = Depends(get_user_service),
 ):
     if user_id == current_user.id:
@@ -148,7 +148,7 @@ async def update_user(
 @invalidate_cache(tags=("users:list", "users:search", "users:detail"))
 async def archive_user(
     user_id: UUID,
-    current_user: CurrentUserSchema = presets.CanDeleteUsers,
+    current_user: CurrentUserSchema = Depends(UserPermissions.CanDeleteUsers),
     service: UserService = Depends(get_user_service),
 ):
     if user_id == current_user.id:
@@ -162,7 +162,7 @@ async def archive_user(
 @invalidate_cache(tags=("users:list", "users:search", "users:detail"))
 async def block_user(
     user_id: UUID,
-    current_user: CurrentUserSchema = presets.CanManageUsers,
+    current_user: CurrentUserSchema = Depends(UserPermissions.CanManageUsers),
     service: UserService = Depends(get_user_service),
 ):
     if user_id == current_user.id:
@@ -176,7 +176,7 @@ async def block_user(
 @invalidate_cache(tags=("users:list", "users:search", "users:detail"))
 async def activate_user(
     user_id: UUID,
-    current_user: CurrentUserSchema = presets.CanManageUsers,
+    current_user: CurrentUserSchema = Depends(UserPermissions.CanManageUsers),
     service: UserService = Depends(get_user_service),
 ):
     if user_id == current_user.id:

@@ -3,19 +3,21 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from api.dependencies.assets.asset_model import get_asset_model_service
+from core.security.rbac.presets import AssetPermissions
 from schemas.assets.asset_model import AssetModelCreateSchema, AssetModelOutSchema
 from schemas.common import StatusResponse
 from services.assets.asset_model_service import AssetModelService
 
+
 router = APIRouter(prefix="/asset-models", tags=["Asset models"])
 
 
-@router.get("/", response_model=list[AssetModelOutSchema])
+@router.get("/", response_model=list[AssetModelOutSchema], dependencies=[Depends(AssetPermissions.CanViewAssets)])
 async def list_models(service: AssetModelService = Depends(get_asset_model_service)):
     return await service.list()
 
 
-@router.post("/", response_model=AssetModelOutSchema)
+@router.post("/", response_model=AssetModelOutSchema, dependencies=[Depends(AssetPermissions.CanCreateAssets)])
 async def create_model(
     data: AssetModelCreateSchema,
     service: AssetModelService = Depends(get_asset_model_service),
@@ -23,7 +25,7 @@ async def create_model(
     return await service.create(data)
 
 
-@router.delete("/{model_id}", response_model=StatusResponse)
+@router.delete("/{model_id}", response_model=StatusResponse, dependencies=[Depends(AssetPermissions.CanDeleteAssets)])
 async def delete_model(
     model_id: UUID,
     service: AssetModelService = Depends(get_asset_model_service),

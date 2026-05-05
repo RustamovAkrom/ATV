@@ -8,7 +8,7 @@ from api.v1.analytics._utils import (
 )
 from core.cache.decorators import cached
 from core.config import get_settings
-from core.security.rbac import presets
+from core.security.rbac.presets import AssetPermissions
 from schemas.analytics.dashboard.repairs import RepairOut, RepairSummaryOut
 from services.analytics.dashboard.repair_service import RepairAnalyticsService
 
@@ -22,7 +22,7 @@ DASHBOARD_LIMIT, DASHBOARD_WINDOW = parse_rate_limit(
 @router.get(
     "/recent",
     response_model=list[RepairOut],
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=60, tags=("analytics:dashboard:repairs",))
 async def get_recent_repairs(
@@ -44,7 +44,7 @@ async def get_recent_repairs(
 @router.get(
     "/summary",
     response_model=RepairSummaryOut,
-    dependencies=[presets.CanViewAssets],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
 )
 @cached(ttl=120, tags=("analytics:dashboard:repairs:summary",))
 async def get_repairs_summary(

@@ -181,6 +181,7 @@ async def test_revoke_single_session(client, create_user):
 
     # revoke ONE session
     revoke_resp = await client.delete(f"/sessions/{session_id}")
+    print("DEBUG REVOKE", revoke_resp.status_code, revoke_resp.text)
     assert revoke_resp.status_code == 200, revoke_resp.text
 
     # refresh → should fail because revoked session triggers security response

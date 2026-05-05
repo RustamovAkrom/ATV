@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 
 from api.dependencies.audit import get_audit_service
 from core.cache.decorators import cached
-from core.security.rbac.presets import CanViewAudit
+from core.security.rbac.presets import AuditPermissions
 from schemas.audit import AuditFiltersSchema, AuditSchema, AuditStatsSchema
 from schemas.pagination import PageSchema, PaginationParamsSchema
 from services.audit.audit_service import AuditService
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/audit", tags=["Audit"])
 
 # Делаем проверку прав обязательной для всего роутера сразу,
 # чтобы не писать Depends в каждой функции
-router.dependencies.append(CanViewAudit)
+router.dependencies.append(Depends(AuditPermissions.CanViewAudit))
 
 
 def get_audit_filters(
