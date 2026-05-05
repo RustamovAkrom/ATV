@@ -94,6 +94,9 @@ class AssetService:
     async def create(
         self, data: AssetCreate, actor: CurrentUserSchema
     ) -> AssetDetailSchema:
+        AccessControl.check_region_access(actor, data.region_id)
+        AccessControl.check_service_access(actor, data.service_id)
+
         if data.owner_id:
             owner = await self.asset_repo.get_user(data.owner_id)
             if not owner:
@@ -159,6 +162,12 @@ class AssetService:
             return await self.get(asset.id, actor)
 
         await self._validate_update_references(payload)
+
+        if "region_id" in payload:
+            AccessControl.check_region_access(actor, payload["region_id"])
+        if "service_id" in payload:
+            AccessControl.check_service_access(actor, payload["service_id"])
+
         await self._validate_uniques(
             self._clean_optional(payload.get("asset_tag")),
             self._clean_optional(payload.get("serial_number")),

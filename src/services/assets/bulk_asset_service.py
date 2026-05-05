@@ -8,6 +8,9 @@ from schemas.assets.bulk import BulkFailedItem, BulkResult
 from schemas.auth.auth import CurrentUserSchema
 from core.security.rbac.permissions import Permissions
 from core.security.rbac.guards import check_permissions
+from services.assets.asset_assignment_service import AssetAssignmentService
+from services.assets.asset_transfer_service import AssetTransferService
+from services.assets.asset_service import AssetService
 
 
 class BulkAssetService:
@@ -16,9 +19,9 @@ class BulkAssetService:
     def __init__(
         self,
         session: AsyncSession,
-        assignment_service,
-        transfer_service,
-        asset_service,
+        assignment_service: AssetAssignmentService,
+        transfer_service: AssetTransferService,
+        asset_service: AssetService,
     ):
         self.session = session
         self.assignment_service = assignment_service
@@ -30,6 +33,7 @@ class BulkAssetService:
         asset_ids,
         user_id,
         actor: CurrentUserSchema,
+        atomic: bool = False,
     ) -> BulkResult:
         check_permissions(actor, Permissions.ASSETS_UPDATE)
 
@@ -42,6 +46,7 @@ class BulkAssetService:
                 user_id,
                 actor,
             ),
+            atomic=atomic,
         )
 
     async def bulk_transfer(
@@ -49,6 +54,7 @@ class BulkAssetService:
         asset_ids,
         transfer: AssetTransferCreate,
         actor: CurrentUserSchema,
+        atomic: bool = False,
     ) -> BulkResult:
         check_permissions(actor, Permissions.ASSETS_UPDATE)
 
@@ -61,6 +67,7 @@ class BulkAssetService:
                 transfer,
                 actor,
             ),
+            atomic=atomic,
         )
 
     async def bulk_update_status(
@@ -68,6 +75,7 @@ class BulkAssetService:
         asset_ids,
         status,
         actor: CurrentUserSchema,
+        atomic: bool = False,
     ) -> BulkResult:
         check_permissions(actor, Permissions.ASSETS_UPDATE)
 
@@ -80,11 +88,27 @@ class BulkAssetService:
                 AssetStatusChangeRequest(status=status),
                 actor,
             ),
+            atomic=atomic,
         )
 
-    async def _process_items(self, asset_ids, callback) -> BulkResult:
+    async def _process_items(self, asset_ids, callback, atomic: bool = False) -> BulkResult:
         success = []
         failed = []
+
+        if atomic:
+            try:
+                async with self.session.begin():
+                    for asset_id in asset_ids:
+                        await callback(asset_id)
+                        success.append(asset_id)
+            except APIException as exc:
+                failed.append(BulkFailedItem(id=asset_id, error=str(exc.detail)))
+                return BulkResult(success=[], failed=failed)
+            except Exception as exc:
+                failed.append(BulkFailedItem(id=asset_id, error=str(exc)))
+                return BulkResult(success=[], failed=failed)
+
+            return BulkResult(success=success, failed=failed)
 
         for asset_id in asset_ids:
             try:
