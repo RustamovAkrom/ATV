@@ -19,12 +19,9 @@ from schemas.common import StatusResponse
 
 router = APIRouter(prefix="/rbac", tags=["RBAC"])
 
-# --- ЧТЕНИЕ (Доступно тем, кто управляет пользователями или аудитом) ---
-
 
 @router.get("/roles", response_model=list[RoleOutSchema])
 async def list_roles(
-    # Позволяем просмотр тем, у кого есть права на просмотр ролей (Админы/Суперы)
     _: CurrentUserSchema = Depends(UserPermissions.CanViewUsers),
     service: RBACService = Depends(get_rbac_service),
 ):

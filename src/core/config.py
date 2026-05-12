@@ -119,6 +119,19 @@ class Settings(BaseSettings):
     ALERT_INACTIVE_ASSET_DAYS: int = 60
     ALERT_OVERLOADED_USER_THRESHOLD: int = 10
 
+    # File upload settings
+    UPLOAD_MAX_SIZE_MB: int = 5 # maximum file size in MB
+    UPLOAD_ALLOWED_EXTENSIONS: list[str] = [".jpg", ".jpeg", ".png", ".gif", ".webp"]
+    UPLOAD_ALLOWED_MIMETYPES: list[str] = [
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp"
+    ]
+    UPLOAD_AVATAR_DIR: str = "static/avatars"
+    UPLOAD_AVATAR_URL_PREFIX: str = "/static/avatars"
+    UPLOAD_MAX_FILENAME_LENGTH: int = 100
+
     @field_validator("DEBUG", mode="before")
     @classmethod
     def parse_debug_flag(cls, value):
