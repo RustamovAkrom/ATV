@@ -59,7 +59,6 @@ async def validate_and_prepare(repo, name: str):
     # 3. generate slug
     code = slugify(name)
 
-    # 🔥 ВАЖНЫЙ ФИКС
     if not code:
         raise BadRequest("Invalid name")
 

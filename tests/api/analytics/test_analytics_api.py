@@ -23,6 +23,11 @@ async def test_dashboard_overview_returns_stable_payload(
     assert payload["asset_history_metrics"]["total_history_entries"] >= 1
 
 
+async def test_dashboard_overview_requires_auth(client):
+    response = await client.get("/analytics/dashboard/overview/")
+    assert response.status_code in {401, 403}
+
+
 async def test_regions_endpoints_return_geo_and_aggregates(
     client, analytics_seed, analytics_tokens
 ):

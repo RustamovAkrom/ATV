@@ -6,66 +6,50 @@ from sqlalchemy import func, select
 
 from db.models.assets.asset import Asset
 from db.models.documents.document import Document
-from repositories.base import BaseRepository
+from repositories.analytics.base_analytics_repo import BaseAnalyticsRepository
 
 
-class DocumentAnalyticsRepository(BaseRepository):
-    @staticmethod
-    def _scope_filters(
-        region_id: UUID | None,
-        service_id: UUID | None,
-        scoped_region_id: UUID | None,
-        scoped_service_id: UUID | None,
-    ):
-        filters = []
-        if scoped_region_id or region_id:
-            filters.append(Asset.region_id == (scoped_region_id or region_id))
-        if scoped_service_id or service_id:
-            filters.append(Asset.service_id == (scoped_service_id or service_id))
-        return filters
+class DocumentAnalyticsRepository(BaseAnalyticsRepository):
+    """Репозиторий для аналитики документов"""
 
     async def metrics(
         self,
-        region_id: UUID | None,
-        service_id: UUID | None,
-        scoped_region_id: UUID | None,
-        scoped_service_id: UUID | None,
-        required_document_types: list[str],
-    ):
-        filters = self._scope_filters(
-            region_id, service_id, scoped_region_id, scoped_service_id
+        region_id: UUID | None = None,
+        service_id: UUID | None = None,
+        scoped_region_id: UUID | None = None,
+        scoped_service_id: UUID | None = None,
+        required_document_types: list[str] | None = None,
+    ) -> dict:
+        """Метрики по документам активов"""
+        filters = self.scope_filters(
+            Asset, region_id, service_id, scoped_region_id, scoped_service_id
         )
-        total = int(
-            (await self.execute(select(func.count(Asset.id)).where(*filters))).scalar_one()
-            or 0
-        )
-        with_docs = int(
-            (
-                await self.execute(
-                    select(func.count(func.distinct(Asset.id)))
-                    .select_from(Asset)
-                    .join(Document, Document.asset_id == Asset.id)
-                    .where(*filters)
+
+        total = await self.get_count(Asset, filters)
+
+        # Активы с документами
+        with_docs = await self.session.scalar(
+            select(func.count(func.distinct(Asset.id)))
+            .select_from(Asset)
+            .join(Document, Document.asset_id == Asset.id)
+            .where(*filters)
+        ) or 0
+
+        # Активы без обязательных документов
+        missing_compliance = 0
+        if required_document_types:
+            missing_compliance = await self.session.scalar(
+                select(func.count(Asset.id))
+                .where(
+                    *filters,
+                    ~Asset.id.in_(
+                        select(Document.asset_id).where(
+                            Document.document_type.in_(required_document_types)
+                        )
+                    ),
                 )
-            ).scalar_one()
-            or 0
-        )
-        missing_compliance = int(
-            (
-                await self.execute(
-                    select(func.count(Asset.id))
-                    .where(
-                        *filters,
-                        ~Asset.id.in_(
-                            select(Document.asset_id).where(
-                                Document.document_type.in_(required_document_types)
-                            )
-                        ),
-                    )
-                )
-            ).scalar_one()
-            or 0
-        )
+            ) or 0
+
         return {
             "total_assets": total,
             "with_documents": with_docs,

@@ -45,32 +45,18 @@ class AssetHistoryAnalyticsService:
             limit=pagination.limit,
         )
 
-    async def get_aggregates(
-        self, filters: AssetHistoryFilter
-    ) -> AssetHistoryAggregates:
-        """Get aggregated history metrics."""
+    async def get_aggregates(self, filters: AssetHistoryFilter) -> AssetHistoryAggregates:
         agg_dict = await self.repo.get_aggregates(filters)
 
-        # Build actions breakdown objects
-        actions_breakdown = [
-            {
-                "action": a["action"],
-                "count": a["count"],
-                "last_occurrence": a["last_occurrence"],
-                "first_occurrence": a["first_occurrence"],
-            }
-            for a in agg_dict["actions_breakdown"]
-        ]
-
         return AssetHistoryAggregates(
-            total_entries=agg_dict["total_entries"],
-            unique_assets=agg_dict["unique_assets"],
-            unique_users=agg_dict["unique_users"],
-            date_range_start=agg_dict["date_range_start"],
-            date_range_end=agg_dict["date_range_end"],
-            actions_breakdown=actions_breakdown,
-            most_active_asset_id=agg_dict["most_active_asset_id"],
-            most_active_asset_name=agg_dict["most_active_asset_name"],
-            most_active_user_id=agg_dict["most_active_user_id"],
-            most_active_user_name=agg_dict["most_active_user_name"],
+            total_entries=agg_dict.get("total_entries", 0),
+            unique_assets=agg_dict.get("unique_assets", 0),
+            unique_users=agg_dict.get("unique_users", 0),
+            date_range_start=agg_dict.get("date_range_start"),
+            date_range_end=agg_dict.get("date_range_end"),
+            actions_breakdown=agg_dict.get("actions_breakdown", []),
+            most_active_asset_id=agg_dict.get("most_active_asset_id"),
+            most_active_asset_name=agg_dict.get("most_active_asset_name"),
+            most_active_user_id=agg_dict.get("most_active_user_id"),
+            most_active_user_name=agg_dict.get("most_active_user_name"),
         )

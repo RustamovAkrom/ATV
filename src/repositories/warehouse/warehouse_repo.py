@@ -23,3 +23,4 @@ class WarehouseRepository(BaseRepository):
 
     async def get_warehouse(self, warehouse_id: UUID) -> Warehouse | None:
         return await self.session.get(Warehouse, warehouse_id)
+

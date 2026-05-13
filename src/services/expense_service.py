@@ -6,7 +6,6 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.exceptions.errors import NotFound
-from db.models.expenses import Expense
 from repositories.expenses import ExpenseRepository
 from schemas.expenses import (
     ExpenseCreateSchema,

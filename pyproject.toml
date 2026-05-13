@@ -122,6 +122,11 @@ source = ["src"]
 omit = [
     "*/tests/*",
     "*/migrations/*",
+    "src/scripts/*",
+    "src/dev.py",
+    "src/main.py",
+    "src/tasks/*",
+    "src/core/admin/*",
 ]
 
 [tool.coverage.report]

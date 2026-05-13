@@ -35,8 +35,8 @@ async def test_assignment_repository_aggregates_and_filters(dbsession, analytics
 
     assert active_total == 3
     assert len(active_items) == 3
-    assert aggregates["total_assignments"] == 4
-    assert aggregates["total_active_assignments"] == 3
+    assert aggregates.get("total_assignments", 0) == 4
+    assert aggregates.get("total_active_assignments", 0) == 3
 
 
 async def test_transfer_repository_metrics_and_bottlenecks(dbsession, analytics_seed):
@@ -45,7 +45,7 @@ async def test_transfer_repository_metrics_and_bottlenecks(dbsession, analytics_
     aggregates = await repo.get_transfer_aggregates(AssetTransferFilterInput())
     bottlenecks = await repo.get_bottlenecks(critical_days=2, warning_days=1)
 
-    assert aggregates["total_transfers"] == 2
-    assert aggregates["pending_transfers"] == 1
-    assert aggregates["completed_transfers"] == 1
-    assert len(bottlenecks["critical"]) >= 1
+    assert aggregates.get("total_transfers", 0) == 2
+    assert aggregates.get("pending_transfers", 0) == 1
+    assert aggregates.get("completed_transfers", 0) == 1
+    assert len(bottlenecks.get("critical", [])) >= 1

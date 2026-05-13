@@ -9,92 +9,62 @@ from db.models.enums import LifecycleStage
 from db.models.org.region import Region
 from db.models.org.service import Service
 from db.models.warehouse.warehouse import Warehouse
-from repositories.base import BaseRepository
+from repositories.analytics.base_analytics_repo import BaseAnalyticsRepository
 
 
-class AssetAnalyticsRepository(BaseRepository):
-    @staticmethod
-    def _scope_filters(
-        region_id: UUID | None,
-        service_id: UUID | None,
-        scoped_region_id: UUID | None,
-        scoped_service_id: UUID | None,
-    ):
-        filters = []
-        if scoped_region_id or region_id:
-            filters.append(Asset.region_id == (scoped_region_id or region_id))
-        if scoped_service_id or service_id:
-            filters.append(Asset.service_id == (scoped_service_id or service_id))
-        return filters
+class AssetAnalyticsRepository(BaseAnalyticsRepository):
+    """Репозиторий для аналитики активов"""
 
     async def distribution(
         self,
-        region_id: UUID | None,
-        service_id: UUID | None,
-        scoped_region_id: UUID | None,
-        scoped_service_id: UUID | None,
+        region_id: UUID | None = None,
+        service_id: UUID | None = None,
+        scoped_region_id: UUID | None = None,
+        scoped_service_id: UUID | None = None,
     ) -> dict:
-        filters = self._scope_filters(
-            region_id, service_id, scoped_region_id, scoped_service_id
+        """Распределение активов по регионам, сервисам, складам и статусам"""
+        filters = self.scope_filters(
+            Asset, region_id, service_id, scoped_region_id, scoped_service_id
         )
-        total_assets = int(
-            (await self.execute(select(func.count(Asset.id)).where(*filters))).scalar_one()
-            or 0
-        )
-        by_region = (
-            await self.execute(
-                select(Region.id, Region.name, func.count(Asset.id).label("asset_count"))
-                .select_from(Region)
-                .outerjoin(Asset, Asset.region_id == Region.id)
-                .where(*filters)
-                .group_by(Region.id, Region.name)
-            )
-        ).all()
-        by_service = (
-            await self.execute(
-                select(Service.id, Service.name, func.count(Asset.id).label("asset_count"))
-                .select_from(Service)
-                .outerjoin(Asset, Asset.service_id == Service.id)
-                .where(*filters)
-                .group_by(Service.id, Service.name)
-            )
-        ).all()
-        by_warehouse = (
-            await self.execute(
-                select(
-                    Warehouse.id,
-                    Warehouse.name,
-                    func.count(Asset.id).label("asset_count"),
-                )
-                .select_from(Warehouse)
-                .outerjoin(Asset, Asset.current_warehouse_id == Warehouse.id)
-                .where(*filters)
-                .group_by(Warehouse.id, Warehouse.name)
-            )
-        ).all()
-        by_status = (
-            await self.execute(
-                select(Asset.status, func.count(Asset.id).label("asset_count"))
-                .where(*filters)
-                .group_by(Asset.status)
-            )
-        ).all()
-        geo = (
-            await self.execute(
-                select(
-                    Region.id.label("region_id"),
-                    Region.name.label("region_name"),
-                    func.count(Asset.id).label("asset_count"),
-                    func.count(Asset.id)
-                    .filter(Asset.condition_percent <= 35)
-                    .label("critical_assets_count"),
-                )
-                .select_from(Region)
-                .outerjoin(Asset, Asset.region_id == Region.id)
-                .where(*filters)
-                .group_by(Region.id, Region.name)
-            )
-        ).all()
+
+        # Общее количество
+        total_assets = await self.get_count(Asset, filters)
+
+        # По регионам
+        by_region_query = select(
+            Region.id, Region.name, func.count(Asset.id).label("asset_count")
+        ).select_from(Region).outerjoin(Asset, Asset.region_id == Region.id).where(*filters).group_by(Region.id, Region.name)
+        by_region = (await self.session.execute(by_region_query)).all()
+
+        # По сервисам
+        by_service_query = select(
+            Service.id, Service.name, func.count(Asset.id).label("asset_count")
+        ).select_from(Service).outerjoin(Asset, Asset.service_id == Service.id).where(*filters).group_by(Service.id, Service.name)
+        by_service = (await self.session.execute(by_service_query)).all()
+
+        # По складам
+        by_warehouse_query = select(
+            Warehouse.id, Warehouse.name, func.count(Asset.id).label("asset_count")
+        ).select_from(Warehouse).outerjoin(Asset, Asset.current_warehouse_id == Warehouse.id).where(*filters).group_by(Warehouse.id, Warehouse.name)
+        by_warehouse = (await self.session.execute(by_warehouse_query)).all()
+
+        # По статусам
+        by_status_query = select(
+            Asset.status, func.count(Asset.id).label("asset_count")
+        ).where(*filters).group_by(Asset.status)
+        by_status = (await self.session.execute(by_status_query)).all()
+
+        # Гео-данные
+        geo_query = select(
+            Region.id.label("region_id"),
+            Region.name.label("region_name"),
+            func.count(Asset.id).label("asset_count"),
+            func.count(Asset.id)
+            .filter(Asset.condition_percent <= 35)
+            .label("critical_assets_count"),
+        ).select_from(Region).outerjoin(Asset, Asset.region_id == Region.id).where(*filters).group_by(Region.id, Region.name)
+        geo = (await self.session.execute(geo_query)).all()
+
         return {
             "total_assets": total_assets,
             "by_region": by_region,
@@ -106,33 +76,37 @@ class AssetAnalyticsRepository(BaseRepository):
 
     async def lifecycle(
         self,
-        region_id: UUID | None,
-        service_id: UUID | None,
-        scoped_region_id: UUID | None,
-        scoped_service_id: UUID | None,
+        region_id: UUID | None = None,
+        service_id: UUID | None = None,
+        scoped_region_id: UUID | None = None,
+        scoped_service_id: UUID | None = None,
     ) -> dict:
-        filters = self._scope_filters(
-            region_id, service_id, scoped_region_id, scoped_service_id
+        """Анализ жизненного цикла активов"""
+        filters = self.scope_filters(
+            Asset, region_id, service_id, scoped_region_id, scoped_service_id
         )
+
         ref_date = func.coalesce(Asset.commission_date, Asset.purchase_date)
         age_years = cast(func.extract("year", func.age(func.current_date(), ref_date)), Float)
+
         stage = case(
             (age_years < 2, LifecycleStage.NEW.value),
             (age_years < 5, LifecycleStage.NORMAL.value),
             (age_years < 10, LifecycleStage.OLD.value),
             else_=LifecycleStage.CRITICAL.value,
         )
-        rows = (
-            await self.execute(
-                select(stage.label("stage"), func.count(Asset.id).label("asset_count"))
-                .where(ref_date.isnot(None), *filters)
-                .group_by(stage)
-            )
-        ).all()
+
+        query = select(
+            stage.label("stage"),
+            func.count(Asset.id).label("asset_count")
+        ).where(ref_date.isnot(None), *filters).group_by(stage)
+
+        rows = (await self.session.execute(query)).all()
         total = sum(int(r.asset_count or 0) for r in rows)
         critical = sum(
             int(r.asset_count or 0)
             for r in rows
             if str(r.stage) == LifecycleStage.CRITICAL.value
         )
+
         return {"rows": rows, "total": total, "critical": critical}

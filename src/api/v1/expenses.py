@@ -16,7 +16,7 @@ from schemas.expenses import (
     ExpenseStatsSchema,
     ExpenseUpdateSchema,
 )
-from services.expenses import ExpenseService
+from services.expense_service import ExpenseService
 from schemas.auth.auth import CurrentUserSchema
 
 router = APIRouter(prefix="/expenses", tags=["Expenses"])

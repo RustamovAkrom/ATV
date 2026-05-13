@@ -4,7 +4,7 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.exceptions import NotFoundException, ValidationError
+from core.exceptions.errors import NotFound, ValidationError
 from repositories.warehouse.warehouse_repo import WarehouseRepository
 
 
@@ -82,7 +82,7 @@ class WarehouseService:
         """Get a specific warehouse."""
         warehouse = await self.repository.get_by_id(warehouse_id)
         if not warehouse:
-            raise NotFoundException(f"Warehouse {warehouse_id} not found")
+            raise NotFound(f"Warehouse {warehouse_id} not found")
 
         return {
             "id": str(warehouse.id),
@@ -325,7 +325,7 @@ class WarehouseService:
         """Get a specific part."""
         part = await self.repository.get_part_by_id(part_id)
         if not part:
-            raise NotFoundException(f"Part {part_id} not found")
+            raise NotFound(f"Part {part_id} not found")
 
         return {
             "id": str(part.id),

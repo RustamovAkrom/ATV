@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
-from pydantic import BaseModel
+from schemas.base import BaseSchema
 
 
 class AlertType(StrEnum):
@@ -17,7 +17,7 @@ class AlertSeverity(StrEnum):
     CRITICAL = "critical"
 
 
-class AlertOut(BaseModel):
+class AlertOut(BaseSchema):
     alert_type: AlertType
     severity: AlertSeverity
     entity_id: UUID

@@ -1,180 +1,55 @@
-# api/v1/analytics/asset_history.py
-
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
 
 from api.dependencies.analytics import get_asset_history_analytics_service
-from api.v1.analytics._utils import (
-    enforce_rate_limit,
-    parse_optional_datetime,
-    parse_rate_limit,
-    run_analytics_operation,
-)
+from api.v1.analytics._utils import enforce_rate_limit, parse_optional_datetime, parse_rate_limit, run_analytics_operation
 from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.rbac.presets import AssetPermissions
-from schemas.analytics.asset_history import (
-    AssetHistoryAggregates,
-    AssetHistoryFilter,
-    AssetHistoryOut,
-)
+from schemas.analytics.asset_history import AssetHistoryAggregates, AssetHistoryFilter, AssetHistoryOut
 from schemas.pagination import PageOutSchema, PaginationParamsSchema, build_page
-from services.analytics.asset_history_analytics_service import (
-    AssetHistoryAnalyticsService,
-)
+from services.analytics.asset_history_analytics_service import AssetHistoryAnalyticsService
 
-router = APIRouter(
-    prefix="/analytics/asset-history",
-    tags=["Analytics - Asset History"],
-)
+router = APIRouter(prefix="/analytics/asset-history", tags=["Analytics - History"])
 settings = get_settings()
 ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTICS)
 
 
-@router.get(
-    "/",
-    response_model=PageOutSchema[AssetHistoryOut],
-    dependencies=[Depends(AssetPermissions.CanViewAssets)],
-)
-@cached(ttl=60, tags=("analytics:asset-history:list",))
+@router.get("/", response_model=PageOutSchema[AssetHistoryOut], dependencies=[Depends(AssetPermissions.CanViewAssets)])
+@cached(ttl=60, tags=("analytics:history:list",))
 async def list_asset_history(
-    request: Request,
-    asset_id: UUID | None = Query(None),
-    user_id: UUID | None = Query(None),
-    action: str | None = Query(None, max_length=50),
-    date_from: str | None = Query(None, description="ISO format datetime"),
-    date_to: str | None = Query(None, description="ISO format datetime"),
-    search: str | None = Query(None, max_length=100),
-    pagination: PaginationParamsSchema = Depends(),
-    service: AssetHistoryAnalyticsService = Depends(
-        get_asset_history_analytics_service
-    ),
+    request: Request, asset_id: UUID | None = Query(None), user_id: UUID | None = Query(None),
+    action: str | None = Query(None, max_length=50), date_from: str | None = Query(None), date_to: str | None = Query(None),
+    search: str | None = Query(None, max_length=100), pagination: PaginationParamsSchema = Depends(),
+    service: AssetHistoryAnalyticsService = Depends(get_asset_history_analytics_service),
 ):
-    """List asset history with filtering and pagination."""
-    date_from_dt = parse_optional_datetime(date_from)
-    date_to_dt = parse_optional_datetime(date_to)
-
     filters = AssetHistoryFilter(
-        asset_id=asset_id,
-        user_id=user_id,
-        action=action,
-        date_from=date_from_dt,
-        date_to=date_to_dt,
-        search=search,
+        asset_id=asset_id, user_id=user_id, action=action,
+        date_from=parse_optional_datetime(date_from), date_to=parse_optional_datetime(date_to), search=search,
     )
-
-    await enforce_rate_limit(
-        request, "analytics:asset-history:list", ANALYTICS_LIMIT, ANALYTICS_WINDOW
-    )
+    await enforce_rate_limit(request, "analytics:history:list", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
-        request,
-        "analytics.asset_history.list",
-        {
-            "asset_id": asset_id,
-            "user_id": user_id,
-            "action": action,
-            "date_from": date_from_dt,
-            "date_to": date_to_dt,
-            "search": search,
-        },
+        request, "analytics.history.list", filters.model_dump(mode="json"),
         lambda: service.list(filters, pagination),
-        lambda: build_page(
-            schema=PageOutSchema[AssetHistoryOut],
-            items=[],
-            total=0,
-            page=pagination.page,
-            limit=pagination.limit,
-        ),
+        lambda: build_page(PageOutSchema[AssetHistoryOut], [], 0, pagination.page, pagination.limit),
     )
 
 
-@router.get(
-    "/aggregates",
-    response_model=AssetHistoryAggregates,
-    dependencies=[Depends(AssetPermissions.CanViewAssets)],
-)
-@cached(ttl=600, tags=("analytics:asset-history:aggregates",))
+@router.get("/aggregates", response_model=AssetHistoryAggregates, dependencies=[Depends(AssetPermissions.CanViewAssets)])
+@cached(ttl=600, tags=("analytics:history:aggregates",))
 async def get_asset_history_aggregates(
-    request: Request,
-    asset_id: UUID | None = Query(None),
-    user_id: UUID | None = Query(None),
-    action: str | None = Query(None, max_length=50),
-    date_from: str | None = Query(None, description="ISO format datetime"),
-    date_to: str | None = Query(None, description="ISO format datetime"),
-    service: AssetHistoryAnalyticsService = Depends(
-        get_asset_history_analytics_service
-    ),
+    request: Request, asset_id: UUID | None = Query(None), user_id: UUID | None = Query(None),
+    action: str | None = Query(None, max_length=50), date_from: str | None = Query(None), date_to: str | None = Query(None),
+    service: AssetHistoryAnalyticsService = Depends(get_asset_history_analytics_service),
 ):
-    """Get aggregated asset history metrics."""
-    date_from_dt = parse_optional_datetime(date_from)
-    date_to_dt = parse_optional_datetime(date_to)
-
     filters = AssetHistoryFilter(
-        asset_id=asset_id,
-        user_id=user_id,
-        action=action,
-        date_from=date_from_dt,
-        date_to=date_to_dt,
+        asset_id=asset_id, user_id=user_id, action=action,
+        date_from=parse_optional_datetime(date_from), date_to=parse_optional_datetime(date_to),
     )
-
-    await enforce_rate_limit(
-        request, "analytics:asset-history:aggregates", ANALYTICS_LIMIT, ANALYTICS_WINDOW
-    )
+    await enforce_rate_limit(request, "analytics:history:aggregates", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
-        request,
-        "analytics.asset_history.aggregates",
-        {
-            "asset_id": asset_id,
-            "user_id": user_id,
-            "action": action,
-            "date_from": date_from_dt,
-            "date_to": date_to_dt,
-        },
+        request, "analytics.history.aggregates", filters.model_dump(mode="json"),
         lambda: service.get_aggregates(filters),
-        lambda: AssetHistoryAggregates(
-            total_entries=0,
-            unique_assets=0,
-            unique_users=0,
-            date_range_start=None,
-            date_range_end=None,
-            actions_breakdown=[],
-            most_active_asset_id=None,
-            most_active_asset_name=None,
-            most_active_user_id=None,
-            most_active_user_name=None,
-        ),
-    )
-
-
-@router.post(
-    "/search",
-    response_model=PageOutSchema[AssetHistoryOut],
-    dependencies=[Depends(AssetPermissions.CanViewAssets)],
-)
-@cached(ttl=60, tags=("analytics:asset-history:search",))
-async def search_asset_history(
-    request: Request,
-    filters: AssetHistoryFilter,
-    pagination: PaginationParamsSchema = Depends(),
-    service: AssetHistoryAnalyticsService = Depends(
-        get_asset_history_analytics_service
-    ),
-):
-    """Search asset history with complex filters."""
-    await enforce_rate_limit(
-        request, "analytics:asset-history:search", ANALYTICS_LIMIT, ANALYTICS_WINDOW
-    )
-    return await run_analytics_operation(
-        request,
-        "analytics.asset_history.search",
-        filters.model_dump(mode="json"),
-        lambda: service.list(filters, pagination),
-        lambda: build_page(
-            schema=PageOutSchema[AssetHistoryOut],
-            items=[],
-            total=0,
-            page=pagination.page,
-            limit=pagination.limit,
-        ),
+        lambda: AssetHistoryAggregates(total_entries=0, unique_assets=0, unique_users=0, date_range_start=None, date_range_end=None, actions_breakdown=[], most_active_asset_id=None, most_active_asset_name=None, most_active_user_id=None, most_active_user_name=None),
     )

@@ -4,13 +4,13 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-
+from pydantic import ConfigDict, Field, field_validator
+from schemas.base import BaseSchema
 from api.v1.analytics._utils import sanitize_search
 from db.models.enums import TransferStatus
 
 
-class AssetTransferFilterInput(BaseModel):
+class AssetTransferFilterInput(BaseSchema):
     """Filters for asset transfer analytics queries."""
 
     asset_id: UUID | None = None
@@ -36,7 +36,7 @@ class AssetTransferFilterInput(BaseModel):
         return cleaned or None
 
 
-class AssetTransferOut(BaseModel):
+class AssetTransferOut(BaseSchema):
     """Transfer record with location details."""
 
     id: UUID
@@ -60,10 +60,8 @@ class AssetTransferOut(BaseModel):
 
     comment: str | None
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class AssetTransferPageOut(BaseModel):
+class AssetTransferPageOut(BaseSchema):
     items: list[AssetTransferOut]
 
     total: int
@@ -75,7 +73,7 @@ class AssetTransferPageOut(BaseModel):
     has_prev: bool
 
 
-class TransferDurationMetrics(BaseModel):
+class TransferDurationMetrics(BaseSchema):
     """Duration metrics for a transfer."""
 
     pending_duration_days: Decimal | None
@@ -92,7 +90,7 @@ class AssetTransferDetailOut(AssetTransferOut):
     duration_metrics: TransferDurationMetrics
 
 
-class TransferHistoryEntry(BaseModel):
+class TransferHistoryEntry(BaseSchema):
     """Transfer history entry for an asset."""
 
     transfer_id: UUID
@@ -106,7 +104,7 @@ class TransferHistoryEntry(BaseModel):
     duration_days: Decimal | None
 
 
-class AssetTransferHistory(BaseModel):
+class AssetTransferHistory(BaseSchema):
     """Complete transfer history for an asset."""
 
     asset_id: UUID
@@ -118,7 +116,7 @@ class AssetTransferHistory(BaseModel):
     history: list[TransferHistoryEntry]
 
 
-class TransferStatusBreakdown(BaseModel):
+class TransferStatusBreakdown(BaseSchema):
     """Breakdown of transfers by status."""
 
     status: str
@@ -127,7 +125,7 @@ class TransferStatusBreakdown(BaseModel):
     average_pending_days: Decimal | None  # Only for pending transfers
 
 
-class TransferBottleneck(BaseModel):
+class TransferBottleneck(BaseSchema):
     """Bottleneck analysis - transfers waiting too long."""
 
     transfer_id: UUID
@@ -141,7 +139,7 @@ class TransferBottleneck(BaseModel):
     created_at: datetime
 
 
-class TransferMetrics(BaseModel):
+class TransferMetrics(BaseSchema):
     """Aggregated transfer metrics."""
 
     total_transfers: int
@@ -163,7 +161,7 @@ class TransferMetrics(BaseModel):
     status_breakdown: list[TransferStatusBreakdown]
 
 
-class WarehouseTransferMetrics(BaseModel):
+class WarehouseTransferMetrics(BaseSchema):
     """Transfer metrics per warehouse."""
 
     warehouse_id: UUID
@@ -175,7 +173,7 @@ class WarehouseTransferMetrics(BaseModel):
     average_duration_days: Decimal | None
 
 
-class TransferPageOut(BaseModel):
+class TransferPageOut(BaseSchema):
     """Paginated transfer list."""
 
     items: list[AssetTransferOut]
@@ -184,7 +182,7 @@ class TransferPageOut(BaseModel):
     limit: int
 
 
-class BottleneckReportOut(BaseModel):
+class BottleneckReportOut(BaseSchema):
     """Report of transfer bottlenecks."""
 
     total_bottlenecks: int

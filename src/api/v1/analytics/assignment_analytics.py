@@ -1,5 +1,3 @@
-# api/v1/analytics/assignment_analytics.py
-
 from decimal import Decimal
 from uuid import UUID
 
@@ -30,10 +28,7 @@ from services.analytics.asset_assignment_analytics_service import (
     AssetAssignmentAnalyticsService,
 )
 
-router = APIRouter(
-    prefix="/analytics/assignments",
-    tags=["Analytics - Asset Assignments"],
-)
+router = APIRouter(prefix="/analytics/assignments", tags=["Analytics - Assignments"])
 settings = get_settings()
 ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTICS)
 
@@ -48,53 +43,29 @@ async def list_assignments(
     request: Request,
     asset_id: UUID | None = Query(None),
     user_id: UUID | None = Query(None),
-    status: AssignmentAnalyticsStatus | None = Query(
-        None, description="active or inactive"
-    ),
-    date_from: str | None = Query(None, description="ISO format datetime"),
-    date_to: str | None = Query(None, description="ISO format datetime"),
+    status: AssignmentAnalyticsStatus | None = Query(None),
+    date_from: str | None = Query(None),
+    date_to: str | None = Query(None),
     search: str | None = Query(None, max_length=100),
     pagination: PaginationParamsSchema = Depends(),
-    service: AssetAssignmentAnalyticsService = Depends(
-        get_asset_assignment_analytics_service
-    ),
+    service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
-    """List asset assignments with filtering and pagination."""
-    date_from_dt = parse_optional_datetime(date_from)
-    date_to_dt = parse_optional_datetime(date_to)
-
     filters = AssetAssignmentFilterInput(
         asset_id=asset_id,
         user_id=user_id,
         status=status,
-        date_from=date_from_dt,
-        date_to=date_to_dt,
+        date_from=parse_optional_datetime(date_from),
+        date_to=parse_optional_datetime(date_to),
         search=search,
     )
-
-    await enforce_rate_limit(
-        request, "analytics:assignments:list", ANALYTICS_LIMIT, ANALYTICS_WINDOW
-    )
+    await enforce_rate_limit(request, "analytics:assignments:list", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request,
         "analytics.assignments.list",
-        {
-            "asset_id": asset_id,
-            "user_id": user_id,
-            "status": status,
-            "date_from": date_from_dt,
-            "date_to": date_to_dt,
-            "search": search,
-        },
+        filters.model_dump(mode="json"),
         lambda: service.list_assignments(filters, pagination, current_user),
-        lambda: build_page(
-            schema=PageOutSchema[AssetAssignmentDetailOut],
-            items=[],
-            total=0,
-            page=pagination.page,
-            limit=pagination.limit,
-        ),
+        lambda: build_page(PageOutSchema[AssetAssignmentDetailOut], [], 0, pagination.page, pagination.limit),
     )
 
 
@@ -107,27 +78,16 @@ async def list_assignments(
 async def list_active_assignments(
     request: Request,
     pagination: PaginationParamsSchema = Depends(),
-    service: AssetAssignmentAnalyticsService = Depends(
-        get_asset_assignment_analytics_service
-    ),
+    service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
-    """List currently active assignments."""
-    await enforce_rate_limit(
-        request, "analytics:assignments:active", ANALYTICS_LIMIT, ANALYTICS_WINDOW
-    )
+    await enforce_rate_limit(request, "analytics:assignments:active", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request,
         "analytics.assignments.active",
         {"page": pagination.page, "limit": pagination.limit},
         lambda: service.list_active_assignments(pagination, current_user),
-        lambda: build_page(
-            schema=PageOutSchema[AssetAssignmentDetailOut],
-            items=[],
-            total=0,
-            page=pagination.page,
-            limit=pagination.limit,
-        ),
+        lambda: build_page(PageOutSchema[AssetAssignmentDetailOut], [], 0, pagination.page, pagination.limit),
     )
 
 
@@ -140,15 +100,10 @@ async def list_active_assignments(
 async def get_user_assignment_summary(
     request: Request,
     user_id: UUID,
-    service: AssetAssignmentAnalyticsService = Depends(
-        get_asset_assignment_analytics_service
-    ),
+    service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
-    """Get assignment summary for a specific user."""
-    await enforce_rate_limit(
-        request, "analytics:assignments:user-summary", ANALYTICS_LIMIT, ANALYTICS_WINDOW
-    )
+    await enforce_rate_limit(request, "analytics:assignments:user-summary", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request,
         "analytics.assignments.user_summary",
@@ -176,15 +131,10 @@ async def get_user_assignment_summary(
 async def get_asset_assignment_timeline(
     request: Request,
     asset_id: UUID,
-    service: AssetAssignmentAnalyticsService = Depends(
-        get_asset_assignment_analytics_service
-    ),
+    service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
-    """Get complete assignment timeline for an asset."""
-    await enforce_rate_limit(
-        request, "analytics:assignments:timeline", ANALYTICS_LIMIT, ANALYTICS_WINDOW
-    )
+    await enforce_rate_limit(request, "analytics:assignments:timeline", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request,
         "analytics.assignments.timeline",
@@ -213,35 +163,20 @@ async def get_assignment_aggregates(
     status: AssignmentAnalyticsStatus | None = Query(None),
     date_from: str | None = Query(None),
     date_to: str | None = Query(None),
-    service: AssetAssignmentAnalyticsService = Depends(
-        get_asset_assignment_analytics_service
-    ),
+    service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
 ):
-    """Get aggregated assignment metrics."""
-    date_from_dt = parse_optional_datetime(date_from)
-    date_to_dt = parse_optional_datetime(date_to)
-
     filters = AssetAssignmentFilterInput(
         asset_id=asset_id,
         user_id=user_id,
         status=status,
-        date_from=date_from_dt,
-        date_to=date_to_dt,
+        date_from=parse_optional_datetime(date_from),
+        date_to=parse_optional_datetime(date_to),
     )
-
-    await enforce_rate_limit(
-        request, "analytics:assignments:aggregates", ANALYTICS_LIMIT, ANALYTICS_WINDOW
-    )
+    await enforce_rate_limit(request, "analytics:assignments:aggregates", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request,
         "analytics.assignments.aggregates",
-        {
-            "asset_id": asset_id,
-            "user_id": user_id,
-            "status": status,
-            "date_from": date_from_dt,
-            "date_to": date_to_dt,
-        },
+        filters.model_dump(mode="json"),
         lambda: service.get_aggregates(filters),
         lambda: AssignmentAggregates(
             total_active_assignments=0,

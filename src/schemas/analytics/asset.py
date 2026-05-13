@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
-
+from schemas.base import BaseSchema
 from schemas.analytics.common import DistributionSchema
 
 
-class RegionGeoMetricSchema(BaseModel):
+class RegionGeoMetricSchema(BaseSchema):
     region_id: str
     region_name: str
     metrics: dict[str, int]
 
 
-class AssetDistributionDataSchema(BaseModel):
+class AssetDistributionDataSchema(BaseSchema):
     total_assets: int
     by_region: DistributionSchema
     by_service: DistributionSchema
@@ -20,6 +19,6 @@ class AssetDistributionDataSchema(BaseModel):
     geo: list[RegionGeoMetricSchema]
 
 
-class AssetLifecycleDataSchema(BaseModel):
+class AssetLifecycleDataSchema(BaseSchema):
     lifecycle_distribution: DistributionSchema
     critical_assets_percentage: float

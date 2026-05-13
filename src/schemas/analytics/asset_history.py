@@ -3,12 +3,12 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-
+from pydantic import ConfigDict, Field, field_validator
+from schemas.base import BaseSchema
 from api.v1.analytics._utils import sanitize_search
 
 
-class AssetHistoryFilter(BaseModel):
+class AssetHistoryFilter(BaseSchema):
     asset_id: UUID | None = None
     user_id: UUID | None = None
     action: str | None = Field(default=None, max_length=50)
@@ -27,7 +27,7 @@ class AssetHistoryFilter(BaseModel):
         return cleaned or None
 
 
-class AssetHistoryOut(BaseModel):
+class AssetHistoryOut(BaseSchema):
     id: UUID
     asset_id: UUID
     asset_name: str
@@ -40,7 +40,7 @@ class AssetHistoryOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class AssetHistoryMetrics(BaseModel):
+class AssetHistoryMetrics(BaseSchema):
     """Metrics aggregated for asset history."""
 
     action: str
@@ -49,7 +49,7 @@ class AssetHistoryMetrics(BaseModel):
     first_occurrence: datetime
 
 
-class AssetHistoryAggregates(BaseModel):
+class AssetHistoryAggregates(BaseSchema):
     """Aggregated history data."""
 
     total_entries: int
@@ -64,7 +64,7 @@ class AssetHistoryAggregates(BaseModel):
     most_active_user_name: str | None
 
 
-class AssetHistoryPage(BaseModel):
+class AssetHistoryPage(BaseSchema):
     """Paginated history with total count."""
 
     items: list[AssetHistoryOut]

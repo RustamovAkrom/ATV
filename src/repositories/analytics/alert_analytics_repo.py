@@ -1,5 +1,4 @@
 from sqlalchemy import exists, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models.assets.asset import Asset
 from db.models.assets.asset_assignment import AssetAssignment
@@ -7,37 +6,40 @@ from db.models.assets.asset_transfer import AssetTransfer
 from db.models.enums import AssetStatus, TransferStatus
 from db.models.repairs.repair import Repair
 from db.models.users.user import User
+from repositories.analytics.base_analytics_repo import BaseAnalyticsRepository
 
 
-class AlertAnalyticsRepository:
-    def __init__(self, session: AsyncSession):
-        self.session = session
+class AlertAnalyticsRepository(BaseAnalyticsRepository):
+    """Репозиторий для алертов"""
 
     async def stuck_transfers(self, cutoff):
-        result = await self.session.execute(
-            select(AssetTransfer.id, Asset.name, AssetTransfer.created_at)
-            .join(Asset, Asset.id == AssetTransfer.asset_id)
-            .where(
-                AssetTransfer.status == TransferStatus.PENDING,
-                AssetTransfer.created_at <= cutoff,
-            )
-            .order_by(AssetTransfer.created_at.asc())
-        )
+        """Трансферы, зависшие дольше cutoff"""
+        query = select(
+            AssetTransfer.id, Asset.name, AssetTransfer.created_at
+        ).join(Asset, Asset.id == AssetTransfer.asset_id).where(
+            AssetTransfer.status == TransferStatus.PENDING,
+            AssetTransfer.created_at <= cutoff,
+        ).order_by(AssetTransfer.created_at.asc())
+
+        result = await self.session.execute(query)
         return result.all()
 
     async def excessive_repairs(self, since, threshold: int):
-        result = await self.session.execute(
-            select(
-                Asset.id,
-                Asset.name,
-                func.count(Repair.id).label("repair_count"),
-            )
-            .join(Repair, Repair.asset_id == Asset.id)
-            .where(Repair.created_at >= since)
-            .group_by(Asset.id, Asset.name)
-            .having(func.count(Repair.id) > threshold)
-            .order_by(func.count(Repair.id).desc(), Asset.name.asc())
+        """Активы с частыми ремонтами"""
+        query = select(
+            Asset.id,
+            Asset.name,
+            func.count(Repair.id).label("repair_count"),
+        ).join(Repair, Repair.asset_id == Asset.id).where(
+            Repair.created_at >= since
+        ).group_by(Asset.id, Asset.name).having(
+            func.count(Repair.id) > threshold
+        ).order_by(
+            func.count(Repair.id).desc(),
+            Asset.name.asc()
         )
+
+        result = await self.session.execute(query)
         return result.all()
 
     async def inactive_assets(self, cutoff):
