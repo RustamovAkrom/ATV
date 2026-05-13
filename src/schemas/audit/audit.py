@@ -3,15 +3,14 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field, field_validator
+from schemas.base import BaseSchema
 
 
 # =========================
 # BASE (общая модель)
 # =========================
-class AuditBaseSchema(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class AuditBaseSchema(BaseSchema):
     method: str
     path: str
     status_code: int
@@ -47,22 +46,16 @@ class AuditCreateSchema(AuditBaseSchema):
 
 
 class AuditSchema(AuditBaseSchema):
-    model_config = ConfigDict(from_attributes=True)
-
     id: uuid.UUID
     created_at: datetime
 
 
 class AuditStreamSchema(AuditBaseSchema):
-    model_config = ConfigDict(extra="forbid")
-
     level: str
     timestamp: float
 
 
-class AuditFiltersSchema(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class AuditFiltersSchema(BaseSchema):
     user_id: uuid.UUID | None = None
     request_id: str | None = Field(default=None, max_length=128)
     method: str | None = Field(default=None, max_length=16)
@@ -91,9 +84,9 @@ class AuditFiltersSchema(BaseModel):
         return value
 
 
-class AuditStatsSchema(BaseModel):
+class AuditStatsSchema(BaseSchema):
     total: int
     errors: int
     server_errors: int
-
     suspicious: int
+    unique_users: int

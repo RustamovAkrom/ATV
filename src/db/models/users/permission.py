@@ -48,6 +48,8 @@ user_permissions = Table(
 
 class Role(Base, UUIDMixing, TimestampMixin):
     __tablename__ = "roles"
+    __role_permissions_table__ = "role_permissions"
+
     name: Mapped[str] = mapped_column(
         String(100), unique=True, nullable=False, index=True
     )

@@ -1,10 +1,11 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
+from schemas.base import BaseSchema
 
 
-class SessionOutSchema(BaseModel):
+class SessionOutSchema(BaseSchema):
     id: UUID
     ip_address: str | None
     user_agent: str | None
@@ -16,10 +17,7 @@ class SessionOutSchema(BaseModel):
     created_at: datetime
     expires_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class CleanupResponseSchema(BaseModel):
+class CleanupResponseSchema(BaseSchema):
     deleted: int
     message: str = "Old sessions removed"
-    model_config = ConfigDict(from_attributes=True)

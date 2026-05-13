@@ -1,7 +1,7 @@
 from uuid import UUID
 
-from pydantic import BaseModel
+from schemas.base import BaseSchema
 
 
-class WarehouseMoveRequest(BaseModel):
+class WarehouseMoveRequest(BaseSchema):
     warehouse_id: UUID

@@ -214,6 +214,7 @@ class AssetService:
         AccessControl.check_service_access(actor, asset.service_id)
 
         new_status = data.status
+
         if asset.status == new_status:
             return await self.get(asset.id, actor)
 
@@ -226,8 +227,8 @@ class AssetService:
             asset_id=asset.id,
             actor_id=actor.id,
             owner_id=asset.owner_id,
-            from_status=previous_status.value,
-            to_status=new_status.value,
+            from_status=previous_status.value if hasattr(previous_status, 'value') else str(previous_status),
+            to_status=new_status.value if hasattr(new_status, 'value') else str(new_status),
         )
 
         return await self.get(asset.id, actor)

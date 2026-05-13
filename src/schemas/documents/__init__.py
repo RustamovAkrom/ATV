@@ -1,1 +1,1 @@
-from .documents import *  # noqa
+from .document import *  # noqa

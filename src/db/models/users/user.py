@@ -2,7 +2,7 @@ from datetime import date, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, func, Index
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from sqlalchemy import Enum as SAEnum
@@ -23,6 +23,11 @@ if TYPE_CHECKING:
 
 class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
     __tablename__ = "users"
+    __table_args__ = (
+        Index('ix_users_region_service', 'assigned_region_id', 'assigned_service_id'),
+        Index('ix_users_status_role', 'status', 'role_id'),
+        Index('ix_users_hired_status', 'hired_at', 'status'),
+    )
     STATUS_ENUM = UserStatus
 
     # ========== БАЗОВЫЕ ПОЛЯ ==========
@@ -204,6 +209,11 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
             perm_set.update(p.code for p in self.direct_permissions)
 
         return list(perm_set)
+
+    @property
+    def is_employed(self) -> bool:
+        return (self.hired_at and self.hired_at <= date.today() and
+                (not self.dismissed_at or self.dismissed_at > date.today()))
 
     def __repr__(self):
         return self.login

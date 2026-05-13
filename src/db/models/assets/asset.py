@@ -4,8 +4,9 @@ from datetime import date
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
+from sqlalchemy.ext.hybrid import hybrid_property
 
-from sqlalchemy import Date, Enum as SAEnum, ForeignKey, Integer, Numeric, String, text
+from sqlalchemy import Date, Enum as SAEnum, ForeignKey, Integer, Numeric, String, text, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship, synonym, validates
 
@@ -180,6 +181,22 @@ class Asset(Base, UUIDMixing, TimestampMixin):
         if value == AssetStatus.ACTIVE and self.owner_id is not None:
             raise ValueError("ACTIVE asset cannot have owner_id")
         return value
+
+    @hybrid_property
+    def age_years(self) -> float | None:
+        if self.commission_date:
+            return (date.today() - self.commission_date).days / 365.25
+        return None
+
+    @property
+    def is_under_warranty(self) -> bool:
+        "Check warranty"
+        return self.warranty_end and self.warranty_end >= date.today()
+
+    __table_args__ = (
+        Index('ix_assets_status_region', 'status', 'region_id'),
+        Index('ix_assets_service_class', 'service_id', 'class_id'),
+    )
 
     def __repr__(self):
         return self.name

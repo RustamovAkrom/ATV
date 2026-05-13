@@ -3,8 +3,9 @@
 from datetime import datetime
 from enum import Enum
 from uuid import UUID
+from pydantic import ConfigDict, Field
 
-from pydantic import BaseModel, ConfigDict, Field
+from schemas.base import BaseSchema, NamedRefSchema, UserRefSchema
 
 
 class ExpenseTypeEnum(str, Enum):
@@ -16,41 +17,16 @@ class ExpenseTypeEnum(str, Enum):
     LOGISTICS = "logistics"
     OTHER = "other"
 
-
-class AssetRef(BaseModel):
-    """Reference to an asset."""
-
-    id: UUID
-    asset_tag: str
+AssetRef = NamedRefSchema
+RegionRef = NamedRefSchema
+ServiceRef = NamedRefSchema
+UserRef = UserRefSchema
 
 
-class UserRef(BaseModel):
-    """Reference to a user."""
-
-    id: UUID
-    full_name: str
-
-
-class RegionRef(BaseModel):
-    """Reference to a region."""
-
-    id: UUID
-    name: str
-
-
-class ServiceRef(BaseModel):
-    """Reference to a service."""
-
-    id: UUID
-    name: str
-
-
-class ExpenseCreateSchema(BaseModel):
-    """Schema for creating an expense."""
-
-    amount: float = Field(..., gt=0, description="Amount must be positive")
-    currency: str = Field(default="UZS", min_length=3, max_length=10)
-    expense_type: ExpenseTypeEnum = Field(...)
+class ExpenseCreateSchema(BaseSchema):
+    amount: float = Field(..., gt=0, le=1e12, description="Amount must be positive")
+    currency: str = Field("UZS", min_length=3, max_length=10, pattern=r'^[A-Z]{3}$')
+    expense_type: ExpenseTypeEnum
     description: str | None = Field(None, max_length=1000)
     asset_id: UUID | None = None
     repair_id: UUID | None = None
@@ -59,49 +35,33 @@ class ExpenseCreateSchema(BaseModel):
     occurred_at: datetime | None = None
     file_url: str | None = Field(None, max_length=2048)
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class ExpenseUpdateSchema(BaseModel):
-    """Schema for updating an expense."""
-
+class ExpenseUpdateSchema(BaseSchema):
     amount: float | None = Field(None, gt=0)
-    currency: str | None = None
+    currency: str | None = Field(None, min_length=3, max_length=10)
     expense_type: ExpenseTypeEnum | None = None
-    description: str | None = None
-    file_url: str | None = None
-
-    model_config = ConfigDict(from_attributes=True)
+    description: str | None = Field(None, max_length=1000)
+    file_url: str | None = Field(None, max_length=2048)
 
 
-class ExpenseOutSchema(BaseModel):
-    """Schema for expense output/response."""
-
+class ExpenseOutSchema(BaseSchema):
     id: UUID
     amount: float
     currency: str
     expense_type: ExpenseTypeEnum = Field(..., alias="expense_type_code")
     description: str | None
     file_url: str | None
-
-    # References
     asset: AssetRef | None = None
     repair_id: UUID | None = None
     region: RegionRef | None = None
     service: ServiceRef | None = None
     created_by: UserRef | None = None
-
-    # Timestamps
     occurred_at: datetime
     created_at: datetime
     updated_at: datetime
 
-    model_config = ConfigDict(
-        from_attributes=True, populate_by_name=True, use_enum_values=True
-    )
 
-
-class ExpensePageSchema(BaseModel):
+class ExpensePageSchema(BaseSchema):
     """Paginated expenses response."""
 
     total: int
@@ -112,7 +72,7 @@ class ExpensePageSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class ExpenseStatsSchema(BaseModel):
+class ExpenseStatsSchema(BaseSchema):
     """Statistics about expenses."""
 
     total_amount: float

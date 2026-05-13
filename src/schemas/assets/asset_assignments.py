@@ -1,21 +1,19 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from schemas.base import BaseSchema
 
 
-class AssetAssignmentRequest(BaseModel):
+class AssetAssignmentRequest(BaseSchema):
     user_id: UUID
 
 
-class AssetReassignmentRequest(BaseModel):
+class AssetReassignmentRequest(BaseSchema):
     new_user_id: UUID
 
 
-class AssetAssignmentActionSchema(BaseModel):
+class AssetAssignmentActionSchema(BaseSchema):
     asset_id: UUID
     user_id: UUID | None
     assigned_at: datetime | None = None
     unassigned_at: datetime | None = None
-
-    model_config = ConfigDict(from_attributes=True)

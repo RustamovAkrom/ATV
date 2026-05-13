@@ -1,19 +1,20 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
 
 from db.models.enums import DocumentStatus
+from schemas.base import BaseSchema
 
 
-class DocumentFileCreate(BaseModel):
+class DocumentFileCreate(BaseSchema):
     file_name: str = Field(min_length=1, max_length=255)
     file_path: str = Field(min_length=1, max_length=500)
     file_size: int | None = Field(default=None, ge=0)
     content_type: str | None = Field(default=None, max_length=100)
 
 
-class AssetDocumentCreate(BaseModel):
+class AssetDocumentCreate(BaseSchema):
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=500)
     document_type: str = Field(default="other", min_length=1, max_length=50)
@@ -22,17 +23,15 @@ class AssetDocumentCreate(BaseModel):
     files: list[DocumentFileCreate] = Field(default_factory=list)
 
 
-class DocumentFileSchema(BaseModel):
+class DocumentFileSchema(BaseSchema):
     id: UUID
     file_name: str
     file_path: str
     file_size: int | None
     content_type: str | None
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class AssetDocumentSchema(BaseModel):
+class AssetDocumentSchema(BaseSchema):
     id: UUID
     title: str
     description: str | None
@@ -44,5 +43,3 @@ class AssetDocumentSchema(BaseModel):
     files: list[DocumentFileSchema] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
-
-    model_config = ConfigDict(from_attributes=True, populate_by_name=True)

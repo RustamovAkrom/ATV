@@ -1,19 +1,18 @@
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, HttpUrl
+from pydantic import ConfigDict, HttpUrl
+from schemas.base import BaseSchema
 
 
-class ManufacturerCreateSchema(BaseModel):
+class ManufacturerCreateSchema(BaseSchema):
     name: str
     country: str | None = None
     website: HttpUrl | None = None
 
 
-class ManufacturerOutSchema(BaseModel):
+class ManufacturerOutSchema(BaseSchema):
     id: UUID
     name: str
     code: str
     country: str | None
     website: str | None
-
-    model_config = ConfigDict(from_attributes=True)

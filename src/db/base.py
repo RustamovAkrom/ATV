@@ -51,7 +51,14 @@ UUIDMixing = UUIDMixin
 class StatusMixin:
     STATUS_ENUM: Any = None
 
-    status: Mapped[str] = mapped_column(String(50), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        index=True
+    )
+
+    def is_status(self, status: Any) -> bool:
+        return self.status == status.value if hasattr(status, 'value') else self.status == status
 
     @validates("status")
     def validate_status(self, value: str) -> str:

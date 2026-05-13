@@ -2,67 +2,54 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
 
 from db.models.enums import AssetStatus
 from schemas.pagination import PageOutSchema
+from schemas.base import BaseSchema, TimestampSchema
 
 
-class AssetRef(BaseModel):
+class AssetRef(BaseSchema):
     id: UUID
     name: str
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class UserRef(BaseModel):
+class UserRef(BaseSchema):
     id: UUID
     login: str
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class RegionRef(BaseModel):
+class RegionRef(BaseSchema):
     id: UUID
     name: str
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class ServiceRef(BaseModel):
+class ServiceRef(BaseSchema):
     id: UUID
     name: str
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class WarehouseRef(BaseModel):
+class WarehouseRef(BaseSchema):
     id: UUID
     name: str
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class AssetAssignmentSchema(BaseModel):
+class AssetAssignmentSchema(BaseSchema):
     id: UUID
     user: UserRef
     assigned_at: datetime
     unassigned_at: datetime | None
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class AssetHistorySchema(BaseModel):
+class AssetHistorySchema(BaseSchema):
     id: UUID
     action: str
     description: str
     created_at: datetime
     user: UserRef
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class AssetCreate(BaseModel):
+class AssetCreate(BaseSchema):
     name: str = Field(min_length=1, max_length=255)
     type: str = Field(min_length=1, max_length=100)
     model_id: UUID
@@ -90,7 +77,7 @@ class AssetCreate(BaseModel):
     metadata: dict = Field(default_factory=dict)
 
 
-class AssetUpdate(BaseModel):
+class AssetUpdate(BaseSchema):
     name: str | None = Field(default=None, min_length=1, max_length=255)
     type: str | None = Field(default=None, min_length=1, max_length=100)
     model_id: UUID | None = None
@@ -110,15 +97,15 @@ class AssetUpdate(BaseModel):
     metadata: dict | None = None
 
 
-class AssetAssignRequest(BaseModel):
+class AssetAssignRequest(BaseSchema):
     user_id: UUID
 
 
-class AssetStatusChangeRequest(BaseModel):
+class AssetStatusChangeRequest(BaseSchema):
     status: AssetStatus
 
 
-class AssetFilters(BaseModel):
+class AssetFilters(BaseSchema):
     owner_id: UUID | None = None
     region_id: UUID | None = None
     service_id: UUID | None = None
@@ -132,7 +119,7 @@ class AssetFilters(BaseModel):
     search: str | None = Field(default=None, max_length=251005)
 
 
-class AssetSchema(BaseModel):
+class AssetSchema(TimestampSchema):
     id: UUID
     name: str
     type: str
@@ -155,10 +142,6 @@ class AssetSchema(BaseModel):
     last_repair_date: date | None
     failure_count: int
     usage_intensity: int
-    created_at: datetime
-    updated_at: datetime
-
-    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class AssetDetailSchema(AssetSchema):

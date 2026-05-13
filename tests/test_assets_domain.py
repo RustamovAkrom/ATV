@@ -172,6 +172,11 @@ async def test_asset_transfer_flow(client, dbsession, superadmin_token):
         },
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
+
+    if create_transfer.status_code != 200:
+        print(f"Error response: {create_transfer.text}")
+        print(f"Status: {create_transfer.status_code}")
+
     assert create_transfer.status_code == 200
     transfer = create_transfer.json()
     assert transfer["status"] == "pending"

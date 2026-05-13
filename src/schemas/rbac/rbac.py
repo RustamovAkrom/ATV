@@ -1,34 +1,33 @@
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+from schemas.base import BaseSchema
 
 
-class PermissionOutSchema(BaseModel):
+class PermissionOutSchema(BaseSchema):
     id: UUID
-    name: str
-    code: str
-
-    model_config = ConfigDict(from_attributes=True)
+    name: str = Field(max_length=255)
+    code: str = Field(max_length=50, pattern=r'^[a-z][a-z0-9._]*$')
 
 
-class RoleOutSchema(BaseModel):
+class RoleOutSchema(BaseSchema):
     id: UUID
-    name: str
-    code: str
+    name: str = Field(max_length=100)
+    code: str = Field(max_length=50)
+    description: str | None = Field(None, max_length=500)
     permissions: list[PermissionOutSchema] = Field(default_factory=list)
-    model_config = ConfigDict(from_attributes=True)
 
 
-class RoleCreateSchema(BaseModel):
-    name: str
-    code: str
-    description: str | None = None
+class RoleCreateSchema(BaseSchema):
+    name: str = Field(min_length=2, max_length=100)
+    code: str = Field(min_length=2, max_length=50, pattern=r'^[a-z][a-z0-9_]*$')
+    description: str | None = Field(None, max_length=500)
 
 
-class RoleUpdateSchema(BaseModel):
-    name: str | None
-    description: str | None = None
+class RoleUpdateSchema(BaseSchema):
+    name: str | None = Field(None, min_length=2, max_length=100)
+    description: str | None = Field(None, max_length=500)
 
 
-class RolePermissionsUpdateSchema(BaseModel):
-    permission_ids: list[UUID]
+class RolePermissionsUpdateSchema(BaseSchema):
+    permission_ids: list[UUID] = Field(min_length=1, description="List of permission IDs to assign")

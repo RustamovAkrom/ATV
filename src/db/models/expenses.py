@@ -2,15 +2,16 @@
 
 from datetime import datetime
 from uuid import UUID
+from sqlalchemy.ext.hybrid import hybrid_property
 
 from sqlalchemy import DateTime, ForeignKey, Index, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
-from db.base import Base, UUIDMixing
+from db.base import Base, UUIDMixing, TimestampMixin
 
 
-class Expense(Base, UUIDMixing):
+class Expense(Base, UUIDMixing, TimestampMixin):
     """Model for tracking expenses related to assets, repairs, and operations."""
 
     __tablename__ = "expenses"
@@ -47,14 +48,15 @@ class Expense(Base, UUIDMixing):
     occurred_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=func.now(), nullable=False
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=func.now(), nullable=False
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=func.now(), onupdate=func.now()
-    )
 
     __table_args__ = (
         Index("ix_expenses_asset_region", "asset_id", "region_id"),
         Index("ix_expenses_type_date", "expense_type_code", "occurred_at"),
+        Index('ix_expenses_created_occurred', 'created_at', 'occurred_at'),
     )
+
+    @hybrid_property
+    def amount_usd(self) -> float | None:
+        if self.currency == 'UZS':
+            return self.amount / 13000 # пример курса
+        return self.amount

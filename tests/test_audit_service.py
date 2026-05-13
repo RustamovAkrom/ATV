@@ -117,6 +117,7 @@ async def test_audit_stats_returns_expected_counters(client, create_user, dbsess
         "errors": 2,
         "server_errors": 1,
         "suspicious": 1,
+        "unique_users": 1,
     }
 
 

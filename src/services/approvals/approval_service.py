@@ -314,9 +314,10 @@ class ApprovalService:
             return
 
         if approval.entity_type == "asset_archive":
+            status_request = AssetStatusChangeRequest(status=AssetStatus.ARCHIVED)
             await self.asset_service.change_status(
                 approval.entity_id,
-                AssetStatusChangeRequest(status=AssetStatus.ARCHIVED),
+                status_request,
                 actor,
             )
             return
