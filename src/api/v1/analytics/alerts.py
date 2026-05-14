@@ -10,7 +10,7 @@ from services.analytics.alert_analytics_service import AlertAnalyticsService
 
 router = APIRouter(prefix="/analytics/alerts", tags=["Analytics - Alerts"])
 settings = get_settings()
-ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTICS)
+ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit("5/minute")
 
 
 @router.get("/", response_model=list[AlertOut], dependencies=[Depends(AssetPermissions.CanViewAssets)])

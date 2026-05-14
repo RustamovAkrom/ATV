@@ -11,7 +11,7 @@ from services.analytics.forecast_analytics_service import ForecastAnalyticsServi
 
 router = APIRouter(prefix="/analytics/forecast", tags=["Analytics - Forecast"])
 settings = get_settings()
-ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTICS)
+ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit("5/minute")
 
 
 @router.get("/repairs", response_model=ForecastSeriesOut, dependencies=[Depends(AssetPermissions.CanViewAssets)])

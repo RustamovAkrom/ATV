@@ -12,7 +12,7 @@ from services.analytics.region_analytics_service import RegionAnalyticsService
 
 router = APIRouter(prefix="/analytics/regions", tags=["Analytics - Regions"])
 settings = get_settings()
-ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTICS)
+ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit("5/minute")
 
 
 @router.get("/overview", response_model=list[RegionOverviewOut], dependencies=[Depends(AssetPermissions.CanViewAssets)])

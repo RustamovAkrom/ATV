@@ -12,7 +12,7 @@ from services.analytics.top_analytics_service import TopAnalyticsService
 
 router = APIRouter(prefix="/analytics/top", tags=["Analytics - Top"])
 settings = get_settings()
-ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTICS)
+ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit("5/minute")
 
 
 @router.get("/assets", response_model=list[TopAssetAnalyticsOut], dependencies=[Depends(AssetPermissions.CanViewAssets)])

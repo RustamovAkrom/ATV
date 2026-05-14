@@ -6,12 +6,12 @@ from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.rbac.presets import AssetPermissions
 from schemas.analytics.costs import AssetCostAnalyticsOut, RegionCostAnalyticsOut, RepairCostAnalyticsOut
-from schemas.pagination import PageOutSchema, PaginationParamsSchema, build_page
+from schemas.pagination import PageOutSchema, PaginationParamsSchema
 from services.analytics.cost_analytics_service import CostAnalyticsService
 
 router = APIRouter(prefix="/analytics/costs", tags=["Analytics - Costs"])
 settings = get_settings()
-ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTICS)
+ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit("5/minute")
 
 
 @router.get("/repairs", response_model=PageOutSchema[RepairCostAnalyticsOut], dependencies=[Depends(AssetPermissions.CanViewAssets)])
@@ -24,7 +24,7 @@ async def get_repair_costs(
     return await run_analytics_operation(
         request, "analytics.costs.repairs", {"page": pagination.page, "limit": pagination.limit},
         lambda: service.get_repair_costs(pagination),
-        lambda: build_page(PageOutSchema[RepairCostAnalyticsOut], [], 0, pagination.page, pagination.limit),
+        lambda: PageOutSchema([], 0, pagination.page, pagination.limit),
     )
 
 
@@ -38,7 +38,7 @@ async def get_asset_costs(
     return await run_analytics_operation(
         request, "analytics.costs.assets", {"page": pagination.page, "limit": pagination.limit},
         lambda: service.get_asset_costs(pagination),
-        lambda: build_page(PageOutSchema[AssetCostAnalyticsOut], [], 0, pagination.page, pagination.limit),
+        lambda: PageOutSchema([], 0, pagination.page, pagination.limit),
     )
 
 
@@ -52,5 +52,5 @@ async def get_region_costs(
     return await run_analytics_operation(
         request, "analytics.costs.regions", {"page": pagination.page, "limit": pagination.limit},
         lambda: service.get_region_costs(pagination),
-        lambda: build_page(PageOutSchema[RegionCostAnalyticsOut], [], 0, pagination.page, pagination.limit),
+        lambda: PageOutSchema([], 0, pagination.page, pagination.limit),
     )

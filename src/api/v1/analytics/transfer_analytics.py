@@ -13,12 +13,12 @@ from schemas.analytics.asset_transfer_analytics import (
     AssetTransferFilterInput, AssetTransferHistory, AssetTransferOut,
     BottleneckReportOut, TransferMetrics, WarehouseTransferMetrics,
 )
-from schemas.pagination import PageOutSchema, PaginationParamsSchema, build_page
+from schemas.pagination import PageOutSchema, PaginationParamsSchema
 from services.analytics.asset_transfer_analytics_service import AssetTransferAnalyticsService
 
 router = APIRouter(prefix="/analytics/transfers", tags=["Analytics - Transfers"])
 settings = get_settings()
-ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTICS)
+ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit("5/minute")
 
 
 @router.get("/", response_model=PageOutSchema[AssetTransferOut], dependencies=[Depends(AssetPermissions.CanViewAssets)])
@@ -41,7 +41,7 @@ async def list_transfers(
     return await run_analytics_operation(
         request, "analytics.transfers.list", filters.model_dump(mode="json"),
         lambda: service.list_transfers(filters, pagination),
-        lambda: build_page(PageOutSchema[AssetTransferOut], [], 0, pagination.page, pagination.limit),
+        lambda: PageOutSchema([], 0, pagination.page, pagination.limit),
     )
 
 
@@ -55,7 +55,7 @@ async def list_pending_transfers(
     return await run_analytics_operation(
         request, "analytics.transfers.pending", {"page": pagination.page, "limit": pagination.limit},
         lambda: service.list_pending_transfers(pagination),
-        lambda: build_page(PageOutSchema[AssetTransferOut], [], 0, pagination.page, pagination.limit),
+        lambda: PageOutSchema([], 0, pagination.page, pagination.limit),
     )
 
 

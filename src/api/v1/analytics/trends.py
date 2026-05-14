@@ -10,7 +10,7 @@ from services.analytics.trend_analytics_service import TrendAnalyticsService
 
 router = APIRouter(prefix="/analytics/trends", tags=["Analytics - Trends"])
 settings = get_settings()
-ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTICS)
+ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit("5/minute")
 
 
 @router.get("/assignments", response_model=TrendSeriesOut, dependencies=[Depends(AssetPermissions.CanViewAssets)])

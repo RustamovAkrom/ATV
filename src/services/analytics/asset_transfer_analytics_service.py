@@ -20,7 +20,7 @@ from schemas.analytics.asset_transfer_analytics import (
     TransferStatusBreakdown,
     WarehouseTransferMetrics,
 )
-from schemas.pagination import PageOutSchema, PaginationParamsSchema, build_page
+from schemas.pagination import PageOutSchema, PaginationParamsSchema
 from utils.helpers import utc_now
 
 
@@ -40,8 +40,7 @@ class AssetTransferAnalyticsService:
 
         items = [self._to_transfer_out(t) for t in transfers]
 
-        return build_page(
-            schema=PageOutSchema[AssetTransferOut],
+        return PageOutSchema(
             items=items,
             total=total,
             page=pagination.page,
@@ -60,8 +59,7 @@ class AssetTransferAnalyticsService:
 
         items = [self._to_transfer_out(t) for t in transfers]
 
-        return build_page(
-            schema=PageOutSchema[AssetTransferOut],
+        return PageOutSchema(
             items=items,
             total=total,
             page=pagination.page,

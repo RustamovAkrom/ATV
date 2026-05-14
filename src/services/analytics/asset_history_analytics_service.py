@@ -6,7 +6,7 @@ from schemas.analytics.asset_history import (
     AssetHistoryOut,
     AssetHistoryPage,
 )
-from schemas.pagination import PageOutSchema, PaginationParamsSchema, build_page
+from schemas.pagination import PageOutSchema, PaginationParamsSchema
 
 
 class AssetHistoryAnalyticsService:
@@ -37,8 +37,7 @@ class AssetHistoryAnalyticsService:
             for i in items
         ]
 
-        return build_page(
-            schema=PageOutSchema[AssetHistoryOut],
+        return PageOutSchema(
             items=history_out,
             total=total,
             page=pagination.page,

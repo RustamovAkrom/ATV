@@ -23,14 +23,14 @@ from schemas.analytics.asset_assignment_analytics import (
     UserAssignmentSummary,
 )
 from schemas.auth import CurrentUserSchema
-from schemas.pagination import PageOutSchema, PaginationParamsSchema, build_page
+from schemas.pagination import PageOutSchema, PaginationParamsSchema
 from services.analytics.asset_assignment_analytics_service import (
     AssetAssignmentAnalyticsService,
 )
 
 router = APIRouter(prefix="/analytics/assignments", tags=["Analytics - Assignments"])
 settings = get_settings()
-ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTICS)
+ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit("5/minute")
 
 
 @router.get(
@@ -65,7 +65,7 @@ async def list_assignments(
         "analytics.assignments.list",
         filters.model_dump(mode="json"),
         lambda: service.list_assignments(filters, pagination, current_user),
-        lambda: build_page(PageOutSchema[AssetAssignmentDetailOut], [], 0, pagination.page, pagination.limit),
+        lambda: PageOutSchema([], 0, pagination.page, pagination.limit),
     )
 
 
@@ -87,7 +87,7 @@ async def list_active_assignments(
         "analytics.assignments.active",
         {"page": pagination.page, "limit": pagination.limit},
         lambda: service.list_active_assignments(pagination, current_user),
-        lambda: build_page(PageOutSchema[AssetAssignmentDetailOut], [], 0, pagination.page, pagination.limit),
+        lambda: PageOutSchema([], 0, pagination.page, pagination.limit),
     )
 
 

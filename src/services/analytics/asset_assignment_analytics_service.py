@@ -51,6 +51,15 @@ class AssetAssignmentAnalyticsService(BaseAnalyticsService):
 
         return PageOutSchema(items=items, total=total, page=pagination.page, limit=pagination.limit)
 
+    async def list_active_assignments(
+        self,
+        pagination: PaginationParamsSchema,
+        current_user: CurrentUserSchema,
+    ) -> PageOutSchema[AssetAssignmentDetailOut]:
+        """List currently active assignments only."""
+        filters = AssetAssignmentFilterInput(status="active")
+        return await self.list_assignments(filters, pagination, current_user)
+
     async def get_user_summary(self, user_id: UUID, current_user: CurrentUserSchema) -> UserAssignmentSummary:
         summary = await self.repo.get_user_assignment_summary(user_id)
         summary["user_email"] = self.filter_email(summary["user_email"], current_user)

@@ -8,12 +8,12 @@ from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.rbac.presets import AssetPermissions
 from schemas.analytics.asset_history import AssetHistoryAggregates, AssetHistoryFilter, AssetHistoryOut
-from schemas.pagination import PageOutSchema, PaginationParamsSchema, build_page
+from schemas.pagination import PageOutSchema, PaginationParamsSchema
 from services.analytics.asset_history_analytics_service import AssetHistoryAnalyticsService
 
 router = APIRouter(prefix="/analytics/asset-history", tags=["Analytics - History"])
 settings = get_settings()
-ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit(settings.RATE_LIMIT_ANALYTICS)
+ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit("5/minute")
 
 
 @router.get("/", response_model=PageOutSchema[AssetHistoryOut], dependencies=[Depends(AssetPermissions.CanViewAssets)])
@@ -32,7 +32,7 @@ async def list_asset_history(
     return await run_analytics_operation(
         request, "analytics.history.list", filters.model_dump(mode="json"),
         lambda: service.list(filters, pagination),
-        lambda: build_page(PageOutSchema[AssetHistoryOut], [], 0, pagination.page, pagination.limit),
+        lambda: PageOutSchema([], 0, pagination.page, pagination.limit),
     )
 
 

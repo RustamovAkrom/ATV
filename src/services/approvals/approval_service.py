@@ -22,7 +22,7 @@ from schemas.assets.asset_transfers import AssetTransferCreate
 from schemas.assets.assets import AssetStatusChangeRequest
 from schemas.assets.repairs import RepairCompleteRequest
 from utils.helpers import utc_now
-from schemas.pagination import PaginationParamsSchema, PageOutSchema, build_page
+from schemas.pagination import PaginationParamsSchema, PageOutSchema
 from schemas.auth.auth import CurrentUserSchema
 from core.security.rbac.permissions import Permissions
 from core.security.rbac.guards import check_permissions
@@ -60,8 +60,7 @@ class ApprovalService:
     ):
         items, total = await self.approval_repo.list(status, pagination)
 
-        return build_page(
-            schema=PageOutSchema[ApprovalSchema],
+        return PageOutSchema(
             items=[
                 ApprovalSchema.model_validate(i, from_attributes=True) for i in items
             ],

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from uuid import UUID
+from types import SimpleNamespace
+
+from pydantic import ValidationError
 
 from core.audit.stream import audit_stream
 from core.exceptions.errors import BadRequest, NotFound
@@ -20,7 +23,7 @@ from schemas.assets.assets import (
     AssetUpdate,
     AssetPage,
 )
-from schemas.pagination import PageSchema, PaginationParamsSchema, build_page
+from schemas.pagination import PageOutSchema, PageSchema, PaginationParamsSchema
 from utils.helpers import utc_now
 from schemas.auth.auth import CurrentUserSchema
 from core.security.access_control import AccessControl
@@ -62,9 +65,15 @@ class AssetService:
 
         items, total = await self.asset_repo.list(filters, pagination)
 
-        return build_page(
-            schema=AssetPage,
-            items=[AssetSchema.model_validate(i) for i in items],
+        normalized_items: list[AssetSchema] = []
+        for item in items:
+            try:
+                normalized_items.append(AssetSchema.model_validate(item))
+            except ValidationError:
+                normalized_items.append(self._normalize_asset_schema(item))
+
+        return PageOutSchema(
+            items=normalized_items,
             total=total,
             page=pagination.page,
             limit=pagination.limit,
@@ -86,10 +95,37 @@ class AssetService:
         AccessControl.check_region_access(actor, asset.region_id)
         AccessControl.check_service_access(actor, asset.service_id)
 
-        return [
-            AssetHistorySchema.model_validate(entry, from_attributes=True)
-            for entry in asset.history_entries
-        ]
+        history: list[AssetHistorySchema] = []
+        for entry in asset.history_entries:
+            user = getattr(entry, "user", None)
+            description = getattr(entry, "description", None)
+            if not description:
+                details = getattr(entry, "details", None)
+                description = str(details) if details is not None else ""
+
+            history.append(
+                AssetHistorySchema.model_validate(
+                    {
+                        "id": entry.id,
+                        "action": entry.action,
+                        "description": description,
+                        "created_at": entry.created_at,
+                        "user": (
+                            {
+                                "id": user.id,
+                                "login": user.login,
+                            }
+                            if user is not None
+                            else {
+                                "id": getattr(entry, "user_id", None)
+                                or UUID("00000000-0000-0000-0000-000000000000"),
+                                "login": "system",
+                            }
+                        ),
+                    }
+                )
+            )
+        return history
 
     async def create(
         self, data: AssetCreate, actor: CurrentUserSchema
@@ -344,3 +380,56 @@ class AssetService:
             value = value.strip()
             return value or None
         return value
+
+    @staticmethod
+    def _normalize_asset_schema(item) -> AssetSchema:
+        created_at = getattr(item, "created_at", utc_now())
+        updated_at = getattr(item, "updated_at", created_at)
+
+        model = getattr(item, "model", None)
+        if model is None and getattr(item, "model_id", None):
+            model = SimpleNamespace(id=item.model_id, name="")
+
+        asset_class = getattr(item, "asset_class", None)
+        if asset_class is None and getattr(item, "class_id", None):
+            asset_class = SimpleNamespace(id=item.class_id, name="")
+
+        region = getattr(item, "region", None)
+        if region is None and getattr(item, "region_id", None):
+            region = SimpleNamespace(id=item.region_id, name="")
+
+        service = getattr(item, "service", None)
+        if service is None and getattr(item, "service_id", None):
+            service = SimpleNamespace(id=item.service_id, name="")
+
+        owner = getattr(item, "owner", None)
+        if owner is None and getattr(item, "owner_id", None):
+            owner = SimpleNamespace(id=item.owner_id, login="")
+
+        payload = {
+            "id": item.id,
+            "name": getattr(item, "name", ""),
+            "type": getattr(item, "type", ""),
+            "status": getattr(item, "status", AssetStatus.ACTIVE),
+            "asset_tag": getattr(item, "asset_tag", None),
+            "serial_number": getattr(item, "serial_number", None),
+            "model": model,
+            "asset_class": asset_class,
+            "owner": owner,
+            "region": region,
+            "service": service,
+            "warehouse": getattr(item, "warehouse", None),
+            "assignments": getattr(item, "assignments", []),
+            "meta": getattr(item, "meta", {}) or {},
+            "condition_percent": getattr(item, "condition_percent", 100),
+            "commission_date": getattr(item, "commission_date", None),
+            "warranty_end": getattr(item, "warranty_end", None),
+            "purchase_date": getattr(item, "purchase_date", None),
+            "purchase_cost": getattr(item, "purchase_cost", None),
+            "last_repair_date": getattr(item, "last_repair_date", None),
+            "failure_count": getattr(item, "failure_count", 0),
+            "usage_intensity": getattr(item, "usage_intensity", 0),
+            "created_at": created_at,
+            "updated_at": updated_at,
+        }
+        return AssetSchema.model_validate(payload, from_attributes=True)
