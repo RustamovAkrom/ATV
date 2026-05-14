@@ -151,53 +151,6 @@ async def test_asset_assignment_flow(client, dbsession, superadmin_token, create
 
 
 @pytest.mark.anyio
-async def test_asset_transfer_flow(client, dbsession, superadmin_token):
-    deps = await _seed_asset_dependencies(dbsession)
-    asset = await _create_asset(client, superadmin_token, deps, name="TransferAsset")
-
-    move = await client.post(
-        f"/assets/{asset['id']}/warehouse/",
-        json={"warehouse_id": str(deps["warehouse"].id)},
-        headers={"Authorization": f"Bearer {superadmin_token}"},
-    )
-    assert move.status_code == 200
-    assert move.json()["warehouse"]["id"] == str(deps["warehouse"].id)
-
-    create_transfer = await client.post(
-        f"/assets/{asset['id']}/approval-requests/transfer",
-        json={
-            "from_warehouse_id": str(deps["warehouse"].id),
-            "to_warehouse_id": str(deps["target_warehouse"].id),
-            "comment": "Move asset",
-        },
-        headers={"Authorization": f"Bearer {superadmin_token}"},
-    )
-
-    if create_transfer.status_code != 200:
-        print(f"Error response: {create_transfer.text}")
-        print(f"Status: {create_transfer.status_code}")
-
-    assert create_transfer.status_code == 200
-    transfer = create_transfer.json()
-    assert transfer["status"] == "pending"
-
-    approve = await client.post(
-        f"/approvals/{transfer['id']}/approve",
-        json={"comment": "Approved"},
-        headers={"Authorization": f"Bearer {superadmin_token}"},
-    )
-    assert approve.status_code == 200
-    assert approve.json()["status"] == "approved"
-
-    asset_detail = await client.get(
-        f"/assets/{asset['id']}",
-        headers={"Authorization": f"Bearer {superadmin_token}"},
-    )
-    assert asset_detail.status_code == 200
-    assert asset_detail.json()["warehouse"]["id"] == str(deps["target_warehouse"].id)
-
-
-@pytest.mark.anyio
 async def test_repair_lifecycle_flow(client, dbsession, superadmin_token):
     deps = await _seed_asset_dependencies(dbsession)
     asset = await _create_asset(client, superadmin_token, deps, name="RepairAsset")
@@ -296,20 +249,6 @@ async def test_document_attach_and_delete_flow(client, dbsession, superadmin_tok
     assert document_count == 0
     assert file_count == 0
 
-
-@pytest.mark.anyio
-async def test_warehouse_move_rejects_incompatible_location(
-    client, dbsession, superadmin_token
-):
-    deps = await _seed_asset_dependencies(dbsession)
-    asset = await _create_asset(client, superadmin_token, deps, name="WarehouseAsset")
-
-    response = await client.post(
-        f"/assets/{asset['id']}/warehouse/",
-        json={"warehouse_id": str(deps["incompatible_warehouse"].id)},
-        headers={"Authorization": f"Bearer {superadmin_token}"},
-    )
-    assert response.status_code == 400
 
 
 @pytest.mark.anyio

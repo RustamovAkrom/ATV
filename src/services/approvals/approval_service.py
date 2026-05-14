@@ -23,6 +23,7 @@ from schemas.assets.assets import AssetStatusChangeRequest
 from schemas.assets.repairs import RepairCompleteRequest
 from utils.helpers import utc_now
 from schemas.pagination import PaginationParamsSchema, PageOutSchema
+from schemas.warehouses.warehouses import WarehouseMoveRequest
 from schemas.auth.auth import CurrentUserSchema
 from core.security.rbac.permissions import Permissions
 from core.security.rbac.guards import check_permissions
@@ -31,6 +32,7 @@ from services.assets.asset_service import AssetService
 from services.assets.repair_service import RepairService
 from services.assets.asset_transfer_service import AssetTransferService
 from services.assets.asset_assignment_service import AssetAssignmentService
+from services.assets.warehouse_service import WarehouseService
 from core.notifications.builder import NotificationBuilder
 from core.notifications.dispatcher import NotificationDispatcher
 
@@ -44,6 +46,7 @@ class ApprovalService:
         transfer_service: AssetTransferService,
         repair_service: RepairService,
         asset_assignment_service: AssetAssignmentService,
+        warehouse_service: WarehouseService,
         notification_dispatcher: NotificationDispatcher,
     ):
         self.approval_repo = approval_repo
@@ -51,6 +54,7 @@ class ApprovalService:
         self.transfer_service = transfer_service
         self.repair_service = repair_service
         self.asset_assignment_service = asset_assignment_service
+        self.warehouse_service = warehouse_service
         self.notification_dispatcher = notification_dispatcher
 
     async def list(
@@ -221,6 +225,7 @@ class ApprovalService:
             ("asset_archive", "archive"),
             ("asset_delete", "delete"),
             ("repair", "complete_repair"),
+            ("asset", "move_to_warehouse"),
         }
 
         entity_type = data.entity_type.strip().lower()
@@ -260,6 +265,13 @@ class ApprovalService:
             if key == ("repair", "complete_repair"):
                 return jsonable_encoder(
                     RepairCompleteApprovalPayload(**data.payload).model_dump(
+                        exclude_none=True
+                    )
+                )
+
+            if key == ("asset", "move_to_warehouse"):
+                return jsonable_encoder(
+                    WarehouseMoveRequest(**data.payload).model_dump(
                         exclude_none=True
                     )
                 )
@@ -336,6 +348,15 @@ class ApprovalService:
                 actor,
             )
             return
+
+        if approval.entity_type == "asset":
+            if approval.action == "move_to_warehouse":
+                await self.warehouse_service.move_asset_to_warehouse(
+                    approval.entity_id,
+                    WarehouseMoveRequest(**payload),
+                    actor,
+                )
+                return
 
         raise BadRequest("Unsupported execution")
 

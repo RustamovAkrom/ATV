@@ -9,7 +9,7 @@ from schemas.auth import CurrentUserSchema
 from schemas.assets.asset_transfers import AssetTransferCreate
 from schemas.assets.asset_assignments import AssetAssignmentRequest
 from schemas.assets.repairs import RepairCompleteRequest
-from schemas.assets.warehouses import WarehouseMoveRequest
+from schemas.warehouses.warehouses import WarehouseMoveRequest
 from schemas.assets.approvals import ApprovalCreate, ApprovalSchema
 
 from services.approvals.approval_service import ApprovalService

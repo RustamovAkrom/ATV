@@ -2,7 +2,7 @@ from uuid import UUID
 
 from core.exceptions.errors import BadRequest, NotFound
 from repositories.warehouse.warehouse_repo import WarehouseRepository
-from schemas.assets.warehouses import WarehouseMoveRequest
+from schemas.warehouses.warehouses import WarehouseMoveRequest
 from core.events.warehouse_events import WarehouseEventService
 from schemas.auth.auth import CurrentUserSchema
 

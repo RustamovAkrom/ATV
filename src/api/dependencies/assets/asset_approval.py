@@ -10,6 +10,7 @@ from services.assets.asset_service import AssetService
 from services.assets.asset_transfer_service import AssetTransferService
 from services.assets.repair_service import RepairService
 from services.assets.asset_assignment_service import AssetAssignmentService
+from services.assets.warehouse_service import WarehouseService
 from core.notifications.dispatcher import NotificationDispatcher
 from api.dependencies.notifications.notification import get_notification_dispatcher
 from api.dependencies.assets.assets import get_asset_service
@@ -17,6 +18,7 @@ from api.dependencies.assets.asset_transfer import get_asset_transfer_service
 from api.dependencies.assets.assets import get_asset_service
 from api.dependencies.assets.asset_assignment import get_asset_assignment_service
 from api.dependencies.assets.asset_repair import get_repair_service
+from api.dependencies.warehouse import get_warehouse_service
 
 
 def get_approval_repo(
@@ -33,6 +35,7 @@ def get_approval_service(
     asset_assignment_service: AssetAssignmentService = Depends(
         get_asset_assignment_service
     ),
+    warehouse_service: WarehouseService = Depends(get_warehouse_service),
     notification_dispatcher: NotificationDispatcher = Depends(
         get_notification_dispatcher
     ),
@@ -43,5 +46,6 @@ def get_approval_service(
         transfer_service,
         repair_service,
         asset_assignment_service,
+        warehouse_service,
         notification_dispatcher,
     )
