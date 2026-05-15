@@ -4,8 +4,9 @@ import aiofiles
 import csv
 from io import StringIO
 from typing import List
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
+
 
 from api.dependencies.users import get_user_service
 from api.dependencies.paginations import get_pagination
@@ -16,6 +17,7 @@ from core.security.rbac.presets import UserPermissions
 from db.models.users.user import User
 from schemas.auth import CurrentUserSchema
 from schemas.pagination import PaginationParamsSchema
+from core.slowapi import limiter
 
 from schemas.users import (
     AdminUserUpdateSchema,
@@ -81,8 +83,10 @@ async def me(
 
 
 @router.patch("/me", response_model=UserOutSchema)
+@limiter.limit("30/minute")
 @invalidate_cache(tags=("users:list", "users:search", "users:detail", "users:me"))
 async def update_me(
+    request: Request,
     data: UserUpdateSchema,
     current_user: CurrentUserSchema = Depends(get_current_user),
     service: UserService = Depends(get_user_service),
@@ -92,8 +96,10 @@ async def update_me(
 
 
 @router.post("/me/change-password")
+@limiter.limit("5/minute")
 @invalidate_cache(tags=("users:me",))
 async def change_password(
+    request: Request,
     data: ChangePasswordRequestSchema,
     current_user: CurrentUserSchema = Depends(get_current_user),
     service: UserService = Depends(get_user_service),
@@ -107,8 +113,10 @@ async def change_password(
 
 
 @router.post("/me/avatar", response_model=UserOutSchema)
+@limiter.limit("10/minute")
 @invalidate_cache(tags=("users:list", "users:search", "users:detail", "users:me"))
 async def upload_avatar(
+    request: Request,
     file: UploadFile = File(...),
     current_user: CurrentUserSchema = Depends(get_current_user),
     service: UserService = Depends(get_user_service),
@@ -175,8 +183,10 @@ async def upload_avatar(
 
 
 @router.delete("/me/avatar", response_model=UserOutSchema)
+@limiter.limit("10/minute")
 @invalidate_cache(tags=("users:list", "users:search", "users:detail", "users:me"))
 async def delete_avatar(
+    request: Request,
     current_user: CurrentUserSchema = Depends(get_current_user),
     service: UserService = Depends(get_user_service),
 ):
@@ -265,8 +275,10 @@ async def list_users(
 
 
 @router.post("/", response_model=UserOutSchema, dependencies=[Depends(UserPermissions.CanCreateUsers)])
+@limiter.limit("10/minute")
 @invalidate_cache(tags=("users:list", "users:search"))
 async def create_user(
+    request: Request,
     data: UserCreateSchema,
     service: UserService = Depends(get_user_service),
 ):
@@ -301,8 +313,10 @@ async def get_user(
 
 
 @router.patch("/{user_id}", response_model=UserOutSchema)
+@limiter.limit("20/minute")
 @invalidate_cache(tags=("users:list", "users:search", "users:detail"))
 async def update_user(
+    request: Request,
     user_id: uuid.UUID,
     data: AdminUserUpdateSchema,
     current_user: CurrentUserSchema = Depends(UserPermissions.CanManageUsers),
@@ -316,8 +330,10 @@ async def update_user(
 
 
 @router.delete("/{user_id}")
+@limiter.limit("5/minute")
 @invalidate_cache(tags=("users:list", "users:search", "users:detail"))
 async def archive_user(
+    request: Request,
     user_id: uuid.UUID,
     current_user: CurrentUserSchema = Depends(UserPermissions.CanDeleteUsers),
     service: UserService = Depends(get_user_service),
@@ -330,8 +346,10 @@ async def archive_user(
 
 
 @router.post("/{user_id}/block")
+@limiter.limit("10/minute")
 @invalidate_cache(tags=("users:list", "users:search", "users:detail"))
 async def block_user(
+    request: Request,
     user_id: uuid.UUID,
     current_user: CurrentUserSchema = Depends(UserPermissions.CanManageUsers),
     service: UserService = Depends(get_user_service),
@@ -344,8 +362,10 @@ async def block_user(
 
 
 @router.post("/{user_id}/activate")
+@limiter.limit("10/minute")
 @invalidate_cache(tags=("users:list", "users:search", "users:detail"))
 async def activate_user(
+    request: Request,
     user_id: uuid.UUID,
     current_user: CurrentUserSchema = Depends(UserPermissions.CanManageUsers),
     service: UserService = Depends(get_user_service),
