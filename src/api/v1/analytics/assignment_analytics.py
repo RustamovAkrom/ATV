@@ -5,9 +5,7 @@ from fastapi import APIRouter, Depends, Query, Request
 
 from api.dependencies.analytics import get_asset_assignment_analytics_service
 from api.v1.analytics._utils import (
-    enforce_rate_limit,
     parse_optional_datetime,
-    parse_rate_limit,
     run_analytics_operation,
 )
 from core.cache.decorators import cached
@@ -30,7 +28,6 @@ from services.analytics.asset_assignment_analytics_service import (
 
 router = APIRouter(prefix="/analytics/assignments", tags=["Analytics - Assignments"])
 settings = get_settings()
-ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit("5/minute")
 
 
 @router.get(
@@ -59,7 +56,6 @@ async def list_assignments(
         date_to=parse_optional_datetime(date_to),
         search=search,
     )
-    await enforce_rate_limit(request, "analytics:assignments:list", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request,
         "analytics.assignments.list",
@@ -81,7 +77,6 @@ async def list_active_assignments(
     service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
-    await enforce_rate_limit(request, "analytics:assignments:active", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request,
         "analytics.assignments.active",
@@ -103,7 +98,6 @@ async def get_user_assignment_summary(
     service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
-    await enforce_rate_limit(request, "analytics:assignments:user-summary", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request,
         "analytics.assignments.user_summary",
@@ -134,7 +128,6 @@ async def get_asset_assignment_timeline(
     service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
-    await enforce_rate_limit(request, "analytics:assignments:timeline", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request,
         "analytics.assignments.timeline",
@@ -172,7 +165,6 @@ async def get_assignment_aggregates(
         date_from=parse_optional_datetime(date_from),
         date_to=parse_optional_datetime(date_to),
     )
-    await enforce_rate_limit(request, "analytics:assignments:aggregates", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request,
         "analytics.assignments.aggregates",

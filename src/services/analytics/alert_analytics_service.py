@@ -15,8 +15,6 @@ settings = get_settings()
 
 
 class AlertAnalyticsService(BaseAnalyticsService):
-    """РЎРµСЂРІРёСЃ РґР»СЏ Р°Р»РµСЂС‚РѕРІ Р°РЅР°Р»РёС‚РёРєРё"""
-
     def __init__(self, repo: AlertAnalyticsRepository, dispatcher: NotificationDispatcher | None = None):
         self.repo = repo
         self.dispatcher = dispatcher
@@ -29,7 +27,6 @@ class AlertAnalyticsService(BaseAnalyticsService):
         inactive_days: int | None = None,
         assignment_threshold: int | None = None,
     ) -> list[AlertOut]:
-        """РџРѕР»СѓС‡РµРЅРёРµ РІСЃРµС… Р°Р»РµСЂС‚РѕРІ"""
         transfer_days = transfer_days or settings.ALERT_TRANSFER_DAYS_LIMIT
         repair_days = repair_days or settings.ALERT_REPAIR_LOOKBACK_DAYS
         repair_threshold = repair_threshold or settings.ALERT_REPAIR_THRESHOLD
@@ -107,7 +104,6 @@ class AlertAnalyticsService(BaseAnalyticsService):
         return alerts
 
     async def dispatch_alerts(self) -> int:
-        """РћС‚РїСЂР°РІРєР° Р°Р»РµСЂС‚РѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏРј"""
         if not self.dispatcher:
             return 0
 

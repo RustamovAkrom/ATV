@@ -15,7 +15,7 @@ class DocumentAnalyticsDomainService(BaseAnalyticsService):
         self.repo = repo
 
     async def get(self, filters: AnalyticsFilters, user: CurrentUserSchema):
-        self.validate_filters(filters, user)  # <-- используем метод из базового класса
+        self.validate_filters(filters, user)
         return await self.repo.metrics(
             filters.region_id,
             filters.service_id,

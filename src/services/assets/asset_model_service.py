@@ -1,5 +1,3 @@
-# services/asset_model_service.py
-
 from uuid import UUID
 
 from core.exceptions.errors import BadRequest, NotFound

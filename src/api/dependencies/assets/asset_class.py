@@ -1,5 +1,3 @@
-# api/dependencies/asset_class.py
-
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 

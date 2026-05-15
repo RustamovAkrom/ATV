@@ -1,5 +1,3 @@
-# services/analytics/asset_transfer_analytics_service.py
-
 from decimal import Decimal
 from uuid import UUID
 

@@ -1,10 +1,9 @@
 from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query
 
 from api.dependencies.analytics import get_asset_analytics_service, get_report_service
-from api.v1.analytics._utils import parse_rate_limit, run_analytics_operation
 from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.auth.dependencies import get_current_user

@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request
 
 from api.dependencies.analytics import get_asset_transfer_analytics_service
-from api.v1.analytics._utils import enforce_rate_limit, parse_optional_datetime, parse_rate_limit, run_analytics_operation
+from api.v1.analytics._utils import parse_optional_datetime, run_analytics_operation
 from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.rbac.presets import AssetPermissions
@@ -18,7 +18,6 @@ from services.analytics.asset_transfer_analytics_service import AssetTransferAna
 
 router = APIRouter(prefix="/analytics/transfers", tags=["Analytics - Transfers"])
 settings = get_settings()
-ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit("5/minute")
 
 
 @router.get("/", response_model=PageOutSchema[AssetTransferOut], dependencies=[Depends(AssetPermissions.CanViewAssets)])
@@ -37,7 +36,6 @@ async def list_transfers(
         from_service_id=from_service_id, to_service_id=to_service_id, status=status,
         date_from=parse_optional_datetime(date_from), date_to=parse_optional_datetime(date_to), search=search,
     )
-    await enforce_rate_limit(request, "analytics:transfers:list", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request, "analytics.transfers.list", filters.model_dump(mode="json"),
         lambda: service.list_transfers(filters, pagination),
@@ -51,7 +49,6 @@ async def list_pending_transfers(
     request: Request, pagination: PaginationParamsSchema = Depends(),
     service: AssetTransferAnalyticsService = Depends(get_asset_transfer_analytics_service),
 ):
-    await enforce_rate_limit(request, "analytics:transfers:pending", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request, "analytics.transfers.pending", {"page": pagination.page, "limit": pagination.limit},
         lambda: service.list_pending_transfers(pagination),
@@ -65,7 +62,6 @@ async def get_asset_transfer_history(
     request: Request, asset_id: UUID,
     service: AssetTransferAnalyticsService = Depends(get_asset_transfer_analytics_service),
 ):
-    await enforce_rate_limit(request, "analytics:transfers:history", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request, "analytics.transfers.history", {"asset_id": asset_id},
         lambda: service.get_asset_transfer_history(asset_id),
@@ -84,7 +80,6 @@ async def get_transfer_metrics(
         asset_id=asset_id, created_by_id=created_by_id, status=status,
         date_from=parse_optional_datetime(date_from), date_to=parse_optional_datetime(date_to),
     )
-    await enforce_rate_limit(request, "analytics:transfers:metrics", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request, "analytics.transfers.metrics", filters.model_dump(mode="json"),
         lambda: service.get_transfer_metrics(filters),
@@ -98,7 +93,6 @@ async def get_transfer_bottlenecks(
     request: Request, critical_days: int = Query(30, ge=1), warning_days: int = Query(7, ge=1),
     service: AssetTransferAnalyticsService = Depends(get_asset_transfer_analytics_service),
 ):
-    await enforce_rate_limit(request, "analytics:transfers:bottlenecks", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request, "analytics.transfers.bottlenecks", {"critical_days": critical_days, "warning_days": warning_days},
         lambda: service.get_bottleneck_report(critical_days, warning_days),
@@ -112,7 +106,6 @@ async def get_warehouse_transfer_metrics(
     request: Request, warehouse_id: UUID,
     service: AssetTransferAnalyticsService = Depends(get_asset_transfer_analytics_service),
 ):
-    await enforce_rate_limit(request, "analytics:transfers:warehouse", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request, "analytics.transfers.warehouse_metrics", {"warehouse_id": warehouse_id},
         lambda: service.get_warehouse_metrics(warehouse_id),

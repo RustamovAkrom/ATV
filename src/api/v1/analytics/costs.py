@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 
 from api.dependencies.analytics import get_cost_analytics_service
-from api.v1.analytics._utils import enforce_rate_limit, parse_rate_limit, run_analytics_operation
+from api.v1.analytics._utils import run_analytics_operation
 from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.rbac.presets import AssetPermissions
@@ -11,7 +11,6 @@ from services.analytics.cost_analytics_service import CostAnalyticsService
 
 router = APIRouter(prefix="/analytics/costs", tags=["Analytics - Costs"])
 settings = get_settings()
-ANALYTICS_LIMIT, ANALYTICS_WINDOW = parse_rate_limit("5/minute")
 
 
 @router.get("/repairs", response_model=PageOutSchema[RepairCostAnalyticsOut], dependencies=[Depends(AssetPermissions.CanViewAssets)])
@@ -20,7 +19,6 @@ async def get_repair_costs(
     request: Request, pagination: PaginationParamsSchema = Depends(),
     service: CostAnalyticsService = Depends(get_cost_analytics_service),
 ):
-    await enforce_rate_limit(request, "analytics:costs:repairs", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request, "analytics.costs.repairs", {"page": pagination.page, "limit": pagination.limit},
         lambda: service.get_repair_costs(pagination),
@@ -34,7 +32,6 @@ async def get_asset_costs(
     request: Request, pagination: PaginationParamsSchema = Depends(),
     service: CostAnalyticsService = Depends(get_cost_analytics_service),
 ):
-    await enforce_rate_limit(request, "analytics:costs:assets", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request, "analytics.costs.assets", {"page": pagination.page, "limit": pagination.limit},
         lambda: service.get_asset_costs(pagination),
@@ -48,7 +45,6 @@ async def get_region_costs(
     request: Request, pagination: PaginationParamsSchema = Depends(),
     service: CostAnalyticsService = Depends(get_cost_analytics_service),
 ):
-    await enforce_rate_limit(request, "analytics:costs:regions", ANALYTICS_LIMIT, ANALYTICS_WINDOW)
     return await run_analytics_operation(
         request, "analytics.costs.regions", {"page": pagination.page, "limit": pagination.limit},
         lambda: service.get_region_costs(pagination),

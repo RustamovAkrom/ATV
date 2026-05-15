@@ -1,11 +1,9 @@
-# services/assets/approval_service.py
-
 from uuid import UUID
 
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import or_, select
 from typing import List
-from core.exceptions.errors import BadRequest, NotFound, PermissionDenied
+from core.exceptions.errors import BadRequest, NotFound
 from db.models.approvals.approval_request import ApprovalRequest
 from db.models.enums import ApprovalStatus, AssetStatus, UserStatus
 from db.models.users.permission import Role

@@ -1,12 +1,10 @@
 from uuid import UUID
 
-from core.audit.stream import audit_stream
 from core.exceptions.errors import NotFound
 from db.models.documents.document import Document
 from db.models.documents.document_file import DocumentFile
 from repositories.documents.document_repo import DocumentRepository
 from schemas.documents import AssetDocumentCreate, AssetDocumentSchema
-from utils.helpers import utc_now
 from schemas.auth.auth import CurrentUserSchema
 from core.events.document_events import DocumentEventService
 

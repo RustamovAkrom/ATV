@@ -18,6 +18,7 @@ async def _seed_asset_dependencies(dbsession):
     category = AssetCategory(
         name=f"ApprovalHardCategory-{suffix}", code=f"AHC-{suffix}"
     )
+
     manufacturer = Manufacturer(name=f"ApprovalHardManufacturer-{suffix}")
     dbsession.add_all([region, service, category, manufacturer])
     await dbsession.flush()
