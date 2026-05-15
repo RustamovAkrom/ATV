@@ -14,7 +14,6 @@ if TYPE_CHECKING:
 class Service(Base, UUIDMixing, TimestampMixin):
     __tablename__ = "services"
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-    code: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=True)
     description: Mapped[str | None] = mapped_column(Text(), nullable=True)
 
     regions: Mapped[list["Region"]] = relationship(
