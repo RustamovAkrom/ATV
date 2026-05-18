@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 
-from api.dependencies.assets.assets import (
+from api.dependencies.assets.asset import (
     get_asset_service,
     get_bulk_asset_service,
 )

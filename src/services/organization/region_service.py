@@ -42,7 +42,7 @@ class RegionService:
 
         return result
 
-    async def get(self, region_id: UUID) -> dict[str, Any] | None:
+    async def get(self, region_id: UUID) -> RegionOutSchema | None:
         region = await self.repo.get(region_id)
         if not region:
             raise NotFound(f"Region {region_id} not found")

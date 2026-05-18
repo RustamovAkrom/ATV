@@ -1,5 +1,3 @@
-# schemas/analytics/asset_transfer_analytics.py
-
 from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
@@ -42,7 +40,6 @@ class AssetTransferOut(BaseSchema):
     id: UUID
     asset_id: UUID
     asset_name: str
-    asset_tag: str | None
     status: str
 
     from_warehouse_name: str | None
@@ -130,7 +127,6 @@ class TransferBottleneck(BaseSchema):
 
     transfer_id: UUID
     asset_name: str
-    asset_tag: str | None
     status: str
     pending_days: int
     created_by_name: str

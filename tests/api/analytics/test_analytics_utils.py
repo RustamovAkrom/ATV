@@ -3,7 +3,6 @@ from fastapi import HTTPException
 
 from api.v1.analytics._utils import (
     parse_optional_datetime,
-    parse_rate_limit,
     sanitize_search,
 )
 
@@ -23,12 +22,3 @@ class TestAnalyticsUtils:
         assert sanitize_search("   ") is None
         assert sanitize_search("") is None
 
-    def test_parse_rate_limit_hour(self):
-        amount, period = parse_rate_limit("100/hour")
-        assert amount == 100
-        assert period == 3600
-
-    def test_parse_rate_limit_invalid_format(self):
-        amount, period = parse_rate_limit("invalid")
-        assert amount == 20
-        assert period == 60

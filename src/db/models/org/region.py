@@ -4,14 +4,15 @@ from uuid import UUID
 from sqlalchemy import JSON, Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from db.base import Base, TimestampMixin, UUIDMixing
+from db.base import Base
+from db.mixins import TimestampMixin, UUIDMixing, SlugMixin
 
 if TYPE_CHECKING:
     from db.models.org.service import Service
     from db.models.users.user import User
 
 
-class Region(Base, UUIDMixing, TimestampMixin):
+class Region(Base, UUIDMixing, TimestampMixin, SlugMixin):
     __tablename__ = "regions"
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     parent_id: Mapped[UUID | None] = mapped_column(

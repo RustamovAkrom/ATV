@@ -53,12 +53,11 @@ class RegionOutSchema(TimestampSchema):
     """Схема для ответа (вывод региона)"""
     id: UUID
     name: str
-    parent_id: UUID | None
     latitude: float | None
     longitude: float | None
     geojson: dict | None
+    parent_id: UUID | None
     level: int | None = Field(None, description="Уровень в иерархии")
-    children_count: int | None = Field(None, description="Количество дочерних регионов")
 
     @field_validator("id", mode="before")
     @classmethod

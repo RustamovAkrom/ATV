@@ -5,7 +5,7 @@ from db.models.users.user import User
 
 
 async def create_user(dbsession, login="user", password="password"):
-    role = Role(name="User", code=UserRole.ADMIN.value)
+    role = Role(name="User", slug=UserRole.ADMIN.value)
     dbsession.add(role)
     await dbsession.flush()
 

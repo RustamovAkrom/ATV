@@ -22,9 +22,9 @@ class AssetCategoryRepository(BaseRepository):
             select(AssetCategory).where(AssetCategory.id == category_id)
         )
 
-    async def get_by_code(self, code: str):
+    async def get_by_slug(self, slug: str):
         return await self.scalar(
-            select(AssetCategory).where(AssetCategory.code == code)
+            select(AssetCategory).where(AssetCategory.slug == slug)
         )
 
     async def get_by_normalized_name(self, name: str):
@@ -32,9 +32,9 @@ class AssetCategoryRepository(BaseRepository):
             select(AssetCategory).where(func.lower(AssetCategory.name) == name)
         )
 
-    async def exists_by_code(self, code: str) -> bool:
+    async def exists_by_slug(self, slug: str) -> bool:
         return await self.scalar(
-            select(AssetCategory.id).where(AssetCategory.code == code)
+            select(AssetCategory.id).where(AssetCategory.slug == slug)
         ) is not None
 
     async def create(self, obj: AssetCategory):

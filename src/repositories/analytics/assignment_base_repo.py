@@ -53,7 +53,6 @@ class AssignmentBaseRepository(BaseAnalyticsRepository):
             query = query.where(
                 or_(
                     self.asset_table.name.ilike(term),
-                    self.asset_table.asset_tag.ilike(term),
                     self.user_table.full_name.ilike(term),
                 )
             )

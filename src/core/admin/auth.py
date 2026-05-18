@@ -20,7 +20,7 @@ class AdminAuth(AuthenticationBackend):
         session_factory = get_sync_session_factory()
         with session_factory() as session:
             user = session.query(User).filter(User.login == username).first()
-            if user and verify_password(password, user.password_hash) and user.role.code == UserRole.SUPERADMIN.value:
+            if user and verify_password(password, user.password_hash) and user.role.slug == UserRole.SUPERADMIN.value:
                 request.session["user_id"] = str(user.id)
                 request.session["user"] = user.login
                 return True

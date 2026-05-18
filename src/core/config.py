@@ -140,7 +140,7 @@ class Settings(BaseSettings):
     ANALYTICS_SEARCH_MAX_LENGTH: int = 100
 
     # FILE UPLOADS
-    UPLOAD_MAX_SIZE_MB: int = 5 # maximum file size in MB
+    UPLOAD_MAX_SIZE_MB: int = 10 # maximum file size in MB
     UPLOAD_ALLOWED_EXTENSIONS: list[str] = Field(
         default_factory=lambda: [".jpg", ".jpeg", ".png", ".gif", ".webp"]
     )

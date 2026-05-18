@@ -8,7 +8,7 @@ from repositories.assets.manufacturer_repo import ManufacturerRepository
 from services.assets.asset_model_service import AssetModelService
 
 from .asset_category import get_asset_category_repo
-from .manufacturer import get_manufacturer_repo
+from .asset_manufacturer import get_manufacturer_repo
 
 
 def get_asset_model_repo(

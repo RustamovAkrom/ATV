@@ -6,7 +6,8 @@ from uuid import UUID
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from db.base import Base, UUIDMixing
+from db.base import Base
+from db.mixins import UUIDMixing
 
 if TYPE_CHECKING:
     from db.models.documents.document import Document

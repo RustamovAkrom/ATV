@@ -23,7 +23,7 @@ class ServiceRepository(BaseRepository):
             select(Service).order_by(Service.name)
         )
 
-    async def get(self, service_id: UUID) -> dict[str, Any] | None:
+    async def get(self, service_id: UUID) -> Service | None:
         return await self.scalar(
             select(Service)
             .options(
@@ -36,7 +36,7 @@ class ServiceRepository(BaseRepository):
         service = Service(**data)
         self.add(service)
         await self.flush()
-        await self.flush(service)
+        await self.refresh(service)
         return service
 
     async def update(self, service_id: UUID, data: dict) -> Service | None:
@@ -60,6 +60,31 @@ class ServiceRepository(BaseRepository):
         if exclude_id:
             query = query.where(Service.id != exclude_id)
         return await self.scalar(query) is not None
+
+    async def check_slug_exists(self, slug: str, exclude_id: UUID | None = None) -> bool:
+        if not slug:
+            return False
+
+        query = select(Service).where(Service.slug == slug)
+        if exclude_id:
+            query = query.where(Service.id != exclude_id)
+        return await self.scalar(query) is not None
+
+    async def set_regions(self, service_id: UUID, region_ids: list[UUID]) -> None:
+        # TODO Shu joyda Regionlarga servislarni ulaydigon qilish kerak hozirda ishlamayapti shuni ishlaydigon qilish kerak service create qilayotkanda region_ids ni olishi kerak va
+        # databaseda
+        # Delete old relationships
+        await self.execute(
+            delete(region_services).where(region_services.c.service_id == service_id)
+        )
+
+        # Create new relationships
+        for region_id in region_ids:
+            await self.execute(
+                region_services.insert().values(service_id=service_id, region_id=region_id)
+            )
+
+        await self.flush()
 
     async def get_regions(self, service_id: UUID) -> list[Region]:
         return await self.scalars(

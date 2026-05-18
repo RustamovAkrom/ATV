@@ -119,8 +119,6 @@ class AssetRepository(BaseRepository):
             query = query.where(
                 or_(
                     func.lower(Asset.name).ilike(like),
-                    func.lower(Asset.type).ilike(like),
-                    func.lower(Asset.asset_tag).ilike(like),
                     func.lower(Asset.serial_number).ilike(like),
                 )
             )
@@ -169,16 +167,6 @@ class AssetRepository(BaseRepository):
             .options(selectinload(User.role).selectinload(Role.permissions))
             .where(User.id == user_id)
         )
-
-    async def asset_tag_exists(
-        self, asset_tag: str, exclude_id: UUID | None = None
-    ) -> bool:
-        query = select(Asset.id).where(Asset.asset_tag == asset_tag)
-
-        if exclude_id:
-            query = query.where(Asset.id != exclude_id)
-
-        return await self.scalar(query.limit(1)) is not None
 
     async def serial_number_exists(
         self, serial_number: str, exclude_id: UUID | None = None

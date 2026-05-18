@@ -81,7 +81,7 @@ class AssetCategoryAdmin(BaseAdmin, model=AssetCategory):
     can_create = True
     can_delete = True
 
-    column_list = ["id", "name", "code", "created_at"]
+    column_list = ["id", "name", "slug", "created_at"]
 
 
 class AssetClassAdmin(BaseAdmin, model=AssetClass):
@@ -93,7 +93,7 @@ class AssetClassAdmin(BaseAdmin, model=AssetClass):
     can_create = True
     can_delete = True
 
-    column_list = ["id", "name", "code", "created_at"]
+    column_list = ["id", "name", "slug", "created_at"]
 
 
 class AssetHistoryAdmin(BaseAdmin, model=AssetHistory):
@@ -124,7 +124,7 @@ class AssetModelAdmin(BaseAdmin, model=AssetModel):
     column_list = [
         "id",
         "name",
-        "code",
+        "slug",
         "manufacturer",
         "category",
         "lifetime_years",
@@ -166,7 +166,7 @@ class ManufacturerAdmin(BaseAdmin, model=Manufacturer):
     name_plural = "Manufacturers"
     icon = "fa-solid fa-industry"
 
-    column_list = ["id", "name", "code", "created_at"]
+    column_list = ["id", "name", "slug", "created_at"]
 
 
 class WarehouseAdmin(BaseAdmin, model=Warehouse):
@@ -177,7 +177,7 @@ class WarehouseAdmin(BaseAdmin, model=Warehouse):
     column_list = [
         "id",
         "name",
-        "code",
+        "slug",
         "region",
         "service",
         "is_active",

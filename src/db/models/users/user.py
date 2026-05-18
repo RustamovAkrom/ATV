@@ -6,7 +6,8 @@ from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, func, Index
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from sqlalchemy import Enum as SAEnum
-from db.base import Base, StatusMixin, TimestampMixin, UUIDMixing
+from db.base import Base
+from db.mixins import StatusMixin, TimestampMixin, UUIDMixing
 from db.models.assets.asset import Asset
 from db.models.org.region import Region
 from db.models.org.service import Service
@@ -203,10 +204,10 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
         perm_set = set()
 
         if self.role and self.role.permissions:
-            perm_set.update(p.code for p in self.role.permissions)
+            perm_set.update(p.slug for p in self.role.permissions)
 
         if self.direct_permissions:
-            perm_set.update(p.code for p in self.direct_permissions)
+            perm_set.update(p.slug for p in self.direct_permissions)
 
         return list(perm_set)
 

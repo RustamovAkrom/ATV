@@ -29,19 +29,19 @@ async def seed_rbac(db):
     # =========================
     print("📋 Setting up permissions...")
     result = await db.execute(select(Permission))
-    existing_permissions = {p.code: p for p in result.scalars().all()}
+    existing_permissions = {p.slug: p for p in result.scalars().all()}
 
-    for code in Permissions.all():
-        if code not in existing_permissions:
-            # Create a human-readable name from the code
-            name = code.replace(".", " ").replace("_", " ").title()
-            db.add(Permission(code=code, name=name))
-            print(f"  + Permission: {code}")
+    for slug in Permissions.all():
+        if slug not in existing_permissions:
+            # Create a human-readable name from the slug
+            name = slug.replace(".", " ").replace("_", " ").title()
+            db.add(Permission(slug=slug, name=name))
+            print(f"  + Permission: {slug}")
 
     await db.flush()
 
     result = await db.execute(select(Permission))
-    permissions_map = {p.code: p for p in result.scalars().all()}
+    permissions_map = {p.slug: p for p in result.scalars().all()}
     print(f"✅ {len(permissions_map)} permissions ready")
 
     # =========================
@@ -49,7 +49,7 @@ async def seed_rbac(db):
     # =========================
     print("👥 Setting up roles...")
     result = await db.execute(select(Role))
-    existing_roles = {r.code: r for r in result.scalars().all()}
+    existing_roles = {r.slug: r for r in result.scalars().all()}
 
     role_descriptions = {
         "superadmin": "Super Administrator - Complete system access",
@@ -64,17 +64,17 @@ async def seed_rbac(db):
     }
 
     for role_enum in UserRole:
-        role_code = str(role_enum.value)
+        role_slug = str(role_enum.value)
 
-        if role_code not in existing_roles:
+        if role_slug not in existing_roles:
             role = Role(
-                code=role_code,
-                name=role_code.replace("_", " ").title(),
-                description=role_descriptions.get(role_code, ""),
+                slug=role_slug,
+                name=role_slug.replace("_", " ").title(),
+                description=role_descriptions.get(role_slug, ""),
             )
             db.add(role)
-            existing_roles[role_code] = role
-            print(f"  + Role: {role_code}")
+            existing_roles[role_slug] = role
+            print(f"  + Role: {role_slug}")
 
     await db.flush()
     print(f"✅ {len(existing_roles)} roles ready")
@@ -84,11 +84,11 @@ async def seed_rbac(db):
     # =========================
     print("⛓️  Mapping permissions to roles...")
 
-    for role_code, perm_codes in ROLE_PERMISSIONS.items():
-        role = existing_roles.get(role_code)
+    for role_slug, perm_slugs in ROLE_PERMISSIONS.items():
+        role = existing_roles.get(role_slug)
 
         if not role:
-            print(f"  ⚠️  Role '{role_code}' not found in ROLE_PERMISSIONS")
+            print(f"  ⚠️  Role '{role_slug}' not found in ROLE_PERMISSIONS")
             continue
 
         # Clear old mappings
@@ -98,8 +98,8 @@ async def seed_rbac(db):
 
         # Insert new mappings
         rows = []
-        for p_code in perm_codes:
-            perm = permissions_map.get(p_code)
+        for p_slug in perm_slugs:
+            perm = permissions_map.get(p_slug)
             if perm:
                 rows.append(
                     {
@@ -108,11 +108,11 @@ async def seed_rbac(db):
                     }
                 )
             else:
-                print(f"  ⚠️  Permission '{p_code}' not found for role '{role_code}'")
+                print(f"  ⚠️  Permission '{p_slug}' not found for role '{role_slug}'")
 
         if rows:
             await db.execute(insert(role_permissions), rows)
-            print(f"  ✓ {role_code}: {len(rows)} permissions mapped")
+            print(f"  ✓ {role_slug}: {len(rows)} permissions mapped")
 
     await db.flush()
 

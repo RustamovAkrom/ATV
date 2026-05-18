@@ -17,6 +17,8 @@ class TopAnalyticsService(BaseAnalyticsService):
 
     async def get_top_assets(self, metric: TopMetric, limit: int) -> list[TopAssetAnalyticsOut]:
         rows = await self.repo.get_top_assets(max(limit, 50))
+        if not rows:
+            return []
         rows = sorted(rows, key=lambda row: (self._pick_metric(row, metric), str(row.id)), reverse=True)
 
         return [
@@ -35,6 +37,8 @@ class TopAnalyticsService(BaseAnalyticsService):
 
     async def get_top_users(self, metric: TopMetric, limit: int, current_user: CurrentUserSchema) -> list[TopUserAnalyticsOut]:
         rows = await self.repo.get_top_users(max(limit, 50))
+        if not rows:
+            return []
         rows = sorted(rows, key=lambda row: (self._pick_metric(row, metric), str(row.id)), reverse=True)
 
         return [
@@ -53,6 +57,8 @@ class TopAnalyticsService(BaseAnalyticsService):
 
     async def get_top_services(self, metric: TopMetric, limit: int) -> list[TopServiceAnalyticsOut]:
         rows = await self.repo.get_top_services(max(limit, 50))
+        if not rows:
+            return []
         rows = sorted(rows, key=lambda row: (self._pick_metric(row, metric), str(row.id)), reverse=True)
 
         return [

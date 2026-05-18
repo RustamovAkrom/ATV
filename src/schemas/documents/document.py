@@ -1,37 +1,59 @@
 from datetime import datetime
 from uuid import UUID
-
-from pydantic import ConfigDict, Field
+from pydantic import Field, field_validator
 
 from db.models.enums import DocumentStatus
-from schemas.base import BaseSchema
+from schemas.base import BaseSchema, TimestampSchema
 
 
-class DocumentFileCreate(BaseSchema):
+class DocumentFileCreateSchema(BaseSchema):
+    """Схема для создания файла документа"""
     file_name: str = Field(min_length=1, max_length=255)
     file_path: str = Field(min_length=1, max_length=500)
-    file_size: int | None = Field(default=None, ge=0)
-    content_type: str | None = Field(default=None, max_length=100)
+    file_size: int | None = Field(None, ge=0)
+    content_type: str | None = Field(None, max_length=100)
 
 
-class AssetDocumentCreate(BaseSchema):
-    title: str = Field(min_length=1, max_length=255)
-    description: str | None = Field(default=None, max_length=500)
-    document_type: str = Field(default="other", min_length=1, max_length=50)
-    status: DocumentStatus = DocumentStatus.DRAFT
-    metadata: dict = Field(default_factory=dict)
-    files: list[DocumentFileCreate] = Field(default_factory=list)
-
-
-class DocumentFileSchema(BaseSchema):
+class DocumentFileOutSchema(BaseSchema):
+    """Схема для вывода файла документа"""
     id: UUID
     file_name: str
     file_path: str
     file_size: int | None
     content_type: str | None
+    created_at: datetime | None = None
 
 
-class AssetDocumentSchema(BaseSchema):
+class AssetDocumentCreateSchema(BaseSchema):
+    """Схема для создания документа (JSON + файлы)"""
+    title: str = Field(min_length=1, max_length=255)
+    description: str | None = Field(None, max_length=500)
+    document_type: str = Field(default="other", min_length=1, max_length=50)
+    status: DocumentStatus = DocumentStatus.DRAFT
+    metadata: dict = Field(default_factory=dict)
+
+
+class AssetDocumentUpdateSchema(BaseSchema):
+    """Схема для обновления документа"""
+    title: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = Field(None, max_length=500)
+    document_type: str | None = Field(None, min_length=1, max_length=50)
+    status: DocumentStatus | None = None
+    metadata: dict | None = None
+
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, v: str | None) -> str | None:
+        if v is not None:
+            cleaned = v.strip()
+            if not cleaned:
+                raise ValueError("Title cannot be empty")
+            return cleaned
+        return v
+
+
+class AssetDocumentOutSchema(TimestampSchema):
+    """Схема для вывода документа"""
     id: UUID
     title: str
     description: str | None
@@ -40,6 +62,11 @@ class AssetDocumentSchema(BaseSchema):
     created_by_id: UUID
     status: DocumentStatus
     metadata: dict = Field(alias="meta")
-    files: list[DocumentFileSchema] = Field(default_factory=list)
-    created_at: datetime
-    updated_at: datetime
+    files: list[DocumentFileOutSchema] = Field(default_factory=list)
+    created_by_name: str | None = None
+
+
+class AssetDocumentWithFilesOutSchema(AssetDocumentOutSchema):
+    """Документ с полной информацией о файлах"""
+    total_files_size: int | None = None
+    file_count: int = 0

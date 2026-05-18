@@ -1,4 +1,3 @@
-﻿from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -7,68 +6,32 @@ pytestmark = pytest.mark.anyio
 
 
 def _auth(token: str) -> dict[str, str]:
-    return {"Authorization": f"Bearer {token}"}
+    return {"Authorization": f"Bearer {token}", "Host": "localhost"}
 
 
-@pytest.fixture
-def stub_expense_service(monkeypatch):
-    from api.v1 import expenses as module
-
-    created = {
-        "id": str(uuid4()),
-        "amount": 1500.5,
-        "currency": "UZS",
-        "expense_type_code": "repair",
-        "description": "Screen replacement",
-        "file_url": None,
-        "asset": None,
-        "repair_id": None,
-        "region": None,
-        "service": None,
-        "created_by": {"id": str(uuid4()), "name": "Admin", "login": "admin"},
-        "occurred_at": datetime.now(UTC).isoformat(),
-        "created_at": datetime.now(UTC).isoformat(),
-        "updated_at": datetime.now(UTC).isoformat(),
-    }
-
-    class _StubExpenseService:
-        def __init__(self, _db):
-            pass
-
-        async def create_expense(self, data, user_id):
-            return created
-
-        async def list_expenses(self, **kwargs):
-            return {"total": 1, "page": 1, "size": 20, "items": [created]}
-
-        async def get_expense(self, expense_id):
-            return created
-
-        async def update_expense(self, expense_id, data):
-            return {**created, "description": "Updated description"}
-
-        async def delete_expense(self, expense_id):
-            return None
-
-    monkeypatch.setattr(module, "ExpenseService", _StubExpenseService)
+async def _create_expense(client, token: str) -> dict:
+    response = await client.post(
+        "/expenses/",
+        headers=_auth(token),
+        json={
+            "amount": 1500.50,
+            "currency": "UZS",
+            "expense_type": "repair",
+            "description": "Screen replacement",
+        },
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
 
 
 class TestExpenseEndpoints:
-    async def test_create_expense_success(self, client, analytics_tokens, stub_expense_service):
-        response = await client.post(
-            "/expenses/",
-            headers=_auth(analytics_tokens["superadmin"]),
-            json={
-                "amount": 1500.50,
-                "currency": "UZS",
-                "expense_type": "repair",
-                "description": "Screen replacement",
-            },
-        )
-        assert response.status_code == 201
-        assert response.json()["amount"] == 1500.5
+    async def test_create_expense_success(self, client, analytics_tokens):
+        created = await _create_expense(client, analytics_tokens["superadmin"])
+        assert created["amount"] == 1500.5
+        assert "created_by_id" in created
+        assert "created_by_name" in created
 
-    async def test_create_expense_negative_amount(self, client, analytics_tokens, stub_expense_service):
+    async def test_create_expense_negative_amount(self, client, analytics_tokens):
         response = await client.post(
             "/expenses/",
             headers=_auth(analytics_tokens["superadmin"]),
@@ -76,33 +39,47 @@ class TestExpenseEndpoints:
         )
         assert response.status_code == 400
 
-    async def test_list_expenses(self, client, analytics_tokens, stub_expense_service):
+    async def test_list_expenses(self, client, analytics_tokens):
+        await _create_expense(client, analytics_tokens["superadmin"])
         response = await client.get(
             "/expenses/",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         assert response.status_code == 200
         assert "items" in response.json()
+        assert len(response.json()["items"]) >= 1
 
-    async def test_get_expense_by_id(self, client, analytics_tokens, stub_expense_service):
+    async def test_get_expense_by_id(self, client, analytics_tokens):
+        created = await _create_expense(client, analytics_tokens["superadmin"])
         response = await client.get(
-            f"/expenses/{uuid4()}",
+            f"/expenses/{created['id']}",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         assert response.status_code == 200
+        assert response.json()["id"] == created["id"]
 
-    async def test_update_expense(self, client, analytics_tokens, stub_expense_service):
+    async def test_update_expense(self, client, analytics_tokens):
+        created = await _create_expense(client, analytics_tokens["superadmin"])
         response = await client.patch(
-            f"/expenses/{uuid4()}",
+            f"/expenses/{created['id']}",
             headers=_auth(analytics_tokens["superadmin"]),
             json={"description": "Updated description"},
         )
         assert response.status_code == 200
+        assert response.json()["description"] == "Updated description"
 
-    async def test_delete_expense(self, client, analytics_tokens, stub_expense_service):
+    async def test_delete_expense(self, client, analytics_tokens):
+        created = await _create_expense(client, analytics_tokens["superadmin"])
         response = await client.delete(
-            f"/expenses/{uuid4()}",
+            f"/expenses/{created['id']}",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         assert response.status_code == 200
         assert response.json()["status"] == "deleted"
+
+        missing = await client.get(
+            f"/expenses/{created['id']}",
+            headers=_auth(analytics_tokens["superadmin"]),
+        )
+        # Deleted expense must not be retrievable anymore.
+        assert missing.status_code == 404

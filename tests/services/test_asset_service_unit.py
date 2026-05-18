@@ -43,14 +43,12 @@ class _FakeRepo:
         self.asset = SimpleNamespace(
             id=self.asset_id,
             name="Asset",
-            type="laptop",
             model_id=uuid4(),
             class_id=uuid4(),
             region_id=self.region_id,
             service_id=self.service_id,
             owner_id=None,
             status=AssetStatus.ACTIVE,
-            asset_tag="AT-1",
             serial_number="SN-1",
             meta={},
             history_entries=[],
@@ -80,9 +78,6 @@ class _FakeRepo:
 
     async def get_asset_class(self, class_id):
         return SimpleNamespace(id=class_id)
-
-    async def asset_tag_exists(self, asset_tag, exclude_id=None):
-        return False
 
     async def serial_number_exists(self, serial_number, exclude_id=None):
         return False
@@ -157,12 +152,10 @@ class TestAssetService:
 
         create_payload = AssetCreate(
             name="Asset 1",
-            type="Laptop",
             model_id=uuid4(),
             class_id=uuid4(),
             region_id=repo.region_id,
             service_id=repo.service_id,
-            asset_tag="AT-2",
             serial_number="SN-2",
         )
         created = await service.create(create_payload, actor)
@@ -198,12 +191,12 @@ class TestAssetService:
     async def test_validate_uniques_and_clean_optional(self, asset_service, actor, monkeypatch):
         service, repo = asset_service
 
-        async def _tag_exists(*args, **kwargs):
+        async def _serial_exists(*args, **kwargs):
             return True
+        repo.serial_number_exists = _serial_exists
 
-        monkeypatch.setattr(repo, "asset_tag_exists", _tag_exists)
         with pytest.raises(BadRequest):
-            await service._validate_uniques("AT-1", None)
+            await service._validate_uniques("SN-EXISTS", None)
 
         assert service._clean_optional("  ") is None
         assert service._clean_optional("  x ") == "x"

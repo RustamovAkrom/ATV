@@ -7,20 +7,20 @@ from schemas.base import BaseSchema
 class PermissionOutSchema(BaseSchema):
     id: UUID
     name: str = Field(max_length=255)
-    code: str = Field(max_length=50, pattern=r'^[a-z][a-z0-9._]*$')
+    slug: str = Field(max_length=50, pattern=r'^[a-z][a-z0-9._]*$')
 
 
 class RoleOutSchema(BaseSchema):
     id: UUID
     name: str = Field(max_length=100)
-    code: str = Field(max_length=50)
+    slug: str = Field(max_length=50)
     description: str | None = Field(None, max_length=500)
     permissions: list[PermissionOutSchema] = Field(default_factory=list)
 
 
 class RoleCreateSchema(BaseSchema):
     name: str = Field(min_length=2, max_length=100)
-    code: str = Field(min_length=2, max_length=50, pattern=r'^[a-z][a-z0-9_]*$')
+    slug: str = Field(min_length=2, max_length=50, pattern=r'^[a-z][a-z0-9_]*$')
     description: str | None = Field(None, max_length=500)
 
 

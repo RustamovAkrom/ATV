@@ -28,10 +28,10 @@ from api.v1.notifications import router as notifications_router
 from api.v1.assets.asset_documents import router as documents_router
 from api.v1.assets.asset_repairs import router as asset_repairs_router
 from api.v1.approvals.requests import router as approval_requests_router
-from api.v1.expenses import router as expenses_router
+from api.v1.assets.expenses import router as expenses_router
 from api.v1.organization.regions import router as regions_router
 from api.v1.organization.services import router as services_router
-from api.v1.warehouse.warehouses import router as warehouse_router
+from api.v1.assets.warehouses import router as warehouse_router
 
 
 router = APIRouter()

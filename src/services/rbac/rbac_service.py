@@ -23,14 +23,14 @@ class RBACService:
                 raise NotFound("Role not found")
             return role
         except IntegrityError as e:
-            raise BadRequest("Role with this code already exists") from e
+            raise BadRequest("Role with this slug already exists") from e
 
     async def create_role(self, data: RoleCreateSchema):
         # normalize
-        code = data.code.lower().strip()
+        slug = data.slug.lower().strip()
 
-        if await self.rbac_repo.exists_by_code(code):
-            raise ValidationError("Role code already exists")
+        if await self.rbac_repo.exists_by_slug(slug):
+            raise ValidationError("Role slug already exists")
 
         if await self.rbac_repo.exists_by_name(data.name):
             raise ValidationError("Role name already exists")
@@ -38,12 +38,12 @@ class RBACService:
         try:
             role = Role(
                 name=data.name.strip(),
-                code=code,
+                slug=slug,
                 description=(data.description or "").strip() or None,
             )
             return await self.rbac_repo.create_role(role)
         except IntegrityError as e:
-            raise BadRequest("Role with this code already exists") from e
+            raise BadRequest("Role with this slug already exists") from e
 
     async def update_role(self, role_id: UUID, data: RoleUpdateSchema):
         role = await self.rbac_repo.get_role(role_id)
@@ -52,10 +52,10 @@ class RBACService:
 
         payload = data.model_dump(exclude_unset=True)
 
-        if "code" in payload and payload["code"]:
-            payload["code"] = payload["code"].lower().strip()
-            if await self.rbac_repo.exists_by_code(payload["code"], exclude_id=role_id):
-                raise ValidationError("Role code already exists")
+        if "slug" in payload and payload["slug"]:
+            payload["slug"] = payload["slug"].lower().strip()
+            if await self.rbac_repo.exists_by_slug(payload["slug"], exclude_id=role_id):
+                raise ValidationError("Role slug already exists")
 
         if "name" in payload and payload["name"]:
             payload["name"] = payload["name"].strip()

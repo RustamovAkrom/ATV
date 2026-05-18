@@ -45,7 +45,6 @@ class TopAnalyticsRepository(BaseAnalyticsRepository):
         query = select(
             Asset.id,
             Asset.name,
-            Asset.asset_tag,
             func.coalesce(assignments.c.assignment_count, 0).label("assignment_count"),
             func.coalesce(transfers.c.transfer_count, 0).label("transfer_count"),
             func.coalesce(repairs.c.repair_count, 0).label("repair_count"),

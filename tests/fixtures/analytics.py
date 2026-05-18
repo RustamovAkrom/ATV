@@ -21,16 +21,16 @@ from utils.helpers import utc_now
 @pytest.fixture
 async def analytics_users(dbsession):
     superadmin = await create_user_with_role(
-        dbsession, login_prefix="superadmin", role_code=UserRole.SUPERADMIN.value
+        dbsession, login_prefix="superadmin", role_slug=UserRole.SUPERADMIN.value
     )
     admin = await create_user_with_role(
-        dbsession, login_prefix="admin", role_code=UserRole.ADMIN.value
+        dbsession, login_prefix="admin", role_slug=UserRole.ADMIN.value
     )
     analytic = await create_user_with_role(
-        dbsession, login_prefix="analytic", role_code=UserRole.ANALYTIC.value
+        dbsession, login_prefix="analytic", role_slug=UserRole.ANALYTIC.value
     )
     moderator = await create_user_with_role(
-        dbsession, login_prefix="moderator", role_code=UserRole.MODERATOR.value
+        dbsession, login_prefix="moderator", role_slug=UserRole.MODERATOR.value
     )
     # Removed commit - let test session handle transaction
     return {

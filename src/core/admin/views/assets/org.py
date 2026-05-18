@@ -31,4 +31,4 @@ class ServiceAdmin(BaseAdmin, model=Service):
     can_create = True
     can_delete = True
 
-    column_list = ["id", "name", "code", "created_at"]
+    column_list = ["id", "name", "slug", "created_at"]

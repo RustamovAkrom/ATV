@@ -1,12 +1,11 @@
-# src/db/models/documents/document.py
-
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import JSON, Enum as SAEnum, ForeignKey, String, text
+from sqlalchemy import Enum as SAEnum, ForeignKey, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import JSONB
-from db.base import Base, TimestampMixin, UUIDMixing
+from db.base import Base
+from db.mixins import TimestampMixin, UUIDMixing
 from db.models.enums import DocumentStatus
 
 if TYPE_CHECKING:

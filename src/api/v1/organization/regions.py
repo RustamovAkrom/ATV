@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from api.dependencies.organizations.regions import get_region_service
 from core.security.auth.dependencies import get_current_user
 from core.security.rbac.presets import RegionPermissions
+from core.cache.decorators import cached, invalidate_cache
 from core.slowapi import limiter
 from schemas.auth.auth import CurrentUserSchema
 from schemas.organization.region import (
@@ -15,16 +16,17 @@ from schemas.organization.region import (
     RegionTreeOutSchema,
 )
 from services.organization.region_service import RegionService
-from core.exceptions.errors import NotFound
+
 
 router = APIRouter(prefix="/regions", tags=["Regions"])
 
 
 @router.get(
     "/tree",
-    response_model=list[dict[str, Any]],
+    response_model=list[RegionTreeOutSchema],
     dependencies=[Depends(RegionPermissions.CanViewRegions)],
 )
+@cached(ttl=30, tags=("region:tree",))
 async def get_regions_tree(
     service: RegionService = Depends(get_region_service),
     _: CurrentUserSchema = Depends(get_current_user),
@@ -35,9 +37,10 @@ async def get_regions_tree(
 
 @router.get(
     "/",
-    response_model=list[dict[str, Any]],
+    response_model=list[RegionOutSchema],
     dependencies=[Depends(RegionPermissions.CanViewRegions)],
 )
+@cached(ttl=30, tags=("region:list",))
 async def list_regions(
     service: RegionService = Depends(get_region_service),
     _: CurrentUserSchema = Depends(get_current_user),
@@ -50,9 +53,10 @@ async def list_regions(
 
 @router.get(
     "/{region_id}",
-    response_model=dict[str, Any],
+    response_model=RegionOutSchema,
     dependencies=[Depends(RegionPermissions.CanViewRegions)],
 )
+@cached(ttl=30, tags=("region:detail",))
 async def get_region(
     region_id: UUID,
     service: RegionService = Depends(get_region_service),
@@ -68,6 +72,7 @@ async def get_region(
     dependencies=[Depends(RegionPermissions.CanCreateRegions)],
 )
 @limiter.limit("10/minute")
+@invalidate_cache(tags=("region:tree", "region:list",))
 async def create_region(
     request: Request,
     data: RegionCreateSchema,
@@ -84,6 +89,7 @@ async def create_region(
     dependencies=[Depends(RegionPermissions.CanUpdateRegions)],
 )
 @limiter.limit("20/minute")
+@invalidate_cache(tags=("region:tree", "region:list", "region:detail",))
 async def update_region(
     request: Request,
     region_id: UUID,
@@ -101,6 +107,7 @@ async def update_region(
     dependencies=[Depends(RegionPermissions.CanDeleteRegions)],
 )
 @limiter.limit("5/minute")
+@invalidate_cache(tags=("region:tree", "region:list", "region:detail",))
 async def delete_region(
     request: Request,
     region_id: UUID,

@@ -7,7 +7,7 @@ class RoleAdmin(BaseAdmin, model=Role):
     name_plural = "Roles"
     icon = "fa-solid fa-user-tag"
 
-    column_list = ["id", "name", "code", "created_at"]
+    column_list = ["id", "name", "slug", "created_at"]
 
     can_edit = True
     can_create = True

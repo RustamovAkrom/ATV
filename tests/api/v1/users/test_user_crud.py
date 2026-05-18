@@ -19,12 +19,12 @@ def _rand_phone() -> str:
 
 async def _get_role_id(dbsession) -> uuid.UUID:
     role = (
-        await dbsession.execute(select(Role).where(Role.code == UserRole.ADMIN.value))
+        await dbsession.execute(select(Role).where(Role.slug == UserRole.ADMIN.value))
     ).scalar_one_or_none()
     if role is None:
         role = (
             await dbsession.execute(
-                select(Role).where(Role.code == UserRole.SUPERADMIN.value)
+                select(Role).where(Role.slug == UserRole.SUPERADMIN.value)
             )
         ).scalar_one()
     return role.id

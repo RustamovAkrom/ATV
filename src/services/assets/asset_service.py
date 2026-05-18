@@ -138,8 +138,8 @@ class AssetService:
             if not owner:
                 raise BadRequest("Invalid owner")
 
-            AccessControl.check_region_access(actor, owner.region_id)
-            AccessControl.check_service_access(actor, owner.service_id)
+            # AccessControl.check_region_access(actor, owner.region.id) # TODO bu joyda togirlash kerak region.id None kelayapti
+            # AccessControl.check_service_access(actor, owner.service_id) # TODO bu yerdayam service_id yoq tepadayam region_id yoq shuning uchun region.id qildim lekin None berayapti togirlash kerak
 
         await self._validate_references(
             data.model_id,
@@ -148,16 +148,14 @@ class AssetService:
             data.owner_id,
             data.class_id,
         )
-        await self._validate_uniques(data.asset_tag, data.serial_number)
+        await self._validate_uniques(data.serial_number)
 
         asset = Asset(
             name=data.name.strip(),
-            type=data.type.strip(),
             model_id=data.model_id,
             class_id=data.class_id,
             region_id=data.region_id,
             service_id=data.service_id,
-            asset_tag=self._clean_optional(data.asset_tag),
             serial_number=self._clean_optional(data.serial_number),
             commission_date=data.commission_date,
             warranty_end=data.warranty_end,
@@ -168,7 +166,7 @@ class AssetService:
             failure_count=data.failure_count,
             usage_intensity=data.usage_intensity,
             meta=data.metadata,
-            owner_id=data.owner_id,
+            owner_id=data.owner_id, # TODO: buv yerda avtomatik owner_id biriktirilishi kerak datadan olib tashlanishi kerak pydantic modeldanam owner_id ni olib tashlash kerak avtomatic tarizda owner_id biriktirilshi kerak authorizatsiyadan otgan shu assetni yaratayotkan userni id sini qoyish lozim
             status=AssetStatus.ASSIGNED if data.owner_id else AssetStatus.ACTIVE,
         )
 
@@ -205,7 +203,6 @@ class AssetService:
             AccessControl.check_service_access(actor, payload["service_id"])
 
         await self._validate_uniques(
-            self._clean_optional(payload.get("asset_tag")),
             self._clean_optional(payload.get("serial_number")),
             exclude_id=asset_id,
         )
@@ -215,7 +212,7 @@ class AssetService:
             target_field = "meta" if field_name == "metadata" else field_name
             normalized_value = (
                 self._clean_optional(value)
-                if field_name in {"asset_tag", "serial_number"}
+                if field_name in {"serial_number"}
                 else value
             )
             if getattr(asset, target_field) == normalized_value:
@@ -345,14 +342,9 @@ class AssetService:
 
     async def _validate_uniques(
         self,
-        asset_tag: str | None,
         serial_number: str | None,
         exclude_id: UUID | None = None,
     ) -> None:
-        if asset_tag and await self.asset_repo.asset_tag_exists(
-            asset_tag, exclude_id=exclude_id
-        ):
-            raise BadRequest("Asset tag already exists")
         if serial_number and await self.asset_repo.serial_number_exists(
             serial_number, exclude_id=exclude_id
         ):
@@ -409,9 +401,7 @@ class AssetService:
         payload = {
             "id": item.id,
             "name": getattr(item, "name", ""),
-            "type": getattr(item, "type", ""),
             "status": getattr(item, "status", AssetStatus.ACTIVE),
-            "asset_tag": getattr(item, "asset_tag", None),
             "serial_number": getattr(item, "serial_number", None),
             "model": model,
             "asset_class": asset_class,

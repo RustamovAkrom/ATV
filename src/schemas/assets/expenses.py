@@ -5,7 +5,7 @@ from enum import Enum
 from uuid import UUID
 from pydantic import ConfigDict, Field
 
-from schemas.base import BaseSchema, NamedRefSchema, UserRefSchema
+from schemas.base import BaseSchema, NamedRefSchema
 
 
 class ExpenseTypeEnum(str, Enum):
@@ -20,9 +20,6 @@ class ExpenseTypeEnum(str, Enum):
 AssetRef = NamedRefSchema
 RegionRef = NamedRefSchema
 ServiceRef = NamedRefSchema
-UserRef = UserRefSchema
-
-
 class ExpenseCreateSchema(BaseSchema):
     amount: float = Field(..., gt=0, le=1e12, description="Amount must be positive")
     currency: str = Field("UZS", min_length=3, max_length=10, pattern=r'^[A-Z]{3}$')
@@ -55,7 +52,8 @@ class ExpenseOutSchema(BaseSchema):
     repair_id: UUID | None = None
     region: RegionRef | None = None
     service: ServiceRef | None = None
-    created_by: UserRef | None = None
+    created_by_id: UUID | None = None
+    created_by_name: str | None = None
     occurred_at: datetime
     created_at: datetime
     updated_at: datetime

@@ -204,7 +204,6 @@ class AssetTransferAnalyticsService:
             id=transfer.id,
             asset_id=transfer.asset_id,
             asset_name=transfer.asset.name if transfer.asset else "Unknown",
-            asset_tag=transfer.asset.asset_tag if transfer.asset else None,
             status=transfer.status.value,
             from_warehouse_name=(
                 transfer.from_warehouse.name if transfer.from_warehouse else None
@@ -236,7 +235,6 @@ class AssetTransferAnalyticsService:
         return TransferBottleneck(
             transfer_id=transfer.id,
             asset_name=transfer.asset.name if transfer.asset else "Unknown",
-            asset_tag=transfer.asset.asset_tag if transfer.asset else None,
             status=transfer.status.value,
             pending_days=pending_days,
             created_by_name=(

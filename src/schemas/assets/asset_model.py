@@ -16,7 +16,7 @@ class AssetModelCreateSchema(BaseSchema):
 class AssetModelOutSchema(BaseSchema):
     id: UUID
     name: str
-    code: str
+    slug: str
 
     manufacturer_id: UUID
     category_id: UUID

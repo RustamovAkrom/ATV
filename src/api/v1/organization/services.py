@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Request
 from api.dependencies.organizations.services import get_service_service
 from core.security.auth.dependencies import get_current_user
 from core.security.rbac.presets import ServicePermissions
+from core.cache.decorators import cached, invalidate_cache
 from core.slowapi import limiter
 from schemas.auth.auth import CurrentUserSchema
 from schemas.organization.service import (
@@ -26,6 +27,7 @@ router = APIRouter(prefix="/services", tags=["Services"])
     response_model=list[ServiceOutSchema],
     dependencies=[Depends(ServicePermissions.CanViewServices)],
 )
+@cached(ttl=30, tags=("service:list",))
 async def list_services(
     service: ServiceService = Depends(get_service_service),
     _: CurrentUserSchema = Depends(get_current_user),
@@ -39,6 +41,7 @@ async def list_services(
     response_model=ServiceWithRegionsOutSchema,
     dependencies=[Depends(ServicePermissions.CanViewServices)],
 )
+@cached(ttl=30, tags=("service:detail",))
 async def get_service(
     service_id: UUID,
     service: ServiceService = Depends(get_service_service),
@@ -53,6 +56,7 @@ async def get_service(
     response_model=list[dict[str, Any]],
     dependencies=[Depends(ServicePermissions.CanViewServices)],
 )
+@cached(ttl=30, tags=("service:regions",))
 async def get_service_regions(
     service_id: UUID,
     service: ServiceService = Depends(get_service_service),
@@ -68,6 +72,7 @@ async def get_service_regions(
     dependencies=[Depends(ServicePermissions.CanCreateServices)],
 )
 @limiter.limit("10/minute")
+@invalidate_cache(tags=("service:list", "service:regions",))
 async def create_service(
     request: Request,
     data: ServiceCreateSchema,
@@ -84,6 +89,7 @@ async def create_service(
     dependencies=[Depends(ServicePermissions.CanUpdateServices)],
 )
 @limiter.limit("20/minute")
+@invalidate_cache(tags=("service:list", "service:regions", "service:detail",))
 async def update_service(
     request: Request,
     service_id: UUID,
@@ -100,6 +106,7 @@ async def update_service(
     dependencies=[Depends(ServicePermissions.CanDeleteServices)],
 )
 @limiter.limit("5/minute")
+@invalidate_cache(tags=("service:list", "service:regions", "service:detail",))
 async def delete_service(
     request: Request,
     service_id: UUID,

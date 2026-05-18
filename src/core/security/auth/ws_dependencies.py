@@ -32,7 +32,7 @@ async def get_current_user_ws(
 
     return CurrentUserSchema(
         id=user.id,
-        role=user.role.code.lower() if user.role else None,
+        role=user.role.slug.lower() if user.role else None,
         permissions=[str(p).lower() for p in (user.permissions or [])],
         assigned_region_id=user.assigned_region_id,
         assigned_service_id=user.assigned_service_id,

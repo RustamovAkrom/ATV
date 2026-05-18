@@ -1,7 +1,8 @@
 from sqlalchemy import JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from db.base import Base, TimestampMixin, UUIDMixin
+from db.base import Base
+from db.mixins import TimestampMixin, UUIDMixin
 
 
 class SystemConfig(Base, UUIDMixin, TimestampMixin):

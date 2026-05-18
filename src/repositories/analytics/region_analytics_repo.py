@@ -172,13 +172,12 @@ class RegionAnalyticsRepository(BaseAnalyticsRepository):
         cost_query = select(
             Asset.id,
             Asset.name,
-            Asset.asset_tag,
             func.coalesce(Asset.purchase_cost, 0).label("purchase_cost"),
             func.coalesce(repair_costs.c.repair_cost, 0).label("repair_cost"),
         ).outerjoin(repair_costs, repair_costs.c.asset_id == Asset.id).where(
             Asset.region_id == region_id
         ).group_by(
-            Asset.id, Asset.name, Asset.asset_tag, Asset.purchase_cost, repair_costs.c.repair_cost
+            Asset.id, Asset.name, Asset.purchase_cost, repair_costs.c.repair_cost
         ).order_by(
             (func.coalesce(Asset.purchase_cost, 0) + func.coalesce(repair_costs.c.repair_cost, 0)).desc()
         ).limit(5)

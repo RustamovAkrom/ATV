@@ -51,7 +51,6 @@ class AssetHistorySchema(BaseSchema):
 
 class AssetCreate(BaseSchema):
     name: str = Field(min_length=1, max_length=255)
-    type: str = Field(min_length=1, max_length=100)
     model_id: UUID
 
     class_id: UUID | None = None
@@ -59,7 +58,6 @@ class AssetCreate(BaseSchema):
     service_id: UUID | None = None
     owner_id: UUID | None = None
 
-    asset_tag: str | None = Field(default=None, max_length=255)
     serial_number: str | None = Field(default=None, max_length=255)
 
     commission_date: date | None = None
@@ -79,12 +77,14 @@ class AssetCreate(BaseSchema):
 
 class AssetUpdate(BaseSchema):
     name: str | None = Field(default=None, min_length=1, max_length=255)
-    type: str | None = Field(default=None, min_length=1, max_length=100)
+
     model_id: UUID | None = None
     class_id: UUID | None = None
+
     region_id: UUID | None = None
     service_id: UUID | None = None
-    asset_tag: str | None = Field(default=None, max_length=255)
+    # owner_id: UUID | None = None
+
     serial_number: str | None = Field(default=None, max_length=255)
     commission_date: date | None = None
     warranty_end: date | None = None
@@ -122,9 +122,7 @@ class AssetFilters(BaseSchema):
 class AssetSchema(TimestampSchema):
     id: UUID
     name: str
-    type: str
     status: AssetStatus
-    asset_tag: str | None
     serial_number: str | None
     model: AssetRef
     asset_class: AssetRef | None

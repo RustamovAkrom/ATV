@@ -48,7 +48,6 @@ class AssetTransferAnalyticsRepository(BaseAnalyticsRepository):
             query = query.join(Asset, isouter=True).where(
                 or_(
                     Asset.name.ilike(term),
-                    Asset.asset_tag.ilike(term),
                 )
             )
 

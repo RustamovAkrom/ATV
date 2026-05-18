@@ -1,5 +1,3 @@
-# services/asset_class_service.py
-
 from uuid import UUID
 
 from core.exceptions.errors import BadRequest, NotFound
@@ -17,11 +15,11 @@ class AssetClassService:
         return await self.repo.list()
 
     async def create(self, data: AssetClassCreateSchema):
-        name, code = await validate_and_prepare(self.repo, data.name)
+        name, slug = await validate_and_prepare(self.repo, data.name)
 
         obj = AssetClass(
             name=name,
-            code=code,
+            slug=slug,
             description=data.description,
         )
 

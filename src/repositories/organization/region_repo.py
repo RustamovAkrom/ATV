@@ -79,7 +79,7 @@ class RegionRepository(BaseRepository):
         root_regions = []
 
         for region in regions:
-            region.children = []
+            region.children = [] # TODO Error: sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
             if region.parent_id and region.parent_id in region_map:
                 parent = region_map[region.parent_id]
                 if not hasattr(parent, '_children'):

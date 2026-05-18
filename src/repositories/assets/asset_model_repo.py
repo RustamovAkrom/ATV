@@ -23,9 +23,9 @@ class AssetModelRepository(BaseRepository):
             select(AssetModel).where(AssetModel.id == model_id)
         )
 
-    async def get_by_code(self, code: str):
+    async def get_by_slug(self, slug: str):
         return await self.scalar(
-            select(AssetModel).where(AssetModel.code == code)
+            select(AssetModel).where(AssetModel.slug == slug)
         )
 
     async def get_by_name_and_manufacturer(self, normalized: str, manufacturer_id):

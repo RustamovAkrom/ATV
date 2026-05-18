@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING
 from sqlalchemy import UUID, Column, ForeignKey, String, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from db.base import Base, TimestampMixin, UUIDMixing
+from db.base import Base
+from db.mixins import TimestampMixin, UUIDMixing, SlugMixin
 
 if TYPE_CHECKING:
     from db.models.users.user import User
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
     from .region import Region
 
 
-class Service(Base, UUIDMixing, TimestampMixin):
+class Service(Base, UUIDMixing, TimestampMixin, SlugMixin):
     __tablename__ = "services"
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     description: Mapped[str | None] = mapped_column(Text(), nullable=True)

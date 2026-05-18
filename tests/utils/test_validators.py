@@ -40,12 +40,12 @@ async def test_ensure_unique_name_raises_when_found():
 
 
 @pytest.mark.anyio
-async def test_ensure_unique_code_raises_when_found():
+async def test_ensure_unique_slug_raises_when_found():
     repo = AsyncMock()
-    repo.get_by_code.return_value = object()
+    repo.get_by_slug.return_value = object()
 
     with pytest.raises(BadRequest, match="Similar entity already exists"):
-        await validators.ensure_unique_code(repo, "code")
+        await validators.ensure_unique_slug(repo, "slug")
 
 
 @pytest.mark.anyio
@@ -78,14 +78,14 @@ async def test_safe_create_maps_unknown_error():
 async def test_validate_and_prepare_success():
     repo = AsyncMock()
     repo.get_by_normalized_name.return_value = None
-    repo.get_by_code.return_value = None
+    repo.get_by_slug.return_value = None
 
-    name, code = await validators.validate_and_prepare(repo, " Main Office ")
+    name, slug = await validators.validate_and_prepare(repo, " Main Office ")
 
     assert name == "Main Office"
-    assert code == "main_office"
+    assert slug == "main_office"
     repo.get_by_normalized_name.assert_awaited_once_with("main office")
-    repo.get_by_code.assert_awaited_once_with("main_office")
+    repo.get_by_slug.assert_awaited_once_with("main_office")
 
 
 @pytest.mark.anyio

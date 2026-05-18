@@ -10,7 +10,8 @@ from sqlalchemy import Date, Enum as SAEnum, ForeignKey, Integer, Numeric, Strin
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship, synonym, validates
 
-from db.base import Base, TimestampMixin, UUIDMixing
+from db.base import Base
+from db.mixins import TimestampMixin, UUIDMixing, SlugMixin
 from db.models.documents.document import Document
 from db.models.enums import AssetStatus
 from db.models.repairs.repair import Repair
@@ -27,14 +28,14 @@ if TYPE_CHECKING:
     from db.models.users.user import User
 
 
-class Asset(Base, UUIDMixing, TimestampMixin):
+class Asset(Base, UUIDMixing, TimestampMixin, SlugMixin):
     __tablename__ = "assets"
 
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    # type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
 
     # Identifiers
-    asset_tag: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
+    # asset_tag: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
     serial_number: Mapped[str | None] = mapped_column(
         String(255), unique=True, index=True
     )

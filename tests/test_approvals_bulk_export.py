@@ -14,8 +14,8 @@ from db.models.org.service import Service
 async def _seed_asset_dependencies(dbsession):
     suffix = uuid4().hex[:8]
     region = Region(name=f"ApprovalRegion-{suffix}")
-    service = Service(name=f"ApprovalService-{suffix}", code=f"APS-{suffix}")
-    category = AssetCategory(name=f"ApprovalCategory-{suffix}", code=f"APC-{suffix}")
+    service = Service(name=f"ApprovalService-{suffix}", slug=f"APS-{suffix}")
+    category = AssetCategory(name=f"ApprovalCategory-{suffix}", slug=f"APC-{suffix}")
     manufacturer = Manufacturer(name=f"ApprovalManufacturer-{suffix}")
     dbsession.add_all([region, service, category, manufacturer])
     await dbsession.flush()
@@ -35,11 +35,9 @@ async def _create_asset(client, token: str, deps: dict, name: str):
         "/assets/",
         json={
             "name": name,
-            "type": "laptop",
             "model_id": str(deps["model"].id),
             "region_id": str(deps["region"].id),
             "service_id": str(deps["service"].id),
-            "asset_tag": f"AT-{uuid4().hex[:6]}",
             "serial_number": f"SN-{uuid4().hex[:8]}",
         },
         headers={"Authorization": f"Bearer {token}"},

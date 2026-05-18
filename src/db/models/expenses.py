@@ -4,11 +4,12 @@ from datetime import datetime
 from uuid import UUID
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from sqlalchemy import DateTime, ForeignKey, Index, Numeric, String, Text
+from sqlalchemy import DateTime, ForeignKey, Index, Numeric, String, Text, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
-from db.base import Base, UUIDMixing, TimestampMixin
+from db.base import Base
+from db.mixins import UUIDMixing, TimestampMixin
 
 
 class Expense(Base, UUIDMixing, TimestampMixin):
@@ -50,13 +51,29 @@ class Expense(Base, UUIDMixing, TimestampMixin):
     )
 
     __table_args__ = (
+        CheckConstraint('amount >= 0', name='ck_expense_amount_positive'),
         Index("ix_expenses_asset_region", "asset_id", "region_id"),
         Index("ix_expenses_type_date", "expense_type_code", "occurred_at"),
         Index('ix_expenses_created_occurred', 'created_at', 'occurred_at'),
     )
 
+    def __repr__(self) -> str:
+        return f"<Expense {self.id}: {self.amount} {self.currency} ({self.expense_type_code})>"
+
     @hybrid_property
     def amount_usd(self) -> float | None:
         if self.currency == 'UZS':
             return self.amount / 13000 # пример курса
+        return self.amount
+
+    @hybrid_property
+    def amount_formatted(self) -> str:
+        """Форматированная сумма с валютой."""
+        return f"{self.amount:,.2f} {self.currency}"
+
+    @hybrid_property
+    def amount_usd(self) -> float | None:
+        """Конвертация в USD."""
+        if self.currency == 'UZS':
+            return self.amount / 13000 # TODO: Change automaticaly dependens on UZS
         return self.amount

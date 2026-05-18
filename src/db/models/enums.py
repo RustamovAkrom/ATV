@@ -76,7 +76,7 @@ class TaskStatus(StrEnum):
 class DocumentStatus(StrEnum):
     DRAFT = "draft"
     ACTIVE = "active"
-    APPROVED = "archived"
+    APPROVED = "approved"
 
 
 class ApprovalStatus(StrEnum):

@@ -1,12 +1,11 @@
-from typing import Callable, Awaitable, Any
+# core/events/base.py
+from typing import Any, Awaitable, Callable
 from utils.helpers import utc_now
 from core.audit.stream import audit_stream
 
 
 class BaseEventService:
-    """
-    Executes side-effects in controlled pipeline.
-    """
+    """Executes side-effects in controlled pipeline."""
 
     async def execute(
         self,
@@ -38,10 +37,10 @@ class BaseEventService:
                 }
             )
         except Exception:
-            return
+            pass  # Audit failure should not break business flow
 
-    async def _safe_notify(self, fn):
+    async def _safe_notify(self, fn: Callable[[], Awaitable[Any]]):
         try:
             await fn()
         except Exception:
-            return
+            pass  # Notification failure should not break business flow

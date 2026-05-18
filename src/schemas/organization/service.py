@@ -8,6 +8,7 @@ from schemas.base import BaseSchema, TimestampSchema
 class ServiceBaseSchema(BaseSchema):
     name: str = Field(min_length=2, max_length=255, description="Service name")
     description: str | None = Field(None, max_length=500, description="Service description")
+    region_ids: list[UUID] | None = Field(None, description="IDs attached regions")
 
     @field_validator("name")
     @classmethod
@@ -26,6 +27,7 @@ class ServiceCreateSchema(ServiceBaseSchema):
 class ServiceUpdateSchema(BaseSchema):
     name: str | None = Field(None, min_length=2, max_length=255, description="Service name")
     description: str | None = Field(None, max_length=500, description="Service description")
+    region_ids: list[UUID] | None = Field(None, description="IDs attached regions")
 
     @field_validator("name")
     @classmethod
@@ -42,6 +44,7 @@ class ServiceUpdateSchema(BaseSchema):
 class ServiceOutSchema(TimestampSchema):
     id: UUID
     name: str
+    slug: str
     description: str | None
     region_ids: list[UUID] | None = Field(None, description="IDs attached regions")
 

@@ -3,8 +3,8 @@ from uuid import UUID
 
 import pytest
 
-from repositories.expenses import ExpenseRepository
-from schemas.expenses import ExpenseCreateSchema, ExpenseUpdateSchema
+from repositories.assets.expense_repo import ExpenseRepository
+from schemas.assets.expenses import ExpenseCreateSchema, ExpenseUpdateSchema
 
 pytestmark = pytest.mark.anyio
 

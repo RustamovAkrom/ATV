@@ -13,6 +13,6 @@ class ManufacturerCreateSchema(BaseSchema):
 class ManufacturerOutSchema(BaseSchema):
     id: UUID
     name: str
-    code: str
+    slug: str
     country: str | None
     website: str | None

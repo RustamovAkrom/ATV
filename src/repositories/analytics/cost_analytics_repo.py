@@ -51,7 +51,6 @@ class CostAnalyticsRepository(BaseAnalyticsRepository):
         query = select(
             Asset.id,
             Asset.name,
-            Asset.asset_tag,
             func.coalesce(Asset.purchase_cost, 0).label("purchase_cost"),
             func.coalesce(
                 func.sum(
@@ -61,7 +60,7 @@ class CostAnalyticsRepository(BaseAnalyticsRepository):
             ).label("repair_cost"),
         ).outerjoin(Repair, Repair.asset_id == Asset.id).outerjoin(
             repair_parts, repair_parts.c.repair_id == Repair.id
-        ).group_by(Asset.id, Asset.name, Asset.asset_tag, Asset.purchase_cost).order_by(
+        ).group_by(Asset.id, Asset.name, Asset.purchase_cost).order_by(
             (func.coalesce(Asset.purchase_cost, 0) + func.coalesce(
                 func.sum(
                     func.coalesce(Repair.labor_cost, 0) + func.coalesce(repair_parts.c.parts_cost, 0)

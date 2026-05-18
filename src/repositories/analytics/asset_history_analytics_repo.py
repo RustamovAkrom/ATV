@@ -34,7 +34,6 @@ class AssetHistoryAnalyticsRepository(BaseAnalyticsRepository):
             query = query.join(Asset).join(User).where(
                 or_(
                     Asset.name.ilike(term),
-                    Asset.asset_tag.ilike(term),
                     User.full_name.ilike(term),
                     AssetHistory.description.ilike(term),
                     AssetHistory.action.ilike(term),

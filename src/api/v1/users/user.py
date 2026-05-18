@@ -36,9 +36,9 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 
 def _to_user_out(user: User) -> UserOutSchema:
-    role = getattr(user.role, "code", None)
+    role = getattr(user.role, "slug", None)
     permissions = [
-        str(getattr(permission, "code", getattr(permission, "value", permission)))
+        str(getattr(permission, "slug", getattr(permission, "value", permission)))
         for permission in (getattr(user, "permissions", None) or [])
     ]
 
@@ -84,7 +84,7 @@ async def me(
 
 @router.patch("/me", response_model=UserOutSchema)
 @limiter.limit("30/minute")
-@invalidate_cache(tags=("users:list", "users:search", "users:detail", "users:me"))
+@invalidate_cache(tags=("users:list", "users:search", "users:detail", "users:me",))
 async def update_me(
     request: Request,
     data: UserUpdateSchema,
@@ -114,7 +114,7 @@ async def change_password(
 
 @router.post("/me/avatar", response_model=UserOutSchema)
 @limiter.limit("10/minute")
-@invalidate_cache(tags=("users:list", "users:search", "users:detail", "users:me"))
+@invalidate_cache(tags=("users:list", "users:search", "users:detail", "users:me",))
 async def upload_avatar(
     request: Request,
     file: UploadFile = File(...),
@@ -184,7 +184,7 @@ async def upload_avatar(
 
 @router.delete("/me/avatar", response_model=UserOutSchema)
 @limiter.limit("10/minute")
-@invalidate_cache(tags=("users:list", "users:search", "users:detail", "users:me"))
+@invalidate_cache(tags=("users:list", "users:search", "users:detail", "users:me",))
 async def delete_avatar(
     request: Request,
     current_user: CurrentUserSchema = Depends(get_current_user),
@@ -208,6 +208,7 @@ async def delete_avatar(
 
 
 @router.get("/me/avatar", response_class=FileResponse)
+@cached(ttl=30, tags=("users:avatar",))
 async def get_avatar(
     current_user: CurrentUserSchema = Depends(get_current_user),
     service: UserService = Depends(get_user_service),
@@ -276,7 +277,7 @@ async def list_users(
 
 @router.post("/", response_model=UserOutSchema, dependencies=[Depends(UserPermissions.CanCreateUsers)])
 @limiter.limit("10/minute")
-@invalidate_cache(tags=("users:list", "users:search"))
+@invalidate_cache(tags=("users:list", "users:search",))
 async def create_user(
     request: Request,
     data: UserCreateSchema,
@@ -314,7 +315,7 @@ async def get_user(
 
 @router.patch("/{user_id}", response_model=UserOutSchema)
 @limiter.limit("20/minute")
-@invalidate_cache(tags=("users:list", "users:search", "users:detail"))
+@invalidate_cache(tags=("users:list", "users:search", "users:detail",))
 async def update_user(
     request: Request,
     user_id: uuid.UUID,
@@ -331,7 +332,7 @@ async def update_user(
 
 @router.delete("/{user_id}")
 @limiter.limit("5/minute")
-@invalidate_cache(tags=("users:list", "users:search", "users:detail"))
+@invalidate_cache(tags=("users:list", "users:search", "users:detail",))
 async def archive_user(
     request: Request,
     user_id: uuid.UUID,
@@ -347,7 +348,7 @@ async def archive_user(
 
 @router.post("/{user_id}/block")
 @limiter.limit("10/minute")
-@invalidate_cache(tags=("users:list", "users:search", "users:detail"))
+@invalidate_cache(tags=("users:list", "users:search", "users:detail",))
 async def block_user(
     request: Request,
     user_id: uuid.UUID,
@@ -363,7 +364,7 @@ async def block_user(
 
 @router.post("/{user_id}/activate")
 @limiter.limit("10/minute")
-@invalidate_cache(tags=("users:list", "users:search", "users:detail"))
+@invalidate_cache(tags=("users:list", "users:search", "users:detail",))
 async def activate_user(
     request: Request,
     user_id: uuid.UUID,

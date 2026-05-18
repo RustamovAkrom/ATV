@@ -4,8 +4,10 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from core.exceptions.errors import NotFound, ValidationError
-from services.warehouse.warehouse_service import WarehouseService
+from core.exceptions.errors import BadRequest, NotFound
+from schemas.assets.warehouses import WarehouseCreateSchema
+from schemas.pagination import PaginationParamsSchema
+from services.assets.warehouse_service import WarehouseService
 
 pytestmark = pytest.mark.anyio
 
@@ -18,11 +20,11 @@ class _FakeSession:
         self.commits += 1
 
 
-def _warehouse_obj(name="Warehouse", code="WH-1"):
+def _warehouse_obj(name="Warehouse", slug="WH-1"):
     return SimpleNamespace(
         id=uuid4(),
         name=name,
-        code=code,
+        slug=slug,
         region_id=uuid4(),
         service_id=None,
         manager_user_id=None,
@@ -45,32 +47,49 @@ class _FakeRepo:
         self.warehouses: dict[UUID, SimpleNamespace] = {}
         self.parts: dict[UUID, SimpleNamespace] = {}
 
-    async def list_warehouses(self, page=1, size=20, region_id=None, service_id=None):
+    async def list(self, region_id=None, service_id=None, is_active=None, limit=20, offset=0):
         items = list(self.warehouses.values())
         if region_id:
             items = [x for x in items if x.region_id == region_id]
         if service_id:
             items = [x for x in items if x.service_id == service_id]
-        return items[:size], len(items)
+        if is_active is not None:
+            items = [x for x in items if x.is_active == is_active]
+        return items[offset: offset + limit], len(items)
 
-    async def create_warehouse(self, name, code=None, region_id=None, service_id=None, manager_user_id=None):
-        wh = _warehouse_obj(name=name, code=code or "AUTO")
+    async def create(self, data):
+        wh = _warehouse_obj(name=data.get("name"), slug=data.get("slug") or "AUTO")
+        region_id = data.get("region_id")
+        service_id = data.get("service_id")
+        manager_user_id = data.get("manager_user_id")
         wh.region_id = region_id
         wh.service_id = service_id
         wh.manager_user_id = manager_user_id
         self.warehouses[wh.id] = wh
         return wh
 
-    async def get_by_id(self, warehouse_id):
+    async def get(self, warehouse_id):
         return self.warehouses.get(warehouse_id)
 
-    async def update_warehouse(self, warehouse_id, data):
+    async def update(self, warehouse_id, data):
         wh = self.warehouses.get(warehouse_id)
         if not wh:
             return None
         for k, v in data.items():
             setattr(wh, k, v)
         return wh
+
+    async def check_slug_exists(self, slug, exclude_id=None):
+        slug_u = slug.upper() if isinstance(slug, str) else slug
+        for wid, wh in self.warehouses.items():
+            if exclude_id and wid == exclude_id:
+                continue
+            if (wh.slug or "").upper() == slug_u:
+                return True
+        return False
+
+    async def get_assets_count(self, warehouse_id):
+        return 0
 
     async def delete(self, warehouse_id):
         self.warehouses.pop(warehouse_id, None)
@@ -144,11 +163,11 @@ class _FakeRepo:
         items = list(self.parts.values())
         return items[:size], len(items)
 
-    async def create_part(self, name, code=None, description=None, unit_price=None):
+    async def create_part(self, name, slug=None, description=None, unit_price=None):
         part = _PartObj(
             id=uuid4(),
             name=name,
-            code=code or "PRT",
+            slug=slug or "PRT",
             description=description,
             unit_price=unit_price,
             created_at=datetime.now(UTC),
@@ -171,36 +190,34 @@ class _FakeRepo:
 
 @pytest.fixture
 def warehouse_service(monkeypatch):
-    import services.warehouse.warehouse_service as module
-
-    session = _FakeSession()
-
-    def _factory(_session):
-        return _FakeRepo(session)
-
-    monkeypatch.setattr(module, "WarehouseRepository", _factory)
-    return WarehouseService(session)
-
+    repo = _FakeRepo(_FakeSession())
+    asset_repo = SimpleNamespace(get_by_id=None, flush=None)
+    events = SimpleNamespace(asset_moved_to_warehouse=None)
+    return WarehouseService(repo, asset_repo, events)
 
 class TestWarehouseService:
     async def test_create_list_get_update_delete_warehouse(self, warehouse_service):
         region_id = uuid4()
-        created = await warehouse_service.create_warehouse("Test Warehouse", region_id, code="TWH001")
-        assert created["name"] == "Test Warehouse"
+        created = await warehouse_service.create_warehouse(
+            WarehouseCreateSchema(name="Test Warehouse", region_id=region_id, slug="TWH001")
+        )
+        assert created.name == "Test Warehouse"
 
-        listed = await warehouse_service.list_warehouses(page=1, size=10)
-        assert listed["total"] >= 1
+        _listed_items, listed_total = await warehouse_service.list_warehouses(
+            PaginationParamsSchema(page=1, limit=10)
+        )
+        assert listed_total >= 1
 
-        got = await warehouse_service.get_warehouse(UUID(created["id"]))
-        assert got["code"] == "TWH001"
+        got = await warehouse_service.get_warehouse(created.id)
+        assert got.slug == "TWH001"
 
-        updated = await warehouse_service.update_warehouse(UUID(created["id"]), {"name": "Updated", "is_active": False})
-        assert updated["name"] == "Updated"
-        assert updated["is_active"] is False
+        updated = await warehouse_service.update_warehouse(created.id, {"name": "Updated", "is_active": False})
+        assert updated.name == "Updated"
+        assert updated.is_active is False
 
-        await warehouse_service.delete_warehouse(UUID(created["id"]))
+        await warehouse_service.delete_warehouse(created.id)
         with pytest.raises(NotFound):
-            await warehouse_service.get_warehouse(UUID(created["id"]))
+            await warehouse_service.get_warehouse(created.id)
 
     async def test_get_update_delete_not_found(self, warehouse_service):
         fake_id = uuid4()
@@ -213,8 +230,10 @@ class TestWarehouseService:
 
     async def test_stock_and_movements(self, warehouse_service):
         region_id = uuid4()
-        wh = await warehouse_service.create_warehouse("Stock WH", region_id)
-        warehouse_id = UUID(wh["id"])
+        wh = await warehouse_service.create_warehouse(
+            WarehouseCreateSchema(name="Stock WH", region_id=region_id)
+        )
+        warehouse_id = wh.id
         part_id = uuid4()
         user_id = uuid4()
 
@@ -238,13 +257,13 @@ class TestWarehouseService:
         warehouse_id = uuid4()
         part_id = uuid4()
         user_id = uuid4()
-        with pytest.raises(ValidationError):
+        with pytest.raises(BadRequest):
             await warehouse_service.record_stock_in(warehouse_id, part_id, 0, user_id)
-        with pytest.raises(ValidationError):
+        with pytest.raises(BadRequest):
             await warehouse_service.record_stock_out(warehouse_id, part_id, -1, user_id)
 
     async def test_parts_crud(self, warehouse_service):
-        created = await warehouse_service.create_part("Part A", code="PA", unit_price=12.5)
+        created = await warehouse_service.create_part("Part A", slug="PA", unit_price=12.5)
         part_id = UUID(created["id"])
 
         listed = await warehouse_service.list_parts(page=1, size=10)

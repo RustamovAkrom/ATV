@@ -1,25 +1,11 @@
+# core/events/asset_events.py
 from uuid import UUID
-
-from core.events.base import BaseEventService
+from core.events.domain_event_service import DomainEventService
 from core.notifications.builder import NotificationBuilder
-from core.notifications.dispatcher import NotificationDispatcher
-from services.assets.asset_history_service import AssetHistoryService
 
 
-class AssetEventService:
-    """
-    Asset domain events ONLY.
-    """
-
-    def __init__(
-        self,
-        base: BaseEventService,
-        history: AssetHistoryService,
-        notifications: NotificationDispatcher,
-    ):
-        self.base = base
-        self.history = history
-        self.notifications = notifications
+class AssetEventService(DomainEventService):
+    """Asset domain events."""
 
     async def created(
         self,
@@ -30,24 +16,17 @@ class AssetEventService:
         asset_name: str,
         status: str,
     ):
-        await self.base.execute(
-            history=lambda: self.history.log(
-                asset_id,
-                actor_id,
-                "created",
-                f"Asset created with status '{status}'",
-            ),
+        await self._execute(
+            asset_id=asset_id,
+            actor_id=actor_id,
+            action="created",
+            description=f"Asset created with status '{status}'",
             audit_event="asset.created",
-            audit_payload={
-                "asset_id": str(asset_id),
-                "actor_id": str(actor_id),
-            },
+            audit_payload={"asset_id": str(asset_id), "actor_id": str(actor_id)},
             notification=lambda: (
                 self.notifications.dispatch(
                     NotificationBuilder.asset_created(
-                        user_id=user_id,
-                        asset_id=asset_id,
-                        name=asset_name,
+                        user_id=user_id, asset_id=asset_id, name=asset_name
                     )
                 )
                 if user_id
@@ -64,26 +43,17 @@ class AssetEventService:
         asset_name: str,
         fields: list[str],
     ):
-        await self.base.execute(
-            history=lambda: self.history.log(
-                asset_id,
-                actor_id,
-                "updated",
-                f"Updated fields: {', '.join(sorted(fields))}",
-            ),
+        await self._execute(
+            asset_id=asset_id,
+            actor_id=actor_id,
+            action="updated",
+            description=f"Updated fields: {', '.join(sorted(fields))}",
             audit_event="asset.updated",
-            audit_payload={
-                "asset_id": str(asset_id),
-                "actor_id": str(actor_id),
-                "fields": fields,
-            },
+            audit_payload={"asset_id": str(asset_id), "actor_id": str(actor_id), "fields": fields},
             notification=lambda: (
                 self.notifications.dispatch(
                     NotificationBuilder.asset_updated(
-                        user_id=owner_id,
-                        asset_id=asset_id,
-                        name=asset_name,
-                        fields=fields,
+                        user_id=owner_id, asset_id=asset_id, name=asset_name, fields=fields
                     )
                 )
                 if owner_id

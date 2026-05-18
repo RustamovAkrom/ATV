@@ -10,6 +10,17 @@ from schemas.base import BaseSchema
 
 
 class ApprovalCreate(BaseSchema):
+    """
+    Схема для создания запроса на согласование.
+
+    ⚠️ НЕ ИСПОЛЬЗОВАТЬ НАПРЯМУЮ!
+    Используйте специализированные эндпоинты:
+    - POST /assets/{id}/approval-requests/assignment
+    - POST /assets/{id}/approval-requests/transfer
+    - POST /assets/{id}/approval-requests/repair/{repair_id}/complete
+    - POST /assets/{id}/approval-requests/warehouse-move
+    """
+
     entity_type: str = Field(min_length=1, max_length=100)
     entity_id: UUID
     action: str = Field(min_length=1, max_length=100)

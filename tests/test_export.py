@@ -20,8 +20,8 @@ from services.assets.export_service import ExportService
 async def _seed_asset_dependencies(dbsession):
     suffix = uuid4().hex[:8]
     region = Region(name=f"ExportRegion-{suffix}")
-    service = Service(name=f"ExportService-{suffix}", code=f"ES-{suffix}")
-    category = AssetCategory(name=f"ExportCategory-{suffix}", code=f"EC-{suffix}")
+    service = Service(name=f"ExportService-{suffix}", slug=f"ES-{suffix}")
+    category = AssetCategory(name=f"ExportCategory-{suffix}", slug=f"EC-{suffix}")
     manufacturer = Manufacturer(name=f"ExportManufacturer-{suffix}")
     dbsession.add_all([region, service, category, manufacturer])
     await dbsession.flush()
@@ -40,11 +40,9 @@ async def _create_asset(client, token: str, deps: dict, name: str):
         "/assets/",
         json={
             "name": name,
-            "type": "laptop",
             "model_id": str(deps["model"].id),
             "region_id": str(deps["region"].id),
             "service_id": str(deps["service"].id),
-            "asset_tag": f"AT-{uuid4().hex[:6]}",
             "serial_number": f"SN-{uuid4().hex[:8]}",
         },
         headers={"Authorization": f"Bearer {token}"},
@@ -53,45 +51,45 @@ async def _create_asset(client, token: str, deps: dict, name: str):
     return response.json()
 
 
-async def _create_role_user(dbsession, role_code: str, login: str):
+async def _create_role_user(dbsession, role_slug: str, login: str):
     # Get or create the role with permissions loaded
     role = await dbsession.scalar(
         select(Role)
         .options(selectinload(Role.permissions))
-        .where(Role.code == role_code)
+        .where(Role.slug == role_slug)
     )
     if not role:
-        role = Role(name=role_code.upper(), code=role_code, permissions=[])
+        role = Role(name=role_slug.upper(), slug=role_slug, permissions=[])
         dbsession.add(role)
         await dbsession.flush()
         # Reload with selectinload
         role = await dbsession.scalar(
             select(Role)
             .options(selectinload(Role.permissions))
-            .where(Role.code == role_code)
+            .where(Role.slug == role_slug)
         )
 
-    # Assign appropriate permissions based on role code
+    # Assign appropriate permissions based on role slug
     permissions_to_assign = []
 
-    if role_code == "analytic":
+    if role_slug == "analytic":
         # Analytic role should have ASSETS_EXPORT permission
         perm = await dbsession.scalar(
-            select(Permission).where(Permission.code == Permissions.ASSETS_EXPORT)
+            select(Permission).where(Permission.slug == Permissions.ASSETS_EXPORT)
         )
         if not perm:
-            perm = Permission(name="Export Assets", code=Permissions.ASSETS_EXPORT)
+            perm = Permission(name="Export Assets", slug=Permissions.ASSETS_EXPORT)
             dbsession.add(perm)
             await dbsession.flush()
         permissions_to_assign.append(perm)
-    elif role_code == "moderator":
+    elif role_slug == "moderator":
         # Moderator role should NOT have ASSETS_EXPORT permission
         # Get ASSETS_VIEW permission if it exists
         perm = await dbsession.scalar(
-            select(Permission).where(Permission.code == Permissions.ASSETS_VIEW)
+            select(Permission).where(Permission.slug == Permissions.ASSETS_VIEW)
         )
         if not perm:
-            perm = Permission(name="View Assets", code=Permissions.ASSETS_VIEW)
+            perm = Permission(name="View Assets", slug=Permissions.ASSETS_VIEW)
             dbsession.add(perm)
             await dbsession.flush()
         permissions_to_assign.append(perm)

@@ -10,8 +10,9 @@ from schemas.organization.service import (
     ServiceOutSchema,
     ServiceWithRegionsOutSchema,
 )
-from core.exceptions.errors import NotFound, Conflict
+from core.exceptions.errors import NotFound, Conflict, BadRequest
 from db.models.org.service import Service
+from utils.slug import slugify
 
 
 class ServiceService:
@@ -50,7 +51,15 @@ class ServiceService:
         if await self.repo.check_name_exists(data.name):
             raise Conflict(f"Service with name '{data.name}' already exists ")
 
-        service = await self.repo.create(data.model_dump(exclude_unset=True))
+        print(data.model_dump(exclude_unset=True))
+        service = await self.repo.create(
+            {
+                "name": data.name,
+                "slug": slugify(data.name),
+                "description": data.description if data.description else None,
+            }
+
+        )
         return self._to_out_schema(service)
 
     async def update(self, service_id: UUID, data: ServiceUpdateSchema) -> ServiceOutSchema:
@@ -58,11 +67,21 @@ class ServiceService:
         if not service:
             raise NotFound(f"Service {service_id} not found")
 
-        if data.name and self.repo.check_name_exists(data.name, exclude_id=service_id):
-            raise Conflict(f"Service with name '{data.name}' already exists")
+        if not data.name and not self.repo.check_name_exists(data.name, exclude_id=service_id):
+            raise NotFound(f"Service with name '{data.name}' not found")
 
-        update_data = data.model_dump(exclude_unset=True)
+        update_data = {
+                "name": data.name,
+                "slug": slugify(data.name),
+                "description": data.description if data.description else None,
+        }
+
         updated = await self.repo.update(service_id, update_data)
+        if not updated:
+            raise BadRequest(f"Could not update service {service_id}")
+
+        if data.region_ids:
+            self.repo.set_regions(service.id, data.region_ids)
 
         return self._to_out_schema(updated)
 
@@ -78,6 +97,7 @@ class ServiceService:
         return ServiceOutSchema(
             id=service.id,
             name=service.name,
+            slug=service.slug,
             description=service.description,
             created_at=service.created_at,
             updated_at=service.updated_at,

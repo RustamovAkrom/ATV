@@ -1,35 +1,30 @@
+# core/events/transfer_events.py
 from uuid import UUID
 
-from core.events.base import BaseEventService
+from core.events.domain_event_service import DomainEventService
 from core.notifications.builder import NotificationBuilder
-from core.notifications.dispatcher import NotificationDispatcher
-from services.assets.asset_history_service import AssetHistoryService
 
 
-class TransferEventService:
-    def __init__(
+class TransferEventService(DomainEventService):
+    """Transfer domain events."""
+
+    async def created(
         self,
-        base: BaseEventService,
-        history: AssetHistoryService,
-        notifications: NotificationDispatcher,
+        *,
+        asset_id: UUID,
+        transfer_id: UUID,
+        actor_id: UUID
     ):
-        self.base = base
-        self.history = history
-        self.notifications = notifications
-
-    async def created(self, *, asset_id: UUID, transfer_id: UUID, actor_id: UUID):
-        await self.base.execute(
-            history=lambda: self.history.log(
-                asset_id,
-                actor_id,
-                "transfer_created",
-                f"Transfer {transfer_id} created",
-            ),
+        await self._execute(
+            asset_id=asset_id,
+            actor_id=actor_id,
+            action="transfer_created",
+            description=f"Transfer {transfer_id} created",
             audit_event="asset.transfer_created",
             audit_payload={
                 "asset_id": str(asset_id),
-                "actor_id": str(actor_id),
                 "transfer_id": str(transfer_id),
+                "actor_id": str(actor_id),
             },
             notification=lambda: self.notifications.dispatch(
                 NotificationBuilder.asset_transfer_created(
@@ -48,23 +43,23 @@ class TransferEventService:
         actor_id: UUID,
         created_by_id: UUID,
     ):
-        await self.base.execute(
-            history=lambda: self.history.log(
-                asset_id,
-                actor_id,
-                "transfer_approved",
-                f"Transfer {transfer_id} approved",
-            ),
+        await self._execute(
+            asset_id=asset_id,
+            actor_id=actor_id,
+            action="transfer_approved",
+            description=f"Transfer {transfer_id} approved",
             audit_event="asset.transfer_approved",
             audit_payload={
                 "asset_id": str(asset_id),
-                "actor_id": str(actor_id),
                 "transfer_id": str(transfer_id),
+                "actor_id": str(actor_id),
+                "created_by_id": str(created_by_id),
             },
             notification=lambda: self.notifications.dispatch(
                 NotificationBuilder.asset_transfer_completed(
                     user_id=created_by_id,
                     asset_id=asset_id,
+                    transfer_id=transfer_id,
                 )
             ),
         )
@@ -77,23 +72,23 @@ class TransferEventService:
         actor_id: UUID,
         created_by_id: UUID,
     ):
-        await self.base.execute(
-            history=lambda: self.history.log(
-                asset_id,
-                actor_id,
-                "transfer_rejected",
-                f"Transfer {transfer_id} rejected",
-            ),
+        await self._execute(
+            asset_id=asset_id,
+            actor_id=actor_id,
+            action="transfer_rejected",
+            description=f"Transfer {transfer_id} rejected",
             audit_event="asset.transfer_rejected",
             audit_payload={
                 "asset_id": str(asset_id),
-                "actor_id": str(actor_id),
                 "transfer_id": str(transfer_id),
+                "actor_id": str(actor_id),
+                "created_by_id": str(created_by_id),
             },
             notification=lambda: self.notifications.dispatch(
                 NotificationBuilder.asset_transfer_rejected(
                     user_id=created_by_id,
                     asset_id=asset_id,
+                    transfer_id=transfer_id,
                 )
             ),
         )
