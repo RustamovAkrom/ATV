@@ -16,6 +16,7 @@ from db.models.documents.document import Document
 from db.models.enums import AssetStatus
 from db.models.repairs.repair import Repair
 from db.models.warehouse.warehouse import Warehouse
+from db.models.assets.asset_image import AssetImage
 
 if TYPE_CHECKING:
     from db.models.assets.asset_assignment import AssetAssignment
@@ -32,10 +33,8 @@ class Asset(Base, UUIDMixing, TimestampMixin, SlugMixin):
     __tablename__ = "assets"
 
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    # type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
 
     # Identifiers
-    # asset_tag: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
     serial_number: Mapped[str | None] = mapped_column(
         String(255), unique=True, index=True
     )
@@ -164,6 +163,13 @@ class Asset(Base, UUIDMixing, TimestampMixin, SlugMixin):
         back_populates="asset",
         lazy="selectin",
         cascade="all, delete-orphan",
+    )
+    images: Mapped[list["AssetImage"]] = relationship(
+        "AssetImage",
+        back_populates="asset",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        order_by="AssetImage.sort_order",
     )
 
     responsible_user_id = synonym("owner_id")

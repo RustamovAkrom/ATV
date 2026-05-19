@@ -1,4 +1,5 @@
 from sqlalchemy.orm import validates
+from sqlalchemy import event
 import uuid
 from datetime import datetime
 from typing import Any
@@ -24,6 +25,8 @@ class SlugMixin:
 
         if not getattr(self, "slug", None):
             self.slug = slugify(value)
+            if not self.slug:
+                self.slug = f"item_{uuid.uuid4().hex[:8]}"
         return value
 
 

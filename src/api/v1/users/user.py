@@ -1,24 +1,25 @@
 import uuid
-import os
-import aiofiles
 import csv
 from io import StringIO
 from typing import List
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
 
-
 from api.dependencies.users import get_user_service
 from api.dependencies.paginations import get_pagination
+from api.dependencies.storage import get_file_upload_service
 from core.cache.decorators import cached, invalidate_cache
 from core.exceptions.errors import BadRequest
 from core.security.auth.dependencies import get_current_user
 from core.security.rbac.presets import UserPermissions
+from core.slowapi import limiter
+from core.config import get_settings
+from core.storage import FileUploadService
+from core.storage.configs import UploadConfigs
+
 from db.models.users.user import User
 from schemas.auth import CurrentUserSchema
 from schemas.pagination import PaginationParamsSchema
-from core.slowapi import limiter
-
 from schemas.users import (
     AdminUserUpdateSchema,
     ChangePasswordRequestSchema,
@@ -29,10 +30,10 @@ from schemas.users import (
 )
 from services.users.user_service import UserService
 from schemas.common import StatusResponse
-from core.config import get_settings
 
 
 router = APIRouter(prefix="/users", tags=["Users"])
+settings = get_settings()
 
 
 def _to_user_out(user: User) -> UserOutSchema:
@@ -71,7 +72,11 @@ def _to_user_out(user: User) -> UserOutSchema:
         assigned_service_id=getattr(user, "assigned_service_id", None),
     )
 
-### ME -----------------------------------------
+
+# ============================================================
+# ME ENDPOINTS
+# ============================================================
+
 @router.get("/me", response_model=UserOutSchema)
 @cached(ttl=60, tags=("users:me",))
 async def me(
@@ -120,64 +125,44 @@ async def upload_avatar(
     file: UploadFile = File(...),
     current_user: CurrentUserSchema = Depends(get_current_user),
     service: UserService = Depends(get_user_service),
+    upload_service: FileUploadService = Depends(get_file_upload_service),
 ):
-    settings = get_settings()
+    """
+    Загрузить аватар пользователя.
 
-    # Проверяем размер файла
-    max_size = settings.UPLOAD_MAX_SIZE_MB * 1024 * 1024
-    if file.size and file.size > max_size:
-        raise HTTPException(
-            status_code=400,
-            detail=f"File too large. Max size: {settings.UPLOAD_MAX_SIZE_MB}MB"
-        )
-
-    # ВОТ ТУТ ОШИБКА - используем MIMETYPES для content_type, а не EXTENSIONS
-    if file.content_type not in settings.UPLOAD_ALLOWED_MIMETYPES:
-        raise HTTPException(
-            status_code=400,
-            detail=f"File type not allowed. Allowed: {', '.join(settings.UPLOAD_ALLOWED_MIMETYPES)}"
-        )
-
-    avatar_dir = settings.BASE_DIR / settings.UPLOAD_AVATAR_DIR
-    avatar_dir.mkdir(parents=True, exist_ok=True)
-
-    file_extension = os.path.splitext(file.filename)[1].lower()
-
-    # Проверяем расширение файла
-    if file_extension not in settings.UPLOAD_ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Extension not allowed. Allowed: {', '.join(settings.UPLOAD_ALLOWED_EXTENSIONS)}"
-        )
-
-    unique_filename = f"{uuid.uuid4()}{file_extension}"
-
-    if len(unique_filename) > settings.UPLOAD_MAX_FILENAME_LENGTH:
-        unique_filename = unique_filename[:settings.UPLOAD_MAX_FILENAME_LENGTH]
-
-    file_path = avatar_dir / unique_filename
-
+    - Поддерживаемые форматы: JPEG, PNG, GIF, WEBP
+    - Максимальный размер: 2MB
+    """
     try:
-        async with aiofiles.open(file_path, 'wb') as buffer:
-            content = await file.read()
-            await buffer.write(content)
+        result = await upload_service.upload(
+            file=file,
+            folder=settings.STORAGE_AVATAR_FOLDER,
+            validator=UploadConfigs.avatar(),
+        )
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
-    avatar_url = f"{settings.UPLOAD_AVATAR_URL_PREFIX}/{unique_filename}"
-
+    # Получаем старого пользователя
     user = await service.get(current_user.id)
     old_avatar_url = user.avatar_url
 
-    user = await service.update_avatar(current_user.id, UserAvatarUpdateSchema(avatar_url=avatar_url))
+    # Обновляем аватар
+    user = await service.update_avatar(
+        current_user.id,
+        UserAvatarUpdateSchema(avatar_url=result.public_url)
+    )
 
+    # Удаляем старый аватар
     if old_avatar_url:
-        old_avatar_path = settings.BASE_DIR / old_avatar_url.lstrip('/')
-        if old_avatar_path.exists() and old_avatar_path.is_file():
-            try:
-                old_avatar_path.unlink()
-            except Exception:
-                pass
+        try:
+            # Извлекаем путь из URL
+            old_path = old_avatar_url.replace(f"{settings.STORAGE_URL_PREFIX}/", "")
+            await upload_service.delete(old_path)
+        except Exception as e:
+            # Логируем, но не прерываем выполнение
+            print(f"Failed to delete old avatar: {e}")
 
     return _to_user_out(user)
 
@@ -189,19 +174,22 @@ async def delete_avatar(
     request: Request,
     current_user: CurrentUserSchema = Depends(get_current_user),
     service: UserService = Depends(get_user_service),
+    upload_service: FileUploadService = Depends(get_file_upload_service),
 ):
-    settings = get_settings()
-
+    """Удалить аватар пользователя"""
     user = await service.get(current_user.id)
 
-    if user.avatar_url:
-        old_avatar_path = settings.BASE_DIR / user.avatar_url.lstrip('/')
-        if old_avatar_path.exists() and old_avatar_path.is_file():
-            try:
-                old_avatar_path.unlink()
-            except Exception as e:
-                print(f"Failed to delete avatar file: {e}")
+    if not user.avatar_url:
+        raise HTTPException(status_code=404, detail="Avatar not found")
 
+    # Удаляем файл
+    try:
+        old_path = user.avatar_url.replace(f"{settings.STORAGE_URL_PREFIX}/", "")
+        await upload_service.delete(old_path)
+    except Exception as e:
+        print(f"Failed to delete avatar file: {e}")
+
+    # Обновляем пользователя
     user = await service.update_avatar(current_user.id, UserAvatarUpdateSchema(avatar_url=None))
 
     return _to_user_out(user)
@@ -213,12 +201,13 @@ async def get_avatar(
     current_user: CurrentUserSchema = Depends(get_current_user),
     service: UserService = Depends(get_user_service),
 ):
+    """Получить файл аватара"""
     user = await service.get(current_user.id)
 
     if not user.avatar_url:
         raise HTTPException(status_code=404, detail="Avatar not found")
 
-    avatar_path = get_settings().BASE_DIR / user.avatar_url.lstrip("/")
+    avatar_path = settings.BASE_DIR / user.avatar_url.lstrip("/")
 
     if not avatar_path.exists():
         raise HTTPException(status_code=404, detail="Avatar file not found")
@@ -230,12 +219,16 @@ async def get_avatar(
     )
 
 
-# USERS -----------------------------------------------------------------------------------------
+# ============================================================
+# ADMIN USER MANAGEMENT
+# ============================================================
+
 @router.get("/export", dependencies=[Depends(UserPermissions.CanViewUsers)])
 async def export_users(
     service: UserService = Depends(get_user_service),
     pagination: PaginationParamsSchema = Depends(get_pagination)
 ):
+    """Экспорт пользователей в CSV"""
     users = await service.get_all(pagination)
 
     output = StringIO()
@@ -259,7 +252,7 @@ async def export_users(
         iter([output.getvalue()]),
         media_type="text/csv",
     )
-    response.headers["Content-Disposition"] = "attachment; filename=user.csv"
+    response.headers["Content-Disposition"] = "attachment; filename=users.csv"
     return response
 
 

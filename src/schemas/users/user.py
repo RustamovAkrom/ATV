@@ -77,7 +77,7 @@ class ChangePasswordRequestSchema(BaseSchema):
 
 
 class UserAvatarUpdateSchema(BaseSchema):
-    avatar_url: str | None = Field(None, max_length=500, pattern=r'^/static/avatars/.*$')
+    avatar_url: str | None = Field(None, max_length=500)
 
 
 class UserOutSchema(TimestampSchema):

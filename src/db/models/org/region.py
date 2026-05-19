@@ -39,3 +39,6 @@ class Region(Base, UUIDMixing, TimestampMixin, SlugMixin):
         back_populates="regions",
         lazy="selectin",
     )
+
+    def __repr__(self):
+        return self.name

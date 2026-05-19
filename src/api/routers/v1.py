@@ -32,7 +32,7 @@ from api.v1.assets.expenses import router as expenses_router
 from api.v1.organization.regions import router as regions_router
 from api.v1.organization.services import router as services_router
 from api.v1.assets.warehouses import router as warehouse_router
-
+from api.v1.assets.asset_images import router as asset_image_router
 
 router = APIRouter()
 
@@ -50,6 +50,9 @@ router.include_router(notifications_router)
 router.include_router(approvals_router)
 router.include_router(assets_router)
 router.include_router(asset_repairs_router)
+
+# Asset Images
+router.include_router(asset_image_router)
 
 # Warehouse
 router.include_router(warehouse_router)

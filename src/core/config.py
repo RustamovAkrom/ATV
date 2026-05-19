@@ -4,7 +4,7 @@ from functools import cache
 from pathlib import Path
 from typing import Literal, Any
 
-from pydantic import field_validator, Field
+from pydantic import field_validator, Field, ValidationInfo
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from yarl import URL
 
@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     APP_TITLE: str = "TTM"
     APP_NAME: str = "fastapi-backend"
     APP_VERSION: str = "1.0.0"
-    APP_DESCRIPTION: str = "Production-ready FastAPI backend"
+    APP_DESCRIPTION: str = "Production-ready Fastapi backend"
 
     APP_HOST: str = "127.0.0.1"
     APP_PORT: int = 8000
@@ -139,27 +139,49 @@ class Settings(BaseSettings):
     # Analytics
     ANALYTICS_SEARCH_MAX_LENGTH: int = 100
 
-    # FILE UPLOADS
-    UPLOAD_MAX_SIZE_MB: int = 10 # maximum file size in MB
-    UPLOAD_ALLOWED_EXTENSIONS: list[str] = Field(
-        default_factory=lambda: [".jpg", ".jpeg", ".png", ".gif", ".webp"]
-    )
-    UPLOAD_ALLOWED_MIMETYPES: list[str] = Field(
+    # ========== FILE STORAGE SYSTEM ==========
+    STORAGE_ROOT_DIR: str = "storage"
+    STORAGE_URL_PREFIX: str = "/storage"
+
+    STORAGE_DEFAULT_MAX_SIZE_MB: int = 10
+    STORAGE_DEFAULT_ALLOWED_MIMETYPES: list[str] = Field(
         default_factory=lambda: [
-            "image/jpeg",
-            "image/png",
-            "image/gif",
-            "image/webp"
+            "image/jpeg", "image/png", "image/gif", "image/webp",
+            "application/pdf", "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         ]
     )
 
-    UPLOAD_AVATAR_DIR: str = "static/avatars"
+    STORAGE_AVATAR_MAX_SIZE_MB: int = 2
+    STORAGE_AVATAR_ALLOWED_MIMETYPES: list[str] = Field(
+        default_factory=lambda: ["image/jpeg", "image/png", "image/gif", "image/webp"]
+    )
+    STORAGE_AVATAR_FOLDER: str = "avatars"
 
-    UPLOAD_AVATAR_URL_PREFIX: str = "/static/avatars"
+    STORAGE_ASSET_IMAGE_MAX_SIZE_MB: int = 5
+    STORAGE_ASSET_IMAGE_ALLOWED_MIMETYPES: list[str] = Field(
+        default_factory=lambda: ["image/jpeg", "image/png", "image/gif", "image/webp"]
+    )
+    STORAGE_ASSET_IMAGE_FOLDER: str = "assets"
 
-    UPLOAD_MAX_FILENAME_LENGTH: int = 100
+    STORAGE_DOCUMENT_MAX_SIZE_MB: int = 15
+    STORAGE_DOCUMENT_ALLOWED_MIMETYPES: list[str] = Field(
+        default_factory=lambda: [
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ]
+    )
+    STORAGE_DOCUMENT_FOLDER: str = "documents"
 
-    # VALIDATORS
+    STORAGE_FILENAME_MAX_LENGTH: int = 255
+    STORAGE_KEEP_ORIGINAL_NAME: bool = False
+    STORAGE_VIRUS_SCAN_ENABLED: bool = False
+    STORAGE_VIRUS_SCAN_URL: str | None = None
+
+    # ========== VALIDATORS ==========
     @field_validator("DEBUG", mode="before")
     @classmethod
     def parse_debug_flag(cls, value):
@@ -169,43 +191,29 @@ class Settings(BaseSettings):
             normalized = value.strip().lower()
             if normalized in {"1", "true", "yes", "on", "debug"}:
                 return True
-            if normalized in {
-                "0",
-                "false",
-                "no",
-                "off",
-                "release",
-                "prod",
-                "production",
-            }:
+            if normalized in {"0", "false", "no", "off", "release", "prod", "production"}:
                 return False
         return bool(value)
 
     @field_validator(
         "ALLOWED_HOSTS",
         "CORS_ORIGINS",
-        "UPLOAD_ALLOWED_EXTENSIONS",
-        "UPLOAD_ALLOWED_MIMETYPES",
+        "STORAGE_DEFAULT_ALLOWED_MIMETYPES",
+        "STORAGE_AVATAR_ALLOWED_MIMETYPES",
+        "STORAGE_ASSET_IMAGE_ALLOWED_MIMETYPES",
+        "STORAGE_DOCUMENT_ALLOWED_MIMETYPES",
         "CELERY_ACCEPT_CONTENT",
         mode="before",
     )
-
     @classmethod
     def parse_csv_list(cls, value: Any) -> list[str]:
         if isinstance(value, list):
             return value
-
         if isinstance(value, str):
-            return [
-                item.strip()
-                for item in value.split(",")
-                if item.strip()
-            ]
-
+            return [item.strip() for item in value.split(",") if item.strip()]
         return []
 
-    # DATABASE URLS
-
+    # ========== DATABASE URLS ==========
     @property
     def postgres_async_url(self) -> str:
         return str(

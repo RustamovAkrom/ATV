@@ -5,11 +5,12 @@ from db.models.assets.asset_category import AssetCategory
 from db.models.assets.asset_class import AssetClass
 from db.models.assets.asset_history import AssetHistory
 from db.models.assets.asset_model import AssetModel
+from db.models.assets.asset_image import AssetImage
 from db.models.assets.asset_transfer import AssetTransfer
 from db.models.assets.manufacturer import Manufacturer
 from db.models.warehouse.warehouse import Warehouse
 import json
-from wtforms import TextAreaField
+
 
 class AssetAdmin(BaseAdmin, model=Asset):
     name = "Asset"
@@ -20,13 +21,11 @@ class AssetAdmin(BaseAdmin, model=Asset):
     can_create = True
     can_delete = True
 
-    form_excluded_columns = ["meta"]
+    form_excluded_columns = ["meta", "slug", "created_at", "updated_at"]
 
     column_list = [
         "id",
         "name",
-        "type",
-        "asset_tag",
         "serial_number",
         "status",
         "owner",
@@ -36,9 +35,9 @@ class AssetAdmin(BaseAdmin, model=Asset):
         "created_at",
     ]
 
-    column_searchable_list = ["name", "asset_tag", "serial_number"]
+    column_searchable_list = ["name", "slug", "serial_number"]
 
-    column_sortable_list = ["created_at", "name", "asset_tag"]
+    column_sortable_list = ["created_at", "name", "status"]
 
     column_formatters = {
         "owner": lambda m, _: m.owner.full_name if m.owner else None,
@@ -47,7 +46,6 @@ class AssetAdmin(BaseAdmin, model=Asset):
         "service": lambda m, _: m.service.name if m.service else None,
         "meta": lambda m, _: json.dumps(m.meta, indent=2) if m.meta else "{}"
     }
-
 
 class AssetAssignmentAdmin(BaseAdmin, model=AssetAssignment):
     name = "Asset Assignment"
@@ -65,11 +63,71 @@ class AssetAssignmentAdmin(BaseAdmin, model=AssetAssignment):
         "assigned_at",
         "unassigned_at",
     ]
+    column_searchable_list = ["asset_id", "user_id"]
 
     column_formatters = {
         "asset": lambda m, _: m.asset.name if m.asset else None,
         "user": lambda m, _: m.user.full_name if m.user else None,
     }
+
+
+class AssetImageAdmin(BaseAdmin, model=AssetImage):
+    name = "Asset Image"
+    name_plural = "Asset Images"
+    icon = "fa-solid fa-image"
+
+    can_edit = True
+    can_create = True
+    can_delete = True
+
+    # Список колонок для отображения в таблице
+    column_list = [
+        "id",
+        "preview",
+        "asset",
+        "file_name",
+        "file_size",
+        "is_primary",
+        "sort_order",
+        "created_at",
+    ]
+
+    # Поля для поиска
+    column_searchable_list = ["file_name", "asset_id"]
+
+    # Сортировка
+    column_sortable_list = ["sort_order", "is_primary", "created_at", "file_size"]
+
+    # Форматтеры
+    column_formatters = {
+        "asset": lambda m, _: m.asset.name if m.asset else "-",
+        "file_size": lambda m, _: f"{m.file_size / 1024:.1f} KB" if m.file_size else "-",
+        "is_primary": lambda m, _: "⭐ Yes" if m.is_primary else "",
+        "preview": lambda m, _: (
+            f'<img src="{m.file_path}" style="max-width: 50px; max-height: 50px; object-fit: cover;" />'
+            if m.file_path else "-"
+        ),
+    }
+
+    form_excluded_columns = ["id", "created_at", "updated_at", "file_path"]
+
+    # Детальный просмотр
+    column_details_list = [
+        "id",
+        "asset",
+        "file_name",
+        "file_path",
+        "preview",
+        "file_size",
+        "content_type",
+        "is_primary",
+        "sort_order",
+        "width",
+        "height",
+        "alt_text",
+        "created_at",
+        "updated_at",
+    ]
 
 
 class AssetCategoryAdmin(BaseAdmin, model=AssetCategory):
@@ -83,6 +141,10 @@ class AssetCategoryAdmin(BaseAdmin, model=AssetCategory):
 
     column_list = ["id", "name", "slug", "created_at"]
 
+    column_searchable_list = ["name", "slug"]
+
+    form_excluded_columns = ["slug"]
+
 
 class AssetClassAdmin(BaseAdmin, model=AssetClass):
     name = "Asset Class"
@@ -95,6 +157,37 @@ class AssetClassAdmin(BaseAdmin, model=AssetClass):
 
     column_list = ["id", "name", "slug", "created_at"]
 
+    column_searchable_list = ["name", "slug"]
+
+    form_excluded_columns = ["slug", "created_at", "updated_at"]
+
+
+class AssetModelAdmin(BaseAdmin, model=AssetModel):
+    name = "Asset Model"
+    name_plural = "Asset Models"
+    icon = "fa-solid fa-cogs"
+
+    can_edit = True
+    can_create = True
+    can_delete = True
+
+    column_list = [
+        "id",
+        "name",
+        "slug",
+        "manufacturer",
+        "category",
+        "lifetime_years",
+        "warranty_months",
+        "created_at",
+    ]
+
+    column_formatters = {
+        "manufacturer": lambda m, _: m.manufacturer.name if m.manufacturer else None,
+        "category": lambda m, _: m.category.name if m.category else None,
+    }
+
+    form_excluded_columns = ["slug", "created_at", "updated_at"]
 
 class AssetHistoryAdmin(BaseAdmin, model=AssetHistory):
     name = "Asset History"
@@ -116,26 +209,6 @@ class AssetHistoryAdmin(BaseAdmin, model=AssetHistory):
     }
 
 
-class AssetModelAdmin(BaseAdmin, model=AssetModel):
-    name = "Asset Model"
-    name_plural = "Asset Models"
-    icon = "fa-solid fa-cogs"
-
-    column_list = [
-        "id",
-        "name",
-        "slug",
-        "manufacturer",
-        "category",
-        "lifetime_years",
-        "warranty_months",
-        "created_at",
-    ]
-
-    column_formatters = {
-        "manufacturer": lambda m, _: m.manufacturer.name if m.manufacturer else None,
-        "category": lambda m, _: m.category.name if m.category else None,
-    }
 
 
 class AssetTransferAdmin(BaseAdmin, model=AssetTransfer):
@@ -166,13 +239,23 @@ class ManufacturerAdmin(BaseAdmin, model=Manufacturer):
     name_plural = "Manufacturers"
     icon = "fa-solid fa-industry"
 
+    can_edit = True
+    can_create = True
+    can_delete = True
+
     column_list = ["id", "name", "slug", "created_at"]
+
+    form_excluded_columns = ["slug", "created_at", "updated_at"]
 
 
 class WarehouseAdmin(BaseAdmin, model=Warehouse):
     name = "Warehouse"
     name_plural = "Warehouses"
     icon = "fa-solid fa-warehouse"
+
+    can_edit = True
+    can_create = True
+    can_delete = True
 
     column_list = [
         "id",
@@ -188,3 +271,5 @@ class WarehouseAdmin(BaseAdmin, model=Warehouse):
         "region": lambda m, _: m.region.name if m.region else None,
         "service": lambda m, _: m.service.name if m.service else None,
     }
+
+    form_excluded_columns = ["slug", "created_at", "updated_at"]

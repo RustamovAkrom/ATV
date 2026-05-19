@@ -27,6 +27,9 @@ class Service(Base, UUIDMixing, TimestampMixin, SlugMixin):
         "User", back_populates="service", lazy="selectin"
     )
 
+    def __repr__(self):
+        return self.name
+
 
 region_services = Table(
     "region_services",

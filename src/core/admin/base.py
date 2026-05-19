@@ -1,17 +1,53 @@
 from sqladmin import ModelView
+from sqladmin.helpers import get_object_identifier
+from loguru import logger
 
 
 class BaseAdmin(ModelView):
-    can_create = False
-    can_edit = False
-    can_delete = False
-    can_view_details = True
-    can_export = True
+    """Базовый класс для всех админ-моделей с настройками безопасности."""
+
+    # Безопасность по умолчанию
+    can_create = False      # Создание требует явного разрешения
+    can_edit = False        # Редактирование требует явного разрешения
+    can_delete = False      # Удаление требует явного разрешения
+    can_view_details = True  # Просмотр обычно разрешён
+    can_export = True        # Экспорт данных
 
     page_size = 50
-
     column_default_sort = ("id", True)
 
-    # def is_accessible(self, request):
-    #     # TODO: integration with JWT / RBAC
-    #     return True
+    # Дополнительные настройки
+    save_as = True  # Возможность сохранить как новую запись
+    save_as_continue = True  # После сохранения оставаться на форме
+
+    # Настройки экспорта
+    export_types = ["csv", "json", "xlsx"]
+
+    # Скрыть чувствительные поля по умолчанию
+    column_details_exclude_list = []
+    column_form_exclude_list = []
+
+    # Включить поиск
+    searchable_columns = []
+
+    @classmethod
+    def is_accessible(cls, request) -> bool:
+        """Проверка доступа к админ-панели."""
+        # Проверяем, есть ли пользователь в сессии
+        if "user" not in request.session:
+            return False
+
+        # TODO: можно добавить дополнительную проверку прав
+        return True
+
+    async def after_create(self, request, obj):
+        """Логирование после создания."""
+        logger.info(f"Admin created {self.__class__.__name__}: {obj}")
+
+    async def after_edit(self, request, obj):
+        """Логирование после редактирования."""
+        logger.info(f"Admin edited {self.__class__.__name__}: {obj}")
+
+    async def after_delete(self, request, obj):
+        """Логирование после удаления."""
+        logger.info(f"Admin deleted {self.__class__.__name__}: {obj}")

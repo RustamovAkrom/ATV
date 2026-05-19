@@ -10,6 +10,7 @@ from fastapi.routing import APIRoute
 from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.templating import Jinja2Templates
 
 from api.routers.v1 import router as api_router
 from core.config import Settings, get_settings
@@ -47,6 +48,8 @@ def create_app() -> FastAPI:
     )
     app.state.limiter = limiter
 
+    # Настройка шаблонов для админ-панели
+    configure_templates(app, settings)
     configure_static(app, settings)
     configure_docs(app, settings)
     configure_routes(app, settings)
@@ -56,12 +59,32 @@ def create_app() -> FastAPI:
 
     return app
 
+# TEMPLATES (для админ-панели)
+def configure_templates(app: FastAPI, settings: Settings):
+    """Настройка Jinja2 шаблонов для админ-панели."""
+    templates_dir = settings.BASE_DIR / "templates"
+
+    # Создаём директорию если её нет
+    if not templates_dir.exists():
+        templates_dir.mkdir(parents=True, exist_ok=True)
+
+    # Подключаем шаблоны
+    app.templates = Jinja2Templates(directory=str(templates_dir))
+
+    # Делаем шаблоны доступными через app.state
+    app.state.templates = app.templates
+
 # STATIC
 def configure_static(app: FastAPI, settings: Settings):
     static_dir = settings.BASE_DIR / "static"
 
     if static_dir.exists():
         app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+    # Также монтируем статику SQLAdmin если есть
+    storage_dir = settings.BASE_DIR / settings.STORAGE_ROOT_DIR
+    if storage_dir.exists():
+        app.mount("/storage", StaticFiles(directory=storage_dir), name="storage")
 
 # DOCS
 def configure_docs(app: FastAPI, settings: Settings):
@@ -123,7 +146,7 @@ def configure_middlewares(app: FastAPI, settings: Settings):
     # Observability (LAST)
     app.add_middleware(MetricsMiddleware)  # Metrics
 
-    # Session
+    # Session (для админ-панели)
     app.add_middleware(
         SessionMiddleware,
         secret_key=settings.SECRET_KEY,

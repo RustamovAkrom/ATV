@@ -1,7 +1,3 @@
-import os
-import uuid
-import shutil
-from pathlib import Path
 from uuid import UUID
 from typing import List
 
@@ -9,11 +5,14 @@ from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, R
 from fastapi.responses import FileResponse
 
 from api.dependencies.documents.document import get_document_service
+from api.dependencies.storage import get_file_upload_service
 from core.cache.decorators import invalidate_cache
 from core.security.auth.dependencies import get_current_user
 from core.security.rbac.presets import AssetPermissions
 from core.slowapi import limiter
 from core.config import get_settings
+from core.storage import FileUploadService
+from core.storage.configs import UploadConfigs
 
 from schemas.auth import CurrentUserSchema
 from schemas.documents.document import (
@@ -28,36 +27,6 @@ from services.documents.document_service import DocumentService
 
 settings = get_settings()
 router = APIRouter(prefix="/assets/{asset_id}/documents", tags=["Asset Documents"])
-
-# Директория для хранения файлов документов
-DOCUMENTS_DIR = settings.BASE_DIR / "storage" / "documents"
-
-
-def ensure_documents_dir():
-    """Создать директорию для документов если её нет"""
-    DOCUMENTS_DIR.mkdir(parents=True, exist_ok=True)
-
-
-def save_upload_file(upload_file: UploadFile, document_id: UUID) -> tuple[str, str, int]:
-    """Сохранить загруженный файл и вернуть путь, имя, размер"""
-    ensure_documents_dir()
-
-    # Генерируем уникальное имя файла
-    file_extension = os.path.splitext(upload_file.filename or "file")[1].lower()
-    unique_filename = f"{document_id}_{uuid.uuid4().hex[:8]}{file_extension}"
-    file_path = DOCUMENTS_DIR / unique_filename
-
-    # Сохраняем файл
-    content = upload_file.file.read()
-    file_size = len(content)
-
-    with open(file_path, "wb") as buffer:
-        buffer.write(content)
-
-    # Возвращаем относительный путь для хранения в БД
-    relative_path = f"storage/documents/{unique_filename}"
-
-    return relative_path, upload_file.filename or "unknown", file_size
 
 
 # ========== GET запросы (без rate limit) ==========
@@ -107,7 +76,6 @@ async def download_file(
 
     # Полный путь к файлу
     full_path = settings.BASE_DIR / file_info.file_path
-
     if not full_path.exists():
         raise HTTPException(status_code=404, detail="File not found on server")
 
@@ -137,6 +105,7 @@ async def attach_asset_document(
     files: List[UploadFile] = File(default=[]),
     actor: CurrentUserSchema = Depends(get_current_user),
     service: DocumentService = Depends(get_document_service),
+    upload_service: FileUploadService = Depends(get_file_upload_service),
 ):
     """
     Создать документ с загрузкой файлов.
@@ -149,7 +118,7 @@ async def attach_asset_document(
     except ValueError:
         raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
 
-    # Сначала создаем документ без файлов
+    # Создаем документ
     create_data = AssetDocumentCreateSchema(
         title=title,
         description=description,
@@ -159,25 +128,30 @@ async def attach_asset_document(
 
     document = await service.create_document(asset_id, create_data, actor)
 
-    # Затем сохраняем файлы
+    # Сохраняем файлы через единую систему загрузки
     uploaded_files = []
     for upload_file in files:
-        if upload_file.size and upload_file.size > settings.UPLOAD_MAX_SIZE_MB * 1024 * 1024:
-            raise HTTPException(status_code=400, detail=f"File too large: {upload_file.filename}")
+        try:
+            result = await upload_service.upload(
+                file=upload_file,
+                folder=settings.STORAGE_DOCUMENT_FOLDER,
+                validator=UploadConfigs.document(),
+            )
+            uploaded_files.append({
+                "file_name": result.original_name,
+                "file_path": result.file_path,
+                "file_size": result.file_size,
+                "content_type": upload_file.content_type,
+            })
+        except HTTPException as e:
+            # Если файл не прошёл валидацию, удаляем созданный документ
+            await service.delete_document(asset_id, document.id, actor)
+            raise e
 
-        file_path, file_name, file_size = save_upload_file(upload_file, document.id)
-        uploaded_files.append({
-            "file_name": file_name,
-            "file_path": file_path,
-            "file_size": file_size,
-            "content_type": upload_file.content_type,
-        })
-
-    # Если есть файлы, добавляем их к документу
+    # Добавляем файлы к документу
     for file_data in uploaded_files:
         await service.add_file_to_document(asset_id, document.id, file_data, actor)
 
-    # Возвращаем обновленный документ
     return await service.get_document(asset_id, document.id, actor)
 
 
@@ -214,21 +188,27 @@ async def add_file_to_document(
     file: UploadFile = File(...),
     actor: CurrentUserSchema = Depends(get_current_user),
     service: DocumentService = Depends(get_document_service),
+    upload_service: FileUploadService = Depends(get_file_upload_service),
 ):
     """Добавить файл к существующему документу"""
-    if file.size and file.size > settings.UPLOAD_MAX_SIZE_MB * 1024 * 1024:
-        raise HTTPException(status_code=400, detail=f"File too large: {file.filename}")
+    try:
+        result = await upload_service.upload(
+            file=file,
+            folder=settings.STORAGE_DOCUMENT_FOLDER,
+            validator=UploadConfigs.document(),
+        )
+    except HTTPException as e:
+        raise e
 
-    file_path, file_name, file_size = save_upload_file(file, document_id)
     file_data = {
-        "file_name": file_name,
-        "file_path": file_path,
-        "file_size": file_size,
+        "file_name": result.original_name,
+        "file_path": result.file_path,
+        "file_size": result.file_size,
         "content_type": file.content_type,
     }
 
-    result = await service.add_file_to_document(asset_id, document_id, file_data, actor)
-    return {"message": "File added successfully", "file": result.model_dump()}
+    file_obj = await service.add_file_to_document(asset_id, document_id, file_data, actor)
+    return {"message": "File added successfully", "file": file_obj.model_dump()}
 
 
 @router.delete(
@@ -245,8 +225,22 @@ async def delete_file_from_document(
     file_id: UUID,
     actor: CurrentUserSchema = Depends(get_current_user),
     service: DocumentService = Depends(get_document_service),
+    upload_service: FileUploadService = Depends(get_file_upload_service),
 ):
     """Удалить файл из документа"""
+    # Получаем информацию о файле перед удалением
+    document = await service.get_document(asset_id, document_id, actor)
+    file_to_delete = None
+    for f in document.files:
+        if f.id == file_id:
+            file_to_delete = f
+            break
+
+    if file_to_delete:
+        # Удаляем физический файл
+        await upload_service.delete(file_to_delete.file_path)
+
+    # Удаляем запись из БД
     await service.delete_file_from_document(asset_id, document_id, file_id, actor)
     return StatusResponse(status="deleted", message="File deleted successfully")
 
@@ -264,7 +258,19 @@ async def delete_asset_document(
     document_id: UUID,
     actor: CurrentUserSchema = Depends(get_current_user),
     service: DocumentService = Depends(get_document_service),
+    upload_service: FileUploadService = Depends(get_file_upload_service),
 ):
     """Удалить документ (каскадно удаляет все файлы)"""
+    # Получаем документ с файлами
+    document = await service.get_document(asset_id, document_id, actor)
+
+    # Удаляем физические файлы
+    for file in document.files:
+        try:
+            await upload_service.delete(file.file_path)
+        except Exception:
+            pass  # Логируем, но не прерываем удаление документа
+
+    # Удаляем документ из БД
     await service.delete_document(asset_id, document_id, actor)
     return StatusResponse(status="deleted", message="Asset document successfully deleted")
