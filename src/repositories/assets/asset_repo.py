@@ -37,6 +37,7 @@ class AssetRepository(BaseRepository):
         return self._list_options() + (
             selectinload(Asset.assignments).selectinload(AssetAssignment.user),
             selectinload(Asset.history_entries).selectinload(AssetHistory.user),
+            selectinload(Asset.maintenances),
         )
 
     def _base_query(self):

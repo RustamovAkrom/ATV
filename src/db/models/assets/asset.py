@@ -17,6 +17,8 @@ from db.models.enums import AssetStatus
 from db.models.repairs.repair import Repair
 from db.models.warehouse.warehouse import Warehouse
 from db.models.assets.asset_image import AssetImage
+from db.models.assets.asset_maintenance import AssetMaintenance
+
 
 if TYPE_CHECKING:
     from db.models.assets.asset_assignment import AssetAssignment
@@ -170,6 +172,11 @@ class Asset(Base, UUIDMixing, TimestampMixin, SlugMixin):
         lazy="selectin",
         cascade="all, delete-orphan",
         order_by="AssetImage.sort_order",
+    )
+
+    maintenances: Mapped[list["AssetMaintenance"]] = relationship(
+        "AssetMaintenance", back_populates="asset", lazy="selectin",
+        cascade="all, delete-orphan"
     )
 
     responsible_user_id = synonym("owner_id")

@@ -4,6 +4,9 @@ from pydantic import Field, field_validator
 
 from db.models.enums import DocumentStatus
 from schemas.base import BaseSchema, TimestampSchema
+from core.config import get_settings
+
+settings = get_settings()
 
 
 class DocumentFileCreateSchema(BaseSchema):
@@ -22,6 +25,12 @@ class DocumentFileOutSchema(BaseSchema):
     file_size: int | None
     content_type: str | None
     created_at: datetime | None = None
+    url: str | None = None  # <-- явное поле
+
+    def model_post_init(self, __context):
+        """Вычисляем URL после инициализации модели"""
+        if self.file_path:
+            self.url = f"{settings.STORAGE_URL_PREFIX}/{self.file_path}"
 
 
 class AssetDocumentCreateSchema(BaseSchema):
@@ -70,3 +79,9 @@ class AssetDocumentWithFilesOutSchema(AssetDocumentOutSchema):
     """Документ с полной информацией о файлах"""
     total_files_size: int | None = None
     file_count: int = 0
+
+    def model_post_init(self, __context):
+        """Вычисляем общий размер файлов после инициализации"""
+        if self.files:
+            self.total_files_size = sum(f.file_size or 0 for f in self.files)
+            self.file_count = len(self.files)

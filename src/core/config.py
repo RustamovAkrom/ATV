@@ -141,7 +141,7 @@ class Settings(BaseSettings):
 
     # ========== FILE STORAGE SYSTEM ==========
     STORAGE_ROOT_DIR: str = "storage"
-    STORAGE_URL_PREFIX: str = "/storage"
+    STORAGE_URL_PREFIX: str = "http://localhost:8000/storage" # or "/storage"
 
     STORAGE_DEFAULT_MAX_SIZE_MB: int = 10
     STORAGE_DEFAULT_ALLOWED_MIMETYPES: list[str] = Field(
@@ -154,7 +154,7 @@ class Settings(BaseSettings):
 
     STORAGE_AVATAR_MAX_SIZE_MB: int = 2
     STORAGE_AVATAR_ALLOWED_MIMETYPES: list[str] = Field(
-        default_factory=lambda: ["image/jpeg", "image/png", "image/gif", "image/webp"]
+        default_factory=lambda: ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"]
     )
     STORAGE_AVATAR_FOLDER: str = "avatars"
 

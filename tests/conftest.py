@@ -25,7 +25,10 @@ from db.models.users.user import User
 from tests.utils.auth import login
 from schemas.auth.auth import CurrentUserSchema
 
-pytest_plugins = ("tests.fixtures.analytics",)
+pytest_plugins = (
+    "tests.fixtures.analytics",
+    "tests.fixtures.maintenance",
+)
 
 
 # ---------------- ENGINE ----------------

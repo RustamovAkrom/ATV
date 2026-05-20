@@ -171,7 +171,10 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
     # ========== СВОЙСТВА ==========
     @property
     def is_active(self) -> bool:
-        return self.status == UserStatus.ACTIVE.value if self.status else False
+        if not self.status:
+            return False
+        # status is a SQLAlchemy Enum mapped to UserStatus — compare as enum, not string
+        return self.status == UserStatus.ACTIVE
 
     @hybrid_property
     def full_name(self) -> str:

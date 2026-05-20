@@ -7,7 +7,7 @@ from core.security.jwt import decode_token
 from repositories.users.user_repo import UserRepository
 from schemas.auth import CurrentUserSchema
 from core.security.rbac.permissions import Permissions
-from db.models.enums import UserRole
+from db.models.enums import UserRole, UserStatus
 
 from .extractor import extract_token
 
@@ -44,7 +44,7 @@ async def get_current_user(
     if not user:
         raise InvalidToken()
 
-    if user.status != "active":
+    if user.status != UserStatus.ACTIVE:
         raise InvalidToken("User inactive")
 
     if user.last_password_change and payload.iat:

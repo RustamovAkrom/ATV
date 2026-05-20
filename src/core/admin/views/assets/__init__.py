@@ -9,4 +9,5 @@ from .assets import (
     ManufacturerAdmin,
     WarehouseAdmin,
     AssetImageAdmin,
+    AssetMaintenanceAdmin,
 )

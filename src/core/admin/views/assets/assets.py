@@ -9,6 +9,8 @@ from db.models.assets.asset_image import AssetImage
 from db.models.assets.asset_transfer import AssetTransfer
 from db.models.assets.manufacturer import Manufacturer
 from db.models.warehouse.warehouse import Warehouse
+from db.models.assets.asset_maintenance import AssetMaintenance
+
 import json
 
 
@@ -189,6 +191,7 @@ class AssetModelAdmin(BaseAdmin, model=AssetModel):
 
     form_excluded_columns = ["slug", "created_at", "updated_at"]
 
+
 class AssetHistoryAdmin(BaseAdmin, model=AssetHistory):
     name = "Asset History"
     name_plural = "Asset Histories"
@@ -207,8 +210,6 @@ class AssetHistoryAdmin(BaseAdmin, model=AssetHistory):
         "asset": lambda m, _: m.asset.name if m.asset else None,
         "user": lambda m, _: m.user.full_name if m.user else None,
     }
-
-
 
 
 class AssetTransferAdmin(BaseAdmin, model=AssetTransfer):
@@ -273,3 +274,15 @@ class WarehouseAdmin(BaseAdmin, model=Warehouse):
     }
 
     form_excluded_columns = ["slug", "created_at", "updated_at"]
+
+
+class AssetMaintenanceAdmin(BaseAdmin, model=AssetMaintenance):
+    name = "Maintenance"
+    name_plural = "Maintenances"
+    icon = "fa-solid fa-wrench"
+
+    column_list = ["id", "asset", "maintenance_type", "performed_at", "performed_by"]
+    column_formatters = {
+        "asset": lambda m, _: m.asset.name if m.asset else "-",
+        "performed_by": lambda m, _: m.performed_by.full_name if m.performed_by else "-",
+    }

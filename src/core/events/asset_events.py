@@ -70,13 +70,11 @@ class AssetEventService(DomainEventService):
         from_status: str,
         to_status: str,
     ):
-        await self.base.execute(
-            history=lambda: self.history.log(
-                asset_id,
-                actor_id,
-                "status_changed",
-                f"Status changed from '{from_status}' to '{to_status}'",
-            ),
+        await self._execute(
+            asset_id=asset_id,
+            actor_id=actor_id,
+            action="status_changed",
+            description=f"Status changed from '{from_status}' to '{to_status}'",
             audit_event="asset.status_changed",
             audit_payload={
                 "asset_id": str(asset_id),
@@ -106,18 +104,13 @@ class AssetEventService(DomainEventService):
         owner_id: UUID | None,
         asset_name: str,
     ):
-        await self.base.execute(
-            history=lambda: self.history.log(
-                asset_id,
-                actor_id,
-                "deleted",
-                "Asset deleted",
-            ),
+        await self._execute(
+            asset_id=asset_id,
+            actor_id=actor_id,
+            action="deleted",
+            description="Asset deleted",
             audit_event="asset.deleted",
-            audit_payload={
-                "asset_id": str(asset_id),
-                "actor_id": str(actor_id),
-            },
+            audit_payload={"asset_id": str(asset_id), "actor_id": str(actor_id)},
             notification=lambda: (
                 self.notifications.dispatch(
                     NotificationBuilder.asset_deleted(
@@ -139,13 +132,11 @@ class AssetEventService(DomainEventService):
         user_id: UUID,
         asset_name: str,
     ):
-        await self.base.execute(
-            history=lambda: self.history.log(
-                asset_id,
-                actor_id,
-                "assigned",
-                f"Asset assigned to user {user_id}",
-            ),
+        await self._execute(
+            asset_id=asset_id,
+            actor_id=actor_id,
+            action="assigned",
+            description=f"Asset assigned to user {user_id}",
             audit_event="asset.assigned",
             audit_payload={
                 "asset_id": str(asset_id),
@@ -168,29 +159,49 @@ class AssetEventService(DomainEventService):
         actor_id: UUID,
         user_id: UUID | None,
     ):
-        await self.base.execute(
-            history=lambda: self.history.log(
-                asset_id,
-                actor_id,
-                "unassigned",
-                f"Asset unassigned from user {user_id}",
-            ),
+        await self._execute(
+            asset_id=asset_id,
+            actor_id=actor_id,
+            action="unassigned",
+            description=f"Asset unassigned from user {user_id}",
             audit_event="asset.unassigned",
             audit_payload={
                 "asset_id": str(asset_id),
                 "actor_id": str(actor_id),
                 "user_id": str(user_id),
             },
-            notification=(
-                lambda: (
-                    self.notifications.dispatch(
-                        NotificationBuilder.asset_unassigned(
-                            user_id=user_id,
-                            asset_id=asset_id,
-                        )
+            notification=lambda: (
+                self.notifications.dispatch(
+                    NotificationBuilder.asset_unassigned(
+                        user_id=user_id,
+                        asset_id=asset_id,
                     )
-                    if user_id
-                    else None
                 )
+                if user_id
+                else None
             ),
+        )
+
+    async def maintenance_performed(
+        self,
+        *,
+        asset_id: UUID,
+        actor_id: UUID,
+        maintenance_type: str,
+        performed_by_id: UUID,
+    ):
+        """Выполнено техническое обслуживание"""
+        await self._execute(
+            asset_id=asset_id,
+            actor_id=actor_id,
+            action="maintenance_performed",
+            description=f"{maintenance_type} performed",
+            audit_event="asset.maintenance_performed",
+            audit_payload={
+                "asset_id": str(asset_id),
+                "actor_id": str(actor_id),
+                "maintenance_type": maintenance_type,
+                "performed_by_id": str(performed_by_id),
+            },
+            notification=None,
         )

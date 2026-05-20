@@ -16,6 +16,7 @@ from core.admin.views.assets import (
     ManufacturerAdmin,
     WarehouseAdmin,
     AssetImageAdmin,
+    AssetMaintenanceAdmin,
 )
 from core.admin.views.assets.documents import DocumentAdmin, DocumentFileAdmin
 from core.admin.views.assets.org import RegionAdmin, ServiceAdmin
@@ -59,6 +60,7 @@ def setup_admin(app: FastAPI, settings: Settings):
     admin.add_view(AssetTransferAdmin)
     admin.add_view(ManufacturerAdmin)
     admin.add_view(WarehouseAdmin)
+    admin.add_view(AssetMaintenanceAdmin)
 
     # Asset Images
     admin.add_view(AssetImageAdmin)

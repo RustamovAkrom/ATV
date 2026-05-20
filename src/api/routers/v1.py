@@ -34,6 +34,9 @@ from api.v1.organization.services import router as services_router
 from api.v1.assets.warehouses import router as warehouse_router
 from api.v1.assets.asset_images import router as asset_image_router
 
+from api.v1.assets.asset_maintenances import router as asset_maintenances_router
+
+
 router = APIRouter()
 
 # Auth & Users
@@ -50,6 +53,7 @@ router.include_router(notifications_router)
 router.include_router(approvals_router)
 router.include_router(assets_router)
 router.include_router(asset_repairs_router)
+router.include_router(asset_maintenances_router)
 
 # Asset Images
 router.include_router(asset_image_router)
