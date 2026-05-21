@@ -35,9 +35,7 @@ class ExportService:
             [
                 "id",
                 "name",
-                "type",
                 "status",
-                "asset_tag",
                 "serial_number",
                 "owner_id",
                 "region",
@@ -54,9 +52,7 @@ class ExportService:
                 [
                     str(asset.id),
                     asset.name,
-                    asset.type,
                     asset.status.value,
-                    asset.asset_tag or "",
                     asset.serial_number or "",
                     str(asset.owner_id) if asset.owner_id else "",
                     asset.region.name if asset.region else "",
@@ -78,9 +74,7 @@ class ExportService:
                     {
                         "id": str(asset.id),
                         "name": asset.name,
-                        "type": asset.type,
                         "status": asset.status.value,
-                        "asset_tag": asset.asset_tag,
                         "serial_number": asset.serial_number,
                         "owner_id": str(asset.owner_id) if asset.owner_id else None,
                         "region": asset.region.name if asset.region else None,

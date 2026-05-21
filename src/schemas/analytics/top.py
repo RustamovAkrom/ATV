@@ -13,7 +13,6 @@ class TopMetric(StrEnum):
 class TopAssetAnalyticsOut(BaseModel):
     asset_id: UUID
     asset_name: str
-    asset_tag: str | None = None
     assignment_count: int
     transfer_count: int
     repair_count: int

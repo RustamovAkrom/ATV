@@ -24,28 +24,28 @@ from db.models.users.user import User
 from db.models.warehouse.warehouse import Warehouse
 
 
-async def ensure_role_with_permissions(dbsession, role_code: str) -> Role:
+async def ensure_role_with_permissions(dbsession, role_slug: str) -> Role:
     # Query with explicit selectinload to avoid lazy loading issues
     result = await dbsession.execute(
         select(Role)
-        .where(Role.code == role_code)
+        .where(Role.slug == role_slug)
         .options(selectinload(Role.permissions))
     )
     role = result.scalar_one_or_none()
     if role is None:
-        role = Role(name=role_code.title(), code=role_code)
+        role = Role(name=role_slug.title(), slug=role_slug)
         dbsession.add(role)
         await dbsession.flush()
         # Refresh to load relationships after creation
         await dbsession.refresh(role, ["permissions"])
 
-    for permission_code in ROLE_PERMISSIONS.get(role_code, set()):
+    for permission_slug in ROLE_PERMISSIONS.get(role_slug, set()):
         perm_result = await dbsession.execute(
-            select(Permission).where(Permission.code == permission_code)
+            select(Permission).where(Permission.slug == permission_slug)
         )
         permission = perm_result.scalar_one_or_none()
         if permission is None:
-            permission = Permission(name=permission_code, code=permission_code)
+            permission = Permission(name=permission_slug, slug=permission_slug)
             dbsession.add(permission)
             await dbsession.flush()
         if permission not in role.permissions:
@@ -56,9 +56,9 @@ async def ensure_role_with_permissions(dbsession, role_code: str) -> Role:
 
 
 async def create_user_with_role(
-    dbsession, *, login_prefix: str, role_code: str, password: str = "password"
+    dbsession, *, login_prefix: str, role_slug: str, password: str = "password"
 ) -> User:
-    role = await ensure_role_with_permissions(dbsession, role_code)
+    role = await ensure_role_with_permissions(dbsession, role_slug)
     suffix = uuid4().hex[:8]
     user = User(
         login=f"{login_prefix}_{suffix}",
@@ -77,13 +77,13 @@ async def create_user_with_role(
 
 async def create_org_graph(dbsession):
     manufacturer = Manufacturer(
-        name=f"Manufacturer-{uuid4().hex[:6]}", code=f"mfg-{uuid4().hex[:6]}"
+        name=f"Manufacturer-{uuid4().hex[:6]}", slug=f"mfg-{uuid4().hex[:6]}"
     )
     category = AssetCategory(
-        name=f"Category-{uuid4().hex[:6]}", code=f"cat-{uuid4().hex[:6]}"
+        name=f"Category-{uuid4().hex[:6]}", slug=f"cat-{uuid4().hex[:6]}"
     )
     asset_class = AssetClass(
-        name=f"Class-{uuid4().hex[:6]}", code=f"class-{uuid4().hex[:6]}"
+        name=f"Class-{uuid4().hex[:6]}", slug=f"class-{uuid4().hex[:6]}"
     )
     region = Region(
         name=f"Region-{uuid4().hex[:6]}",
@@ -91,7 +91,7 @@ async def create_org_graph(dbsession):
         longitude=69.28,
         geojson={"type": "Point", "coordinates": [69.28, 41.31]},
     )
-    service = Service(name=f"Service-{uuid4().hex[:6]}", code=f"svc-{uuid4().hex[:6]}")
+    service = Service(name=f"Service-{uuid4().hex[:6]}", slug=f"svc-{uuid4().hex[:6]}")
     dbsession.add_all([manufacturer, category, asset_class, region, service])
     await dbsession.flush()
     await dbsession.execute(
@@ -100,7 +100,7 @@ async def create_org_graph(dbsession):
 
     model = AssetModel(
         name=f"Model-{uuid4().hex[:6]}",
-        code=f"model-{uuid4().hex[:6]}",
+        slug=f"model-{uuid4().hex[:6]}",
         manufacturer_id=manufacturer.id,
         category_id=category.id,
         lifetime_years=5,
@@ -111,7 +111,7 @@ async def create_org_graph(dbsession):
 
     warehouse = Warehouse(
         name=f"Warehouse-{uuid4().hex[:6]}",
-        code=f"wh-{uuid4().hex[:6]}",
+        slug=f"wh-{uuid4().hex[:6]}",
         region_id=region.id,
         service_id=service.id,
         is_active=True,
@@ -144,22 +144,21 @@ async def create_asset(
     if owner and status == AssetStatus.ACTIVE:
         normalized_status = AssetStatus.ASSIGNED
 
-    asset = Asset(
-        name=f"{name}-{suffix}",
-        type="laptop",
-        model_id=graph["model"].id,
-        class_id=graph["asset_class"].id,
-        region_id=graph["region"].id,
-        service_id=graph["service"].id,
-        current_warehouse_id=graph["warehouse"].id,
-        owner_id=owner.id if owner else None,
-        status=normalized_status,
-        asset_tag=f"AT-{suffix}",
-        serial_number=f"SN-{uuid4().hex[:10]}",
-        condition_percent=95,
-        purchase_cost=Decimal(str(purchase_cost)),
-        meta={"source": "test"},
-    )
+    asset_data = {
+        "name": f"{name}-{suffix}",
+        "model_id": graph["model"].id,
+        "class_id": graph["asset_class"].id,
+        "region_id": graph["region"].id,
+        "service_id": graph["service"].id,
+        "current_warehouse_id": graph["warehouse"].id,
+        "owner_id": owner.id if owner else None,
+        "status": normalized_status,
+        "serial_number": f"SN-{uuid4().hex[:10]}",
+        "condition_percent": 95,
+        "purchase_cost": Decimal(str(purchase_cost)),
+        "meta": {"source": "test"},
+    }
+    asset = Asset(**asset_data)
     dbsession.add(asset)
     await dbsession.flush()
     return asset

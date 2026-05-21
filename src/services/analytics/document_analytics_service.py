@@ -1,10 +1,10 @@
 from repositories.analytics.document_analytics_repo import DocumentAnalyticsRepository
 from schemas.analytics.common import AnalyticsFilters
 from schemas.auth import CurrentUserSchema
-from services.analytics._scope import validate_filters
+from services.analytics.base_analytics_service import BaseAnalyticsService
 
 
-class DocumentAnalyticsDomainService:
+class DocumentAnalyticsDomainService(BaseAnalyticsService):
     REQUIRED_COMPLIANCE_DOCUMENT_TYPES = [
         "passport",
         "warranty",
@@ -15,7 +15,7 @@ class DocumentAnalyticsDomainService:
         self.repo = repo
 
     async def get(self, filters: AnalyticsFilters, user: CurrentUserSchema):
-        validate_filters(filters, user)
+        self.validate_filters(filters, user)
         return await self.repo.metrics(
             filters.region_id,
             filters.service_id,

@@ -1,3 +1,4 @@
+# api/dependencies/events/asset.py
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,13 +13,12 @@ from services.assets.asset_history_service import AssetHistoryService
 
 def get_asset_event_service(
     base: BaseEventService = Depends(get_base_event_service),
-    asset_history_service: AssetHistoryService = Depends(get_asset_history_service),
-    notification_dispatcher: NotificationDispatcher = Depends(
-        get_notification_dispatcher
-    ),
+    history: AssetHistoryService = Depends(get_asset_history_service),
+    notifications: NotificationDispatcher = Depends(get_notification_dispatcher),
 ) -> AssetEventService:
+    """DI для AssetEventService."""
     return AssetEventService(
         base=base,
-        history=asset_history_service,
-        notifications=notification_dispatcher,
+        history=history,
+        notifications=notifications,
     )

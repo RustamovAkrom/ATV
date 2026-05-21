@@ -4,7 +4,9 @@ from sqlalchemy import Column, ForeignKey, String, Table, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from db.base import Base, TimestampMixin, UUIDMixing
+from db.base import Base
+from db.mixins import TimestampMixin, UUIDMixing, SlugMixin
+
 
 if TYPE_CHECKING:
     from .user import User
@@ -46,13 +48,12 @@ user_permissions = Table(
 )
 
 
-class Role(Base, UUIDMixing, TimestampMixin):
+class Role(Base, UUIDMixing, TimestampMixin, SlugMixin):
     __tablename__ = "roles"
+    __role_permissions_table__ = "role_permissions"
+
     name: Mapped[str] = mapped_column(
         String(100), unique=True, nullable=False, index=True
-    )
-    code: Mapped[str] = mapped_column(
-        String(50), unique=True, nullable=False, index=True
     )
     description: Mapped[str | None] = mapped_column(Text(), nullable=True)
 
@@ -71,13 +72,10 @@ class Role(Base, UUIDMixing, TimestampMixin):
         return self.name
 
 
-class Permission(Base, UUIDMixing, TimestampMixin):
+class Permission(Base, UUIDMixing, TimestampMixin, SlugMixin):
     __tablename__ = "permissions"
     name: Mapped[str] = mapped_column(
         String(255), nullable=False, unique=True, index=True
-    )
-    code: Mapped[str] = mapped_column(
-        String(50), nullable=False, unique=True, index=True
     )
     description: Mapped[str | None] = mapped_column(Text(), nullable=True)
 

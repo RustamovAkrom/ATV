@@ -1,4 +1,5 @@
 from uuid import UUID
+import json
 
 from repositories.analytics.region_analytics_repo import RegionAnalyticsRepository
 from schemas.analytics.regions import (
@@ -18,12 +19,20 @@ class RegionAnalyticsService:
 
     @staticmethod
     def _to_overview(row) -> RegionOverviewOut:
+        geojson = getattr(row, "geojson", None)
+        if isinstance(geojson, str):
+            try:
+                geojson = json.loads(geojson)
+            except (TypeError, ValueError):
+                geojson = None
+        if geojson is not None and not isinstance(geojson, dict):
+            geojson = None
         return RegionOverviewOut(
             region_id=row.id,
             region_name=row.name,
             latitude=row.latitude,
             longitude=row.longitude,
-            geojson=row.geojson,
+            geojson=geojson,
             asset_counts=RegionAssetStatusCounts(
                 active=int(row.active_assets or 0),
                 assigned=int(row.assigned_assets or 0),
@@ -61,7 +70,7 @@ class RegionAnalyticsService:
             RegionAssetCostSummaryOut(
                 asset_id=row.id,
                 asset_name=row.name,
-                asset_tag=row.asset_tag,
+                asset_tag=getattr(row, "asset_tag", None),
                 purchase_cost=float(row.purchase_cost or 0),
                 repair_cost=float(row.repair_cost or 0),
                 total_cost=float((row.purchase_cost or 0) + (row.repair_cost or 0)),

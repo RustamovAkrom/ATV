@@ -1,22 +1,16 @@
 from fastapi import APIRouter
 
 from api.v1.analytics.alerts import router as alert_analytics_router
-from api.v1.analytics.analytics_endpoints import router as intelligence_analytics_router
-from api.v1.analytics.approvals import router as approvals_analytics_v2_router
 from api.v1.analytics.asset_history import router as asset_history_analytics_router
-from api.v1.analytics.assets import router as assets_analytics_v2_router
+from api.v1.analytics.assets import router as assets_analytics_router
 from api.v1.analytics.assignment_analytics import router as assignment_analytics_router
 from api.v1.analytics.costs import router as costs_analytics_router
-from api.v1.analytics.dashboard.router import router as dashboard_v2_router
-from api.v1.analytics.documents import router as documents_analytics_v2_router
+from api.v1.analytics.dashboard import router as dashboard_analytics_router
 from api.v1.analytics.forecast import router as forecast_analytics_router
 from api.v1.analytics.regions import router as regions_analytics_router
-from api.v1.analytics.repairs import router as repairs_analytics_v2_router
-from api.v1.analytics.reports import router as reports_analytics_v2_router
 from api.v1.analytics.top import router as top_analytics_router
 from api.v1.analytics.transfer_analytics import router as transfer_analytics_router
 from api.v1.analytics.trends import router as trends_analytics_router
-from api.v1.analytics.utilization import router as utilization_analytics_v2_router
 from api.v1.approvals import router as approvals_router
 from api.v1.assets.asset import router as assets_router
 from api.v1.assets.asset_categories import router as asset_category_router
@@ -33,11 +27,15 @@ from api.v1.users.user import router as users_router
 from api.v1.notifications import router as notifications_router
 from api.v1.assets.asset_documents import router as documents_router
 from api.v1.assets.asset_repairs import router as asset_repairs_router
-from api.v1.assets.asset_warehouse import router as asset_warehouse_router
 from api.v1.approvals.requests import router as approval_requests_router
-from api.v1.expenses import router as expenses_router
+from api.v1.assets.expenses import router as expenses_router
 from api.v1.organization.regions import router as regions_router
 from api.v1.organization.services import router as services_router
+from api.v1.assets.warehouses import router as warehouse_router
+from api.v1.assets.asset_images import router as asset_image_router
+
+from api.v1.assets.asset_maintenances import router as asset_maintenances_router
+
 
 router = APIRouter()
 
@@ -55,7 +53,13 @@ router.include_router(notifications_router)
 router.include_router(approvals_router)
 router.include_router(assets_router)
 router.include_router(asset_repairs_router)
-router.include_router(asset_warehouse_router)
+router.include_router(asset_maintenances_router)
+
+# Asset Images
+router.include_router(asset_image_router)
+
+# Warehouse
+router.include_router(warehouse_router)
 
 # Asset approval requests
 router.include_router(approval_requests_router)
@@ -77,23 +81,17 @@ router.include_router(services_router)
 router.include_router(expenses_router)
 
 # Analytics (READ) - CQRS Read Layer
-router.include_router(intelligence_analytics_router)
+router.include_router(assets_analytics_router)
 router.include_router(alert_analytics_router)
-router.include_router(assets_analytics_v2_router)
 router.include_router(assignment_analytics_router)
 router.include_router(asset_history_analytics_router)
 router.include_router(costs_analytics_router)
+router.include_router(dashboard_analytics_router)
 router.include_router(forecast_analytics_router)
 router.include_router(regions_analytics_router)
-router.include_router(repairs_analytics_v2_router)
 router.include_router(top_analytics_router)
 router.include_router(transfer_analytics_router)
 router.include_router(trends_analytics_router)
-router.include_router(approvals_analytics_v2_router)
-router.include_router(documents_analytics_v2_router)
-router.include_router(utilization_analytics_v2_router)
-router.include_router(dashboard_v2_router)
-router.include_router(reports_analytics_v2_router)
 
 # System Audit
 router.include_router(audit_log_router)

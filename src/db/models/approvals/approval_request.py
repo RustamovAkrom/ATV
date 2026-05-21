@@ -9,14 +9,13 @@ from sqlalchemy import (
     Enum as SAEnum,
     ForeignKey,
     String,
-    Integer,
     Index,
 )
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.sql import func
 
-from db.base import Base, UUIDMixing, TimestampMixin
+from db.base import Base
+from db.mixins import UUIDMixing, TimestampMixin
 from db.models.enums import ApprovalStatus
 
 if TYPE_CHECKING:

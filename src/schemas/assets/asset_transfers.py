@@ -1,12 +1,14 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import Field, model_validator
 
 from db.models.enums import TransferStatus
+from schemas.base import BaseSchema
 
 
-class AssetTransferCreate(BaseModel):
+class AssetTransferCreate(BaseSchema):
+    from_warehouse_id: UUID | None = Field(None, description="Source warehouse")
     to_warehouse_id: UUID | None = None
     to_service_id: UUID | None = None
     comment: str | None = Field(default=None, max_length=255)
@@ -15,14 +17,17 @@ class AssetTransferCreate(BaseModel):
     def validate_destination(self):
         if self.to_warehouse_id is None and self.to_service_id is None:
             raise ValueError("Transfer requires a target warehouse or service")
+
+        if self.to_warehouse_id is not None and self.to_service_id is not None:
+            raise ValueError("Transfer cannot have both warehouse and service targets")
         return self
 
 
-class AssetTransferDecision(BaseModel):
+class AssetTransferDecision(BaseSchema):
     comment: str | None = Field(default=None, max_length=255)
 
 
-class AssetTransferSchema(BaseModel):
+class AssetTransferSchema(BaseSchema):
     id: UUID
     asset_id: UUID
     created_by_id: UUID
@@ -36,5 +41,3 @@ class AssetTransferSchema(BaseModel):
     transferred_at: datetime
     created_at: datetime
     updated_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)

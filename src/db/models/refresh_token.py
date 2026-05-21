@@ -6,7 +6,8 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
-from db.base import Base, UUIDMixing
+from db.base import Base
+from db.mixins import UUIDMixing
 
 if TYPE_CHECKING:
     from db.models.users.user import User

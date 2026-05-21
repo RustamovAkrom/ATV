@@ -1,5 +1,3 @@
-# services/asset_model_service.py
-
 from uuid import UUID
 
 from core.exceptions.errors import BadRequest, NotFound
@@ -10,7 +8,7 @@ from repositories.assets.manufacturer_repo import ManufacturerRepository
 from schemas.assets.asset_model import AssetModelCreateSchema
 from utils.slug import slugify
 from utils.validators import (
-    ensure_unique_code,
+    ensure_unique_slug,
     normalize_name,
     safe_create,
     validate_name,
@@ -44,12 +42,12 @@ class AssetModelService:
             raise BadRequest("Model already exists for this manufacturer")
 
         # 3. slug
-        code = slugify(name)
-        if not code:
+        slug = slugify(name)
+        if not slug:
             raise BadRequest("Invalid name")
 
-        # 4. check code (global)
-        await ensure_unique_code(self.repo, code)
+        # 4. check slug (global)
+        await ensure_unique_slug(self.repo, slug)
 
         # 5. FK checks
         manufacturer = await self.manufacturer_repo.get(data.manufacturer_id)
@@ -63,7 +61,7 @@ class AssetModelService:
         # 6. create
         obj = AssetModel(
             name=name,
-            code=code,
+            slug=slug,
             manufacturer_id=data.manufacturer_id,
             category_id=data.category_id,
             lifetime_years=data.lifetime_years,

@@ -23,8 +23,12 @@ from db.models.enums import UserRole, UserStatus
 from db.models.users.permission import Permission, Role
 from db.models.users.user import User
 from tests.utils.auth import login
+from schemas.auth.auth import CurrentUserSchema
 
-pytest_plugins = ("tests.fixtures.analytics",)
+pytest_plugins = (
+    "tests.fixtures.analytics",
+    "tests.fixtures.maintenance",
+)
 
 
 # ---------------- ENGINE ----------------
@@ -126,14 +130,14 @@ async def client(
 async def create_user(dbsession):
     async def _create(login="test_user", password="password"):
         role_result = await dbsession.execute(
-            select(Role).where(Role.code == UserRole.SUPERADMIN.value)
+            select(Role).where(Role.slug == UserRole.SUPERADMIN.value)
         )
         role = role_result.scalar_one_or_none()
 
         if not role:
             role = Role(
                 name="SuperAdmin",
-                code=UserRole.SUPERADMIN.value,
+                slug=UserRole.SUPERADMIN.value,
             )
         dbsession.add(role)
         await dbsession.flush()
@@ -176,7 +180,7 @@ async def superadmin_token(client: AsyncClient, superadmin):
 
 @pytest.fixture
 async def permission_id(dbsession):
-    perm = Permission(name="Test", code="test_perm")
+    perm = Permission(name="Test", slug="test_perm")
     dbsession.add(perm)
     await dbsession.commit()
     return perm.id
@@ -189,7 +193,7 @@ async def permission_id(dbsession):
 async def role_id(client, superadmin_token):
     res = await client.post(
         "/rbac/roles",
-        json={"name": "TestRole", "code": "testrole"},
+        json={"name": "TestRole", "slug": "testrole"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     return res.json()["id"]
@@ -197,7 +201,7 @@ async def role_id(client, superadmin_token):
 
 @pytest.fixture
 async def role_with_users(dbsession):
-    role = Role(name="RoleWithUsers", code="role_with_users")
+    role = Role(name="RoleWithUsers", slug="role_with_users")
     dbsession.add(role)
     await dbsession.flush()
 
@@ -234,3 +238,14 @@ async def approver_token(create_user, client):
     assert response.status_code == 200
 
     return response.json()["access_token"]
+
+
+@pytest.fixture
+def mock_actor():
+    return CurrentUserSchema(
+        id=uuid4(),
+        role="superadmin",
+        permissions=[],
+        assigned_region_id=None,
+        assigned_service_id=None,
+    )

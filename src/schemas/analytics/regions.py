@@ -36,7 +36,6 @@ class RegionServiceLoadOut(BaseModel):
 class RegionAssetCostSummaryOut(BaseModel):
     asset_id: UUID
     asset_name: str
-    asset_tag: str | None = None
     purchase_cost: float
     repair_cost: float
     total_cost: float

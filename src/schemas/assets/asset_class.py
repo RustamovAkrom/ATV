@@ -2,18 +2,18 @@
 
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+from schemas.base import BaseSchema
 
 
-class AssetClassCreateSchema(BaseModel):
+class AssetClassCreateSchema(BaseSchema):
     name: str = Field(min_length=2, max_length=150)
+    slug: str
     description: str | None = None
 
 
-class AssetClassOutSchema(BaseModel):
+class AssetClassOutSchema(BaseSchema):
     id: UUID
     name: str
-    code: str
+    slug: str
     description: str | None
-
-    model_config = ConfigDict(from_attributes=True)

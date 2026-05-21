@@ -1,10 +1,9 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from api.dependencies.rbac import get_rbac_service
 
-# Используем наши пресеты для гибкого управления
 from core.security.rbac.presets import UserPermissions, RBACPermissions
 from schemas.auth import CurrentUserSchema
 from schemas.rbac.rbac import (
@@ -16,15 +15,13 @@ from schemas.rbac.rbac import (
 )
 from services.rbac.rbac_service import RBACService
 from schemas.common import StatusResponse
+from core.slowapi import limiter
 
 router = APIRouter(prefix="/rbac", tags=["RBAC"])
-
-# --- ЧТЕНИЕ (Доступно тем, кто управляет пользователями или аудитом) ---
 
 
 @router.get("/roles", response_model=list[RoleOutSchema])
 async def list_roles(
-    # Позволяем просмотр тем, у кого есть права на просмотр ролей (Админы/Суперы)
     _: CurrentUserSchema = Depends(UserPermissions.CanViewUsers),
     service: RBACService = Depends(get_rbac_service),
 ):
@@ -41,9 +38,10 @@ async def list_permissions(
 
 
 @router.post("/roles", response_model=RoleOutSchema)
+@limiter.limit("10/minute")
 async def create_role(
+    request: Request,
     data: RoleCreateSchema,
-    # Здесь нужна максимальная привилегия
     _: CurrentUserSchema = Depends(RBACPermissions.CanManageRoles),
     service: RBACService = Depends(get_rbac_service),
 ):
@@ -51,7 +49,9 @@ async def create_role(
 
 
 @router.patch("/roles/{role_id}", response_model=RoleOutSchema)
+@limiter.limit("20/minute")
 async def update_role(
+    request: Request,
     role_id: UUID,
     data: RoleUpdateSchema,
     _: CurrentUserSchema = Depends(RBACPermissions.CanManageRoles),
@@ -61,7 +61,9 @@ async def update_role(
 
 
 @router.delete("/roles/{role_id}", response_model=StatusResponse)
+@limiter.limit("5/minute")
 async def delete_role(
+    request: Request,
     role_id: UUID,
     _: CurrentUserSchema = Depends(RBACPermissions.CanManageRoles),
     service: RBACService = Depends(get_rbac_service),
@@ -71,10 +73,11 @@ async def delete_role(
 
 
 @router.put("/roles/{role_id}/permissions", response_model=RoleOutSchema)
+@limiter.limit("10/minute")
 async def set_role_permissions(
+    request: Request,
     role_id: UUID,
     data: RolePermissionsUpdateSchema,
-    # Изменение матрицы прав — самая опасная операция
     _: CurrentUserSchema = Depends(RBACPermissions.CanManageRoles),
     service: RBACService = Depends(get_rbac_service),
 ):

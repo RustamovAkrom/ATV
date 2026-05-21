@@ -8,4 +8,6 @@ from .assets import (
     AssetTransferAdmin,
     ManufacturerAdmin,
     WarehouseAdmin,
+    AssetImageAdmin,
+    AssetMaintenanceAdmin,
 )

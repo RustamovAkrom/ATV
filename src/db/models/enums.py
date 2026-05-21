@@ -1,6 +1,24 @@
 from enum import StrEnum
 
 
+class UserGender(StrEnum):
+    MALE = "male"
+    FEMALE = "female"
+
+
+class UserLanguage(StrEnum):
+    RU = "ru"
+    UZ = "uz"
+    EN = "en"
+
+
+class EmploymentType(StrEnum):
+    FULL_TIME = "full_time"
+    PART_TIME = "part_time"
+    CONTRACTOR = "contractor"
+    INTERN = "intern"
+
+
 class UserRole(StrEnum):
     SUPERADMIN = "superadmin"
     ADMIN = "admin"
@@ -58,7 +76,7 @@ class TaskStatus(StrEnum):
 class DocumentStatus(StrEnum):
     DRAFT = "draft"
     ACTIVE = "active"
-    APPROVED = "archived"
+    APPROVED = "approved"
 
 
 class ApprovalStatus(StrEnum):

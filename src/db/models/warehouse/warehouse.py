@@ -6,7 +6,8 @@ from uuid import UUID
 from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from db.base import Base, TimestampMixin, UUIDMixing
+from db.base import Base
+from db.mixins import TimestampMixin, UUIDMixing, SlugMixin
 
 if TYPE_CHECKING:
     from db.models.assets.asset import Asset
@@ -15,12 +16,10 @@ if TYPE_CHECKING:
     from db.models.users.user import User
 
 
-class Warehouse(Base, UUIDMixing, TimestampMixin):
+class Warehouse(Base, UUIDMixing, TimestampMixin, SlugMixin):
     __tablename__ = "warehouses"
 
     name: Mapped[str] = mapped_column(String(150), nullable=False)
-    code: Mapped[str | None] = mapped_column(String(50), unique=True)
-
     region_id: Mapped[UUID] = mapped_column(
         ForeignKey("regions.id", ondelete="RESTRICT"), nullable=False
     )

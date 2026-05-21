@@ -1,21 +1,19 @@
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from schemas.base import BaseSchema
 
 
-class AssetCategoryCreateSchema(BaseModel):
+class AssetCategoryCreateSchema(BaseSchema):
     name: str
-    # code: str
+    slug: str
 
 
-class AssetCategoryUpdateSchema(BaseModel):
+class AssetCategoryUpdateSchema(BaseSchema):
     name: str | None = None
-    code: str | None = None
+    slug: str | None = None
 
 
-class AssetCategoryOutSchema(BaseModel):
+class AssetCategoryOutSchema(BaseSchema):
     id: UUID
     name: str
-    code: str
-
-    model_config = ConfigDict(from_attributes=True)
+    slug: str

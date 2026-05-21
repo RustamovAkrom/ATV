@@ -25,8 +25,8 @@ class RBACRepository(BaseRepository):
             .where(Role.id == role_id)
         )
 
-    async def exists_by_code(self, code: str, exclude_id: UUID | None = None) -> bool:
-        stmt = select(Role.id).where(Role.code == code)
+    async def exists_by_slug(self, slug: str, exclude_id: UUID | None = None) -> bool:
+        stmt = select(Role.id).where(Role.slug == slug)
         if exclude_id:
             stmt = stmt.where(Role.id != exclude_id)
 

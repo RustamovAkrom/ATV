@@ -7,7 +7,8 @@ from uuid import UUID
 from sqlalchemy import ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
-from db.base import Base, UUIDMixing
+from db.base import Base
+from db.mixins import UUIDMixing
 
 if TYPE_CHECKING:
     pass

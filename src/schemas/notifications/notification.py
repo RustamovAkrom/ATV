@@ -1,10 +1,11 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
+from schemas.base import BaseSchema
 
 
-class NotificationSchema(BaseModel):
+class NotificationSchema(BaseSchema):
     id: UUID
     type: str
     title: str
@@ -17,7 +18,7 @@ class NotificationSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class NotificationCreate(BaseModel):
+class NotificationCreate(BaseSchema):
     user_id: UUID
     type: str
     title: str
@@ -25,10 +26,10 @@ class NotificationCreate(BaseModel):
     data: dict = {}
 
 
-class NotificationFilter(BaseModel):
+class NotificationFilter(BaseSchema):
     is_read: bool | None = None
 
 
-class UnreadCountResponseSchema(BaseModel):
+class UnreadCountResponseSchema(BaseSchema):
     count: int
     model_config = ConfigDict(from_attributes=True)

@@ -15,11 +15,11 @@ class ManufacturerService:
         return await self.repo.list()
 
     async def create(self, data: ManufacturerCreateSchema):
-        name, code = await validate_and_prepare(self.repo, data.name)
+        name, slug = await validate_and_prepare(self.repo, data.name)
 
         obj = Manufacturer(
             name=name,
-            code=code,
+            slug=slug,
             country=data.country,
             website=str(data.website) if data.website else None,
         )

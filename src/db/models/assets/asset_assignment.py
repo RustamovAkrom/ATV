@@ -7,7 +7,8 @@ from sqlalchemy import DateTime, ForeignKey, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
-from db.base import Base, UUIDMixing
+from db.base import Base
+from db.mixins import UUIDMixing
 
 if TYPE_CHECKING:
     from db.models.assets.asset import Asset

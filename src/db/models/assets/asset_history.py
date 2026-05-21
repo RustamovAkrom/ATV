@@ -1,11 +1,11 @@
-from datetime import datetime
 from uuid import UUID
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from db.base import Base, UUIDMixin, TimestampMixin
+from db.base import Base
+from db.mixins import UUIDMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from db.models.assets.asset import Asset

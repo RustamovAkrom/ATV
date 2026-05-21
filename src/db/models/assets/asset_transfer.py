@@ -6,7 +6,8 @@ from sqlalchemy import DateTime, Enum as SAEnum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
-from db.base import Base, TimestampMixin, UUIDMixing
+from db.base import Base
+from db.mixins import TimestampMixin, UUIDMixing
 from db.models.enums import TransferStatus
 
 

@@ -1,5 +1,7 @@
 from sqladmin import Admin
 from fastapi import FastAPI
+from starlette.middleware.sessions import SessionMiddleware
+from starlette.templating import Jinja2Templates
 from core.database.db_sync import get_db_sync_engine
 
 from core.admin.views.users import UserAdmin, PermissionAdmin, RoleAdmin
@@ -13,13 +15,14 @@ from core.admin.views.assets import (
     AssetTransferAdmin,
     ManufacturerAdmin,
     WarehouseAdmin,
+    AssetImageAdmin,
+    AssetMaintenanceAdmin,
 )
 from core.admin.views.assets.documents import DocumentAdmin, DocumentFileAdmin
 from core.admin.views.assets.org import RegionAdmin, ServiceAdmin
 from core.admin.views.assets.repairs import RepairAdmin, RepairPartAdmin
 from core.admin.views.assets.misc import AuditLogAdmin, NotificationAdmin, RefreshTokenAdmin, SystemConfigAdmin
 from core.admin.views.assets.approvals import ApprovalRequestAdmin
-from core.admin.views.assets.dashboard import DashboardView
 from core.admin.auth import AdminAuth
 
 from core.config import Settings
@@ -28,12 +31,18 @@ from core.config import Settings
 def setup_admin(app: FastAPI, settings: Settings):
     engine = get_db_sync_engine()
     authentication_backend = AdminAuth(secret_key=settings.SECRET_KEY)
+
+    # Добавляем SessionMiddleware отдельно (правильный способ)
+    app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
+
+    # Подключаем кастомную директорию с шаблонами
     admin = Admin(
         app,
         engine,
-        title="IIB ATV Admin Panel",
+        title="IIV ATV Admin Panel",
         base_url="/admin",
         authentication_backend=authentication_backend,
+        templates_dir="src/templates",
     )
 
     # Users
@@ -51,6 +60,10 @@ def setup_admin(app: FastAPI, settings: Settings):
     admin.add_view(AssetTransferAdmin)
     admin.add_view(ManufacturerAdmin)
     admin.add_view(WarehouseAdmin)
+    admin.add_view(AssetMaintenanceAdmin)
+
+    # Asset Images
+    admin.add_view(AssetImageAdmin)
 
     # Documents
     admin.add_view(DocumentAdmin)
@@ -70,8 +83,5 @@ def setup_admin(app: FastAPI, settings: Settings):
     admin.add_view(RefreshTokenAdmin)
     admin.add_view(SystemConfigAdmin)
     admin.add_view(ApprovalRequestAdmin)
-
-    # Dashboard
-    admin.add_view(DashboardView)
 
     return admin

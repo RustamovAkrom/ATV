@@ -42,7 +42,6 @@ class AssetAssignmentOut(BaseModel):
     id: UUID
     asset_id: UUID
     asset_name: str
-    asset_tag: str | None
     user_id: UUID
     user_name: str
     user_email: str

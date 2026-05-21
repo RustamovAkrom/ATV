@@ -1,5 +1,3 @@
-# services/analytics/asset_transfer_analytics_service.py
-
 from decimal import Decimal
 from uuid import UUID
 
@@ -20,7 +18,7 @@ from schemas.analytics.asset_transfer_analytics import (
     TransferStatusBreakdown,
     WarehouseTransferMetrics,
 )
-from schemas.pagination import PageOutSchema, PaginationParamsSchema, build_page
+from schemas.pagination import PageOutSchema, PaginationParamsSchema
 from utils.helpers import utc_now
 
 
@@ -40,8 +38,7 @@ class AssetTransferAnalyticsService:
 
         items = [self._to_transfer_out(t) for t in transfers]
 
-        return build_page(
-            schema=PageOutSchema[AssetTransferOut],
+        return PageOutSchema(
             items=items,
             total=total,
             page=pagination.page,
@@ -60,8 +57,7 @@ class AssetTransferAnalyticsService:
 
         items = [self._to_transfer_out(t) for t in transfers]
 
-        return build_page(
-            schema=PageOutSchema[AssetTransferOut],
+        return PageOutSchema(
             items=items,
             total=total,
             page=pagination.page,
@@ -208,7 +204,6 @@ class AssetTransferAnalyticsService:
             id=transfer.id,
             asset_id=transfer.asset_id,
             asset_name=transfer.asset.name if transfer.asset else "Unknown",
-            asset_tag=transfer.asset.asset_tag if transfer.asset else None,
             status=transfer.status.value,
             from_warehouse_name=(
                 transfer.from_warehouse.name if transfer.from_warehouse else None
@@ -240,7 +235,6 @@ class AssetTransferAnalyticsService:
         return TransferBottleneck(
             transfer_id=transfer.id,
             asset_name=transfer.asset.name if transfer.asset else "Unknown",
-            asset_tag=transfer.asset.asset_tag if transfer.asset else None,
             status=transfer.status.value,
             pending_days=pending_days,
             created_by_name=(

@@ -21,6 +21,12 @@ class AuditLogAdmin(BaseAdmin, model=AuditLog):
         "created_at",
     ]
 
+    column_sortable_list = [
+        "created_at",
+        "latency_ms",
+    ]
+
+
 
 class NotificationAdmin(BaseAdmin, model=Notification):
     name = "Notification"

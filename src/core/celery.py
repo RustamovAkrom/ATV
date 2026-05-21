@@ -2,6 +2,9 @@ from celery import Celery
 
 from core.config import get_settings
 from core.logger import configure_logger
+from db.models import load_all_models
+
+load_all_models()
 
 logger = configure_logger()
 settings = get_settings()

@@ -34,7 +34,7 @@ async def list_approvals(
     return await service.list(status, pagination)
 
 
-@router.post(
+@router.post( # BU togridan togri frontenda ishlatilmaydi
     "/", response_model=ApprovalSchema, dependencies=[Depends(AssetApprovalPermissions.CanCreateApprovals)]
 )
 async def create_approval(

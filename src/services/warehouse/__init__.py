@@ -1,1 +1,0 @@
-"""Warehouse service module."""

@@ -1,23 +1,18 @@
 from uuid import UUID
 
-from core.events.base import BaseEventService
+from core.events.domain_event_service import DomainEventService
 from core.notifications.builder import NotificationBuilder
-from core.notifications.dispatcher import NotificationDispatcher
-from services.assets.asset_history_service import AssetHistoryService
 
 
-class RepairEventService:
-    def __init__(
+class RepairEventService(DomainEventService):
+
+    async def reported(
         self,
-        base: BaseEventService,
-        history: AssetHistoryService,
-        notifications: NotificationDispatcher,
+        *,
+        asset_id: UUID,
+        repair_id: UUID,
+        actor_id: UUID
     ):
-        self.base = base
-        self.history = history
-        self.notifications = notifications
-
-    async def reported(self, *, asset_id: UUID, repair_id: UUID, actor_id: UUID):
         await self.base.execute(
             history=lambda: self.history.log(
                 asset_id,

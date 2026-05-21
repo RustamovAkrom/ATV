@@ -146,4 +146,8 @@ class AuthService:
                 exp=datetime.fromtimestamp(payload.exp, tz=UTC),
             )
 
+        tokens = await self.auth_repo.get_by_user(user_id)
+        for token in tokens:
+            await get_blacklist().add(jti=token.id, exp=token.expires_at)
+
         await self.auth_repo.revoke_all_by_user(user_id)

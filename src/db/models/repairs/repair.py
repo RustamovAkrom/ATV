@@ -8,7 +8,8 @@ from uuid import UUID
 from sqlalchemy import DateTime, Enum as SAEnum, ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
-from db.base import Base, TimestampMixin, UUIDMixing
+from db.base import Base
+from db.mixins import TimestampMixin, UUIDMixing
 from db.models.enums import RepairStatus
 
 if TYPE_CHECKING:

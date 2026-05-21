@@ -1,29 +1,117 @@
+from datetime import datetime
+from typing import Any
 from uuid import UUID
 
-from core.exceptions.errors import BadRequest, NotFound
-from repositories.warehouse.warehouse_repo import WarehouseRepository
-from schemas.assets.warehouses import WarehouseMoveRequest
 from core.events.warehouse_events import WarehouseEventService
+from core.exceptions.errors import BadRequest, Conflict, NotFound
+from db.models.warehouse.warehouse import Warehouse
+from repositories.assets.asset_repo import AssetRepository
+from repositories.assets.warehouse_repo import WarehouseRepository
+from schemas.assets.part import PartCreateSchema
+from schemas.assets.stock import StockMovementCreateSchema
+from schemas.assets.warehouses import (
+    WarehouseCreateSchema,
+    WarehouseMoveRequest,
+    WarehouseOutSchema,
+    WarehouseUpdateSchema,
+    WarehouseWithDetailsOutSchema,
+)
 from schemas.auth.auth import CurrentUserSchema
+from schemas.pagination import PaginationParamsSchema
+from core.security.access_control import AccessControl
 
 
 class WarehouseService:
     def __init__(
         self,
         repo: WarehouseRepository,
-        warehouse_events: WarehouseEventService
+        asset_repo: AssetRepository,
+        warehouse_events: WarehouseEventService,
     ):
         self.repo = repo
+        self.asset_repo = asset_repo
         self.warehouse_events = warehouse_events
 
+    async def list_warehouses(
+        self,
+        pagination: PaginationParamsSchema,
+        region_id: UUID | None = None,
+        service_id: UUID | None = None,
+        is_active: bool | None = None,
+    ) -> tuple[list[WarehouseOutSchema], int]:
+        warehouses, total = await self.repo.list(
+            region_id=region_id,
+            service_id=service_id,
+            is_active=is_active,
+            limit=pagination.limit,
+            offset=pagination.offset(),
+        )
+
+        items = []
+        for warehouse in warehouses:
+            assets_count = await self.repo.get_assets_count(warehouse.id)
+            items.append(self._to_out_schema(warehouse, assets_count))
+
+        return items, total
+
+    async def get_warehouse(self, warehouse_id: UUID) -> WarehouseWithDetailsOutSchema:
+        warehouse = await self.repo.get(warehouse_id)
+        if not warehouse:
+            raise NotFound(f"Warehouse {warehouse_id} not found")
+
+        assets_count = await self.repo.get_assets_count(warehouse_id)
+        return self._to_details_schema(warehouse, assets_count)
+
+    async def create_warehouse(self, data: WarehouseCreateSchema) -> WarehouseOutSchema:
+        if data.slug and await self.repo.check_slug_exists(data.slug):
+            raise Conflict(f"Warehouse with slug '{data.slug}' already exists")
+
+        warehouse = await self.repo.create(data.model_dump(exclude_unset=True))
+        return self._to_out_schema(warehouse)
+
+    async def update_warehouse(
+        self,
+        warehouse_id: UUID,
+        data: WarehouseUpdateSchema | dict[str, Any],
+    ) -> WarehouseOutSchema:
+        warehouse = await self.repo.get(warehouse_id)
+        if not warehouse:
+            raise NotFound(f"Warehouse {warehouse_id} not found")
+
+        if isinstance(data, dict):
+            data = WarehouseUpdateSchema(**data)
+
+        if data.slug and await self.repo.check_slug_exists(data.slug, exclude_id=warehouse_id):
+            raise Conflict(f"Warehouse with slug '{data.slug}' already exists")
+
+        update_data = data.model_dump(exclude_unset=True)
+        updated = await self.repo.update(warehouse_id, update_data)
+        return self._to_out_schema(updated)
+
+    async def delete_warehouse(self, warehouse_id: UUID) -> None:
+        warehouse = await self.repo.get(warehouse_id)
+        if not warehouse:
+            raise NotFound(f"Warehouse {warehouse_id} not found")
+
+        assets_count = await self.repo.get_assets_count(warehouse_id)
+        if assets_count > 0:
+            raise Conflict(f"Cannot delete warehouse with {assets_count} assets")
+
+        await self.repo.delete(warehouse_id)
+
     async def move_asset_to_warehouse(
-        self, asset_id: UUID, data: WarehouseMoveRequest, actor: CurrentUserSchema
+        self,
+        asset_id: UUID,
+        data: WarehouseMoveRequest,
+        actor: CurrentUserSchema,
     ) -> UUID:
-        asset = await self.repo.get_asset(asset_id)
+        asset = await self.asset_repo.get_by_id(asset_id)
         if not asset:
             raise NotFound("Asset not found")
+        AccessControl.check_region_access(actor, asset.region_id)
+        AccessControl.check_service_access(actor, asset.service_id)
 
-        warehouse = await self.repo.get_warehouse(data.warehouse_id)
+        warehouse = await self.repo.get(data.warehouse_id)
         if not warehouse:
             raise NotFound("Warehouse not found")
 
@@ -41,8 +129,7 @@ class WarehouseService:
             raise BadRequest("Warehouse service is incompatible with asset service")
 
         asset.current_warehouse_id = warehouse.id
-
-        await self.repo.flush()
+        await self.asset_repo.flush()
 
         await self.warehouse_events.asset_moved_to_warehouse(
             asset_id=asset.id,
@@ -52,3 +139,224 @@ class WarehouseService:
         )
 
         return asset.id
+
+    def _to_out_schema(self, warehouse: Warehouse, assets_count: int = 0) -> WarehouseOutSchema:
+        created_at = getattr(warehouse, "created_at", datetime.utcnow())
+        updated_at = getattr(warehouse, "updated_at", created_at)
+        return WarehouseOutSchema(
+            id=warehouse.id,
+            name=warehouse.name,
+            slug=getattr(warehouse, "slug", None),
+            region_id=warehouse.region_id,
+            service_id=getattr(warehouse, "service_id", None),
+            manager_user_id=getattr(warehouse, "manager_user_id", None),
+            is_active=getattr(warehouse, "is_active", True),
+            created_at=created_at,
+            updated_at=updated_at,
+            assets_count=assets_count,
+        )
+
+    def _to_details_schema(
+        self,
+        warehouse: Warehouse,
+        assets_count: int = 0,
+    ) -> WarehouseWithDetailsOutSchema:
+        created_at = getattr(warehouse, "created_at", datetime.utcnow())
+        updated_at = getattr(warehouse, "updated_at", created_at)
+        return WarehouseWithDetailsOutSchema(
+            id=warehouse.id,
+            name=warehouse.name,
+            slug=getattr(warehouse, "slug", None),
+            region_id=warehouse.region_id,
+            service_id=getattr(warehouse, "service_id", None),
+            manager_user_id=getattr(warehouse, "manager_user_id", None),
+            is_active=getattr(warehouse, "is_active", True),
+            created_at=created_at,
+            updated_at=updated_at,
+            assets_count=assets_count,
+            region_name=getattr(getattr(warehouse, "region", None), "name", None),
+            service_name=getattr(getattr(warehouse, "service", None), "name", None),
+            manager_name=getattr(getattr(warehouse, "manager_user", None), "full_name", None),
+        )
+
+    async def create_warehouse_legacy(
+        self,
+        name: str,
+        region_id: UUID,
+        slug: str | None = None,
+    ) -> WarehouseOutSchema:
+        data = WarehouseCreateSchema(name=name, region_id=region_id, slug=slug)
+        return await self.create_warehouse(data)
+
+    async def get_warehouse_legacy(self, warehouse_id: UUID) -> WarehouseWithDetailsOutSchema:
+        return await self.get_warehouse(warehouse_id)
+
+    async def update_warehouse_legacy(
+        self,
+        warehouse_id: UUID,
+        data: dict[str, Any],
+    ) -> WarehouseOutSchema:
+        update_data = WarehouseUpdateSchema(**data)
+        return await self.update_warehouse(warehouse_id, update_data)
+
+    async def delete_warehouse_legacy(self, warehouse_id: UUID) -> None:
+        await self.delete_warehouse(warehouse_id)
+
+    async def record_stock_in(
+        self,
+        warehouse_id: UUID,
+        part_id: UUID,
+        quantity: int,
+        user_id: UUID,
+    ) -> dict[str, Any]:
+        if quantity <= 0:
+            raise BadRequest("Quantity must be greater than zero")
+        data = StockMovementCreateSchema(quantity=quantity, reference_type="manual")
+        movement = await self.repo.record_stock_in(
+            warehouse_id=warehouse_id,
+            part_id=part_id,
+            quantity=data.quantity,
+            reference_type=data.reference_type,
+            reference_id=data.reference_id,
+            moved_by=user_id,
+        )
+        return self._to_movement_dict(movement)
+
+    async def record_stock_out(
+        self,
+        warehouse_id: UUID,
+        part_id: UUID,
+        quantity: int,
+        user_id: UUID,
+    ) -> dict[str, Any]:
+        if quantity <= 0:
+            raise BadRequest("Quantity must be greater than zero")
+        data = StockMovementCreateSchema(quantity=quantity, reference_type="manual")
+        movement = await self.repo.record_stock_out(
+            warehouse_id=warehouse_id,
+            part_id=part_id,
+            quantity=data.quantity,
+            reference_type=data.reference_type,
+            reference_id=data.reference_id,
+            moved_by=user_id,
+        )
+        return self._to_movement_dict(movement)
+
+    async def get_warehouse_stock(self, warehouse_id: UUID) -> list[dict[str, Any]]:
+        rows = await self.repo.get_warehouse_stock(warehouse_id)
+        items: list[dict[str, Any]] = []
+        for part_id, name, code, quantity, threshold, unit_price in rows:
+            status = "low" if quantity <= threshold else "ok"
+            items.append(
+                {
+                    "part_id": str(part_id),
+                    "name": name,
+                    "code": code,
+                    "quantity": quantity,
+                    "threshold": threshold,
+                    "unit_price": unit_price,
+                    "status": status,
+                }
+            )
+        return items
+
+    async def get_warehouse_movements(
+        self,
+        warehouse_id: UUID,
+        movement_type: str | None = None,
+        page: int = 1,
+        size: int = 20,
+    ) -> dict[str, Any]:
+        items, total = await self.repo.get_warehouse_movements(
+            warehouse_id=warehouse_id,
+            movement_type=movement_type,
+            page=page,
+            size=size,
+        )
+        return {
+            "items": [self._to_movement_dict(item) for item in items],
+            "total": total,
+            "page": page,
+            "size": size,
+        }
+
+    async def get_part_movements(self, warehouse_id: UUID, part_id: UUID) -> list[dict[str, Any]]:
+        items = await self.repo.get_part_movements(warehouse_id, part_id)
+        return [self._to_movement_dict(item) for item in items]
+
+    async def create_part(
+        self,
+        name: str,
+        slug: str | None = None,
+        unit_price: float | None = None,
+    ) -> dict[str, Any]:
+        data = PartCreateSchema(name=name, code=slug, unit_price=unit_price)
+        part = await self.repo.create_part(
+            name=data.name,
+            slug=data.code,
+            description=data.description,
+            unit_price=data.unit_price,
+        )
+        return self._to_part_dict(part)
+
+    async def list_parts(
+        self,
+        warehouse_id: UUID | None = None,
+        page: int = 1,
+        size: int = 20,
+    ) -> dict[str, Any]:
+        items, total = await self.repo.list_parts(warehouse_id=warehouse_id, page=page, size=size)
+        return {
+            "items": [self._to_part_dict(item) for item in items],
+            "total": total,
+            "page": page,
+            "size": size,
+        }
+
+    async def get_part(self, part_id: UUID) -> dict[str, Any]:
+        part = await self.repo.get_part_by_id(part_id)
+        if not part:
+            raise NotFound(f"Part {part_id} not found")
+        return self._to_part_dict(part)
+
+    async def update_part(self, part_id: UUID, data: dict[str, Any]) -> dict[str, Any]:
+        part = await self.repo.get_part_by_id(part_id)
+        if not part:
+            raise NotFound(f"Part {part_id} not found")
+        updated = await self.repo.update_part(part_id, data)
+        return self._to_part_dict(updated)
+
+    async def delete_part(self, part_id: UUID) -> None:
+        part = await self.repo.get_part_by_id(part_id)
+        if not part:
+            raise NotFound(f"Part {part_id} not found")
+        await self.repo.delete_part(part_id)
+
+    @staticmethod
+    def _to_movement_dict(movement: Any) -> dict[str, Any]:
+        return {
+            "id": str(movement.id),
+            "warehouse_id": str(movement.warehouse_id),
+            "part_id": str(movement.part_id),
+            "movement_type": movement.movement_type,
+            "quantity": movement.quantity,
+            "reference_type": getattr(movement, "reference_type", None),
+            "reference_id": (
+                str(getattr(movement, "reference_id", ""))
+                if getattr(movement, "reference_id", None)
+                else None
+            ),
+            "moved_by": str(movement.moved_by),
+            "moved_at": movement.moved_at,
+        }
+
+    @staticmethod
+    def _to_part_dict(part: Any) -> dict[str, Any]:
+        return {
+            "id": str(part.id),
+            "name": part.name,
+            "slug": getattr(part, "slug", None),
+            "description": getattr(part, "description", None),
+            "unit_price": getattr(part, "unit_price", None),
+            "created_at": getattr(part, "created_at", None),
+        }

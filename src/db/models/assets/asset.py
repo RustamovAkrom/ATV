@@ -4,16 +4,21 @@ from datetime import date
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
+from sqlalchemy.ext.hybrid import hybrid_property
 
-from sqlalchemy import Date, Enum as SAEnum, ForeignKey, Integer, Numeric, String, text
+from sqlalchemy import Date, Enum as SAEnum, ForeignKey, Integer, Numeric, String, text, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship, synonym, validates
 
-from db.base import Base, TimestampMixin, UUIDMixing
+from db.base import Base
+from db.mixins import TimestampMixin, UUIDMixing, SlugMixin
 from db.models.documents.document import Document
 from db.models.enums import AssetStatus
 from db.models.repairs.repair import Repair
 from db.models.warehouse.warehouse import Warehouse
+from db.models.assets.asset_image import AssetImage
+from db.models.assets.asset_maintenance import AssetMaintenance
+
 
 if TYPE_CHECKING:
     from db.models.assets.asset_assignment import AssetAssignment
@@ -26,14 +31,12 @@ if TYPE_CHECKING:
     from db.models.users.user import User
 
 
-class Asset(Base, UUIDMixing, TimestampMixin):
+class Asset(Base, UUIDMixing, TimestampMixin, SlugMixin):
     __tablename__ = "assets"
 
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
 
     # Identifiers
-    asset_tag: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
     serial_number: Mapped[str | None] = mapped_column(
         String(255), unique=True, index=True
     )
@@ -163,6 +166,18 @@ class Asset(Base, UUIDMixing, TimestampMixin):
         lazy="selectin",
         cascade="all, delete-orphan",
     )
+    images: Mapped[list["AssetImage"]] = relationship(
+        "AssetImage",
+        back_populates="asset",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        order_by="AssetImage.sort_order",
+    )
+
+    maintenances: Mapped[list["AssetMaintenance"]] = relationship(
+        "AssetMaintenance", back_populates="asset", lazy="selectin",
+        cascade="all, delete-orphan"
+    )
 
     responsible_user_id = synonym("owner_id")
     responsible_user = synonym("owner")
@@ -180,6 +195,22 @@ class Asset(Base, UUIDMixing, TimestampMixin):
         if value == AssetStatus.ACTIVE and self.owner_id is not None:
             raise ValueError("ACTIVE asset cannot have owner_id")
         return value
+
+    @hybrid_property
+    def age_years(self) -> float | None:
+        if self.commission_date:
+            return (date.today() - self.commission_date).days / 365.25
+        return None
+
+    @property
+    def is_under_warranty(self) -> bool:
+        "Check warranty"
+        return self.warranty_end and self.warranty_end >= date.today()
+
+    __table_args__ = (
+        Index('ix_assets_status_region', 'status', 'region_id'),
+        Index('ix_assets_service_class', 'service_id', 'class_id'),
+    )
 
     def __repr__(self):
         return self.name

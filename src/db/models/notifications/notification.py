@@ -5,7 +5,8 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
-from db.base import Base, UUIDMixing
+from db.base import Base
+from db.mixins import UUIDMixing
 
 
 class Notification(Base, UUIDMixing):

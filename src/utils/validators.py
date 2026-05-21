@@ -33,8 +33,8 @@ async def ensure_unique_name(repo, normalized: str):
         raise BadRequest("Already exists")
 
 
-async def ensure_unique_code(repo, code: str):
-    existing = await repo.get_by_code(code)
+async def ensure_unique_slug(repo, slug: str):
+    existing = await repo.get_by_slug(slug)
     if existing:
         raise BadRequest("Similar entity already exists")
 
@@ -57,13 +57,12 @@ async def validate_and_prepare(repo, name: str):
     await ensure_unique_name(repo, normalized)
 
     # 3. generate slug
-    code = slugify(name)
+    slug = slugify(name)
 
-    # 🔥 ВАЖНЫЙ ФИКС
-    if not code:
+    if not slug:
         raise BadRequest("Invalid name")
 
-    # 4. check code
-    await ensure_unique_code(repo, code)
+    # 4. check slug
+    await ensure_unique_slug(repo, slug)
 
-    return name, code
+    return name, slug

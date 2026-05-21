@@ -1,0 +1,78 @@
+{% extends "sqladmin/layout.html" %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fa-solid fa-microchip fa-4x text-primary mb-3"></i>
+                    <h1 class="display-4 mb-3">IIV ATV</h1>
+                    <h4 class="text-muted mb-4">Asset Management System</h4>
+                    <p class="lead">Welcome to the Administrative Dashboard</p>
+                    <hr class="my-4 w-25 mx-auto">
+                    <p class="text-muted">
+                        Manage assets, users, repairs, expenses, and track equipment lifecycle.
+                    </p>
+                    <div class="mt-4">
+                        <a href="/admin/asset/list" class="btn btn-primary mx-1">
+                            <i class="fa-solid fa-microchip me-2"></i>Assets
+                        </a>
+                        <a href="/admin/user/list" class="btn btn-success mx-1">
+                            <i class="fa-solid fa-users me-2"></i>Users
+                        </a>
+                        <a href="/admin/repair/list" class="btn btn-warning mx-1">
+                            <i class="fa-solid fa-screwdriver-wrench me-2"></i>Repairs
+                        </a>
+                        <a href="/admin/expense/list" class="btn btn-danger mx-1">
+                            <i class="fa-solid fa-dollar-sign me-2"></i>Expenses
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fa-solid fa-chart-line fa-2x text-primary mb-3"></i>
+                    <h5>Analytics</h5>
+                    <p class="text-muted">View equipment statistics and reports</p>
+                    <a href="/admin/analytics" class="btn btn-sm btn-outline-primary">View Reports</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fa-solid fa-warehouse fa-2x text-success mb-3"></i>
+                    <h5>Warehouse</h5>
+                    <p class="text-muted">Manage storage and inventory</p>
+                    <a href="/admin/warehouse/list" class="btn btn-sm btn-outline-success">Go to Warehouse</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fa-solid fa-sliders-h fa-2x text-warning mb-3"></i>
+                    <h5>Settings</h5>
+                    <p class="text-muted">System configuration and preferences</p>
+                    <a href="/admin/system-config/list" class="btn btn-sm btn-outline-warning">Configure</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="fa-solid fa-circle-info me-2"></i>
+                For full system documentation, please refer to the <a href="#" class="alert-link">user guide</a>.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

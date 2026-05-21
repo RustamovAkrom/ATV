@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 
-from api.dependencies.assets.assets import (
+from api.dependencies.assets.asset import (
     get_asset_service,
     get_bulk_asset_service,
 )
@@ -92,7 +92,7 @@ async def bulk_assign_assets(
     actor: CurrentUserSchema = Depends(get_current_user),
     service: BulkAssetService = Depends(get_bulk_asset_service),
 ):
-    return await service.bulk_assign(data.asset_ids, data.user_id, actor)
+    return await service.bulk_assign(data.asset_ids, data.user_id, actor, atomic=data.atomic)
 
 
 @router.post(
@@ -105,7 +105,7 @@ async def bulk_transfer_assets(
     actor: CurrentUserSchema = Depends(get_current_user),
     service: BulkAssetService = Depends(get_bulk_asset_service),
 ):
-    return await service.bulk_transfer(data.asset_ids, data.transfer, actor)
+    return await service.bulk_transfer(data.asset_ids, data.transfer, actor, atomic=data.atomic)
 
 
 @router.post(
@@ -118,7 +118,7 @@ async def bulk_update_asset_status(
     service: BulkAssetService = Depends(get_bulk_asset_service),
 ):
     return await service.bulk_update_status(
-        data.asset_ids, data.status, actor
+        data.asset_ids, data.status, actor, atomic=data.atomic
     )
 
 

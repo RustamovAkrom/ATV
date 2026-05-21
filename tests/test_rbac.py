@@ -1,23 +1,23 @@
 async def test_create_role(client, superadmin_token):
     res = await client.post(
         "/rbac/roles",
-        json={"name": "Admin", "code": "admin"},
+        json={"name": "Admin", "slug": "admin"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert res.status_code == 200
-    assert res.json()["code"] == "admin"
+    assert res.json()["slug"] == "admin"
 
 
-async def test_duplicate_role_code(client, superadmin_token):
+async def test_duplicate_role_slug(client, superadmin_token):
     await client.post(
         "/rbac/roles",
-        json={"name": "Admin", "code": "admin"},
+        json={"name": "Admin", "slug": "admin"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
 
     res = await client.post(
         "/rbac/roles",
-        json={"name": "Admin2", "code": "admin"},
+        json={"name": "Admin2", "slug": "admin"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
 

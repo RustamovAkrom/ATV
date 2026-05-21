@@ -25,6 +25,7 @@ class AssetTransferService:
         asset_id: UUID,
         data: AssetTransferCreate,
         actor: CurrentUserSchema,
+        requested_by_id: UUID | None = None,
     ) -> AssetTransferSchema:
         asset = await self.repo.get_asset_for_update(asset_id)
         if not asset:
@@ -62,7 +63,7 @@ class AssetTransferService:
 
         transfer = AssetTransfer(
             asset_id=asset.id,
-            created_by_id=actor.id,
+            created_by_id=requested_by_id or actor.id,
             status=TransferStatus.PENDING,
             from_warehouse_id=asset.current_warehouse_id,
             to_warehouse_id=data.to_warehouse_id,

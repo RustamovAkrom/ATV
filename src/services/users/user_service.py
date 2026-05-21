@@ -7,10 +7,11 @@ from db.models.users import User
 from repositories.rbac.rbac_repo import RBACRepository
 from repositories.users.user_repo import UserRepository
 from schemas.pagination import PaginationParamsSchema
-from schemas.users.users import (
+from schemas.users.user import (
     AdminUserUpdateSchema,
     UserCreateSchema,
     UserUpdateSchema,
+    UserAvatarUpdateSchema
 )
 from utils.helpers import utc_now
 
@@ -52,6 +53,16 @@ class UserService:
             first_name=data.first_name,
             last_name=data.last_name,
             status=UserStatus.ACTIVE.value,
+            position=data.position,
+            department=data.department,
+            employment_type=data.employment_type,
+            date_of_birth=data.date_of_birth,
+            gender=data.gender,
+            badge_number=data.badge_number,
+            passport_number=data.passport_number,
+            hired_at=data.hired_at,
+            language=data.language,
+            timezone=data.timezone,
         )
         user = await self.user_repo.create(user)
         return user
@@ -61,9 +72,17 @@ class UserService:
         if not user:
             raise NotFound("User not found")
 
+        update_data = data.model_dump(exclude_unset=True)
+        await self.user_repo.update(user_id, update_data)
+
+        return await self.get(user_id)
+
+    async def update_avatar(self, user_id: UUID, data: UserAvatarUpdateSchema):
+        user = await self.get(user_id)
+
         await self.user_repo.update(
             user_id,
-            data.model_dump(exclude_unset=True),
+            {"avatar_url": data.avatar_url}
         )
 
         return await self.get(user_id)
@@ -76,11 +95,8 @@ class UserService:
             if not role:
                 raise BadRequest("Invalid role")
 
-        await self.user_repo.update(
-            user_id,
-            data.model_dump(exclude_unset=True),
-        )
-
+        update_data = data.model_dump( exclude_unset=True )
+        await self.user_repo.update( user_id, update_data )
         return await self.get(user_id)
 
     async def change_password(

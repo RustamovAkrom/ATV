@@ -21,6 +21,8 @@ class RegionAdmin(BaseAdmin, model=Region):
         "created_at",
     ]
 
+    form_excluded_columns = ["slug", "created_at", "updated_at"]
+
 
 class ServiceAdmin(BaseAdmin, model=Service):
     name = "Service"
@@ -31,4 +33,6 @@ class ServiceAdmin(BaseAdmin, model=Service):
     can_create = True
     can_delete = True
 
-    column_list = ["id", "name", "code", "created_at"]
+    column_list = ["id", "name", "slug", "created_at"]
+
+    form_excluded_columns = ["slug", "created_at", "updated_at"]

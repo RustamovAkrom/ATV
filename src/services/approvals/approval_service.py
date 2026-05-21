@@ -1,11 +1,9 @@
-# services/assets/approval_service.py
-
 from uuid import UUID
 
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import or_, select
 from typing import List
-from core.exceptions.errors import BadRequest, NotFound, PermissionDenied
+from core.exceptions.errors import BadRequest, NotFound
 from db.models.approvals.approval_request import ApprovalRequest
 from db.models.enums import ApprovalStatus, AssetStatus, UserStatus
 from db.models.users.permission import Role
@@ -22,7 +20,8 @@ from schemas.assets.asset_transfers import AssetTransferCreate
 from schemas.assets.assets import AssetStatusChangeRequest
 from schemas.assets.repairs import RepairCompleteRequest
 from utils.helpers import utc_now
-from schemas.pagination import PaginationParamsSchema, PageOutSchema, build_page
+from schemas.pagination import PaginationParamsSchema, PageOutSchema
+from schemas.assets.warehouses import WarehouseMoveRequest
 from schemas.auth.auth import CurrentUserSchema
 from core.security.rbac.permissions import Permissions
 from core.security.rbac.guards import check_permissions
@@ -31,8 +30,9 @@ from services.assets.asset_service import AssetService
 from services.assets.repair_service import RepairService
 from services.assets.asset_transfer_service import AssetTransferService
 from services.assets.asset_assignment_service import AssetAssignmentService
-from core.notifications.builder import NotificationBuilder
-from core.notifications.dispatcher import NotificationDispatcher
+from services.assets.warehouse_service import WarehouseService
+from core.events.approval_events import ApprovalEventService
+from db.models.assets.asset import Asset
 
 
 class ApprovalService:
@@ -44,14 +44,16 @@ class ApprovalService:
         transfer_service: AssetTransferService,
         repair_service: RepairService,
         asset_assignment_service: AssetAssignmentService,
-        notification_dispatcher: NotificationDispatcher,
+        warehouse_service: WarehouseService,
+        approval_events: ApprovalEventService,
     ):
         self.approval_repo = approval_repo
         self.asset_service = asset_service
         self.transfer_service = transfer_service
         self.repair_service = repair_service
         self.asset_assignment_service = asset_assignment_service
-        self.notification_dispatcher = notification_dispatcher
+        self.warehouse_service = warehouse_service
+        self.approval_events = approval_events
 
     async def list(
         self,
@@ -60,8 +62,7 @@ class ApprovalService:
     ):
         items, total = await self.approval_repo.list(status, pagination)
 
-        return build_page(
-            schema=PageOutSchema[ApprovalSchema],
+        return PageOutSchema(
             items=[
                 ApprovalSchema.model_validate(i, from_attributes=True) for i in items
             ],
@@ -102,15 +103,14 @@ class ApprovalService:
 
         approvers = await self._get_approvers(asset, requester_id=actor.id)
 
-        for uid in approvers:
-            await self.notification_dispatcher.dispatch(
-                NotificationBuilder.approval_requested(
-                    user_id=uid,
-                    entity_type=approval.entity_type,
-                    entity_id=approval.entity_id,
-                    action=approval.action,
-                )
-            )
+        await self.approval_events.requested(
+            approval_id=approval.id,
+            entity_type=approval.entity_type,
+            entity_id=approval.entity_id,
+            action=approval.action,
+            requester_id=actor.id,
+            approver_ids=approvers,
+        )
 
         return ApprovalSchema.model_validate(approval, from_attributes=True)
 
@@ -148,14 +148,14 @@ class ApprovalService:
                 approval.payload = payload
             await self.approval_repo.flush()
 
-        # Create Notification
-        payload = NotificationBuilder.approval_approved(
-            user_id=approval.created_by_id,
+        await self.approval_events.approved(
+            approval_id=approval.id,
             entity_type=approval.entity_type,
             entity_id=approval.entity_id,
             action=approval.action,
+            requester_id=approval.created_by_id,
+            approver_id=actor.id,
         )
-        await self.notification_dispatcher.dispatch(payload)
 
         return ApprovalSchema.model_validate(approval, from_attributes=True)
 
@@ -182,14 +182,15 @@ class ApprovalService:
 
             await self.approval_repo.flush()
 
-        # Create notification
-        payload = NotificationBuilder.approval_rejected(
-            user_id=approval.created_by_id,
+        await self.approval_events.rejected(
+            approval_id=approval.id,
             entity_type=approval.entity_type,
             entity_id=approval.entity_id,
             action=approval.action,
+            requester_id=approval.created_by_id,
+            approver_id=actor.id,
+            reason=comment,
         )
-        await self.notification_dispatcher.dispatch(payload)
 
         return ApprovalSchema.model_validate(approval, from_attributes=True)
 
@@ -215,13 +216,14 @@ class ApprovalService:
         return approval
 
     def _validate_request(self, data: ApprovalCreate) -> dict:
-
+        # TODO: Takomilashtirish kerak pydantic ishlatish kerak bazoviy supported methodlarni yozib qoyish kerak yana qoshimcha methodlarni qoshish imkoniyatiniyam kirgizish kerak avtomatik bolishi shart hamasi qulay va tushinarli sodda bolishi kerak
         supported = {
             ("asset_assignment", "assign"),
             ("asset_transfer", "create_transfer"),
             ("asset_archive", "archive"),
             ("asset_delete", "delete"),
             ("repair", "complete_repair"),
+            ("asset", "move_to_warehouse"),
         }
 
         entity_type = data.entity_type.strip().lower()
@@ -265,6 +267,13 @@ class ApprovalService:
                     )
                 )
 
+            if key == ("asset", "move_to_warehouse"):
+                return jsonable_encoder(
+                    WarehouseMoveRequest(**data.payload).model_dump(
+                        exclude_none=True
+                    )
+                )
+
         except Exception as exc:
             raise BadRequest(f"Invalid payload: {exc}") from exc
 
@@ -279,6 +288,7 @@ class ApprovalService:
         if not isinstance(payload, dict):
             raise BadRequest("Invalid payload format")
 
+        # asset_assignment
         if approval.entity_type == "asset_assignment":
             user_id = payload.get("user_id")
             if not user_id:
@@ -297,13 +307,22 @@ class ApprovalService:
                     UUID(str(user_id)),
                     actor,
                 )
+            await self.approval_events.executed(
+                approval_id=approval.id,
+                entity_type=approval.entity_type,
+                entity_id=approval.entity_id,
+                action=approval.action,
+                requester_id=approval.created_by_id,
+            )
             return
 
+        # asset_transfer
         if approval.entity_type == "asset_transfer":
             transfer = await self.transfer_service.create_transfer(
                 approval.entity_id,
                 AssetTransferCreate(**payload),
                 actor,
+                requested_by_id=approval.created_by_id,
             )
             await self.transfer_service.approve_transfer(
                 approval.entity_id,
@@ -311,20 +330,45 @@ class ApprovalService:
                 actor,
                 comment=payload.get("comment"),
             )
-            return
-
-        if approval.entity_type == "asset_archive":
-            await self.asset_service.change_status(
-                approval.entity_id,
-                AssetStatusChangeRequest(status=AssetStatus.ARCHIVED),
-                actor,
+            await self.approval_events.executed(
+                approval_id=approval.id,
+                entity_type=approval.entity_type,
+                entity_id=approval.entity_id,
+                action=approval.action,
+                requester_id=approval.created_by_id,
             )
             return
 
-        if approval.entity_type == "asset_delete":
-            await self.asset_service.delete(approval.entity_id, actor)
+        # asset_archive
+        if approval.entity_type == "asset_archive":
+            status_request = AssetStatusChangeRequest(status=AssetStatus.ARCHIVED)
+            await self.asset_service.change_status(
+                approval.entity_id,
+                status_request,
+                actor,
+            )
+            await self.approval_events.executed(
+                approval_id=approval.id,
+                entity_type=approval.entity_type,
+                entity_id=approval.entity_id,
+                action=approval.action,
+                requester_id=approval.created_by_id,
+            )
             return
 
+        # asset_delete
+        if approval.entity_type == "asset_delete":
+            await self.asset_service.delete(approval.entity_id, actor)
+            await self.approval_events.executed(
+                approval_id=approval.id,
+                entity_type=approval.entity_type,
+                entity_id=approval.entity_id,
+                action=approval.action,
+                requester_id=approval.created_by_id,
+            )
+            return
+
+        # repair
         if approval.entity_type == "repair":
             repair_id = UUID(str(payload["repair_id"]))
             payload.pop("repair_id")
@@ -335,11 +379,35 @@ class ApprovalService:
                 RepairCompleteRequest(**payload),
                 actor,
             )
+            await self.approval_events.executed(
+                approval_id=approval.id,
+                entity_type=approval.entity_type,
+                entity_id=approval.entity_id,
+                action=approval.action,
+                requester_id=approval.created_by_id,
+            )
             return
+
+        # asset -> move_to_warehouse
+        if approval.entity_type == "asset":
+            if approval.action == "move_to_warehouse":
+                await self.warehouse_service.move_asset_to_warehouse(
+                    approval.entity_id,
+                    WarehouseMoveRequest(**payload),
+                    actor,
+                )
+                await self.approval_events.executed(
+                    approval_id=approval.id,
+                    entity_type=approval.entity_type,
+                    entity_id=approval.entity_id,
+                    action=approval.action,
+                    requester_id=approval.created_by_id,
+                )
+                return
 
         raise BadRequest("Unsupported execution")
 
-    async def _get_approvers(self, asset, requester_id: UUID) -> List[UUID]:
+    async def _get_approvers(self, asset: Asset, requester_id: UUID) -> List[UUID]:
         result = await self.approval_repo.session.execute(
             select(User)
             .join(Role, User.role_id == Role.id)
@@ -362,7 +430,7 @@ class ApprovalService:
             for user in users
             if user.role
             and any(
-                str(getattr(p, "code", "")).lower() == Permissions.APPROVALS_APPROVE
+                str(getattr(p, "slug", "")).lower() == Permissions.APPROVALS_APPROVE
                 for p in (user.role.permissions or [])
             )
         ]

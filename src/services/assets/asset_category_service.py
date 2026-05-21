@@ -13,11 +13,11 @@ class AssetCategoryService:
         return await self.repo.list()
 
     async def create(self, data: AssetCategoryCreateSchema):
-        name, code = await validate_and_prepare(self.repo, data.name)
+        name, slug = await validate_and_prepare(self.repo, data.name)
 
         obj = AssetCategory(
             name=name,
-            code=code,
+            slug=slug,
         )
 
         return await safe_create(self.repo, obj)

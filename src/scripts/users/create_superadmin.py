@@ -53,7 +53,7 @@ async def create_superadmin(db: AsyncSession):
     # get role
     # -------------------------
     role_result = await db.execute(
-        select(Role).where(Role.code == UserRole.SUPERADMIN.value)
+        select(Role).where(Role.slug == UserRole.SUPERADMIN.value)
     )
     role = role_result.scalar_one_or_none()
 

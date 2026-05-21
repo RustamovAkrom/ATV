@@ -1,1 +1,8 @@
-from .documents import *  # noqa
+from .document import (
+    DocumentFileCreateSchema,
+    DocumentFileOutSchema,
+    AssetDocumentCreateSchema,
+    AssetDocumentUpdateSchema,
+    AssetDocumentOutSchema,
+    AssetDocumentWithFilesOutSchema,
+)

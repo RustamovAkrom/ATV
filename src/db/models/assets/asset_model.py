@@ -4,8 +4,8 @@ from uuid import UUID
 from sqlalchemy import ForeignKey, Index, Integer, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
-from db.base import Base, TimestampMixin, UUIDMixing
-from db.models.mixins.slug_mixin import SlugMixin
+from db.base import Base
+from db.mixins import TimestampMixin, UUIDMixing, SlugMixin
 
 if TYPE_CHECKING:
     from .asset import Asset
@@ -17,7 +17,6 @@ class AssetModel(Base, UUIDMixing, TimestampMixin, SlugMixin):
     __tablename__ = "asset_models"
 
     name: Mapped[str] = mapped_column(String(150), index=True)
-    code: Mapped[str] = mapped_column(String(150), unique=True)
 
     manufacturer_id: Mapped[UUID] = mapped_column(
         ForeignKey("manufacturers.id", ondelete="RESTRICT"), nullable=False, index=True

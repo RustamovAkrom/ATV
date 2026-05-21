@@ -19,9 +19,9 @@ class ManufacturerRepository(BaseRepository):
             select(Manufacturer).where(Manufacturer.id == manufacturer_id)
         )
 
-    async def get_by_code(self, code: str):
+    async def get_by_slug(self, slug: str):
         return await self.scalar(
-            select(Manufacturer).where(Manufacturer.code == code)
+            select(Manufacturer).where(Manufacturer.slug == slug)
         )
 
     async def get_by_normalized_name(self, normalized: str):

@@ -1,15 +1,15 @@
 from repositories.analytics.utilization_analytics_repo import UtilizationAnalyticsRepository
 from schemas.analytics.common import AnalyticsFilters
 from schemas.auth import CurrentUserSchema
-from services.analytics._scope import validate_filters
+from services.analytics.base_analytics_service import BaseAnalyticsService
 
 
-class UtilizationAnalyticsDomainService:
+class UtilizationAnalyticsDomainService(BaseAnalyticsService):
     def __init__(self, repo: UtilizationAnalyticsRepository):
         self.repo = repo
 
     async def get(self, filters: AnalyticsFilters, user: CurrentUserSchema):
-        validate_filters(filters, user)
+        self.validate_filters(filters, user)
         raw = await self.repo.metrics(
             filters.region_id,
             filters.service_id,

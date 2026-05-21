@@ -21,9 +21,9 @@ class AssetClassRepository(BaseRepository):
             select(AssetClass).where(AssetClass.id == class_id)
         )
 
-    async def get_by_code(self, code: str):
+    async def get_by_slug(self, slug: str):
         return await self.scalar(
-            select(AssetClass).where(AssetClass.code == code)
+            select(AssetClass).where(AssetClass.slug == slug)
         )
 
     async def get_by_normalized_name(self, normalized: str):

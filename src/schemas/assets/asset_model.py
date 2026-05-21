@@ -1,9 +1,10 @@
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+from schemas.base import BaseSchema
 
 
-class AssetModelCreateSchema(BaseModel):
+class AssetModelCreateSchema(BaseSchema):
     name: str
     manufacturer_id: UUID
     category_id: UUID
@@ -12,15 +13,13 @@ class AssetModelCreateSchema(BaseModel):
     warranty_months: int | None = Field(default=None, ge=0)
 
 
-class AssetModelOutSchema(BaseModel):
+class AssetModelOutSchema(BaseSchema):
     id: UUID
     name: str
-    code: str
+    slug: str
 
     manufacturer_id: UUID
     category_id: UUID
 
     lifetime_years: int | None
     warranty_months: int | None
-
-    model_config = ConfigDict(from_attributes=True)

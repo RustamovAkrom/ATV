@@ -19,6 +19,7 @@ WORKDIR /app
 # copy dependenci specifications
 COPY ./pyproject.toml ./uv.lock ./
 
+
 # create and install requirements in /opt/venv (without movements)
 RUN uv sync --frozen --no-dev
 

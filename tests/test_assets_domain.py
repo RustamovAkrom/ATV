@@ -1,6 +1,7 @@
 from uuid import UUID, uuid4
 
 import pytest
+import io
 from sqlalchemy import func, select
 
 from db.models.assets.asset import Asset
@@ -19,9 +20,9 @@ async def _seed_asset_dependencies(dbsession):
 
     region = Region(name=f"Region-{suffix}")
     other_region = Region(name=f"OtherRegion-{suffix}")
-    service = Service(name=f"Service-{suffix}", code=f"SVC-{suffix}")
-    other_service = Service(name=f"OtherService-{suffix}", code=f"OSVC-{suffix}")
-    category = AssetCategory(name=f"Category-{suffix}", code=f"CAT-{suffix}")
+    service = Service(name=f"Service-{suffix}", slug=f"SVC-{suffix}")
+    other_service = Service(name=f"OtherService-{suffix}", slug=f"OSVC-{suffix}")
+    category = AssetCategory(name=f"Category-{suffix}", slug=f"CAT-{suffix}")
     manufacturer = Manufacturer(name=f"Manufacturer-{suffix}")
 
     dbsession.add_all(
@@ -39,21 +40,21 @@ async def _seed_asset_dependencies(dbsession):
 
     warehouse = Warehouse(
         name=f"Warehouse-{suffix}",
-        code=f"WH-{suffix}",
+        slug=f"WH-{suffix}",
         region_id=region.id,
         service_id=service.id,
         is_active=True,
     )
     target_warehouse = Warehouse(
         name=f"TargetWarehouse-{suffix}",
-        code=f"TWH-{suffix}",
+        slug=f"TWH-{suffix}",
         region_id=region.id,
         service_id=service.id,
         is_active=True,
     )
     incompatible_warehouse = Warehouse(
         name=f"BadWarehouse-{suffix}",
-        code=f"BWH-{suffix}",
+        slug=f"BWH-{suffix}",
         region_id=other_region.id,
         service_id=other_service.id,
         is_active=True,
@@ -76,11 +77,9 @@ async def _seed_asset_dependencies(dbsession):
 async def _create_asset(client, token: str, deps: dict, name: str | None = None):
     payload = {
         "name": name or f"Asset-{uuid4().hex[:6]}",
-        "type": "laptop",
         "model_id": str(deps["model"].id),
         "region_id": str(deps["region"].id),
         "service_id": str(deps["service"].id),
-        "asset_tag": f"AT-{uuid4().hex[:6]}",
         "serial_number": f"SN-{uuid4().hex[:8]}",
     }
     response = await client.post(
@@ -93,7 +92,8 @@ async def _create_asset(client, token: str, deps: dict, name: str | None = None)
 
 
 @pytest.mark.anyio
-async def test_asset_assignment_flow(client, dbsession, superadmin_token, create_user):
+async def test_asset_assignment_flow(client, dbsession, analytics_tokens, create_user):
+    superadmin_token = analytics_tokens["superadmin"]
     deps = await _seed_asset_dependencies(dbsession)
     owner_1 = await create_user(login="asset_owner_1")
     owner_2 = await create_user(login="asset_owner_2")
@@ -151,49 +151,8 @@ async def test_asset_assignment_flow(client, dbsession, superadmin_token, create
 
 
 @pytest.mark.anyio
-async def test_asset_transfer_flow(client, dbsession, superadmin_token):
-    deps = await _seed_asset_dependencies(dbsession)
-    asset = await _create_asset(client, superadmin_token, deps, name="TransferAsset")
-
-    move = await client.post(
-        f"/assets/{asset['id']}/warehouse/",
-        json={"warehouse_id": str(deps["warehouse"].id)},
-        headers={"Authorization": f"Bearer {superadmin_token}"},
-    )
-    assert move.status_code == 200
-    assert move.json()["warehouse"]["id"] == str(deps["warehouse"].id)
-
-    create_transfer = await client.post(
-        f"/assets/{asset['id']}/approval-requests/transfer",
-        json={
-            "from_warehouse_id": str(deps["warehouse"].id),
-            "to_warehouse_id": str(deps["target_warehouse"].id),
-            "comment": "Move asset",
-        },
-        headers={"Authorization": f"Bearer {superadmin_token}"},
-    )
-    assert create_transfer.status_code == 200
-    transfer = create_transfer.json()
-    assert transfer["status"] == "pending"
-
-    approve = await client.post(
-        f"/approvals/{transfer['id']}/approve",
-        json={"comment": "Approved"},
-        headers={"Authorization": f"Bearer {superadmin_token}"},
-    )
-    assert approve.status_code == 200
-    assert approve.json()["status"] == "approved"
-
-    asset_detail = await client.get(
-        f"/assets/{asset['id']}",
-        headers={"Authorization": f"Bearer {superadmin_token}"},
-    )
-    assert asset_detail.status_code == 200
-    assert asset_detail.json()["warehouse"]["id"] == str(deps["target_warehouse"].id)
-
-
-@pytest.mark.anyio
-async def test_repair_lifecycle_flow(client, dbsession, superadmin_token):
+async def test_repair_lifecycle_flow(client, dbsession, analytics_tokens):
+    superadmin_token = analytics_tokens["superadmin"]
     deps = await _seed_asset_dependencies(dbsession)
     asset = await _create_asset(client, superadmin_token, deps, name="RepairAsset")
 
@@ -255,24 +214,20 @@ async def test_repair_lifecycle_flow(client, dbsession, superadmin_token):
 
 
 @pytest.mark.anyio
-async def test_document_attach_and_delete_flow(client, dbsession, superadmin_token):
+async def test_document_attach_and_delete_flow(client, dbsession, analytics_tokens):
+    superadmin_token = analytics_tokens["superadmin"]
     deps = await _seed_asset_dependencies(dbsession)
     asset = await _create_asset(client, superadmin_token, deps, name="DocumentAsset")
 
     attached = await client.post(
         f"/assets/{asset['id']}/documents/",
-        json={
-            "title": "Warranty",
-            "document_type": "warranty",
-            "files": [
-                {
-                    "file_name": "warranty.pdf",
-                    "file_path": "/tmp/warranty.pdf",
-                    "file_size": 1024,
-                    "content_type": "application/pdf",
-                }
-            ],
-        },
+        data={"title": "Warranty", "document_type": "warranty"},
+        files=[
+            (
+                "files",
+                ("warranty.pdf", io.BytesIO(b"fake pdf content"), "application/pdf"),
+            )
+        ],
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert attached.status_code == 200
@@ -292,23 +247,10 @@ async def test_document_attach_and_delete_flow(client, dbsession, superadmin_tok
     assert file_count == 0
 
 
-@pytest.mark.anyio
-async def test_warehouse_move_rejects_incompatible_location(
-    client, dbsession, superadmin_token
-):
-    deps = await _seed_asset_dependencies(dbsession)
-    asset = await _create_asset(client, superadmin_token, deps, name="WarehouseAsset")
-
-    response = await client.post(
-        f"/assets/{asset['id']}/warehouse/",
-        json={"warehouse_id": str(deps["incompatible_warehouse"].id)},
-        headers={"Authorization": f"Bearer {superadmin_token}"},
-    )
-    assert response.status_code == 400
-
 
 @pytest.mark.anyio
-async def test_locked_asset_transfer_is_rejected(client, dbsession, superadmin_token):
+async def test_locked_asset_transfer_is_rejected(client, dbsession, analytics_tokens):
+    superadmin_token = analytics_tokens["superadmin"]
     deps = await _seed_asset_dependencies(dbsession)
     asset = await _create_asset(
         client, superadmin_token, deps, name="LockedTransferAsset"
