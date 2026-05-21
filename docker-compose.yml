@@ -7,11 +7,14 @@ services:
       - .env
     environment:
       ENV: ${ENV:-dev}
+      # Внутри Docker-сети используем DNS-имя сервиса, а не localhost
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
     restart: always
     volumes:
       - ./src:/app
-    ports:
-      - ${PORT:-8001}:8000
+    expose:
+      - "8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -97,6 +100,9 @@ services:
     command: /start-celeryworker
     env_file:
       - .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
     restart: always
     volumes:
       - ./src:/app
@@ -115,6 +121,9 @@ services:
     command: /start-celerybeat
     env_file:
       - .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
     restart: always
     volumes:
       - ./src:/app
@@ -133,6 +142,9 @@ services:
     command: /start-flower
     env_file:
       - .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
     restart: always
     volumes:
       - ./src:/app
@@ -145,6 +157,33 @@ services:
         condition: service_healthy
     networks:
       - backend_network
+
+  nginx:
+    build:
+      context: .
+      dockerfile: deployments/compose/nginx/Dockerfile
+    container_name: iibatv-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      web:
+        condition: service_healthy
+    volumes:
+      - ./src/static:/app/static:ro
+      - ./src/storage:/app/storage:ro
+    networks:
+      - backend_network
+    profiles:
+      - prod
+      - nginx
+    # Healthcheck: nginx должен отвечать 200 на localhost
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null --header='Host: localhost' http://127.0.0.1:80/healthcheck || wget -q -O /dev/null http://127.0.0.1:80/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   pg_data:

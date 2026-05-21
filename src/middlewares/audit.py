@@ -33,6 +33,11 @@ class AuditMiddleware:
             await self.app(scope, receive, send)
             return
 
+        # Audit fully disabled
+        if not self.settings.AUDIT_ENABLED:
+            await self.app(scope, receive, send)
+            return
+
         request = Request(scope, receive)
         start = time.perf_counter()
 

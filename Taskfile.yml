@@ -19,29 +19,29 @@ tasks:
     cmds:
       - docker compose down
 
-  db-reset:
-    desc: Clean database (Danger)
-    env:
-      ENV: local
-    cmds:
-      - docker compose down -v
-      - task: db-up
-      - task: db-migrate
-
   db-revision:
     desc: Create migration
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "33432"
     cmds:
       - task: db-up
       - "{{.RUNNER}} alembic -c src/alembic.ini revision --autogenerate -m '{{.NAME | default .MSG}}'"
 
   db-migrate:
     desc: Apply database migrations
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "33432"
     cmds:
       - task: db-up
       - "{{.RUNNER}} alembic -c src/alembic.ini upgrade head"
 
   db-downgrade:
     desc: Roll back the latest migration
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "33432"
     cmds:
       - task: db-up
       - "{{.RUNNER}} alembic -c src/alembic.ini downgrade -1"
@@ -59,6 +59,8 @@ tasks:
     desc: Seed roles & permissions
     env:
       PYTHONPATH: src
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "33432"
     cmds:
       - "{{.RUNNER}} python -m scripts.cli bootstrap"
 
@@ -66,12 +68,16 @@ tasks:
     desc: Create superadmin user
     env:
       PYTHONPATH: src
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "33432"
     cmd: "{{.RUNNER}} python -m scripts.cli create-superadmin"
 
   init:
     desc: Initialize project
     env:
       ENV: local
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "33432"
     cmds:
       - "uv sync"
       - task: db-up
@@ -83,6 +89,8 @@ tasks:
     env:
       PYTHONPATH: src
       ENV: local
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "33432"
     cmds:
       - task: init
       - "{{.RUNNER}} fastapi dev src/dev.py"
@@ -92,6 +100,8 @@ tasks:
     env:
       PYTHONPATH: src
       ENV: local
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "33432"
     cmds:
       - "{{.RUNNER}} fastapi dev src/dev.py"
 
@@ -102,12 +112,237 @@ tasks:
     cmds:
       - "{{.RUNNER}} python -c 'from scripts.cleanup.tokens import run; run()'"
 
+  # ═══════════════════════════════════════════
+  # PRODUCTION & NGINX
+  # ═══════════════════════════════════════════
+
+  # Запуск полного production-стека: backend + postgres + redis + celery + nginx
   prod:
-    desc: Run production stack
+    desc: Run production stack (with nginx)
     cmds:
-      - docker compose up -d --build
-      - docker compose ps
+      - docker compose --profile prod up -d
+
+  # Сборка production-стека с принудительной пересборкой образов
+  prod-build:
+    desc: Build and run production stack
+    cmds:
+      - docker compose --profile prod up -d --build
+
+  # ═══════════════════════════════════════════
+  # NGINX
+  # ═══════════════════════════════════════════
+
+  # Запуск только nginx (профиль nginx) — reverse proxy на 80/443
+  nginx-up:
+    desc: Start nginx reverse proxy
+    cmds:
+      - docker compose --profile nginx up -d
+
+  # Остановка nginx
+  nginx-down:
+    desc: Stop nginx
+    cmds:
+      - docker compose --profile nginx down
+
+  # Просмотр логов nginx в реальном времени
+  nginx-logs:
+    desc: Tail nginx logs
+    cmds:
+      - docker logs -f iibatv-nginx
+
+  # Перезагрузка конфигурации nginx без перезапуска контейнера
+  nginx-reload:
+    desc: Reload nginx configuration
+    cmds:
+      - docker exec iibatv-nginx nginx -s reload
+
+  # Проверка синтаксиса nginx.conf
+  nginx-test:
+    desc: Test nginx configuration
+    cmds:
+      - docker exec iibatv-nginx nginx -t
+
+  # ═══════════════════════════════════════════
+  # DOCKER COMPOSE UTILITIES
+  # ═══════════════════════════════════════════
+
+  # Показать статус всех запущенных контейнеров (включая профили prod/nginx)
+  ps:
+    desc: Show running containers status
+    cmds:
+      - docker compose --profile prod --profile nginx ps
+
+  # Показать статус всех контейнеров (включая остановленные)
+  ps-all:
+    desc: Show all containers status
+    cmds:
+      - docker compose --profile prod --profile nginx ps -a
+
+  # Остановить все сервисы (без удаления volumes)
+  down:
+    desc: Stop all services
+    cmds:
+      - docker compose --profile prod --profile nginx down
+
+  # Остановить все сервисы и удалить volumes (полная очистка)
+  down-v:
+    desc: Stop all services and remove volumes (DANGER)
+    cmds:
+      - docker compose --profile prod --profile nginx down -v
+
+  # Пересобрать все Docker-образы
+  build:
+    desc: Build all Docker images
+    cmds:
+      - docker compose --profile prod --profile nginx build
+
+  # Перезапустить весь стек
+  restart:
+    desc: Restart all services
+    cmds:
+      - docker compose --profile prod --profile nginx restart
+
+  # Перезапустить только web-сервис (быстрый перезапуск backend)
+  restart-web:
+    desc: Restart web service only
+    cmds:
+      - docker compose restart web
+
+  # ═══════════════════════════════════════════
+  # LOGS
+  # ═══════════════════════════════════════════
+
+  # Логи всех сервисов в реальном времени
+  logs:
+    desc: Tail all services logs
+    cmds:
       - docker compose logs -f
+
+  # Логи web-сервиса (FastAPI backend)
+  logs-web:
+    desc: Tail web service logs
+    cmds:
+      - docker compose logs -f web
+
+  # Логи Celery worker
+  logs-celery:
+    desc: Tail celery worker logs
+    cmds:
+      - docker compose logs -f celery_worker
+
+  # Логи Celery beat (планировщик)
+  logs-beat:
+    desc: Tail celery beat logs
+    cmds:
+      - docker compose logs -f celery_beat
+
+  # Логи Flower (мониторинг Celery)
+  logs-flower:
+    desc: Tail flower logs
+    cmds:
+      - docker compose logs -f celery_flower
+
+  # Логи PostgreSQL
+  logs-db:
+    desc: Tail database logs
+    cmds:
+      - docker compose logs -f postgres
+
+  # Логи Redis
+  logs-redis:
+    desc: Tail redis logs
+    cmds:
+      - docker compose logs -f redis
+
+  # ═══════════════════════════════════════════
+  # SHELL ACCESS
+  # ═══════════════════════════════════════════
+
+  # Открыть shell внутри контейнера web (backend)
+  shell:
+    desc: Open shell in web container
+    cmds:
+      - docker compose exec web sh
+
+  # Открыть shell внутри контейнера PostgreSQL
+  shell-db:
+    desc: Open shell in database container
+    cmds:
+      - docker compose exec postgres sh
+
+  # Открыть shell внутри контейнера Redis
+  shell-redis:
+    desc: Open shell in redis container
+    cmds:
+      - docker compose exec redis sh
+
+  # Подключиться к Redis CLI
+  redis-cli:
+    desc: Connect to Redis CLI
+    cmds:
+      - docker compose exec redis redis-cli
+
+  # ═══════════════════════════════════════════
+  # CODE QUALITY
+  # ═══════════════════════════════════════════
+
+  # Форматирование кода (ruff format)
+  format:
+    desc: Format code with ruff
+    cmds:
+      - "{{.RUNNER}} ruff format {{.SOURCES}}"
+
+  # Запуск линтера (ruff check)
+  lint:
+    desc: Run linter (ruff check)
+    cmds:
+      - "{{.RUNNER}} ruff check {{.SOURCES}}"
+
+  # Автоисправление ошибок линтера
+  lint-fix:
+    desc: Fix linter issues automatically
+    cmds:
+      - "{{.RUNNER}} ruff check --fix {{.SOURCES}}"
+
+  # Проверка типов (pyright / pylance)
+  typecheck:
+    desc: Run type checker
+    cmds:
+      - "{{.RUNNER}} pyright {{.SOURCES}}"
+
+  # ═══════════════════════════════════════════
+  # DATABASE SEEDING
+  # ═══════════════════════════════════════════
+
+  # Сидирование RBAC (роли и права) — безопасно запускать повторно
+  db-seed:
+    desc: Seed database with roles and permissions
+    env:
+      PYTHONPATH: src
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "33432"
+    cmds:
+      - "{{.RUNNER}} python -m scripts.cli bootstrap"
+
+  # ═══════════════════════════════════════════
+  # DEPENDENCIES
+  # ═══════════════════════════════════════════
+
+  # Обновление зависимостей через uv
+  deps-sync:
+    desc: Sync dependencies (uv sync)
+    cmds:
+      - uv sync
+
+  # Обновление lock-файла зависимостей
+  deps-update:
+    desc: Update dependencies lock file
+    cmds:
+      - uv lock --upgrade
+
+  # ═══════════════════════════════════════════
+  # TESTS
+  # ═══════════════════════════════════════════
 
   test-setup:
     cmds:

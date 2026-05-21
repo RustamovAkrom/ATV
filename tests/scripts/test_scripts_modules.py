@@ -85,7 +85,7 @@ async def test_cleanup_expired_tokens_and_run(monkeypatch):
         def __call__(self):
             return _Ctx()
 
-    monkeypatch.setattr(module, "get_session_factory", lambda: _Factory())
+    monkeypatch.setattr(module, "get_sync_session_factory", lambda: _Factory())
     await module._run()
 
 

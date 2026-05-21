@@ -42,7 +42,7 @@ async def test_audit_middleware_prod_enqueues_task(monkeypatch):
         "state": {"user_id": str(uuid4())},
     }
 
-    monkeypatch.setattr(module, "get_settings", lambda: SimpleNamespace(ENV="prod"))
+    monkeypatch.setattr(module, "get_settings", lambda: SimpleNamespace(ENV="prod", AUDIT_ENABLED=True))
     delay = Mock()
     monkeypatch.setattr(module.process_audit_log_task, "delay", delay)
     monkeypatch.setattr(module.audit_stream, "publish", AsyncMock())

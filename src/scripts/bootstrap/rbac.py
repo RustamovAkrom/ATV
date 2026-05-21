@@ -1,4 +1,5 @@
 from sqlalchemy import delete, insert, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from core.security.rbac.permissions import ROLE_PERMISSIONS, Permissions
 from db.models.enums import UserRole
@@ -111,8 +112,21 @@ async def seed_rbac(db):
                 print(f"  ⚠️  Permission '{p_slug}' not found for role '{role_slug}'")
 
         if rows:
-            await db.execute(insert(role_permissions), rows)
-            print(f"  ✓ {role_slug}: {len(rows)} permissions mapped")
+            seen = set()
+            unique_rows = []
+            for row in rows:
+                key = (row["role_id"], row["permission_id"])
+                if key not in seen:
+                    seen.add(key)
+                    unique_rows.append(row)
+
+            stmt = (
+                pg_insert(role_permissions)
+                .values(unique_rows)
+                .on_conflict_do_nothing(index_elements=["role_id", "permission_id"])
+            )
+            await db.execute(stmt)
+            print(f"  ✓ {role_slug}: {len(unique_rows)} permissions mapped")
 
     await db.flush()
 
