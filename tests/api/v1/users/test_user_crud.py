@@ -113,7 +113,7 @@ class TestUserEndpoints:
         assert response.status_code == 400
 
     async def test_block_activate_archive_user_success(self, client, analytics_tokens, analytics_users):
-        user_id = analytics_users["analytic"].id
+        user_id = analytics_users["analyst"].id
 
         blocked = await client.post(
             f"/users/{user_id}/block",
@@ -158,7 +158,7 @@ class TestUserEndpoints:
         role_id = await _get_role_id(dbsession)
         response = await client.post(
             "/users/",
-            headers=_auth(analytics_tokens["analytic"]),
+            headers=_auth(analytics_tokens["analyst"]),
             json={
                 "login": f"denied_{uuid.uuid4().hex[:8]}",
                 "email": f"denied_{uuid.uuid4().hex[:8]}@example.com",
@@ -210,7 +210,7 @@ class TestUserEndpointsAdditional:
         assert response.status_code == 400
 
     async def test_update_user_role(self, client, analytics_tokens, analytics_users, dbsession):
-        target = analytics_users["analytic"]
+        target = analytics_users["analyst"]
         role_id = await _get_role_id(dbsession)
         response = await client.patch(
             f"/users/{target.id}",
@@ -233,7 +233,7 @@ class TestUserEndpointsAdditional:
         target = analytics_users["admin"]
         response = await client.post(
             f"/users/{target.id}/block",
-            headers=_auth(analytics_tokens["analytic"]),
+            headers=_auth(analytics_tokens["analyst"]),
         )
         assert response.status_code in {401, 403}
 

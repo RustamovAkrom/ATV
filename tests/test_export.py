@@ -72,8 +72,8 @@ async def _create_role_user(dbsession, role_slug: str, login: str):
     # Assign appropriate permissions based on role slug
     permissions_to_assign = []
 
-    if role_slug == "analytic":
-        # Analytic role should have ASSETS_EXPORT permission
+    if role_slug == "analyst":
+        # Analyst role should have ASSETS_EXPORT permission
         perm = await dbsession.scalar(
             select(Permission).where(Permission.slug == Permissions.ASSETS_EXPORT)
         )
@@ -82,8 +82,8 @@ async def _create_role_user(dbsession, role_slug: str, login: str):
             dbsession.add(perm)
             await dbsession.flush()
         permissions_to_assign.append(perm)
-    elif role_slug == "moderator":
-        # Moderator role should NOT have ASSETS_EXPORT permission
+    elif role_slug == "operator":
+        # Operator role should NOT have ASSETS_EXPORT permission
         # Get ASSETS_VIEW permission if it exists
         perm = await dbsession.scalar(
             select(Permission).where(Permission.slug == Permissions.ASSETS_VIEW)
@@ -147,34 +147,34 @@ async def test_export_row_limit(client, dbsession, superadmin_token, monkeypatch
 async def test_export_permissions(client, dbsession, superadmin_token):
     deps = await _seed_asset_dependencies(dbsession)
     await _create_asset(client, superadmin_token, deps, "PermissionExportAsset")
-    moderator = await _create_role_user(dbsession, "moderator", "export_moderator")
-    analytic = await _create_role_user(dbsession, "analytic", "export_analytic")
+    operator = await _create_role_user(dbsession, "operator", "export_operator")
+    analyst = await _create_role_user(dbsession, "analyst", "export_analyst")
 
-    moderator_login = await client.post(
+    operator_login = await client.post(
         "/auth/login",
-        data={"username": moderator.login, "password": "password"},
+        data={"username": operator.login, "password": "password"},
     )
-    assert moderator_login.status_code == 200
-    moderator_token = moderator_login.cookies.get("access_token")
+    assert operator_login.status_code == 200
+    operator_token = operator_login.cookies.get("access_token")
 
-    analytic_login = await client.post(
+    analyst_login = await client.post(
         "/auth/login",
-        data={"username": analytic.login, "password": "password"},
+        data={"username": analyst.login, "password": "password"},
     )
-    assert analytic_login.status_code == 200
-    analytic_token = analytic_login.cookies.get("access_token")
+    assert analyst_login.status_code == 200
+    analyst_token = analyst_login.cookies.get("access_token")
 
-    moderator_response = await client.get(
+    operator_response = await client.get(
         "/assets/export",
         params={"format": "json"},
-        headers={"Authorization": f"Bearer {moderator_token}"},
+        headers={"Authorization": f"Bearer {operator_token}"},
     )
-    assert moderator_response.status_code == 403
+    assert operator_response.status_code == 403
 
-    analytic_response = await client.get(
+    analyst_response = await client.get(
         "/assets/export",
         params={"format": "json", "search": "PermissionExportAsset"},
-        headers={"Authorization": f"Bearer {analytic_token}"},
+        headers={"Authorization": f"Bearer {analyst_token}"},
     )
-    assert analytic_response.status_code == 200
-    assert "PermissionExportAsset" in analytic_response.text
+    assert analyst_response.status_code == 200
+    assert "PermissionExportAsset" in analyst_response.text

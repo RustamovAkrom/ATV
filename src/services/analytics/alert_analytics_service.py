@@ -116,7 +116,7 @@ class AlertAnalyticsService(BaseAnalyticsService):
             .join(Role, Role.id == User.role_id)
             .where(
                 User.status == UserStatus.ACTIVE.value,
-                Role.slug.in_([UserRole.SUPERADMIN.value, UserRole.ADMIN.value, UserRole.REGION_MANAGER.value]),
+                Role.slug.in_([UserRole.SUPERADMIN.value, UserRole.ADMIN.value]),
             )
         )
         user_ids = [str(user_id) for user_id in recipients.scalars().all()]

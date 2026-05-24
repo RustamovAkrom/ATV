@@ -146,7 +146,7 @@ async def test_top_entities_and_email_masking(client, analytics_seed, analytics_
     assert admin_payload[0]["email"]
 
     analytic_response = await client.get(
-        "/analytics/top/users", headers=_auth(analytics_tokens["analytic"])
+        "/analytics/top/users", headers=_auth(analytics_tokens["analyst"])
     )
     assert analytic_response.status_code == 200
     analytic_payload = analytic_response.json()

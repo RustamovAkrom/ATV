@@ -28,7 +28,7 @@ class _Repo:
 async def test_top_users_masks_email_for_non_admin():
     service = TopAnalyticsService(_Repo())
     current_user = CurrentUserSchema(
-        id=uuid4(), role=UserRole.ANALYTIC.value, permissions=["assets.view"]
+        id=uuid4(), role=UserRole.ANALYST.value, permissions=["assets.view"]
     )
 
     result = await service.get_top_users(TopMetric.ASSIGNMENTS, 5, current_user)

@@ -146,50 +146,96 @@ class Permissions:
 
 # ======================== ROLE DEFAULT SETS ========================
 
-BASE_STAFF = _set(
+BASE_READ = _set(
     Permissions.USERS_VIEW,
     Permissions.SESSIONS_VIEW,
     Permissions.SYSTEM_HEALTH,
-    Permissions.DOCUMENTS_VIEW,
 )
 
-OPERATIONAL_BASE = _set(
-    *BASE_STAFF,
+OPERATOR_PERMS = _set(
+    *BASE_READ,
     Permissions.ASSETS_VIEW,
+    Permissions.ASSETS_CREATE,
+    Permissions.ASSETS_UPDATE,
     Permissions.REPAIRS_VIEW,
     Permissions.REPAIRS_CREATE,
-    Permissions.APPROVALS_VIEW,
-    Permissions.WAREHOUSE_VIEW,
-)
-
-MANAGER_BASE = _set(
-    *OPERATIONAL_BASE,
-    Permissions.ASSETS_UPDATE,
-    Permissions.ASSETS_ASSIGN,
-    Permissions.ASSETS_TRANSFER,
     Permissions.REPAIRS_UPDATE,
-    Permissions.REPAIRS_COMPLETE,
-    Permissions.APPROVALS_APPROVE,
-    Permissions.APPROVALS_REJECT,
+    Permissions.DOCUMENTS_VIEW,
+    Permissions.DOCUMENTS_CREATE,
+    Permissions.DOCUMENTS_UPDATE,
+    Permissions.APPROVALS_VIEW,
+    Permissions.APPROVALS_CREATE,
+    Permissions.WAREHOUSE_VIEW,
     Permissions.ANALYTICS_VIEW,
 )
 
-ADMIN_BASE = _set(
-    *MANAGER_BASE,
+APPROVER_PERMS = _set(
+    Permissions.APPROVALS_VIEW,
+    Permissions.APPROVALS_APPROVE,
+    Permissions.APPROVALS_REJECT,
+    Permissions.ASSETS_VIEW,
+    Permissions.REPAIRS_VIEW,
+    Permissions.DOCUMENTS_VIEW,
+    Permissions.ANALYTICS_VIEW,
+)
+
+ANALYST_PERMS = _set(
+    Permissions.AUDIT_VIEW,
+    Permissions.AUDIT_EXPORT,
+    Permissions.USERS_VIEW,
+    Permissions.ASSETS_VIEW,
+    Permissions.ASSETS_EXPORT,
+    Permissions.REPAIRS_VIEW,
+    Permissions.REPAIRS_EXPORT,
+    Permissions.DOCUMENTS_VIEW,
+    Permissions.DOCUMENTS_EXPORT,
+    Permissions.WAREHOUSE_VIEW,
+    Permissions.WAREHOUSE_EXPORT,
+    Permissions.ANALYTICS_VIEW,
+    Permissions.ANALYTICS_DASHBOARD,
+    Permissions.ANALYTICS_EXPORT,
+    Permissions.ANALYTICS_FORECAST,
+    Permissions.EXPENSES_VIEW,
+    Permissions.EXPENSES_EXPORT,
+    Permissions.SYSTEM_HEALTH,
+    Permissions.SYSTEM_LOGS,
+)
+
+ADMIN_PERMS = _set(
+    Permissions.USERS_VIEW,
     Permissions.USERS_CREATE,
     Permissions.USERS_EDIT,
+    Permissions.USERS_DELETE,
     Permissions.USERS_PASSWORD_RESET,
+    Permissions.USERS_BULK_EDIT,
+    Permissions.USERS_BULK_DELETE,
+    Permissions.SESSIONS_VIEW,
     Permissions.SESSIONS_REVOKE,
+    Permissions.SESSIONS_REVOKE_ALL,
     Permissions.ROLES_VIEW,
+    Permissions.ASSETS_VIEW,
     Permissions.ASSETS_CREATE,
+    Permissions.ASSETS_UPDATE,
     Permissions.ASSETS_DELETE,
+    Permissions.ASSETS_ASSIGN,
+    Permissions.ASSETS_TRANSFER,
     Permissions.ASSETS_EXPORT,
+    Permissions.ASSETS_ARCHIVE,
+    Permissions.REPAIRS_VIEW,
+    Permissions.REPAIRS_CREATE,
+    Permissions.REPAIRS_UPDATE,
+    Permissions.REPAIRS_COMPLETE,
     Permissions.REPAIRS_EXPORT,
+    Permissions.DOCUMENTS_VIEW,
     Permissions.DOCUMENTS_CREATE,
     Permissions.DOCUMENTS_UPDATE,
     Permissions.DOCUMENTS_DELETE,
     Permissions.DOCUMENTS_EXPORT,
-    Permissions.AUDIT_VIEW,
+    Permissions.APPROVALS_VIEW,
+    Permissions.APPROVALS_CREATE,
+    Permissions.APPROVALS_APPROVE,
+    Permissions.APPROVALS_REJECT,
+    Permissions.WAREHOUSE_VIEW,
     Permissions.WAREHOUSE_MANAGE,
     Permissions.WAREHOUSE_EXPORT,
     Permissions.ORG_REGIONS_VIEW,
@@ -205,141 +251,20 @@ ADMIN_BASE = _set(
     Permissions.EXPENSES_UPDATE,
     Permissions.EXPENSES_DELETE,
     Permissions.EXPENSES_EXPORT,
-)
-
-AUDIT_BASE = _set(
     Permissions.AUDIT_VIEW,
-    Permissions.AUDIT_EXPORT,
-    Permissions.USERS_VIEW,
-    Permissions.ASSETS_VIEW,
-    Permissions.REPAIRS_VIEW,
-    Permissions.DOCUMENTS_VIEW,
-    Permissions.WAREHOUSE_VIEW,
     Permissions.ANALYTICS_VIEW,
-    Permissions.ANALYTICS_DASHBOARD,
-    Permissions.ANALYTICS_EXPORT,
+    Permissions.SYSTEM_SETTINGS,
     Permissions.SYSTEM_HEALTH,
-    Permissions.SYSTEM_LOGS,
-)
-
-APPROVER_BASE = _set(
-    Permissions.APPROVALS_VIEW,
-    Permissions.APPROVALS_APPROVE,
-    Permissions.APPROVALS_REJECT,
-    Permissions.ASSETS_VIEW,
-    Permissions.REPAIRS_VIEW,
-    Permissions.DOCUMENTS_VIEW,
 )
 
 # ======================== ROLE -> PERMISSIONS ========================
 # Keep keys as role values so the map is stable across StrEnum usage.
 ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     UserRole.SUPERADMIN.value: frozenset(Permissions.all()),
-
-    UserRole.ADMIN.value: _set(
-        *ADMIN_BASE,
-        Permissions.SYSTEM_SETTINGS,
-        Permissions.PERMISSIONS_MANAGE,
-        Permissions.APPROVALS_CREATE,
-        Permissions.APPROVALS_VIEW,
-        Permissions.APPROVALS_APPROVE,
-        Permissions.APPROVALS_REJECT,
-        Permissions.SESSIONS_REVOKE_ALL,
-    ),
-
-    UserRole.MODERATOR.value: _set(
-        *OPERATIONAL_BASE,
-        Permissions.ASSETS_UPDATE,
-        Permissions.REPAIRS_UPDATE,
-        Permissions.REPAIRS_COMPLETE,
-        Permissions.APPROVALS_APPROVE,
-        Permissions.APPROVALS_REJECT,
-        Permissions.DOCUMENTS_EXPORT,
-    ),
-
-    UserRole.ANALYTIC.value: _set(
-        *AUDIT_BASE,
-        Permissions.ASSETS_EXPORT,
-        Permissions.REPAIRS_EXPORT,
-        Permissions.DOCUMENTS_EXPORT,
-        Permissions.ANALYTICS_FORECAST,
-        Permissions.WAREHOUSE_EXPORT,
-    ),
-
-    UserRole.REGION_ADMIN.value: _set(
-        *MANAGER_BASE,
-        Permissions.USERS_EDIT,
-        Permissions.USERS_PASSWORD_RESET,
-        Permissions.ASSETS_CREATE,
-        Permissions.ASSETS_DELETE,
-        Permissions.DOCUMENTS_CREATE,
-        Permissions.DOCUMENTS_UPDATE,
-        Permissions.DOCUMENTS_EXPORT,
-        Permissions.ORG_REGIONS_VIEW,
-        Permissions.ORG_SERVICES_VIEW,
-        Permissions.WAREHOUSE_EXPORT,
-        Permissions.EXPENSES_VIEW,
-        Permissions.EXPENSES_CREATE,
-        Permissions.EXPENSES_UPDATE,
-    ),
-
-    UserRole.REGION_MANAGER.value: _set(
-        *MANAGER_BASE,
-        Permissions.ASSETS_CREATE,
-        Permissions.ASSETS_DELETE,
-        Permissions.DOCUMENTS_CREATE,
-        Permissions.DOCUMENTS_UPDATE,
-        Permissions.DOCUMENTS_EXPORT,
-        Permissions.WAREHOUSE_EXPORT,
-        Permissions.EXPENSES_VIEW,
-        Permissions.EXPENSES_CREATE,
-        Permissions.EXPENSES_UPDATE,
-    ),
-
-    UserRole.SERVICE_MANAGER.value: _set(
-        Permissions.USERS_VIEW,
-        Permissions.ASSETS_VIEW,
-        Permissions.ASSETS_CREATE,
-        Permissions.ASSETS_UPDATE,
-        Permissions.ASSETS_ASSIGN,
-        Permissions.ASSETS_TRANSFER,
-        Permissions.REPAIRS_VIEW,
-        Permissions.REPAIRS_CREATE,
-        Permissions.REPAIRS_UPDATE,
-        Permissions.REPAIRS_COMPLETE,
-        Permissions.APPROVALS_VIEW,
-        Permissions.APPROVALS_CREATE,
-        Permissions.APPROVALS_APPROVE,
-        Permissions.DOCUMENTS_VIEW,
-        Permissions.DOCUMENTS_CREATE,
-        Permissions.DOCUMENTS_UPDATE,
-        Permissions.DOCUMENTS_EXPORT,
-        Permissions.WAREHOUSE_VIEW,
-        Permissions.ANALYTICS_VIEW,
-        Permissions.EXPENSES_VIEW,
-        Permissions.EXPENSES_CREATE,
-        Permissions.EXPENSES_UPDATE,
-    ),
-
-    UserRole.OPERATOR.value: _set(
-        Permissions.USERS_VIEW,
-        Permissions.ASSETS_VIEW,
-        Permissions.ASSETS_UPDATE,
-        Permissions.REPAIRS_VIEW,
-        Permissions.REPAIRS_CREATE,
-        Permissions.APPROVALS_VIEW,
-        Permissions.DOCUMENTS_VIEW,
-        Permissions.WAREHOUSE_VIEW,
-        Permissions.ANALYTICS_VIEW,
-    ),
-
-    UserRole.APPROVER.value: _set(
-        *APPROVER_BASE,
-    ),
-
-    UserRole.AUDITOR.value: _set(
-        *AUDIT_BASE,
-    ),
+    UserRole.ADMIN.value: ADMIN_PERMS,
+    UserRole.OPERATOR.value: OPERATOR_PERMS,
+    UserRole.APPROVER.value: APPROVER_PERMS,
+    UserRole.ANALYST.value: ANALYST_PERMS,
 }
 
 

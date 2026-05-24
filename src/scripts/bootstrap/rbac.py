@@ -54,14 +54,10 @@ async def seed_rbac(db):
 
     role_descriptions = {
         "superadmin": "Super Administrator - Complete system access",
-        "admin": "Administrator - Full operational control",
-        "moderator": "Moderator - Regional/operational management",
-        "analytic": "Analyst - Read-only analytics and audit access",
-        "region_admin": "Region Administrator - Region-scoped admin",
-        "service_manager": "Service Manager - Service-scoped management",
-        "operator": "Operator - Basic operational access",
-        "approver": "Approver - Approval workflow focus",
-        "auditor": "Auditor - Audit and compliance focus",
+        "admin": "Administrator - Full operational control, manages users, regions, services",
+        "operator": "Operator - Enters data, creates assets, requests repairs",
+        "approver": "Approver - Approves/rejects requests (assignments, transfers, repairs)",
+        "analyst": "Analyst - Read-only analytics, dashboards, exports (no modifications)",
     }
 
     for role_enum in UserRole:

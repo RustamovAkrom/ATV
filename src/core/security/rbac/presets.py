@@ -15,17 +15,17 @@ class AdministrativPermissions:
     # Для административного персонала (пропустит и супера)
     IsAdmin = require_role(UserRole.ADMIN.value)
 
-    # Для модераторов
-    IsModerator = require_role(UserRole.MODERATOR.value)
-
-    # Любой сотрудник (не обычный юзер)
+    # Любой сотрудник
     IsStaff = require_role(
-        UserRole.ADMIN.value, UserRole.MODERATOR.value, UserRole.ANALYTIC.value
+        UserRole.ADMIN.value,
+        UserRole.ANALYST.value,
+        UserRole.OPERATOR.value,
+        UserRole.APPROVER.value,
     )
 
-    IsAdminOrAnalytic = require_role(
+    IsAdminOrAnalyst = require_role(
         UserRole.ADMIN.value,
-        UserRole.ANALYTIC.value,
+        UserRole.ANALYST.value,
     )
 
 # =================================================================
