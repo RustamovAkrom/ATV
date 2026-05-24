@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from core.audit.stream import audit_stream
+from core.config import get_settings
 from db.models.audit.audit_log import AuditLog
 from repositories.audit.audit_repo import AuditRepository
 from schemas.audit import (
@@ -15,6 +16,10 @@ from schemas.pagination import PageSchema, PaginationParamsSchema
 class AuditService:
     def __init__(self, repo: AuditRepository):
         self.repo = repo
+        self._settings = get_settings()
+
+    def _is_enabled(self) -> bool:
+        return self._settings.AUDIT_ENABLED
 
     @staticmethod
     def _to_schema(item: AuditLog) -> AuditSchema:
@@ -33,7 +38,9 @@ class AuditService:
             limit=pagination.limit,
         )
 
-    async def persist_audit(self, data: AuditCreateSchema | dict) -> AuditSchema:
+    async def persist_audit(self, data: AuditCreateSchema | dict) -> AuditSchema | None:
+        if not self._is_enabled():
+            return None
         audit = await self.repo.create(data)
         return self._to_schema(audit)
 
@@ -88,4 +95,6 @@ class AuditService:
         return AuditStatsSchema(**stats)
 
     async def publish_stream(self, event: dict) -> None:
+        if not self._is_enabled():
+            return
         await audit_stream.publish(event)

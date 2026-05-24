@@ -108,7 +108,6 @@ class Settings(BaseSettings):
     # EMAIL
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
-
     SMTP_FROM: str
     SMTP_USER: str
     SMTP_PASSWORD: str
@@ -127,6 +126,9 @@ class Settings(BaseSettings):
     LOG_ENQUEUE: bool = False
 
     SERVICE_NAME: str = "fastapi-backend"
+
+    # Audit
+    AUDIT_ENABLED: bool = True
 
     # Alerts Default
     ALERT_TRANSFER_DAYS_LIMIT: int = 7

@@ -17,19 +17,36 @@ class RegionRepository(BaseRepository):
         self.session = session
 
     async def list(self) -> list[Region]:
-        return await self.scalars(
+        """Получить все регионы (без детей)"""
+        result = await self.session.execute(
             select(Region).order_by(Region.name)
         )
+        return result.scalars().all()
 
     async def get(self, region_id: UUID) -> Region | None:
-        return await self.scalar(
+        """Получить регион по ID"""
+        result = await self.session.execute(
+            select(Region).where(Region.id == region_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_with_children(self, region_id: UUID) -> Region | None:
+        """Получить регион с детьми"""
+        result = await self.session.execute(
             select(Region)
-            .options(
-                selectinload(Region.parent),
-                selectinload(Region.children)
-            )
+            .options(selectinload(Region.children))
             .where(Region.id == region_id)
         )
+        return result.scalar_one_or_none()
+
+    async def get_root_regions(self) -> list[Region]:
+        """Получить корневые регионы (без родителей)"""
+        result = await self.session.execute(
+            select(Region)
+            .where(Region.parent_id.is_(None))
+            .order_by(Region.name)
+        )
+        return result.scalars().all()
 
     async def create(self, data: dict) -> Region:
         region = Region(**data)
@@ -48,9 +65,11 @@ class RegionRepository(BaseRepository):
         return await self.get(region_id)
 
     async def delete(self, region_id: UUID) -> bool:
-        if await self.scalars_first(
+        # Проверка на наличие дочерних регионов
+        result = await self.session.execute(
             select(Region).where(Region.parent_id == region_id)
-        ):
+        )
+        if result.scalars().first():
             raise Conflict("Cannot delete region with child regions")
 
         result = await self.execute(
@@ -63,33 +82,11 @@ class RegionRepository(BaseRepository):
         query = select(Region).where(Region.name == name)
         if exclude_id:
             query = query.where(Region.id != exclude_id)
-        return await self.scalar(query) is not None
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none() is not None
 
     async def get_children(self, region_id: UUID) -> list[Region]:
-        return await self.scalars(
+        result = await self.session.execute(
             select(Region).where(Region.parent_id == region_id)
         )
-
-    async def build_tree(self) -> list[Region]:
-        regions = await self.list()
-
-        if not regions: return []
-
-        region_map = {region.id: region for region in regions}
-        root_regions = []
-
-        for region in regions:
-            region.children = [] # TODO Error: sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
-            if region.parent_id and region.parent_id in region_map:
-                parent = region_map[region.parent_id]
-                if not hasattr(parent, '_children'):
-                    parent._children = []
-                parent._children.append(region)
-            else:
-                root_regions.append(region)
-
-        for region in regions:
-            if hasattr(region, '_children'):
-                region.children = region._children
-
-        return root_regions
+        return result.scalars().all()

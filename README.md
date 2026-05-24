@@ -76,12 +76,17 @@ Database modeli quyidagi asosiy entity’lardan iborat:
 ---
 
 ## 🚀 Getting Started
+### 0. Requirements:
+ - [Python](https://www.python.org/downloads/)
+ - [UV](https://docs.astral.sh/uv/#__tabbed_1_2)
+ - [Docker](https://docs.docker.com/get-started/get-docker/)
+ - [Task](https://taskfile.dev/docs/installation/)
 
 ### 1. Clone repository
 
 ```bash
-git clone https://github.com/<your-username>/atv.git
-cd atv
+git clone https://github.com/RustamovAkrom/ATV.git
+cd ATV
 ```
 
 ### 2. Create environment
@@ -93,7 +98,7 @@ cp .env.example .env
 ### 3. Run with Docker
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 ### 4. API docs

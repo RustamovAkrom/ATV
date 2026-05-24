@@ -2,10 +2,14 @@
 from typing import Any, Awaitable, Callable
 from utils.helpers import utc_now
 from core.audit.stream import audit_stream
+from core.config import get_settings
 
 
 class BaseEventService:
     """Executes side-effects in controlled pipeline."""
+
+    def __init__(self):
+        self._settings = get_settings()
 
     async def execute(
         self,
@@ -20,7 +24,7 @@ class BaseEventService:
             await history()
 
         # 2. AUDIT (non-critical)
-        if audit_event:
+        if audit_event and self._settings.AUDIT_ENABLED:
             await self._safe_audit(audit_event, audit_payload or {})
 
         # 3. NOTIFICATION (non-critical)

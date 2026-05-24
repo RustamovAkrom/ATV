@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_session_factory
+from core.database.db_sync import get_sync_session_factory
 from db.models.refresh_token import RefreshToken
 
 
@@ -19,7 +19,7 @@ async def cleanup_expired_tokens(db: AsyncSession) -> int:
 # RUNNER
 # -----------------------
 async def _run():
-    session_factory = get_session_factory()
+    session_factory = get_sync_session_factory()
 
     async with session_factory() as session:
         async with session.begin():
