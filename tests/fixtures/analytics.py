@@ -26,18 +26,18 @@ async def analytics_users(dbsession):
     admin = await create_user_with_role(
         dbsession, login_prefix="admin", role_slug=UserRole.ADMIN.value
     )
-    analytic = await create_user_with_role(
-        dbsession, login_prefix="analytic", role_slug=UserRole.ANALYTIC.value
+    analyst = await create_user_with_role(
+        dbsession, login_prefix="analyst", role_slug=UserRole.ANALYST.value
     )
-    moderator = await create_user_with_role(
-        dbsession, login_prefix="moderator", role_slug=UserRole.MODERATOR.value
+    operator = await create_user_with_role(
+        dbsession, login_prefix="operator", role_slug=UserRole.OPERATOR.value
     )
     # Removed commit - let test session handle transaction
     return {
         "superadmin": superadmin,
         "admin": admin,
-        "analytic": analytic,
-        "moderator": moderator,
+        "analyst": analyst,
+        "operator": operator,
     }
 
 
@@ -65,7 +65,7 @@ async def analytics_seed(dbsession, analytics_users):
     asset_secondary = await create_asset(
         dbsession,
         graph=graph,
-        owner=analytics_users["analytic"],
+        owner=analytics_users["analyst"],
         name="SecondaryAsset",
         status=AssetStatus.IN_REPAIR,
         purchase_cost=Decimal("500"),
@@ -89,14 +89,14 @@ async def analytics_seed(dbsession, analytics_users):
     await create_assignment(
         dbsession,
         asset=asset_primary,
-        user=analytics_users["analytic"],
+        user=analytics_users["analyst"],
         assigned_at=now - timedelta(days=20),
         unassigned_at=now - timedelta(days=12),
     )
     await create_assignment(
         dbsession,
         asset=asset_secondary,
-        user=analytics_users["analytic"],
+        user=analytics_users["analyst"],
         assigned_at=now - timedelta(days=5),
         unassigned_at=None,
     )
@@ -120,7 +120,7 @@ async def analytics_seed(dbsession, analytics_users):
     await create_transfer(
         dbsession,
         asset=asset_secondary,
-        created_by=analytics_users["analytic"],
+        created_by=analytics_users["analyst"],
         graph=graph,
         created_at=now - timedelta(days=8),
         status=TransferStatus.PENDING,
@@ -137,7 +137,7 @@ async def analytics_seed(dbsession, analytics_users):
     await create_repair(
         dbsession,
         asset=asset_secondary,
-        reported_by=analytics_users["analytic"],
+        reported_by=analytics_users["analyst"],
         created_at=now - timedelta(days=3),
         labor_cost=Decimal("80"),
         parts_cost=Decimal("20"),
@@ -154,7 +154,7 @@ async def analytics_seed(dbsession, analytics_users):
     await create_history(
         dbsession,
         asset=asset_secondary,
-        user=analytics_users["analytic"],
+        user=analytics_users["analyst"],
         action="repair_finished",
         description="Repair completed",
         created_at=now - timedelta(days=2),

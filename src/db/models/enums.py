@@ -20,17 +20,11 @@ class EmploymentType(StrEnum):
 
 
 class UserRole(StrEnum):
-    SUPERADMIN = "superadmin"
-    ADMIN = "admin"
-    MODERATOR = "moderator"
-    ANALYTIC = "analytic"
-    # Extended roles for enterprises
-    REGION_ADMIN = "region_admin"
-    SERVICE_MANAGER = "service_manager"
-    REGION_MANAGER = "region_manager"
     OPERATOR = "operator"
     APPROVER = "approver"
-    AUDITOR = "auditor"
+    ANALYST = "analyst"
+    ADMIN = "admin"
+    SUPERADMIN = "superadmin"
 
 
 class UserStatus(StrEnum):

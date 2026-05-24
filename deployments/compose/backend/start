@@ -22,11 +22,41 @@ if [ "$ENV" = "prod" ]; then
     WORKERS=${WORKERS:-4}
 fi
 
-exec uvicorn app:create_app \
-    --factory \
-    --proxy-headers \
-    --workers ${WORKERS} \
-    --loop uvloop \
-    --http httptools \
-    --host ${APP_HOST} \
-    --port ${APP_PORT}
+# Check if running in production mode
+if [ "$ENV" = "prod" ]; then
+    echo "Running in PRODUCTION mode with Gunicorn + Uvicorn workers..."
+
+    # Gunicorn with Uvicorn workers for async support
+    # -w: number of worker processes
+    # -k: worker class (UvicornWorker for async)
+    # --bind: host and port
+    # --timeout: worker timeout in seconds
+    # --keep-alive: keep-alive connections
+    # --max-requests: max requests before worker restart (prevents memory leaks)
+    # --max-requests-jitter: random jitter for max-requests
+    exec gunicorn app:create_app \
+        --workers ${WORKERS} \
+        --worker-class uvicorn.workers.UvicornWorker \
+        --bind ${APP_HOST}:${APP_PORT} \
+        --timeout 120 \
+        --keep-alive 5 \
+        --max-requests 1000 \
+        --max-requests-jitter 50 \
+        --access-logfile - \
+        --error-logfile - \
+        --log-level info \
+        --proxy-allow-from '*'
+else
+    echo "Running in DEVELOPMENT mode with Uvicorn..."
+
+    # Use Uvicorn directly for development (faster reload, easier debugging)
+    exec uvicorn app:create_app \
+        --factory \
+        --proxy-headers \
+        --workers ${WORKERS} \
+        --loop uvloop \
+        --http httptools \
+        --host ${APP_HOST} \
+        --port ${APP_PORT} \
+        --reload
+fi
