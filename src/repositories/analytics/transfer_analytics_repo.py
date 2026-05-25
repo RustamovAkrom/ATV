@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import cast, Date, func, select
+from sqlalchemy import Date, cast, func, select
 
 from db.models.assets.asset import Asset
 from db.models.assets.asset_transfer import AssetTransfer
@@ -29,26 +29,30 @@ class TransferAnalyticsRepository(BaseAnalyticsRepository):
         date_filters = self.date_filters(AssetTransfer.created_at, date_from, date_to)
 
         # По периодам
-        per_period_query = select(
-            cast(AssetTransfer.created_at, Date).label("period"),
-            func.count(AssetTransfer.id).label("transfer_count"),
-        ).join(Asset, Asset.id == AssetTransfer.asset_id).where(
-            *filters, *date_filters
-        ).group_by(cast(AssetTransfer.created_at, Date)).order_by(
-            cast(AssetTransfer.created_at, Date)
+        per_period_query = (
+            select(
+                cast(AssetTransfer.created_at, Date).label("period"),
+                func.count(AssetTransfer.id).label("transfer_count"),
+            )
+            .join(Asset, Asset.id == AssetTransfer.asset_id)
+            .where(*filters, *date_filters)
+            .group_by(cast(AssetTransfer.created_at, Date))
+            .order_by(cast(AssetTransfer.created_at, Date))
         )
 
         per_period = (await self.session.execute(per_period_query)).all()
 
         # По активам
-        per_asset_query = select(
-            Asset.id.label("asset_id"),
-            Asset.name.label("asset_name"),
-            func.count(AssetTransfer.id).label("transfer_count"),
-        ).join(AssetTransfer, AssetTransfer.asset_id == Asset.id).where(
-            *filters, *date_filters
-        ).group_by(Asset.id, Asset.name).order_by(
-            func.count(AssetTransfer.id).desc()
+        per_asset_query = (
+            select(
+                Asset.id.label("asset_id"),
+                Asset.name.label("asset_name"),
+                func.count(AssetTransfer.id).label("transfer_count"),
+            )
+            .join(AssetTransfer, AssetTransfer.asset_id == Asset.id)
+            .where(*filters, *date_filters)
+            .group_by(Asset.id, Asset.name)
+            .order_by(func.count(AssetTransfer.id).desc())
         )
 
         per_asset = (await self.session.execute(per_asset_query)).all()

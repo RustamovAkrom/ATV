@@ -1,20 +1,22 @@
-from uuid import UUID
-from typing import TYPE_CHECKING
-
 from datetime import date
+from typing import TYPE_CHECKING
+from uuid import UUID
+
 from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from db.base import Base
-from db.mixins import UUIDMixing, TimestampMixin
+from db.mixins import TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
-    from .asset import Asset
     from db.models.users.user import User
+
+    from .asset import Asset
 
 
 class AssetMaintenance(Base, UUIDMixing, TimestampMixin):
     """Техническое обслуживание (из раздела 6 формуляра)"""
+
     __tablename__ = "asset_maintenances"
 
     asset_id: Mapped[UUID] = mapped_column(
@@ -23,7 +25,9 @@ class AssetMaintenance(Base, UUIDMixing, TimestampMixin):
     maintenance_type: Mapped[str] = mapped_column(String(100), nullable=False)
     performed_at: Mapped[date] = mapped_column(nullable=False)
     issues_found: Mapped[str | None] = mapped_column(Text, nullable=True)
-    performed_by_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    performed_by_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False
+    )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     asset: Mapped["Asset"] = relationship("Asset", back_populates="maintenances")

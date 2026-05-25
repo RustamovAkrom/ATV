@@ -3,7 +3,6 @@ from __future__ import annotations
 """Repository for expenses operations."""
 
 from datetime import datetime, timedelta
-from typing import Tuple
 from uuid import UUID
 
 from sqlalchemy import desc, func, select
@@ -23,9 +22,7 @@ class ExpenseRepository(BaseRepository):
         """Initialize repository with database session."""
         self.session = session
 
-    async def create(
-        self, data: ExpenseCreateSchema, created_by_id: UUID
-    ) -> Expense:
+    async def create(self, data: ExpenseCreateSchema, created_by_id: UUID) -> Expense:
         """Create a new expense record."""
         expense_type_code = (
             data.expense_type.value
@@ -104,7 +101,7 @@ class ExpenseRepository(BaseRepository):
         asset_id: UUID | None = None,
         start_date: datetime | None = None,
         end_date: datetime | None = None,
-    ) -> Tuple[list[Expense], int]:
+    ) -> tuple[list[Expense], int]:
         """List expenses with pagination and filters."""
         query = select(Expense)
 
@@ -145,7 +142,7 @@ class ExpenseRepository(BaseRepository):
         asset_id: UUID | None = None,
         start_date: datetime | None = None,
         end_date: datetime | None = None,
-    ) -> Tuple[list[Expense], int]:
+    ) -> tuple[list[Expense], int]:
         """Backward-compatible alias for listing expenses."""
         return await self.list(
             page=page,
@@ -169,7 +166,7 @@ class ExpenseRepository(BaseRepository):
         update_data = data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             if key == "expense_type":
-                setattr(expense, "expense_type_code", value.value)
+                expense.expense_type_code = value.value
             elif hasattr(expense, key):
                 setattr(expense, key, value)
 
@@ -201,9 +198,7 @@ class ExpenseRepository(BaseRepository):
 
     async def get_asset(self, asset_id: UUID) -> Asset | None:
         """Get asset by ID."""
-        result = await self.session.execute(
-            select(Asset).where(Asset.id == asset_id)
-        )
+        result = await self.session.execute(select(Asset).where(Asset.id == asset_id))
         return result.scalar_one_or_none()
 
     async def get_repair(self, repair_id: UUID) -> Repair | None:
@@ -225,8 +220,9 @@ class ExpenseRepository(BaseRepository):
 
         # By type
         by_type_result = await self.session.execute(
-            select(Expense.expense_type_code, func.sum(Expense.amount))
-            .group_by(Expense.expense_type_code)
+            select(Expense.expense_type_code, func.sum(Expense.amount)).group_by(
+                Expense.expense_type_code
+            )
         )
         by_type = {row[0]: float(row[1] or 0) for row in by_type_result.all()}
 
@@ -244,7 +240,9 @@ class ExpenseRepository(BaseRepository):
             .where(Expense.service_id.isnot(None))
             .group_by(Expense.service_id)
         )
-        by_service = {str(row[0]): float(row[1] or 0) for row in by_service_result.all()}
+        by_service = {
+            str(row[0]): float(row[1] or 0) for row in by_service_result.all()
+        }
 
         return {
             "total_amount": total_amount,

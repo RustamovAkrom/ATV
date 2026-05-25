@@ -1,28 +1,25 @@
 from uuid import UUID
-from typing import List
 
-from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
 from api.dependencies.documents.document import get_document_service
 from api.dependencies.storage import get_file_upload_service
-from core.cache.decorators import invalidate_cache
+from core.cache.decorators import cached, invalidate_cache
+from core.config import get_settings
 from core.security.auth.dependencies import get_current_user
 from core.security.rbac.presets import AssetPermissions
 from core.slowapi import limiter
-from core.config import get_settings
 from core.storage import FileUploadService
 from core.storage.configs import UploadConfigs
-
 from schemas.auth import CurrentUserSchema
+from schemas.common import StatusResponse
 from schemas.documents.document import (
     AssetDocumentCreateSchema,
-    AssetDocumentUpdateSchema,
     AssetDocumentOutSchema,
+    AssetDocumentUpdateSchema,
     AssetDocumentWithFilesOutSchema,
 )
-from schemas.common import StatusResponse
-
 from services.documents.document_service import DocumentService
 
 settings = get_settings()
@@ -31,7 +28,9 @@ router = APIRouter(prefix="/assets/{asset_id}/documents", tags=["Asset Documents
 
 # ========== GET запросы (без rate limit) ==========
 
+
 @router.get("/", response_model=list[AssetDocumentOutSchema])
+@cached(tags=("document:list",))
 async def list_documents(
     asset_id: UUID,
     service: DocumentService = Depends(get_document_service),
@@ -42,6 +41,7 @@ async def list_documents(
 
 
 @router.get("/{document_id}", response_model=AssetDocumentWithFilesOutSchema)
+@cached(tags=("document:detail",))
 async def get_document(
     asset_id: UUID,
     document_id: UUID,
@@ -53,6 +53,7 @@ async def get_document(
 
 
 @router.get("/{document_id}/files/{file_id}")
+@cached(tags=("document:download",))
 async def download_file(
     asset_id: UUID,
     document_id: UUID,
@@ -88,13 +89,21 @@ async def download_file(
 
 # ========== POST/PATCH/DELETE запросы (с rate limit) ==========
 
+
 @router.post(
     "/",
     response_model=AssetDocumentOutSchema,
     dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
 )
 @limiter.limit("20/minute")
-@invalidate_cache(tags=("assets:list",))
+@invalidate_cache(
+    tags=(
+        "assets:list",
+        "document:list",
+        "document:detail",
+        "document:download",
+    )
+)
 async def attach_asset_document(
     request: Request,
     asset_id: UUID,
@@ -102,7 +111,7 @@ async def attach_asset_document(
     description: str | None = Form(None, max_length=500),
     document_type: str = Form("other", min_length=1, max_length=50),
     status: str = Form("draft"),
-    files: List[UploadFile] = File(default=[]),
+    files: list[UploadFile] = File(default=[]),
     actor: CurrentUserSchema = Depends(get_current_user),
     service: DocumentService = Depends(get_document_service),
     upload_service: FileUploadService = Depends(get_file_upload_service),
@@ -113,6 +122,7 @@ async def attach_asset_document(
     """
     # Проверяем допустимые статусы
     from db.models.enums import DocumentStatus
+
     try:
         doc_status = DocumentStatus(status)
     except ValueError:
@@ -137,12 +147,14 @@ async def attach_asset_document(
                 folder=settings.STORAGE_DOCUMENT_FOLDER,
                 validator=UploadConfigs.document(),
             )
-            uploaded_files.append({
-                "file_name": result.original_name,
-                "file_path": result.file_path,
-                "file_size": result.file_size,
-                "content_type": upload_file.content_type,
-            })
+            uploaded_files.append(
+                {
+                    "file_name": result.original_name,
+                    "file_path": result.file_path,
+                    "file_size": result.file_size,
+                    "content_type": upload_file.content_type,
+                }
+            )
         except HTTPException as e:
             # Если файл не прошёл валидацию, удаляем созданный документ
             await service.delete_document(asset_id, document.id, actor)
@@ -161,7 +173,14 @@ async def attach_asset_document(
     dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
 )
 @limiter.limit("30/minute")
-@invalidate_cache(tags=("assets:list",))
+@invalidate_cache(
+    tags=(
+        "assets:list",
+        "document:list",
+        "document:detail",
+        "document:download",
+    )
+)
 async def update_asset_document(
     request: Request,
     asset_id: UUID,
@@ -180,7 +199,14 @@ async def update_asset_document(
     dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
 )
 @limiter.limit("20/minute")
-@invalidate_cache(tags=("assets:list",))
+@invalidate_cache(
+    tags=(
+        "assets:list",
+        "document:list",
+        "document:detail",
+        "document:download",
+    )
+)
 async def add_file_to_document(
     request: Request,
     asset_id: UUID,
@@ -207,7 +233,9 @@ async def add_file_to_document(
         "content_type": file.content_type,
     }
 
-    file_obj = await service.add_file_to_document(asset_id, document_id, file_data, actor)
+    file_obj = await service.add_file_to_document(
+        asset_id, document_id, file_data, actor
+    )
     return {"message": "File added successfully", "file": file_obj.model_dump()}
 
 
@@ -217,7 +245,14 @@ async def add_file_to_document(
     dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
 )
 @limiter.limit("10/minute")
-@invalidate_cache(tags=("assets:list",))
+@invalidate_cache(
+    tags=(
+        "assets:list",
+        "document:list",
+        "document:detail",
+        "document:download",
+    )
+)
 async def delete_file_from_document(
     request: Request,
     asset_id: UUID,
@@ -251,7 +286,14 @@ async def delete_file_from_document(
     dependencies=[Depends(AssetPermissions.CanDeleteAssets)],
 )
 @limiter.limit("5/minute")
-@invalidate_cache(tags=("assets:list",))
+@invalidate_cache(
+    tags=(
+        "assets:list",
+        "document:list",
+        "document:detail",
+        "document:download",
+    )
+)
 async def delete_asset_document(
     request: Request,
     asset_id: UUID,
@@ -273,4 +315,6 @@ async def delete_asset_document(
 
     # Удаляем документ из БД
     await service.delete_document(asset_id, document_id, actor)
-    return StatusResponse(status="deleted", message="Asset document successfully deleted")
+    return StatusResponse(
+        status="deleted", message="Asset document successfully deleted"
+    )

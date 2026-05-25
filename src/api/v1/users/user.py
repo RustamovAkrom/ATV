@@ -1,36 +1,34 @@
-import uuid
 import csv
+import uuid
 from io import StringIO
-from typing import List
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Request
+
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 
-from api.dependencies.users import get_user_service
 from api.dependencies.paginations import get_pagination
 from api.dependencies.storage import get_file_upload_service
+from api.dependencies.users import get_user_service
 from core.cache.decorators import cached, invalidate_cache
+from core.config import get_settings
 from core.exceptions.errors import BadRequest
 from core.security.auth.dependencies import get_current_user
 from core.security.rbac.presets import UserPermissions
 from core.slowapi import limiter
-from core.config import get_settings
 from core.storage import FileUploadService
 from core.storage.configs import UploadConfigs
-
 from db.models.users.user import User
 from schemas.auth import CurrentUserSchema
+from schemas.common import StatusResponse
 from schemas.pagination import PaginationParamsSchema
 from schemas.users import (
     AdminUserUpdateSchema,
     ChangePasswordRequestSchema,
+    UserAvatarUpdateSchema,
     UserCreateSchema,
     UserOutSchema,
     UserUpdateSchema,
-    UserAvatarUpdateSchema,
 )
 from services.users.user_service import UserService
-from schemas.common import StatusResponse
-
 
 router = APIRouter(prefix="/users", tags=["Users"])
 settings = get_settings()
@@ -38,10 +36,10 @@ settings = get_settings()
 
 def _to_user_out(user: User) -> UserOutSchema:
     role = getattr(user.role, "slug", None)
-    permissions = [
-        str(getattr(permission, "slug", getattr(permission, "value", permission)))
-        for permission in (getattr(user, "permissions", None) or [])
-    ]
+    # permissions = [
+    #     str(getattr(permission, "slug", getattr(permission, "value", permission)))
+    #     for permission in (getattr(user, "permissions", None) or [])
+    # ]
 
     return UserOutSchema(
         id=user.id,
@@ -49,7 +47,7 @@ def _to_user_out(user: User) -> UserOutSchema:
         email=user.email,
         phone=user.phone,
         role=str(role).lower() if role else None,
-        permissions=permissions,
+        # permissions=permissions,
         first_name=getattr(user, "first_name", None),
         last_name=getattr(user, "last_name", None),
         status=getattr(user, "status", None),
@@ -77,6 +75,7 @@ def _to_user_out(user: User) -> UserOutSchema:
 # ME ENDPOINTS
 # ============================================================
 
+
 @router.get("/me", response_model=UserOutSchema)
 @cached(ttl=60, tags=("users:me",))
 async def me(
@@ -89,7 +88,14 @@ async def me(
 
 @router.patch("/me", response_model=UserOutSchema)
 @limiter.limit("30/minute")
-@invalidate_cache(tags=("users:list", "users:search", "users:detail", "users:me",))
+@invalidate_cache(
+    tags=(
+        "users:list",
+        "users:search",
+        "users:detail",
+        "users:me",
+    )
+)
 async def update_me(
     request: Request,
     data: UserUpdateSchema,
@@ -119,7 +125,14 @@ async def change_password(
 
 @router.post("/me/avatar", response_model=UserOutSchema)
 @limiter.limit("10/minute")
-@invalidate_cache(tags=("users:list", "users:search", "users:detail", "users:me",))
+@invalidate_cache(
+    tags=(
+        "users:list",
+        "users:search",
+        "users:detail",
+        "users:me",
+    )
+)
 async def upload_avatar(
     request: Request,
     file: UploadFile = File(...),
@@ -150,8 +163,7 @@ async def upload_avatar(
 
     # Обновляем аватар
     user = await service.update_avatar(
-        current_user.id,
-        UserAvatarUpdateSchema(avatar_url=result.public_url)
+        current_user.id, UserAvatarUpdateSchema(avatar_url=result.public_url)
     )
 
     # Удаляем старый аватар
@@ -169,7 +181,14 @@ async def upload_avatar(
 
 @router.delete("/me/avatar", response_model=UserOutSchema)
 @limiter.limit("10/minute")
-@invalidate_cache(tags=("users:list", "users:search", "users:detail", "users:me",))
+@invalidate_cache(
+    tags=(
+        "users:list",
+        "users:search",
+        "users:detail",
+        "users:me",
+    )
+)
 async def delete_avatar(
     request: Request,
     current_user: CurrentUserSchema = Depends(get_current_user),
@@ -190,7 +209,9 @@ async def delete_avatar(
         print(f"Failed to delete avatar file: {e}")
 
     # Обновляем пользователя
-    user = await service.update_avatar(current_user.id, UserAvatarUpdateSchema(avatar_url=None))
+    user = await service.update_avatar(
+        current_user.id, UserAvatarUpdateSchema(avatar_url=None)
+    )
 
     return _to_user_out(user)
 
@@ -213,9 +234,7 @@ async def get_avatar(
         raise HTTPException(status_code=404, detail="Avatar file not found")
 
     return FileResponse(
-        path=avatar_path,
-        media_type="image/jpeg",
-        filename=avatar_path.name
+        path=avatar_path, media_type="image/jpeg", filename=avatar_path.name
     )
 
 
@@ -223,10 +242,11 @@ async def get_avatar(
 # ADMIN USER MANAGEMENT
 # ============================================================
 
+
 @router.get("/export", dependencies=[Depends(UserPermissions.CanViewUsers)])
 async def export_users(
     service: UserService = Depends(get_user_service),
-    pagination: PaginationParamsSchema = Depends(get_pagination)
+    pagination: PaginationParamsSchema = Depends(get_pagination),
 ):
     """Экспорт пользователей в CSV"""
     users = await service.get_all(pagination)
@@ -234,19 +254,44 @@ async def export_users(
     output = StringIO()
     writer = csv.writer(output)
 
-    writer.writerow([
-        "ID", "Login", "Email", "Phone", "First Name", "Last Name",
-        "Position", "Department", "Employment Type", "Status", "Role",
-        "Hired At", "Dismissed At", "Avatar URL"
-    ])
+    writer.writerow(
+        [
+            "ID",
+            "Login",
+            "Email",
+            "Phone",
+            "First Name",
+            "Last Name",
+            "Position",
+            "Department",
+            "Employment Type",
+            "Status",
+            "Role",
+            "Hired At",
+            "Dismissed At",
+            "Avatar URL",
+        ]
+    )
 
     for user in users:
-        writer.writerow([
-            str(user.id), user.login, user.email, user.phone,
-            user.first_name or "", user.last_name or "", user.position or "",
-            user.department or "", user.employment_type or "", user.status or "",
-            user.role or "", user.hired_at or "", user.dismissed_at or "", user.avatar_url or "",
-        ])
+        writer.writerow(
+            [
+                str(user.id),
+                user.login,
+                user.email,
+                user.phone,
+                user.first_name or "",
+                user.last_name or "",
+                user.position or "",
+                user.department or "",
+                user.employment_type or "",
+                user.status or "",
+                user.role or "",
+                user.hired_at or "",
+                user.dismissed_at or "",
+                user.avatar_url or "",
+            ]
+        )
 
     response = StreamingResponse(
         iter([output.getvalue()]),
@@ -257,7 +302,9 @@ async def export_users(
 
 
 @router.get(
-    "/", response_model=list[UserOutSchema], dependencies=[Depends(UserPermissions.CanViewUsers)]
+    "/",
+    response_model=list[UserOutSchema],
+    dependencies=[Depends(UserPermissions.CanViewUsers)],
 )
 @cached(ttl=60, tags=("users:list",))
 async def list_users(
@@ -268,9 +315,18 @@ async def list_users(
     return [_to_user_out(user) for user in users]
 
 
-@router.post("/", response_model=UserOutSchema, dependencies=[Depends(UserPermissions.CanCreateUsers)])
+@router.post(
+    "/",
+    response_model=UserOutSchema,
+    dependencies=[Depends(UserPermissions.CanCreateUsers)],
+)
 @limiter.limit("10/minute")
-@invalidate_cache(tags=("users:list", "users:search",))
+@invalidate_cache(
+    tags=(
+        "users:list",
+        "users:search",
+    )
+)
 async def create_user(
     request: Request,
     data: UserCreateSchema,
@@ -282,7 +338,9 @@ async def create_user(
 
 
 @router.get(
-    "/search", response_model=list[UserOutSchema], dependencies=[Depends(UserPermissions.CanViewUsers)]
+    "/search",
+    response_model=list[UserOutSchema],
+    dependencies=[Depends(UserPermissions.CanViewUsers)],
 )
 @cached(ttl=30, tags=("users:search",))
 async def search_users(
@@ -295,7 +353,9 @@ async def search_users(
 
 
 @router.get(
-    "/{user_id}", response_model=UserOutSchema, dependencies=[Depends(UserPermissions.CanViewUsers)]
+    "/{user_id}",
+    response_model=UserOutSchema,
+    dependencies=[Depends(UserPermissions.CanViewUsers)],
 )
 @cached(ttl=60, tags=("users:detail",))
 async def get_user(
@@ -308,7 +368,13 @@ async def get_user(
 
 @router.patch("/{user_id}", response_model=UserOutSchema)
 @limiter.limit("20/minute")
-@invalidate_cache(tags=("users:list", "users:search", "users:detail",))
+@invalidate_cache(
+    tags=(
+        "users:list",
+        "users:search",
+        "users:detail",
+    )
+)
 async def update_user(
     request: Request,
     user_id: uuid.UUID,
@@ -325,7 +391,13 @@ async def update_user(
 
 @router.delete("/{user_id}")
 @limiter.limit("5/minute")
-@invalidate_cache(tags=("users:list", "users:search", "users:detail",))
+@invalidate_cache(
+    tags=(
+        "users:list",
+        "users:search",
+        "users:detail",
+    )
+)
 async def archive_user(
     request: Request,
     user_id: uuid.UUID,
@@ -341,7 +413,13 @@ async def archive_user(
 
 @router.post("/{user_id}/block")
 @limiter.limit("10/minute")
-@invalidate_cache(tags=("users:list", "users:search", "users:detail",))
+@invalidate_cache(
+    tags=(
+        "users:list",
+        "users:search",
+        "users:detail",
+    )
+)
 async def block_user(
     request: Request,
     user_id: uuid.UUID,
@@ -357,7 +435,13 @@ async def block_user(
 
 @router.post("/{user_id}/activate")
 @limiter.limit("10/minute")
-@invalidate_cache(tags=("users:list", "users:search", "users:detail",))
+@invalidate_cache(
+    tags=(
+        "users:list",
+        "users:search",
+        "users:detail",
+    )
+)
 async def activate_user(
     request: Request,
     user_id: uuid.UUID,

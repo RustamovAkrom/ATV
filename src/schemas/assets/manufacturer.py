@@ -1,6 +1,7 @@
 from uuid import UUID
 
-from pydantic import ConfigDict, HttpUrl
+from pydantic import HttpUrl
+
 from schemas.base import BaseSchema
 
 

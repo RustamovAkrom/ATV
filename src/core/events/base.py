@@ -1,8 +1,10 @@
 # core/events/base.py
-from typing import Any, Awaitable, Callable
-from utils.helpers import utc_now
+from collections.abc import Awaitable, Callable
+from typing import Any
+
 from core.audit.stream import audit_stream
 from core.config import get_settings
+from utils.helpers import utc_now
 
 
 class BaseEventService:

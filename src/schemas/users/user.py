@@ -1,14 +1,14 @@
-from datetime import datetime, date
+from datetime import date, datetime
 from uuid import UUID
 
 from pydantic import ConfigDict, EmailStr, Field, field_validator
 
-from db.models.enums import UserStatus, UserGender, EmploymentType, UserLanguage
+from db.models.enums import EmploymentType, UserGender, UserLanguage, UserStatus
 from schemas.base import BaseSchema, TimestampSchema
 
 
 class UserCreateSchema(BaseSchema):
-    login: str = Field(min_length=3, max_length=100, pattern=r'^[a-zA-Z0-9_]+$')
+    login: str = Field(min_length=3, max_length=100, pattern=r"^[a-zA-Z0-9_]+$")
     email: EmailStr
     phone: str = Field(min_length=7, max_length=20)
     password: str = Field(min_length=6, max_length=100)
@@ -68,11 +68,11 @@ class ChangePasswordRequestSchema(BaseSchema):
     old_password: str
     new_password: str = Field(min_length=6)
 
-    @field_validator('new_password')
+    @field_validator("new_password")
     @classmethod
     def validate_password(cls, v: str) -> str:
         if len(v) > 6:
-            raise ValueError('Password must be at least 5 charecters')
+            raise ValueError("Password must be at least 5 charecters")
         return v
 
 
@@ -86,7 +86,7 @@ class UserOutSchema(TimestampSchema):
     email: str
     phone: str
     role: str | None
-    permissions: list[str] = Field(default_factory=list)
+    # permissions: list[str] = Field(default_factory=list)
     first_name: str | None
     last_name: str | None
     status: UserStatus

@@ -1,9 +1,9 @@
-from fastapi import WebSocket, Depends
+from fastapi import Depends, WebSocket
 
-from core.security.jwt import decode_token
-from core.security.blacklist import get_blacklist
-from core.exceptions.errors import InvalidToken
 from api.dependencies.users import get_user_repo
+from core.exceptions.errors import InvalidToken
+from core.security.blacklist import get_blacklist
+from core.security.jwt import decode_token
 from repositories.users.user_repo import UserRepository
 from schemas.auth import CurrentUserSchema
 

@@ -6,8 +6,8 @@ from core.config import get_settings
 from core.security.auth.dependencies import get_current_user
 from core.slowapi import limiter
 from schemas.auth import CurrentUserSchema, RefreshRequestSchema, TokenResponseSchema
-from services.auth.auth_service import AuthService
 from schemas.common import StatusResponse
+from services.auth.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 settings = get_settings()

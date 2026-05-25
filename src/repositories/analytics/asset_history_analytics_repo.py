@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import selectinload
 
@@ -26,32 +24,40 @@ class AssetHistoryAnalyticsRepository(BaseAnalyticsRepository):
         if filters.action:
             query = query.where(AssetHistory.action == filters.action)
 
-        date_filters = self.date_filters(AssetHistory.created_at, filters.date_from, filters.date_to)
+        date_filters = self.date_filters(
+            AssetHistory.created_at, filters.date_from, filters.date_to
+        )
         query = query.where(*date_filters)
 
         if filters.search:
             term = f"%{filters.search.strip()}%"
-            query = query.join(Asset).join(User).where(
-                or_(
-                    Asset.name.ilike(term),
-                    User.full_name.ilike(term),
-                    AssetHistory.description.ilike(term),
-                    AssetHistory.action.ilike(term),
+            query = (
+                query.join(Asset)
+                .join(User)
+                .where(
+                    or_(
+                        Asset.name.ilike(term),
+                        User.full_name.ilike(term),
+                        AssetHistory.description.ilike(term),
+                        AssetHistory.action.ilike(term),
+                    )
                 )
             )
 
         return query
 
     async def list(
-        self,
-        filters: AssetHistoryFilter,
-        pagination: PaginationParamsSchema
+        self, filters: AssetHistoryFilter, pagination: PaginationParamsSchema
     ) -> tuple[list[AssetHistory], int]:
         """Список записей истории с пагинацией"""
-        query = select(AssetHistory).options(
-            selectinload(AssetHistory.asset),
-            selectinload(AssetHistory.user),
-        ).order_by(AssetHistory.created_at.desc())
+        query = (
+            select(AssetHistory)
+            .options(
+                selectinload(AssetHistory.asset),
+                selectinload(AssetHistory.user),
+            )
+            .order_by(AssetHistory.created_at.desc())
+        )
 
         query = self._apply_filters(query, filters)
         result, total = await self.execute_with_pagination(query, pagination)
@@ -65,23 +71,32 @@ class AssetHistoryAnalyticsRepository(BaseAnalyticsRepository):
         filtered = base_query.subquery()
 
         # Основные агрегаты
-        agg_query = select(
-            func.count(filtered.c.id).label("total_entries"),
-            func.count(func.distinct(AssetHistory.asset_id)).label("unique_assets"),
-            func.count(func.distinct(AssetHistory.user_id)).label("unique_users"),
-            func.min(AssetHistory.created_at).label("min_date"),
-            func.max(AssetHistory.created_at).label("max_date"),
-        ).select_from(filtered).join(AssetHistory, AssetHistory.id == filtered.c.id)
+        agg_query = (
+            select(
+                func.count(filtered.c.id).label("total_entries"),
+                func.count(func.distinct(AssetHistory.asset_id)).label("unique_assets"),
+                func.count(func.distinct(AssetHistory.user_id)).label("unique_users"),
+                func.min(AssetHistory.created_at).label("min_date"),
+                func.max(AssetHistory.created_at).label("max_date"),
+            )
+            .select_from(filtered)
+            .join(AssetHistory, AssetHistory.id == filtered.c.id)
+        )
 
         aggregate_row = (await self.session.execute(agg_query)).one()
 
         # Разбивка по действиям
-        actions_query = select(
-            AssetHistory.action,
-            func.count().label("count"),
-            func.min(AssetHistory.created_at).label("first_occurrence"),
-            func.max(AssetHistory.created_at).label("last_occurrence"),
-        ).select_from(filtered).join(AssetHistory, AssetHistory.id == filtered.c.id).group_by(AssetHistory.action)
+        actions_query = (
+            select(
+                AssetHistory.action,
+                func.count().label("count"),
+                func.min(AssetHistory.created_at).label("first_occurrence"),
+                func.max(AssetHistory.created_at).label("last_occurrence"),
+            )
+            .select_from(filtered)
+            .join(AssetHistory, AssetHistory.id == filtered.c.id)
+            .group_by(AssetHistory.action)
+        )
 
         actions_result = await self.session.execute(actions_query)
         actions_breakdown = [

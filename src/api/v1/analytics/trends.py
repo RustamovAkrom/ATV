@@ -12,40 +12,64 @@ router = APIRouter(prefix="/analytics/trends", tags=["Analytics - Trends"])
 settings = get_settings()
 
 
-@router.get("/assignments", response_model=TrendSeriesOut, dependencies=[Depends(AssetPermissions.CanViewAssets)])
+@router.get(
+    "/assignments",
+    response_model=TrendSeriesOut,
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
+)
 @cached(ttl=300, tags=("analytics:trends:assignments",))
 async def get_assignment_trends(
-    request: Request, interval: TrendInterval = Query(TrendInterval.DAILY), periods: int = Query(30, ge=1, le=180),
+    request: Request,
+    interval: TrendInterval = Query(TrendInterval.DAILY),
+    periods: int = Query(30, ge=1, le=180),
     service: TrendAnalyticsService = Depends(get_trend_analytics_service),
 ):
     return await run_analytics_operation(
-        request, "analytics.trends.assignments", {"interval": interval, "periods": periods},
+        request,
+        "analytics.trends.assignments",
+        {"interval": interval, "periods": periods},
         lambda: service.assignment_trends(interval, periods),
         lambda: TrendSeriesOut(interval=interval, points=[]),
     )
 
 
-@router.get("/transfers", response_model=TrendSeriesOut, dependencies=[Depends(AssetPermissions.CanViewAssets)])
+@router.get(
+    "/transfers",
+    response_model=TrendSeriesOut,
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
+)
 @cached(ttl=300, tags=("analytics:trends:transfers",))
 async def get_transfer_trends(
-    request: Request, interval: TrendInterval = Query(TrendInterval.DAILY), periods: int = Query(30, ge=1, le=180),
+    request: Request,
+    interval: TrendInterval = Query(TrendInterval.DAILY),
+    periods: int = Query(30, ge=1, le=180),
     service: TrendAnalyticsService = Depends(get_trend_analytics_service),
 ):
     return await run_analytics_operation(
-        request, "analytics.trends.transfers", {"interval": interval, "periods": periods},
+        request,
+        "analytics.trends.transfers",
+        {"interval": interval, "periods": periods},
         lambda: service.transfer_trends(interval, periods),
         lambda: TrendSeriesOut(interval=interval, points=[]),
     )
 
 
-@router.get("/repairs", response_model=RepairTrendSeriesOut, dependencies=[Depends(AssetPermissions.CanViewAssets)])
+@router.get(
+    "/repairs",
+    response_model=RepairTrendSeriesOut,
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
+)
 @cached(ttl=300, tags=("analytics:trends:repairs",))
 async def get_repair_trends(
-    request: Request, interval: TrendInterval = Query(TrendInterval.DAILY), periods: int = Query(30, ge=1, le=180),
+    request: Request,
+    interval: TrendInterval = Query(TrendInterval.DAILY),
+    periods: int = Query(30, ge=1, le=180),
     service: TrendAnalyticsService = Depends(get_trend_analytics_service),
 ):
     return await run_analytics_operation(
-        request, "analytics.trends.repairs", {"interval": interval, "periods": periods},
+        request,
+        "analytics.trends.repairs",
+        {"interval": interval, "periods": periods},
         lambda: service.repair_trends(interval, periods),
         lambda: RepairTrendSeriesOut(interval=interval, points=[]),
     )

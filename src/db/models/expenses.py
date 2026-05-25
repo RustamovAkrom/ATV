@@ -2,14 +2,22 @@
 
 from datetime import datetime
 from uuid import UUID
-from sqlalchemy.ext.hybrid import hybrid_property
 
-from sqlalchemy import DateTime, ForeignKey, Index, Numeric, String, Text, CheckConstraint
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Numeric,
+    String,
+    Text,
+)
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from db.base import Base
-from db.mixins import UUIDMixing, TimestampMixin
+from db.mixins import TimestampMixin, UUIDMixing
 
 
 class Expense(Base, UUIDMixing, TimestampMixin):
@@ -51,10 +59,10 @@ class Expense(Base, UUIDMixing, TimestampMixin):
     )
 
     __table_args__ = (
-        CheckConstraint('amount >= 0', name='ck_expense_amount_positive'),
+        CheckConstraint("amount >= 0", name="ck_expense_amount_positive"),
         Index("ix_expenses_asset_region", "asset_id", "region_id"),
         Index("ix_expenses_type_date", "expense_type_code", "occurred_at"),
-        Index('ix_expenses_created_occurred', 'created_at', 'occurred_at'),
+        Index("ix_expenses_created_occurred", "created_at", "occurred_at"),
     )
 
     def __repr__(self) -> str:
@@ -62,8 +70,8 @@ class Expense(Base, UUIDMixing, TimestampMixin):
 
     @hybrid_property
     def amount_usd(self) -> float | None:
-        if self.currency == 'UZS':
-            return self.amount / 13000 # пример курса
+        if self.currency == "UZS":
+            return self.amount / 13000  # пример курса
         return self.amount
 
     @hybrid_property
@@ -74,6 +82,6 @@ class Expense(Base, UUIDMixing, TimestampMixin):
     @hybrid_property
     def amount_usd(self) -> float | None:
         """Конвертация в USD."""
-        if self.currency == 'UZS':
-            return self.amount / 13000 # TODO: Change automaticaly dependens on UZS
+        if self.currency == "UZS":
+            return self.amount / 13000  # TODO: Change automaticaly dependens on UZS
         return self.amount

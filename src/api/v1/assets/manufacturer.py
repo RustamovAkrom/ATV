@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends
 
 from api.dependencies.assets.asset_manufacturer import get_manufacturer_service
 from schemas.assets.manufacturer import ManufacturerCreateSchema, ManufacturerOutSchema
-from services.assets.manufacturer_service import ManufacturerService
 from schemas.common import StatusResponse
+from services.assets.manufacturer_service import ManufacturerService
 
 router = APIRouter(prefix="/manufacturer", tags=["Manufacturer"])
 

@@ -1,5 +1,3 @@
-from sqlalchemy.orm import validates
-from sqlalchemy import event
 import uuid
 from datetime import datetime
 from typing import Any
@@ -14,7 +12,9 @@ from utils.slug import slugify
 
 
 class SlugMixin:
-    slug: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
+    slug: Mapped[str] = mapped_column(
+        String(255), nullable=False, unique=True, index=True
+    )
 
     @validates("name")
     def _generate_slug(self, key, value: str):
@@ -66,14 +66,14 @@ UUIDMixing = UUIDMixin
 class StatusMixin:
     STATUS_ENUM: Any = None
 
-    status: Mapped[str] = mapped_column(
-        String(50),
-        nullable=False,
-        index=True
-    )
+    status: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
 
     def is_status(self, status: Any) -> bool:
-        return self.status == status.value if hasattr(status, 'value') else self.status == status
+        return (
+            self.status == status.value
+            if hasattr(status, "value")
+            else self.status == status
+        )
 
     @validates("status")
     def validate_status(self, value: str) -> str:

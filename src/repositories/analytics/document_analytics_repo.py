@@ -28,27 +28,32 @@ class DocumentAnalyticsRepository(BaseAnalyticsRepository):
         total = await self.get_count(Asset, filters)
 
         # Активы с документами
-        with_docs = await self.session.scalar(
-            select(func.count(func.distinct(Asset.id)))
-            .select_from(Asset)
-            .join(Document, Document.asset_id == Asset.id)
-            .where(*filters)
-        ) or 0
+        with_docs = (
+            await self.session.scalar(
+                select(func.count(func.distinct(Asset.id)))
+                .select_from(Asset)
+                .join(Document, Document.asset_id == Asset.id)
+                .where(*filters)
+            )
+            or 0
+        )
 
         # Активы без обязательных документов
         missing_compliance = 0
         if required_document_types:
-            missing_compliance = await self.session.scalar(
-                select(func.count(Asset.id))
-                .where(
-                    *filters,
-                    ~Asset.id.in_(
-                        select(Document.asset_id).where(
-                            Document.document_type.in_(required_document_types)
-                        )
-                    ),
+            missing_compliance = (
+                await self.session.scalar(
+                    select(func.count(Asset.id)).where(
+                        *filters,
+                        ~Asset.id.in_(
+                            select(Document.asset_id).where(
+                                Document.document_type.in_(required_document_types)
+                            )
+                        ),
+                    )
                 )
-            ) or 0
+                or 0
+            )
 
         return {
             "total_assets": total,

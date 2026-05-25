@@ -1,25 +1,26 @@
 from uuid import UUID
-from typing import List
 
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request
 
 from api.dependencies.assets.asset_maintenance import get_asset_maintenance_service
-from core.cache.decorators import invalidate_cache
+from core.cache.decorators import cached, invalidate_cache
 from core.security.auth.dependencies import get_current_user
-from core.security.rbac.presets import AssetPermissions
 from core.slowapi import limiter
-from schemas.auth import CurrentUserSchema
 from schemas.assets.asset_maintenance import (
     AssetMaintenanceCreateSchema,
-    AssetMaintenanceUpdateSchema,
     AssetMaintenanceOutSchema,
+    AssetMaintenanceUpdateSchema,
 )
+from schemas.auth import CurrentUserSchema
 from services.assets.asset_maintenance_service import AssetMaintenanceService
 
-router = APIRouter(prefix="/assets/{asset_id}/maintenances", tags=["Asset Maintenances"])
+router = APIRouter(
+    prefix="/assets/{asset_id}/maintenances", tags=["Asset Maintenances"]
+)
 
 
-@router.get("/", response_model=List[AssetMaintenanceOutSchema])
+@router.get("/", response_model=list[AssetMaintenanceOutSchema])
+@cached(tags=("maintenance:list",))
 async def list_asset_maintenances(
     asset_id: UUID,
     service: AssetMaintenanceService = Depends(get_asset_maintenance_service),
@@ -31,7 +32,13 @@ async def list_asset_maintenances(
 
 @router.post("/", response_model=AssetMaintenanceOutSchema)
 @limiter.limit("20/minute")
-@invalidate_cache(tags=("assets:list", "assets:detail"))
+@invalidate_cache(
+    tags=(
+        "assets:list",
+        "assets:detail",
+        "maintenance:list",
+    )
+)
 async def create_asset_maintenance(
     request: Request,
     asset_id: UUID,
@@ -45,7 +52,13 @@ async def create_asset_maintenance(
 
 @router.patch("/{maintenance_id}", response_model=AssetMaintenanceOutSchema)
 @limiter.limit("20/minute")
-@invalidate_cache(tags=("assets:list", "assets:detail"))
+@invalidate_cache(
+    tags=(
+        "assets:list",
+        "assets:detail",
+        "maintenance:list",
+    )
+)
 async def update_asset_maintenance(
     request: Request,
     asset_id: UUID,
@@ -60,7 +73,13 @@ async def update_asset_maintenance(
 
 @router.delete("/{maintenance_id}")
 @limiter.limit("10/minute")
-@invalidate_cache(tags=("assets:list", "assets:detail"))
+@invalidate_cache(
+    tags=(
+        "assets:list",
+        "assets:detail",
+        "maintenance:list",
+    )
+)
 async def delete_asset_maintenance(
     request: Request,
     asset_id: UUID,

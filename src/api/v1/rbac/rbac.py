@@ -3,9 +3,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request
 
 from api.dependencies.rbac import get_rbac_service
-
-from core.security.rbac.presets import UserPermissions, RBACPermissions
+from core.cache.decorators import cached, invalidate_cache
+from core.security.rbac.presets import RBACPermissions, UserPermissions
+from core.slowapi import limiter
 from schemas.auth import CurrentUserSchema
+from schemas.common import StatusResponse
 from schemas.rbac.rbac import (
     PermissionOutSchema,
     RoleCreateSchema,
@@ -14,13 +16,12 @@ from schemas.rbac.rbac import (
     RoleUpdateSchema,
 )
 from services.rbac.rbac_service import RBACService
-from schemas.common import StatusResponse
-from core.slowapi import limiter
 
 router = APIRouter(prefix="/rbac", tags=["RBAC"])
 
 
 @router.get("/roles", response_model=list[RoleOutSchema])
+@cached(tags=("roles:list",))
 async def list_roles(
     _: CurrentUserSchema = Depends(UserPermissions.CanViewUsers),
     service: RBACService = Depends(get_rbac_service),
@@ -29,6 +30,7 @@ async def list_roles(
 
 
 @router.get("/permissions", response_model=list[PermissionOutSchema])
+@cached(tags=("permissions:list",))
 async def list_permissions(
     # Список прав полезен админу при настройке системы
     _: CurrentUserSchema = Depends(UserPermissions.CanViewUsers),
@@ -39,6 +41,12 @@ async def list_permissions(
 
 @router.post("/roles", response_model=RoleOutSchema)
 @limiter.limit("10/minute")
+@invalidate_cache(
+    tags=(
+        "roles:list",
+        "permissions:list",
+    )
+)
 async def create_role(
     request: Request,
     data: RoleCreateSchema,
@@ -50,6 +58,12 @@ async def create_role(
 
 @router.patch("/roles/{role_id}", response_model=RoleOutSchema)
 @limiter.limit("20/minute")
+@invalidate_cache(
+    tags=(
+        "roles:list",
+        "permissions:list",
+    )
+)
 async def update_role(
     request: Request,
     role_id: UUID,
@@ -62,6 +76,12 @@ async def update_role(
 
 @router.delete("/roles/{role_id}", response_model=StatusResponse)
 @limiter.limit("5/minute")
+@invalidate_cache(
+    tags=(
+        "roles:list",
+        "permissions:list",
+    )
+)
 async def delete_role(
     request: Request,
     role_id: UUID,
@@ -74,6 +94,12 @@ async def delete_role(
 
 @router.put("/roles/{role_id}/permissions", response_model=RoleOutSchema)
 @limiter.limit("10/minute")
+@invalidate_cache(
+    tags=(
+        "roles:list",
+        "permissions:list",
+    )
+)
 async def set_role_permissions(
     request: Request,
     role_id: UUID,

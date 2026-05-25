@@ -2,7 +2,8 @@
 
 from uuid import UUID
 
-from pydantic import ConfigDict, Field
+from pydantic import Field
+
 from schemas.base import BaseSchema
 
 

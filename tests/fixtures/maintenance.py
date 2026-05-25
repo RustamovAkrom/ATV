@@ -1,4 +1,5 @@
 """Fixtures for AssetMaintenance tests."""
+
 import pytest
 
 from tests.factories.maintenance import create_maintenance

@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-from uuid import UUID
 from types import SimpleNamespace
+from uuid import UUID
 
 from pydantic import ValidationError
 
-from core.audit.stream import audit_stream
+from core.events.asset_events import AssetEventService
 from core.exceptions.errors import BadRequest, NotFound
+from core.security.access_control import AccessControl
 from db.models.assets.asset import Asset
-from db.models.assets.asset_assignment import AssetAssignment
-from db.models.assets.asset_history import AssetHistory
 from db.models.enums import AssetStatus, UserStatus
 from repositories.assets.asset_repo import AssetRepository
 from schemas.assets.assets import (
-    AssetAssignRequest,
     AssetCreate,
     AssetDetailSchema,
     AssetFilters,
@@ -21,13 +19,10 @@ from schemas.assets.assets import (
     AssetSchema,
     AssetStatusChangeRequest,
     AssetUpdate,
-    AssetPage,
 )
+from schemas.auth.auth import CurrentUserSchema
 from schemas.pagination import PageOutSchema, PageSchema, PaginationParamsSchema
 from utils.helpers import utc_now
-from schemas.auth.auth import CurrentUserSchema
-from core.security.access_control import AccessControl
-from core.events.asset_events import AssetEventService
 
 
 class AssetService:
@@ -166,7 +161,7 @@ class AssetService:
             failure_count=data.failure_count,
             usage_intensity=data.usage_intensity,
             meta=data.metadata,
-            owner_id=data.owner_id, # TODO: buv yerda avtomatik owner_id biriktirilishi kerak datadan olib tashlanishi kerak pydantic modeldanam owner_id ni olib tashlash kerak avtomatic tarizda owner_id biriktirilshi kerak authorizatsiyadan otgan shu assetni yaratayotkan userni id sini qoyish lozim
+            owner_id=data.owner_id,  # TODO: buv yerda avtomatik owner_id biriktirilishi kerak datadan olib tashlanishi kerak pydantic modeldanam owner_id ni olib tashlash kerak avtomatic tarizda owner_id biriktirilshi kerak authorizatsiyadan otgan shu assetni yaratayotkan userni id sini qoyish lozim
             status=AssetStatus.ASSIGNED if data.owner_id else AssetStatus.ACTIVE,
         )
 
@@ -260,8 +255,12 @@ class AssetService:
             asset_id=asset.id,
             actor_id=actor.id,
             owner_id=asset.owner_id,
-            from_status=previous_status.value if hasattr(previous_status, 'value') else str(previous_status),
-            to_status=new_status.value if hasattr(new_status, 'value') else str(new_status),
+            from_status=previous_status.value
+            if hasattr(previous_status, "value")
+            else str(previous_status),
+            to_status=new_status.value
+            if hasattr(new_status, "value")
+            else str(new_status),
         )
 
         return await self.get(asset.id, actor)

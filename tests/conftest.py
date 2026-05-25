@@ -22,8 +22,8 @@ from db.models import load_all_models
 from db.models.enums import UserRole, UserStatus
 from db.models.users.permission import Permission, Role
 from db.models.users.user import User
-from tests.utils.auth import login
 from schemas.auth.auth import CurrentUserSchema
+from tests.utils.auth import login
 
 pytest_plugins = (
     "tests.fixtures.analytics",

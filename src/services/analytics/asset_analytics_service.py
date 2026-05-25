@@ -8,7 +8,9 @@ class AssetAnalyticsService(BaseAnalyticsService):
     def __init__(self, repo: AssetAnalyticsRepository):
         self.repo = repo
 
-    async def distribution(self, filters: AnalyticsFilters, user: CurrentUserSchema) -> dict:
+    async def distribution(
+        self, filters: AnalyticsFilters, user: CurrentUserSchema
+    ) -> dict:
         self.validate_filters(filters, user)
 
         raw = await self.repo.distribution(
@@ -24,8 +26,12 @@ class AssetAnalyticsService(BaseAnalyticsService):
             "total_assets": total,
             "by_region": self.to_distribution(raw["by_region"], total, "id", "name"),
             "by_service": self.to_distribution(raw["by_service"], total, "id", "name"),
-            "by_warehouse": self.to_distribution(raw["by_warehouse"], total, "id", "name"),
-            "by_status": self.to_distribution(raw["by_status"], total, "status", "status"),
+            "by_warehouse": self.to_distribution(
+                raw["by_warehouse"], total, "id", "name"
+            ),
+            "by_status": self.to_distribution(
+                raw["by_status"], total, "status", "status"
+            ),
             "geo": [
                 {
                     "region_id": str(r.region_id),
@@ -40,7 +46,9 @@ class AssetAnalyticsService(BaseAnalyticsService):
             ],
         }
 
-    async def lifecycle(self, filters: AnalyticsFilters, user: CurrentUserSchema) -> dict:
+    async def lifecycle(
+        self, filters: AnalyticsFilters, user: CurrentUserSchema
+    ) -> dict:
         self.validate_filters(filters, user)
 
         raw = await self.repo.lifecycle(
@@ -56,7 +64,9 @@ class AssetAnalyticsService(BaseAnalyticsService):
                 "key": str(r.stage),
                 "label": str(r.stage),
                 "count": int(r.asset_count or 0),
-                "percentage": round((int(r.asset_count or 0) / total * 100.0) if total else 0.0, 2),
+                "percentage": round(
+                    (int(r.asset_count or 0) / total * 100.0) if total else 0.0, 2
+                ),
             }
             for r in raw["rows"]
         ]
@@ -67,5 +77,7 @@ class AssetAnalyticsService(BaseAnalyticsService):
                 "values": [i["count"] for i in items],
                 "items": items,
             },
-            "critical_assets_percentage": round((raw["critical"] / total * 100.0) if total else 0.0, 2),
+            "critical_assets_percentage": round(
+                (raw["critical"] / total * 100.0) if total else 0.0, 2
+            ),
         }

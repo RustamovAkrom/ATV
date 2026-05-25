@@ -6,15 +6,15 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request
 
 from api.dependencies.organizations.services import get_service_service
+from core.cache.decorators import cached, invalidate_cache
 from core.security.auth.dependencies import get_current_user
 from core.security.rbac.presets import ServicePermissions
-from core.cache.decorators import cached, invalidate_cache
 from core.slowapi import limiter
 from schemas.auth.auth import CurrentUserSchema
 from schemas.organization.service import (
     ServiceCreateSchema,
-    ServiceUpdateSchema,
     ServiceOutSchema,
+    ServiceUpdateSchema,
     ServiceWithRegionsOutSchema,
 )
 from services.organization.service_service import ServiceService
@@ -72,7 +72,12 @@ async def get_service_regions(
     dependencies=[Depends(ServicePermissions.CanCreateServices)],
 )
 @limiter.limit("10/minute")
-@invalidate_cache(tags=("service:list", "service:regions",))
+@invalidate_cache(
+    tags=(
+        "service:list",
+        "service:regions",
+    )
+)
 async def create_service(
     request: Request,
     data: ServiceCreateSchema,
@@ -89,7 +94,13 @@ async def create_service(
     dependencies=[Depends(ServicePermissions.CanUpdateServices)],
 )
 @limiter.limit("20/minute")
-@invalidate_cache(tags=("service:list", "service:regions", "service:detail",))
+@invalidate_cache(
+    tags=(
+        "service:list",
+        "service:regions",
+        "service:detail",
+    )
+)
 async def update_service(
     request: Request,
     service_id: UUID,
@@ -106,7 +117,13 @@ async def update_service(
     dependencies=[Depends(ServicePermissions.CanDeleteServices)],
 )
 @limiter.limit("5/minute")
-@invalidate_cache(tags=("service:list", "service:regions", "service:detail",))
+@invalidate_cache(
+    tags=(
+        "service:list",
+        "service:regions",
+        "service:detail",
+    )
+)
 async def delete_service(
     request: Request,
     service_id: UUID,

@@ -1,7 +1,7 @@
+import io
 from uuid import UUID, uuid4
 
 import pytest
-import io
 from sqlalchemy import func, select
 
 from db.models.assets.asset import Asset
@@ -245,7 +245,6 @@ async def test_document_attach_and_delete_flow(client, dbsession, analytics_toke
     file_count = await dbsession.scalar(select(func.count()).select_from(DocumentFile))
     assert document_count == 0
     assert file_count == 0
-
 
 
 @pytest.mark.anyio

@@ -12,7 +12,11 @@ router = APIRouter(prefix="/analytics/alerts", tags=["Analytics - Alerts"])
 settings = get_settings()
 
 
-@router.get("/", response_model=list[AlertOut], dependencies=[Depends(AssetPermissions.CanViewAssets)])
+@router.get(
+    "/",
+    response_model=list[AlertOut],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
+)
 @cached(ttl=120, tags=("analytics:alerts",))
 async def get_alerts(
     request: Request,
@@ -24,8 +28,15 @@ async def get_alerts(
     service: AlertAnalyticsService = Depends(get_alert_analytics_service),
 ):
     return await run_analytics_operation(
-        request, "analytics.alerts",
+        request,
+        "analytics.alerts",
         {"transfer_days": transfer_days, "repair_days": repair_days},
-        lambda: service.get_alerts(transfer_days, repair_days, repair_threshold, inactive_days, assignment_threshold),
+        lambda: service.get_alerts(
+            transfer_days,
+            repair_days,
+            repair_threshold,
+            inactive_days,
+            assignment_threshold,
+        ),
         lambda: [],
     )

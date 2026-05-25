@@ -1,20 +1,18 @@
 from uuid import UUID
-from typing import List
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Request
+
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
 from api.dependencies.assets.asset_image import get_asset_image_service
 from api.dependencies.storage import get_file_upload_service
-from core.cache.decorators import invalidate_cache
-from core.security.auth.dependencies import get_current_user
-from core.security.rbac.presets import AssetPermissions
-from core.slowapi import limiter
+from core.cache.decorators import cached, invalidate_cache
 from core.config import get_settings
+from core.security.auth.dependencies import get_current_user
+from core.slowapi import limiter
 from core.storage import FileUploadService
 from core.storage.configs import UploadConfigs
-
+from schemas.assets.asset_image import AssetImageCreateSchema, AssetImageOutSchema
 from schemas.auth import CurrentUserSchema
-from schemas.assets.asset_image import AssetImageOutSchema, AssetImageCreateSchema
 from services.assets.asset_image_service import AssetImageService
 
 router = APIRouter(prefix="/assets/{asset_id}/images", tags=["Asset Images"])
@@ -23,7 +21,9 @@ settings = get_settings()
 
 # ========== GET запросы (без rate limit) ==========
 
+
 @router.get("/", response_model=list[AssetImageOutSchema])
+@cached(tags=("asset:image:list",))
 async def list_asset_images(
     asset_id: UUID,
     service: AssetImageService = Depends(get_asset_image_service),
@@ -34,6 +34,7 @@ async def list_asset_images(
 
 
 @router.get("/file/{image_id}")
+@cached(tags=("asset:image:file",))
 async def get_image_file(
     image_id: UUID,
     service: AssetImageService = Depends(get_asset_image_service),
@@ -60,9 +61,18 @@ async def get_image_file(
 
 # ========== POST/PATCH/DELETE запросы (с rate limit) ==========
 
+
 @router.post("/", response_model=AssetImageOutSchema)
 @limiter.limit("20/minute")
-@invalidate_cache(tags=("assets:list", "assets:detail"))
+@invalidate_cache(
+    tags=(
+        "asset:list",
+        "asset:detail",
+        "asset:history",
+        "asset:image:list",
+        "asset:image:file",
+    )
+)
 async def upload_asset_image(
     request: Request,
     asset_id: UUID,
@@ -87,6 +97,7 @@ async def upload_asset_image(
     width, height = None, None
     try:
         from PIL import Image
+
         full_path = settings.BASE_DIR / result.file_path
         with Image.open(full_path) as img:
             width, height = img.size
@@ -107,7 +118,15 @@ async def upload_asset_image(
 
 @router.put("/{image_id}/primary")
 @limiter.limit("10/minute")
-@invalidate_cache(tags=("assets:list", "assets:detail"))
+@invalidate_cache(
+    tags=(
+        "asset:list",
+        "asset:detail",
+        "asset:history",
+        "asset:image:list",
+        "asset:image:file",
+    )
+)
 async def set_primary_image(
     request: Request,
     asset_id: UUID,
@@ -122,7 +141,14 @@ async def set_primary_image(
 
 @router.delete("/{image_id}")
 @limiter.limit("10/minute")
-@invalidate_cache(tags=("assets:list", "assets:detail"))
+@invalidate_cache(
+    tags=(
+        "asset:list",
+        "asset:detail",
+        "asset:image:list",
+        "asset:image:file",
+    )
+)
 async def delete_asset_image(
     request: Request,
     asset_id: UUID,
@@ -150,7 +176,13 @@ async def delete_asset_image(
 
 @router.post("/reorder")
 @limiter.limit("10/minute")
-@invalidate_cache(tags=("assets:list", "assets:detail"))
+@invalidate_cache(
+    tags=(
+        "asset:list",
+        "asset:detail",
+        "asset:image:list",
+    )
+)
 async def reorder_images(
     request: Request,
     asset_id: UUID,

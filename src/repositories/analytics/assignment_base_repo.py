@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Tuple
-from uuid import UUID
-
-from sqlalchemy import and_, func, or_, select
-from sqlalchemy.orm import selectinload
+from sqlalchemy import func, or_, select
 
 from db.models.assets.asset import Asset
 from db.models.assets.asset_assignment import AssetAssignment
 from db.models.users.user import User
-from schemas.analytics.asset_assignment_analytics import AssignmentAnalyticsStatus
 from repositories.analytics.base_analytics_repo import BaseAnalyticsRepository
+from schemas.analytics.asset_assignment_analytics import AssignmentAnalyticsStatus
 
 
 class AssignmentBaseRepository(BaseAnalyticsRepository):
@@ -27,28 +23,28 @@ class AssignmentBaseRepository(BaseAnalyticsRepository):
         if not filters:
             return query
 
-        if with_joins and hasattr(filters, 'search') and filters.search:
+        if with_joins and hasattr(filters, "search") and filters.search:
             query = query.join(self.asset_table).join(self.user_table)
 
-        if hasattr(filters, 'asset_id') and filters.asset_id:
+        if hasattr(filters, "asset_id") and filters.asset_id:
             query = query.where(self.assignment_table.asset_id == filters.asset_id)
 
-        if hasattr(filters, 'user_id') and filters.user_id:
+        if hasattr(filters, "user_id") and filters.user_id:
             query = query.where(self.assignment_table.user_id == filters.user_id)
 
-        if hasattr(filters, 'status'):
+        if hasattr(filters, "status"):
             if filters.status == AssignmentAnalyticsStatus.ACTIVE:
                 query = query.where(self.assignment_table.unassigned_at.is_(None))
             elif filters.status == AssignmentAnalyticsStatus.INACTIVE:
                 query = query.where(self.assignment_table.unassigned_at.isnot(None))
 
-        if hasattr(filters, 'date_from') and filters.date_from:
+        if hasattr(filters, "date_from") and filters.date_from:
             query = query.where(self.assignment_table.assigned_at >= filters.date_from)
 
-        if hasattr(filters, 'date_to') and filters.date_to:
+        if hasattr(filters, "date_to") and filters.date_to:
             query = query.where(self.assignment_table.assigned_at <= filters.date_to)
 
-        if hasattr(filters, 'search') and filters.search and with_joins:
+        if hasattr(filters, "search") and filters.search and with_joins:
             term = f"%{filters.search.strip()}%"
             query = query.where(
                 or_(
@@ -63,23 +59,29 @@ class AssignmentBaseRepository(BaseAnalyticsRepository):
         """Получает агрегированные метрики для назначений"""
         # Базовый подзапрос с фильтрами
         base_query = select(self.assignment_table.id)
-        base_query = self.apply_assignment_filters(base_query, filters, with_joins=False)
+        base_query = self.apply_assignment_filters(
+            base_query, filters, with_joins=False
+        )
         filtered = base_query.subquery()
 
-        aggregate_query = select(
-            func.count(filtered.c.id).label("total_assignments"),
-            func.count(filtered.c.id)
-            .filter(self.assignment_table.unassigned_at.is_(None))
-            .label("active_assignments"),
-            func.count(filtered.c.id)
-            .filter(self.assignment_table.unassigned_at.isnot(None))
-            .label("inactive_assignments"),
-            func.avg(
-                self.assignment_table.unassigned_at - self.assignment_table.assigned_at
-            ).filter(self.assignment_table.unassigned_at.isnot(None))
-            .label("avg_duration"),
-        ).select_from(filtered).join(
-            self.assignment_table, self.assignment_table.id == filtered.c.id
+        aggregate_query = (
+            select(
+                func.count(filtered.c.id).label("total_assignments"),
+                func.count(filtered.c.id)
+                .filter(self.assignment_table.unassigned_at.is_(None))
+                .label("active_assignments"),
+                func.count(filtered.c.id)
+                .filter(self.assignment_table.unassigned_at.isnot(None))
+                .label("inactive_assignments"),
+                func.avg(
+                    self.assignment_table.unassigned_at
+                    - self.assignment_table.assigned_at
+                )
+                .filter(self.assignment_table.unassigned_at.isnot(None))
+                .label("avg_duration"),
+            )
+            .select_from(filtered)
+            .join(self.assignment_table, self.assignment_table.id == filtered.c.id)
         )
 
         result = await self.session.execute(aggregate_query)
@@ -97,4 +99,8 @@ class AssignmentBaseRepository(BaseAnalyticsRepository):
         """Конвертирует SQL interval в дни"""
         if interval is None:
             return None
-        return interval.total_seconds() / 86400 if hasattr(interval, 'total_seconds') else None
+        return (
+            interval.total_seconds() / 86400
+            if hasattr(interval, "total_seconds")
+            else None
+        )

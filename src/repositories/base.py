@@ -1,6 +1,7 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy import Result
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from core.exceptions.errors import Conflict
 
 
@@ -52,5 +53,6 @@ class BaseRepository:
         obj = await self.scalar(stmt)
         if not obj:
             from core.exceptions.errors import NotFound
+
             raise NotFound(message)
         return obj

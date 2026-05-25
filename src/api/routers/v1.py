@@ -12,30 +12,28 @@ from api.v1.analytics.top import router as top_analytics_router
 from api.v1.analytics.transfer_analytics import router as transfer_analytics_router
 from api.v1.analytics.trends import router as trends_analytics_router
 from api.v1.approvals import router as approvals_router
+from api.v1.approvals.requests import router as approval_requests_router
 from api.v1.assets.asset import router as assets_router
 from api.v1.assets.asset_categories import router as asset_category_router
 from api.v1.assets.asset_classes import router as asset_classes_router
+from api.v1.assets.asset_documents import router as documents_router
+from api.v1.assets.asset_images import router as asset_image_router
+from api.v1.assets.asset_maintenances import router as asset_maintenances_router
 from api.v1.assets.asset_model import router as asset_model_router
+from api.v1.assets.asset_repairs import router as asset_repairs_router
+from api.v1.assets.expenses import router as expenses_router
 from api.v1.assets.manufacturer import router as manufacturer_router
+from api.v1.assets.warehouses import router as warehouse_router
 from api.v1.audit.audit import router as audit_log_router
 from api.v1.audit.audit_stream import router as audit_stream_router
 from api.v1.auth.auth import router as auth_router
 from api.v1.auth.sessions import router as sessions_router
+from api.v1.notifications import router as notifications_router
+from api.v1.organization.regions import router as regions_router
+from api.v1.organization.services import router as services_router
 from api.v1.rbac.rbac import router as rbac_router
 from api.v1.users.security import router as security_router
 from api.v1.users.user import router as users_router
-from api.v1.notifications import router as notifications_router
-from api.v1.assets.asset_documents import router as documents_router
-from api.v1.assets.asset_repairs import router as asset_repairs_router
-from api.v1.approvals.requests import router as approval_requests_router
-from api.v1.assets.expenses import router as expenses_router
-from api.v1.organization.regions import router as regions_router
-from api.v1.organization.services import router as services_router
-from api.v1.assets.warehouses import router as warehouse_router
-from api.v1.assets.asset_images import router as asset_image_router
-
-from api.v1.assets.asset_maintenances import router as asset_maintenances_router
-
 
 router = APIRouter()
 

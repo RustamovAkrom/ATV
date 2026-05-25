@@ -5,8 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base
-from db.mixins import TimestampMixin, UUIDMixing, SlugMixin
-
+from db.mixins import SlugMixin, TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
     from .user import User
@@ -95,5 +94,6 @@ class Permission(Base, UUIDMixing, TimestampMixin, SlugMixin):
 
     def __repr__(self):
         return self.name
+
 
 __all__ = ["Role", "Permission", "role_permissions", "user_permissions"]

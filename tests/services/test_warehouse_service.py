@@ -1,4 +1,4 @@
-﻿from datetime import UTC, datetime
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from uuid import UUID, uuid4
 
@@ -47,7 +47,9 @@ class _FakeRepo:
         self.warehouses: dict[UUID, SimpleNamespace] = {}
         self.parts: dict[UUID, SimpleNamespace] = {}
 
-    async def list(self, region_id=None, service_id=None, is_active=None, limit=20, offset=0):
+    async def list(
+        self, region_id=None, service_id=None, is_active=None, limit=20, offset=0
+    ):
         items = list(self.warehouses.values())
         if region_id:
             items = [x for x in items if x.region_id == region_id]
@@ -55,7 +57,7 @@ class _FakeRepo:
             items = [x for x in items if x.service_id == service_id]
         if is_active is not None:
             items = [x for x in items if x.is_active == is_active]
-        return items[offset: offset + limit], len(items)
+        return items[offset : offset + limit], len(items)
 
     async def create(self, data):
         wh = _warehouse_obj(name=data.get("name"), slug=data.get("slug") or "AUTO")
@@ -126,7 +128,9 @@ class _FakeRepo:
             moved_at=datetime.now(UTC),
         )
 
-    async def get_warehouse_movements(self, warehouse_id, movement_type=None, page=1, size=20):
+    async def get_warehouse_movements(
+        self, warehouse_id, movement_type=None, page=1, size=20
+    ):
         items = [
             _MovementObj(
                 id=uuid4(),
@@ -195,11 +199,14 @@ def warehouse_service(monkeypatch):
     events = SimpleNamespace(asset_moved_to_warehouse=None)
     return WarehouseService(repo, asset_repo, events)
 
+
 class TestWarehouseService:
     async def test_create_list_get_update_delete_warehouse(self, warehouse_service):
         region_id = uuid4()
         created = await warehouse_service.create_warehouse(
-            WarehouseCreateSchema(name="Test Warehouse", region_id=region_id, slug="TWH001")
+            WarehouseCreateSchema(
+                name="Test Warehouse", region_id=region_id, slug="TWH001"
+            )
         )
         assert created.name == "Test Warehouse"
 
@@ -211,7 +218,9 @@ class TestWarehouseService:
         got = await warehouse_service.get_warehouse(created.id)
         assert got.slug == "TWH001"
 
-        updated = await warehouse_service.update_warehouse(created.id, {"name": "Updated", "is_active": False})
+        updated = await warehouse_service.update_warehouse(
+            created.id, {"name": "Updated", "is_active": False}
+        )
         assert updated.name == "Updated"
         assert updated.is_active is False
 
@@ -241,13 +250,19 @@ class TestWarehouseService:
         assert len(stock) == 2
         assert stock[0]["status"] in {"low", "ok"}
 
-        stock_in = await warehouse_service.record_stock_in(warehouse_id, part_id, 5, user_id)
+        stock_in = await warehouse_service.record_stock_in(
+            warehouse_id, part_id, 5, user_id
+        )
         assert stock_in["movement_type"] == "in"
 
-        stock_out = await warehouse_service.record_stock_out(warehouse_id, part_id, 2, user_id)
+        stock_out = await warehouse_service.record_stock_out(
+            warehouse_id, part_id, 2, user_id
+        )
         assert stock_out["movement_type"] == "out"
 
-        movements = await warehouse_service.get_warehouse_movements(warehouse_id, movement_type="in")
+        movements = await warehouse_service.get_warehouse_movements(
+            warehouse_id, movement_type="in"
+        )
         assert "items" in movements
 
         part_moves = await warehouse_service.get_part_movements(warehouse_id, part_id)
@@ -263,7 +278,9 @@ class TestWarehouseService:
             await warehouse_service.record_stock_out(warehouse_id, part_id, -1, user_id)
 
     async def test_parts_crud(self, warehouse_service):
-        created = await warehouse_service.create_part("Part A", slug="PA", unit_price=12.5)
+        created = await warehouse_service.create_part(
+            "Part A", slug="PA", unit_price=12.5
+        )
         part_id = UUID(created["id"])
 
         listed = await warehouse_service.list_parts(page=1, size=10)

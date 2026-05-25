@@ -8,6 +8,7 @@ class UploadConfigs:
     def avatar() -> FileValidator:
         """Конфигурация для аватаров"""
         from core.config import get_settings
+
         settings = get_settings()
         return FileValidator(
             max_size_mb=settings.STORAGE_AVATAR_MAX_SIZE_MB,
@@ -18,6 +19,7 @@ class UploadConfigs:
     def asset_image() -> FileValidator:
         """Конфигурация для изображений активов"""
         from core.config import get_settings
+
         settings = get_settings()
         return FileValidator(
             max_size_mb=settings.STORAGE_ASSET_IMAGE_MAX_SIZE_MB,
@@ -28,6 +30,7 @@ class UploadConfigs:
     def document() -> FileValidator:
         """Конфигурация для документов"""
         from core.config import get_settings
+
         settings = get_settings()
         return FileValidator(
             max_size_mb=settings.STORAGE_DOCUMENT_MAX_SIZE_MB,

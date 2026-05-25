@@ -1,4 +1,4 @@
-﻿import pytest
+import pytest
 from fastapi import HTTPException
 
 from api.v1.analytics._utils import (
@@ -21,4 +21,3 @@ class TestAnalyticsUtils:
     def test_sanitize_search_empty(self):
         assert sanitize_search("   ") is None
         assert sanitize_search("") is None
-

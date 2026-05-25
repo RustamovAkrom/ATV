@@ -1,5 +1,6 @@
-from uuid import UUID
 from typing import Any
+from uuid import UUID
+
 from pydantic import Field, field_validator
 
 from schemas.base import BaseSchema, TimestampSchema
@@ -7,7 +8,9 @@ from schemas.base import BaseSchema, TimestampSchema
 
 class ServiceBaseSchema(BaseSchema):
     name: str = Field(min_length=2, max_length=255, description="Service name")
-    description: str | None = Field(None, max_length=500, description="Service description")
+    description: str | None = Field(
+        None, max_length=500, description="Service description"
+    )
     region_ids: list[UUID] | None = Field(None, description="IDs of attached regions")
 
     @field_validator("name")
@@ -22,13 +25,19 @@ class ServiceBaseSchema(BaseSchema):
 
 class ServiceCreateSchema(ServiceBaseSchema):
     """Схема для создания сервиса"""
+
     pass
 
 
 class ServiceUpdateSchema(BaseSchema):
     """Схема для обновления сервиса"""
-    name: str | None = Field(None, min_length=2, max_length=255, description="Service name")
-    description: str | None = Field(None, max_length=500, description="Service description")
+
+    name: str | None = Field(
+        None, min_length=2, max_length=255, description="Service name"
+    )
+    description: str | None = Field(
+        None, max_length=500, description="Service description"
+    )
     region_ids: list[UUID] | None = Field(None, description="IDs of attached regions")
 
     @field_validator("name")
@@ -45,6 +54,7 @@ class ServiceUpdateSchema(BaseSchema):
 
 class ServiceOutSchema(TimestampSchema):
     """Схема для вывода сервиса"""
+
     id: UUID
     name: str
     slug: str | None  # <-- исправлено: может быть None при создании?
@@ -54,4 +64,5 @@ class ServiceOutSchema(TimestampSchema):
 
 class ServiceWithRegionsOutSchema(ServiceOutSchema):
     """Схема для вывода сервиса с регионами"""
+
     regions: list[dict[str, Any]] | None = Field(None, description="Attached regions")

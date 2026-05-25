@@ -1,5 +1,3 @@
-from fastapi import Depends
-
 from core.security.rbac.guards import require_permission, require_role
 from core.security.rbac.permissions import Permissions
 from db.models.enums import UserRole
@@ -7,6 +5,7 @@ from db.models.enums import UserRole
 # =================================================================
 # ROLE-BASED PRESETS (Жесткие проверки по роли)
 # =================================================================
+
 
 class AdministrativPermissions:
     # Только для разработчика/главного админа
@@ -28,6 +27,7 @@ class AdministrativPermissions:
         UserRole.ANALYST.value,
     )
 
+
 # =================================================================
 # PERMISSION-BASED PRESETS (Гибкие проверки по правам)
 # =================================================================
@@ -35,24 +35,32 @@ class UserPermissions:
     # --- Users Management ---
     CanViewUsers = require_permission(Permissions.USERS_VIEW)
     CanCreateUsers = require_permission(Permissions.USERS_CREATE)
-    CanManageUsers = require_permission(Permissions.USERS_EDIT, Permissions.USERS_CREATE)
+    CanManageUsers = require_permission(
+        Permissions.USERS_EDIT, Permissions.USERS_CREATE
+    )
 
     CanDeleteUsers = require_permission(Permissions.USERS_DELETE)
+
 
 class AuditPermissions:
     # --- Audit & Security ---
     CanViewAudit = require_permission(Permissions.AUDIT_VIEW)
     CanExportAudit = require_permission(Permissions.AUDIT_EXPORT)
-    CanFullAuditControl = require_permission(Permissions.AUDIT_VIEW, Permissions.AUDIT_CLEANUP)
+    CanFullAuditControl = require_permission(
+        Permissions.AUDIT_VIEW, Permissions.AUDIT_CLEANUP
+    )
+
 
 class RBACPermissions:
     # --- RBAC ---
     CanManageRoles = require_permission(Permissions.ROLES_MANAGE)
 
+
 class UserSessionPermissions:
     # --- Sessions ---
     CanViewSessions = require_permission(Permissions.SESSIONS_VIEW)
     CanRevokeSessions = require_permission(Permissions.SESSIONS_REVOKE)
+
 
 class AssetPermissions:
     # --- Assets ---

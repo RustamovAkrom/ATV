@@ -21,27 +21,18 @@ tasks:
 
   db-revision:
     desc: Create migration
-    env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: "33432"
     cmds:
       - task: db-up
       - "{{.RUNNER}} alembic -c src/alembic.ini revision --autogenerate -m '{{.NAME | default .MSG}}'"
 
   db-migrate:
     desc: Apply database migrations
-    env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: "33432"
     cmds:
       - task: db-up
       - "{{.RUNNER}} alembic -c src/alembic.ini upgrade head"
 
   db-downgrade:
     desc: Roll back the latest migration
-    env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: "33432"
     cmds:
       - task: db-up
       - "{{.RUNNER}} alembic -c src/alembic.ini downgrade -1"
@@ -59,8 +50,6 @@ tasks:
     desc: Seed roles & permissions
     env:
       PYTHONPATH: src
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: "33432"
     cmds:
       - "{{.RUNNER}} python -m scripts.cli bootstrap"
 
@@ -68,16 +57,10 @@ tasks:
     desc: Create superadmin user
     env:
       PYTHONPATH: src
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: "33432"
     cmd: "{{.RUNNER}} python -m scripts.cli create-superadmin"
 
   init:
     desc: Initialize project
-    env:
-      ENV: local
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: "33432"
     cmds:
       - "uv sync"
       - task: db-up
@@ -89,8 +72,6 @@ tasks:
     env:
       PYTHONPATH: src
       ENV: local
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: "33432"
     cmds:
       - task: init
       - "{{.RUNNER}} fastapi dev src/dev.py"
@@ -100,8 +81,6 @@ tasks:
     env:
       PYTHONPATH: src
       ENV: local
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: "33432"
     cmds:
       - "{{.RUNNER}} fastapi dev src/dev.py"
 

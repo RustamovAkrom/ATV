@@ -3,8 +3,10 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any
 from uuid import UUID
-from schemas.base import BaseSchema
+
 from pydantic import Field
+
+from schemas.base import BaseSchema
 
 
 class AnalyticsFilters(BaseSchema):

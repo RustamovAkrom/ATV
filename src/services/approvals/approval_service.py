@@ -1,10 +1,16 @@
+import builtins
 from uuid import UUID
 
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import or_, select
-from typing import List
+
+from core.events.approval_events import ApprovalEventService
 from core.exceptions.errors import BadRequest, NotFound
+from core.security.access_control import AccessControl
+from core.security.rbac.guards import check_permissions
+from core.security.rbac.permissions import Permissions
 from db.models.approvals.approval_request import ApprovalRequest
+from db.models.assets.asset import Asset
 from db.models.enums import ApprovalStatus, AssetStatus, UserStatus
 from db.models.users.permission import Role
 from db.models.users.user import User
@@ -19,24 +25,18 @@ from schemas.assets.approvals import (
 from schemas.assets.asset_transfers import AssetTransferCreate
 from schemas.assets.assets import AssetStatusChangeRequest
 from schemas.assets.repairs import RepairCompleteRequest
-from utils.helpers import utc_now
-from schemas.pagination import PaginationParamsSchema, PageOutSchema
 from schemas.assets.warehouses import WarehouseMoveRequest
 from schemas.auth.auth import CurrentUserSchema
-from core.security.rbac.permissions import Permissions
-from core.security.rbac.guards import check_permissions
-from core.security.access_control import AccessControl
-from services.assets.asset_service import AssetService
-from services.assets.repair_service import RepairService
-from services.assets.asset_transfer_service import AssetTransferService
+from schemas.pagination import PageOutSchema, PaginationParamsSchema
 from services.assets.asset_assignment_service import AssetAssignmentService
+from services.assets.asset_service import AssetService
+from services.assets.asset_transfer_service import AssetTransferService
+from services.assets.repair_service import RepairService
 from services.assets.warehouse_service import WarehouseService
-from core.events.approval_events import ApprovalEventService
-from db.models.assets.asset import Asset
+from utils.helpers import utc_now
 
 
 class ApprovalService:
-
     def __init__(
         self,
         approval_repo: ApprovalRepository,
@@ -120,7 +120,6 @@ class ApprovalService:
         check_permissions(actor, Permissions.APPROVALS_APPROVE)
 
         async with self.approval_repo.session.begin_nested():
-
             approval = await self._get_pending(approval_id, for_update=True)
 
             AccessControl.check_not_creator(actor, approval.created_by_id)
@@ -165,7 +164,6 @@ class ApprovalService:
         check_permissions(actor, Permissions.APPROVALS_REJECT)
 
         async with self.approval_repo.session.begin_nested():
-
             approval = await self._get_pending(approval_id, for_update=True)
 
             AccessControl.check_not_creator(actor, approval.created_by_id)
@@ -269,9 +267,7 @@ class ApprovalService:
 
             if key == ("asset", "move_to_warehouse"):
                 return jsonable_encoder(
-                    WarehouseMoveRequest(**data.payload).model_dump(
-                        exclude_none=True
-                    )
+                    WarehouseMoveRequest(**data.payload).model_dump(exclude_none=True)
                 )
 
         except Exception as exc:
@@ -407,7 +403,9 @@ class ApprovalService:
 
         raise BadRequest("Unsupported execution")
 
-    async def _get_approvers(self, asset: Asset, requester_id: UUID) -> List[UUID]:
+    async def _get_approvers(
+        self, asset: Asset, requester_id: UUID
+    ) -> builtins.list[UUID]:
         result = await self.approval_repo.session.execute(
             select(User)
             .join(Role, User.role_id == Role.id)

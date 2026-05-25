@@ -82,7 +82,9 @@ class AuditMiddleware:
                 ip = (
                     forwarded_for.decode().split(",")[0].strip()
                     if forwarded_for
-                    else scope.get("client")[0] if scope.get("client") else None
+                    else scope.get("client")[0]
+                    if scope.get("client")
+                    else None
                 )
 
                 status_code = message["status"]

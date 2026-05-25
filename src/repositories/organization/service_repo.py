@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select, update, delete
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from core.exceptions.errors import Conflict
 from db.models.org.region import Region
 from db.models.org.service import Service, region_services
 from repositories.base import BaseRepository
-from core.exceptions.errors import Conflict
 
 
 class ServiceRepository(BaseRepository):
@@ -19,9 +18,7 @@ class ServiceRepository(BaseRepository):
 
     async def list(self) -> list[Service]:
         """Получить список всех сервисов"""
-        result = await self.session.execute(
-            select(Service).order_by(Service.name)
-        )
+        result = await self.session.execute(select(Service).order_by(Service.name))
         return result.scalars().all()
 
     async def get(self, service_id: UUID) -> Service | None:
@@ -44,9 +41,7 @@ class ServiceRepository(BaseRepository):
     async def update(self, service_id: UUID, data: dict) -> Service | None:
         """Обновить сервис"""
         await self.session.execute(
-            update(Service)
-            .where(Service.id == service_id)
-            .values(**data)
+            update(Service).where(Service.id == service_id).values(**data)
         )
         await self.flush()
         return await self.get(service_id)
@@ -64,7 +59,9 @@ class ServiceRepository(BaseRepository):
         await self.flush()
         return result.rowcount > 0
 
-    async def check_name_exists(self, name: str, exclude_id: UUID | None = None) -> bool:
+    async def check_name_exists(
+        self, name: str, exclude_id: UUID | None = None
+    ) -> bool:
         """Проверить существование сервиса с таким именем"""
         query = select(Service).where(Service.name == name)
         if exclude_id:
@@ -72,7 +69,9 @@ class ServiceRepository(BaseRepository):
         result = await self.session.execute(query)
         return result.scalar_one_or_none() is not None
 
-    async def check_slug_exists(self, slug: str, exclude_id: UUID | None = None) -> bool:
+    async def check_slug_exists(
+        self, slug: str, exclude_id: UUID | None = None
+    ) -> bool:
         """Проверить существование сервиса с таким slug"""
         if not slug:
             return False
@@ -102,8 +101,7 @@ class ServiceRepository(BaseRepository):
 
             await self.session.execute(
                 region_services.insert().values(
-                    service_id=service_id,
-                    region_id=region_id
+                    service_id=service_id, region_id=region_id
                 )
             )
 

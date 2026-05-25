@@ -2,15 +2,16 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import Enum as SAEnum, ForeignKey, String, text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from db.base import Base
 from db.mixins import TimestampMixin, UUIDMixing
 from db.models.enums import DocumentStatus
 
 if TYPE_CHECKING:
-    from db.models.documents.document_file import DocumentFile
     from db.models.assets.asset import Asset
+    from db.models.documents.document_file import DocumentFile
     from db.models.users.user import User
 
 
@@ -40,7 +41,7 @@ class Document(Base, UUIDMixing, TimestampMixin):
         JSONB,
         nullable=False,
         default=dict,
-        server_default=text("'{}'::jsonb")
+        server_default=text("'{}'::jsonb"),
     )
 
     created_by: Mapped["User"] = relationship("User", lazy="selectin")
@@ -52,7 +53,9 @@ class Document(Base, UUIDMixing, TimestampMixin):
         cascade="all, delete-orphan",
     )
 
-    asset: Mapped["Asset"] = relationship("Asset", back_populates="documents", lazy="joined")
+    asset: Mapped["Asset"] = relationship(
+        "Asset", back_populates="documents", lazy="joined"
+    )
 
     def __repr__(self):
         return self.title

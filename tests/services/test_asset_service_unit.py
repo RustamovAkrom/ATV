@@ -1,4 +1,4 @@
-﻿from datetime import UTC, datetime
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -13,8 +13,8 @@ from schemas.assets.assets import (
     AssetStatusChangeRequest,
     AssetUpdate,
 )
-from schemas.pagination import PaginationParamsSchema
 from schemas.auth.auth import CurrentUserSchema
+from schemas.pagination import PaginationParamsSchema
 from services.assets.asset_service import AssetService
 
 pytestmark = pytest.mark.anyio
@@ -65,7 +65,12 @@ class _FakeRepo:
         return await self.get_by_id(asset_id, include_history)
 
     async def get_user(self, user_id):
-        return SimpleNamespace(id=user_id, region_id=self.region_id, service_id=self.service_id, status=UserStatus.ACTIVE.value)
+        return SimpleNamespace(
+            id=user_id,
+            region_id=self.region_id,
+            service_id=self.service_id,
+            status=UserStatus.ACTIVE.value,
+        )
 
     async def get_model(self, model_id):
         return SimpleNamespace(id=model_id)
@@ -106,8 +111,12 @@ def actor():
 def asset_service(monkeypatch):
     import services.assets.asset_service as module
 
-    monkeypatch.setattr(module.AccessControl, "check_region_access", lambda *args, **kwargs: None)
-    monkeypatch.setattr(module.AccessControl, "check_service_access", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        module.AccessControl, "check_region_access", lambda *args, **kwargs: None
+    )
+    monkeypatch.setattr(
+        module.AccessControl, "check_service_access", lambda *args, **kwargs: None
+    )
 
     repo = _FakeRepo()
     service = AssetService(repo, _FakeEvents())
@@ -142,7 +151,9 @@ class TestAssetService:
         assert isinstance(history, list)
         assert isinstance(history[0], AssetHistorySchema)
 
-    async def test_create_update_change_status_delete(self, asset_service, actor, monkeypatch):
+    async def test_create_update_change_status_delete(
+        self, asset_service, actor, monkeypatch
+    ):
         service, repo = asset_service
 
         async def _fake_get(asset_id, actor):
@@ -188,11 +199,14 @@ class TestAssetService:
         with pytest.raises(BadRequest):
             service._validate_status_change(repo.asset, AssetStatus.ACTIVE)
 
-    async def test_validate_uniques_and_clean_optional(self, asset_service, actor, monkeypatch):
+    async def test_validate_uniques_and_clean_optional(
+        self, asset_service, actor, monkeypatch
+    ):
         service, repo = asset_service
 
         async def _serial_exists(*args, **kwargs):
             return True
+
         repo.serial_number_exists = _serial_exists
 
         with pytest.raises(BadRequest):
@@ -208,7 +222,9 @@ class TestAssetService:
         with pytest.raises(BadRequest):
             await service.delete(repo.asset_id, actor)
 
-    async def test_update_and_change_status_noop_return_current(self, asset_service, actor, monkeypatch):
+    async def test_update_and_change_status_noop_return_current(
+        self, asset_service, actor, monkeypatch
+    ):
         service, repo = asset_service
 
         async def _fake_get(asset_id, actor):
@@ -228,40 +244,55 @@ class TestAssetService:
 
         async def _none(*args, **kwargs):
             return None
+
         async def _ok(*args, **kwargs):
             return SimpleNamespace(id=uuid4())
 
         # model missing
         repo.get_model = _none
         with pytest.raises(BadRequest):
-            await service._validate_references(uuid4(), repo.region_id, repo.service_id, None, repo.asset.class_id)
+            await service._validate_references(
+                uuid4(), repo.region_id, repo.service_id, None, repo.asset.class_id
+            )
 
         # region missing
         repo.get_model = _ok
         repo.get_region = _none
         with pytest.raises(BadRequest):
-            await service._validate_references(uuid4(), repo.region_id, repo.service_id, None, repo.asset.class_id)
+            await service._validate_references(
+                uuid4(), repo.region_id, repo.service_id, None, repo.asset.class_id
+            )
 
         # service missing
         repo.get_region = _ok
         repo.get_service = _none
         with pytest.raises(BadRequest):
-            await service._validate_references(uuid4(), repo.region_id, repo.service_id, None, repo.asset.class_id)
+            await service._validate_references(
+                uuid4(), repo.region_id, repo.service_id, None, repo.asset.class_id
+            )
 
         # class missing
         repo.get_service = _ok
         repo.get_asset_class = _none
         with pytest.raises(BadRequest):
-            await service._validate_references(uuid4(), repo.region_id, repo.service_id, None, repo.asset.class_id)
+            await service._validate_references(
+                uuid4(), repo.region_id, repo.service_id, None, repo.asset.class_id
+            )
 
         # owner inactive
         repo.get_asset_class = _ok
+
         async def _blocked_user(*args, **kwargs):
             return SimpleNamespace(id=uuid4(), status=UserStatus.BLOCKED.value)
+
         repo.get_user = _blocked_user
         with pytest.raises(BadRequest):
             await service._validate_references(
-                uuid4(), repo.region_id, repo.service_id, repo.owner_id, repo.asset.class_id
+                uuid4(),
+                repo.region_id,
+                repo.service_id,
+                repo.owner_id,
+                repo.asset.class_id,
             )
 
     async def test_validate_update_references_errors(self, asset_service):
@@ -269,6 +300,7 @@ class TestAssetService:
 
         async def _none(*args, **kwargs):
             return None
+
         async def _ok(*args, **kwargs):
             return SimpleNamespace(id=uuid4())
 

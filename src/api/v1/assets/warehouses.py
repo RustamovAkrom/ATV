@@ -6,13 +6,13 @@ from api.dependencies.assets.asset_warehouse import get_warehouse_service
 from core.security.auth.dependencies import get_current_user
 from core.security.rbac.presets import AssetPermissions
 from core.slowapi import limiter
-from schemas.auth import CurrentUserSchema
 from schemas.assets.warehouses import (
     WarehouseCreateSchema,
-    WarehouseUpdateSchema,
     WarehouseOutSchema,
+    WarehouseUpdateSchema,
     WarehouseWithDetailsOutSchema,
 )
+from schemas.auth import CurrentUserSchema
 from schemas.pagination import PageOutSchema, PaginationParamsSchema
 from services.assets.warehouse_service import WarehouseService
 
@@ -20,6 +20,7 @@ router = APIRouter(prefix="/warehouses", tags=["Warehouses"])
 
 
 # ========== GET запросы (без rate limit) ==========
+
 
 @router.get(
     "/",
@@ -41,7 +42,9 @@ async def list_warehouses(
         service_id=service_id,
         is_active=is_active,
     )
-    return PageOutSchema(items=items, total=total, page=pagination.page, limit=pagination.limit)
+    return PageOutSchema(
+        items=items, total=total, page=pagination.page, limit=pagination.limit
+    )
 
 
 @router.get(
@@ -59,6 +62,7 @@ async def get_warehouse(
 
 
 # ========== POST/PATCH/DELETE запросы (с rate limit) ==========
+
 
 @router.post(
     "/",

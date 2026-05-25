@@ -1,11 +1,11 @@
-from uuid import UUID
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base
-from db.mixins import UUIDMixin, TimestampMixin
+from db.mixins import TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
     from db.models.assets.asset import Asset
@@ -25,7 +25,9 @@ class AssetHistory(Base, UUIDMixin, TimestampMixin):
     )  # "status_change", "repair_finished", "assigned"
     description: Mapped[str] = mapped_column(Text)
 
-    asset: Mapped["Asset"] = relationship("Asset", back_populates="history_entries", lazy="selectin")
+    asset: Mapped["Asset"] = relationship(
+        "Asset", back_populates="history_entries", lazy="selectin"
+    )
     user: Mapped["User"] = relationship("User", lazy="selectin")
 
     def __repr__(self):

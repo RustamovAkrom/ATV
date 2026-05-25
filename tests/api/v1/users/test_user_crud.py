@@ -1,4 +1,4 @@
-﻿import uuid
+import uuid
 
 import pytest
 from sqlalchemy import select
@@ -31,7 +31,9 @@ async def _get_role_id(dbsession) -> uuid.UUID:
 
 
 class TestUserEndpoints:
-    async def test_create_user_returns_duplicate_email_error_due_repo_bug(self, client, analytics_tokens, dbsession):
+    async def test_create_user_returns_duplicate_email_error_due_repo_bug(
+        self, client, analytics_tokens, dbsession
+    ):
         role_id = await _get_role_id(dbsession)
         response = await client.post(
             "/users/",
@@ -48,7 +50,9 @@ class TestUserEndpoints:
         )
         assert response.status_code == 400
 
-    async def test_create_user_duplicate_email(self, client, analytics_tokens, dbsession):
+    async def test_create_user_duplicate_email(
+        self, client, analytics_tokens, dbsession
+    ):
         role_id = await _get_role_id(dbsession)
         email = f"dup_{uuid.uuid4().hex[:8]}@example.com"
 
@@ -112,7 +116,9 @@ class TestUserEndpoints:
         )
         assert response.status_code == 400
 
-    async def test_block_activate_archive_user_success(self, client, analytics_tokens, analytics_users):
+    async def test_block_activate_archive_user_success(
+        self, client, analytics_tokens, analytics_users
+    ):
         user_id = analytics_users["analyst"].id
 
         blocked = await client.post(
@@ -154,7 +160,9 @@ class TestUserEndpoints:
         assert response.status_code == 200
         assert response.json()["status"] == "ok"
 
-    async def test_permission_denied_for_user_create(self, client, analytics_tokens, dbsession):
+    async def test_permission_denied_for_user_create(
+        self, client, analytics_tokens, dbsession
+    ):
         role_id = await _get_role_id(dbsession)
         response = await client.post(
             "/users/",
@@ -182,7 +190,9 @@ class TestUserEndpointsAdditional:
         assert isinstance(data, list)
         assert len(data) <= 5
 
-    async def test_list_users_with_search(self, client, analytics_tokens, analytics_users):
+    async def test_list_users_with_search(
+        self, client, analytics_tokens, analytics_users
+    ):
         q = analytics_users["admin"].login[:3]
         response = await client.get(
             "/users/search",
@@ -192,7 +202,9 @@ class TestUserEndpointsAdditional:
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
-    async def test_get_user_by_id_success(self, client, analytics_tokens, analytics_users):
+    async def test_get_user_by_id_success(
+        self, client, analytics_tokens, analytics_users
+    ):
         user_id = analytics_users["admin"].id
         response = await client.get(
             f"/users/{user_id}",
@@ -209,7 +221,9 @@ class TestUserEndpointsAdditional:
         )
         assert response.status_code == 400
 
-    async def test_update_user_role(self, client, analytics_tokens, analytics_users, dbsession):
+    async def test_update_user_role(
+        self, client, analytics_tokens, analytics_users, dbsession
+    ):
         target = analytics_users["analyst"]
         role_id = await _get_role_id(dbsession)
         response = await client.patch(
@@ -220,7 +234,9 @@ class TestUserEndpointsAdditional:
         assert response.status_code == 200
         assert response.json()["role"] is not None
 
-    async def test_update_user_self_forbidden(self, client, analytics_tokens, analytics_users):
+    async def test_update_user_self_forbidden(
+        self, client, analytics_tokens, analytics_users
+    ):
         me = analytics_users["superadmin"]
         response = await client.patch(
             f"/users/{me.id}",
@@ -229,7 +245,9 @@ class TestUserEndpointsAdditional:
         )
         assert response.status_code in {400, 403}
 
-    async def test_block_user_not_admin(self, client, analytics_tokens, analytics_users):
+    async def test_block_user_not_admin(
+        self, client, analytics_tokens, analytics_users
+    ):
         target = analytics_users["admin"]
         response = await client.post(
             f"/users/{target.id}/block",

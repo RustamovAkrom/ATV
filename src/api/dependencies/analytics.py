@@ -7,9 +7,15 @@ from db.dependencies import get_db_session
 from repositories.analytics.alert_analytics_repo import AlertAnalyticsRepository
 from repositories.analytics.approval_analytics_repo import ApprovalAnalyticsRepository
 from repositories.analytics.asset_analytics_repo import AssetAnalyticsRepository
-from repositories.analytics.asset_assignment_analytics_repo import AssetAssignmentAnalyticsRepository
-from repositories.analytics.asset_history_analytics_repo import AssetHistoryAnalyticsRepository
-from repositories.analytics.asset_transfer_analytics_repo import AssetTransferAnalyticsRepository
+from repositories.analytics.asset_assignment_analytics_repo import (
+    AssetAssignmentAnalyticsRepository,
+)
+from repositories.analytics.asset_history_analytics_repo import (
+    AssetHistoryAnalyticsRepository,
+)
+from repositories.analytics.asset_transfer_analytics_repo import (
+    AssetTransferAnalyticsRepository,
+)
 from repositories.analytics.cost_analytics_repo import CostAnalyticsRepository
 from repositories.analytics.document_analytics_repo import DocumentAnalyticsRepository
 from repositories.analytics.forecast_analytics_repo import ForecastAnalyticsRepository
@@ -18,24 +24,33 @@ from repositories.analytics.repair_analytics_repo import RepairAnalyticsReposito
 from repositories.analytics.top_analytics_repo import TopAnalyticsRepository
 from repositories.analytics.transfer_analytics_repo import TransferAnalyticsRepository
 from repositories.analytics.trend_analytics_repo import TrendAnalyticsRepository
-from repositories.analytics.utilization_analytics_repo import UtilizationAnalyticsRepository
-
+from repositories.analytics.utilization_analytics_repo import (
+    UtilizationAnalyticsRepository,
+)
 from services.analytics.alert_analytics_service import AlertAnalyticsService
 from services.analytics.approval_analytics_service import ApprovalAnalyticsDomainService
 from services.analytics.asset_analytics_service import AssetAnalyticsService
-from services.analytics.asset_assignment_analytics_service import AssetAssignmentAnalyticsService
-from services.analytics.asset_history_analytics_service import AssetHistoryAnalyticsService
-from services.analytics.asset_transfer_analytics_service import AssetTransferAnalyticsService
+from services.analytics.asset_assignment_analytics_service import (
+    AssetAssignmentAnalyticsService,
+)
+from services.analytics.asset_history_analytics_service import (
+    AssetHistoryAnalyticsService,
+)
+from services.analytics.asset_transfer_analytics_service import (
+    AssetTransferAnalyticsService,
+)
 from services.analytics.cost_analytics_service import CostAnalyticsService
 from services.analytics.document_analytics_service import DocumentAnalyticsDomainService
 from services.analytics.forecast_analytics_service import ForecastAnalyticsService
 from services.analytics.region_analytics_service import RegionAnalyticsService
 from services.analytics.repair_analytics_service import RepairAnalyticsDomainService
+from services.analytics.report_service import ReportService
 from services.analytics.top_analytics_service import TopAnalyticsService
 from services.analytics.transfer_analytics_service import TransferAnalyticsDomainService
 from services.analytics.trend_analytics_service import TrendAnalyticsService
-from services.analytics.utilization_analytics_service import UtilizationAnalyticsDomainService
-from services.analytics.report_service import ReportService
+from services.analytics.utilization_analytics_service import (
+    UtilizationAnalyticsDomainService,
+)
 
 
 # ============================================================
@@ -72,7 +87,9 @@ def get_asset_assignment_analytics_repo(db: AsyncSession = Depends(get_db_sessio
 
 
 def get_asset_assignment_analytics_service(
-    repo: AssetAssignmentAnalyticsRepository = Depends(get_asset_assignment_analytics_repo),
+    repo: AssetAssignmentAnalyticsRepository = Depends(
+        get_asset_assignment_analytics_repo
+    ),
 ) -> AssetAssignmentAnalyticsService:
     return AssetAssignmentAnalyticsService(repo)
 
@@ -238,11 +255,21 @@ def get_forecast_analytics_service(
 # ============================================================
 def get_report_service(
     asset_service: AssetAnalyticsService = Depends(get_asset_analytics_service),
-    repair_service: RepairAnalyticsDomainService = Depends(get_repair_analytics_service),
-    transfer_service: TransferAnalyticsDomainService = Depends(get_transfer_analytics_service),
-    approval_service: ApprovalAnalyticsDomainService = Depends(get_approval_analytics_service),
-    document_service: DocumentAnalyticsDomainService = Depends(get_document_analytics_service),
-    utilization_service: UtilizationAnalyticsDomainService = Depends(get_utilization_analytics_service),
+    repair_service: RepairAnalyticsDomainService = Depends(
+        get_repair_analytics_service
+    ),
+    transfer_service: TransferAnalyticsDomainService = Depends(
+        get_transfer_analytics_service
+    ),
+    approval_service: ApprovalAnalyticsDomainService = Depends(
+        get_approval_analytics_service
+    ),
+    document_service: DocumentAnalyticsDomainService = Depends(
+        get_document_analytics_service
+    ),
+    utilization_service: UtilizationAnalyticsDomainService = Depends(
+        get_utilization_analytics_service
+    ),
 ) -> ReportService:
     return ReportService(
         asset_service=asset_service,

@@ -27,7 +27,9 @@ class DocumentFile(Base, UUIDMixing):
     file_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
     content_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
-    document: Mapped["Document"] = relationship("Document", back_populates="files", lazy="selectin")
+    document: Mapped["Document"] = relationship(
+        "Document", back_populates="files", lazy="selectin"
+    )
 
     def __repr__(self):
         return f"{self.file_name} | SIZE: {self.file_size}"

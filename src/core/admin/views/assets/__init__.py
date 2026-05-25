@@ -4,10 +4,10 @@ from .assets import (
     AssetCategoryAdmin,
     AssetClassAdmin,
     AssetHistoryAdmin,
+    AssetImageAdmin,
+    AssetMaintenanceAdmin,
     AssetModelAdmin,
     AssetTransferAdmin,
     ManufacturerAdmin,
     WarehouseAdmin,
-    AssetImageAdmin,
-    AssetMaintenanceAdmin,
 )

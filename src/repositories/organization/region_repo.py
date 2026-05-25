@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select, update, delete
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from core.exceptions.errors import Conflict
 from db.models.org.region import Region
 from repositories.base import BaseRepository
-from core.exceptions.errors import Conflict
 
 
 class RegionRepository(BaseRepository):
@@ -18,9 +17,7 @@ class RegionRepository(BaseRepository):
 
     async def list(self) -> list[Region]:
         """Получить все регионы (без детей)"""
-        result = await self.session.execute(
-            select(Region).order_by(Region.name)
-        )
+        result = await self.session.execute(select(Region).order_by(Region.name))
         return result.scalars().all()
 
     async def get(self, region_id: UUID) -> Region | None:
@@ -42,9 +39,7 @@ class RegionRepository(BaseRepository):
     async def get_root_regions(self) -> list[Region]:
         """Получить корневые регионы (без родителей)"""
         result = await self.session.execute(
-            select(Region)
-            .where(Region.parent_id.is_(None))
-            .order_by(Region.name)
+            select(Region).where(Region.parent_id.is_(None)).order_by(Region.name)
         )
         return result.scalars().all()
 
@@ -56,11 +51,7 @@ class RegionRepository(BaseRepository):
         return region
 
     async def update(self, region_id: UUID, data: dict) -> Region | None:
-        await self.execute(
-            update(Region)
-            .where(Region.id == region_id)
-            .values(**data)
-        )
+        await self.execute(update(Region).where(Region.id == region_id).values(**data))
         await self.flush()
         return await self.get(region_id)
 
@@ -72,13 +63,13 @@ class RegionRepository(BaseRepository):
         if result.scalars().first():
             raise Conflict("Cannot delete region with child regions")
 
-        result = await self.execute(
-            delete(Region).where(Region.id == region_id)
-        )
+        result = await self.execute(delete(Region).where(Region.id == region_id))
         await self.flush()
         return result.rowcount > 0
 
-    async def check_name_exists(self, name: str, exclude_id: UUID | None = None) -> bool:
+    async def check_name_exists(
+        self, name: str, exclude_id: UUID | None = None
+    ) -> bool:
         query = select(Region).where(Region.name == name)
         if exclude_id:
             query = query.where(Region.id != exclude_id)

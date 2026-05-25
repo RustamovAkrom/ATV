@@ -10,9 +10,7 @@ class ManufacturerRepository(BaseRepository):
         self.session = session
 
     async def list(self):
-        return await self.scalars(
-            select(Manufacturer).order_by(Manufacturer.name)
-        )
+        return await self.scalars(select(Manufacturer).order_by(Manufacturer.name))
 
     async def get(self, manufacturer_id):
         return await self.scalar(
@@ -20,9 +18,7 @@ class ManufacturerRepository(BaseRepository):
         )
 
     async def get_by_slug(self, slug: str):
-        return await self.scalar(
-            select(Manufacturer).where(Manufacturer.slug == slug)
-        )
+        return await self.scalar(select(Manufacturer).where(Manufacturer.slug == slug))
 
     async def get_by_normalized_name(self, normalized: str):
         return await self.scalars_first(

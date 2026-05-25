@@ -1,6 +1,8 @@
 # core/events/domain_event_service.py
+from collections.abc import Awaitable, Callable
+from typing import Any
 from uuid import UUID
-from typing import Any, Awaitable, Callable
+
 from core.events.base import BaseEventService
 from core.notifications.dispatcher import NotificationDispatcher
 from services.assets.asset_history_service import AssetHistoryService

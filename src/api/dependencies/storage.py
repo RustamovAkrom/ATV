@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from core.storage import LocalStorageStrategy, FileUploadService
+from core.storage import FileUploadService, LocalStorageStrategy
 
 
 @lru_cache

@@ -6,8 +6,8 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models.audit.audit_log import AuditLog
-from schemas.audit import AuditCreateSchema, AuditFiltersSchema
 from repositories.base import BaseRepository
+from schemas.audit import AuditCreateSchema, AuditFiltersSchema
 
 
 class AuditRepository(BaseRepository):

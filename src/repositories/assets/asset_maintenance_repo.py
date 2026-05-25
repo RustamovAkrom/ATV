@@ -1,6 +1,6 @@
 from uuid import UUID
-from typing import List, Optional
-from sqlalchemy import select, update, delete
+
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models.assets.asset_maintenance import AssetMaintenance
@@ -21,14 +21,14 @@ class AssetMaintenanceRepository(BaseRepository):
         await self.refresh(maintenance)
         return maintenance
 
-    async def get(self, maintenance_id: UUID) -> Optional[AssetMaintenance]:
+    async def get(self, maintenance_id: UUID) -> AssetMaintenance | None:
         """Получить запись по ID"""
         result = await self.session.execute(
             select(AssetMaintenance).where(AssetMaintenance.id == maintenance_id)
         )
         return result.scalar_one_or_none()
 
-    async def get_by_asset(self, asset_id: UUID) -> List[AssetMaintenance]:
+    async def get_by_asset(self, asset_id: UUID) -> list[AssetMaintenance]:
         """Получить все записи обслуживания для актива"""
         result = await self.session.execute(
             select(AssetMaintenance)
@@ -37,7 +37,7 @@ class AssetMaintenanceRepository(BaseRepository):
         )
         return result.scalars().all()
 
-    async def update(self, maintenance_id: UUID, data: dict) -> Optional[AssetMaintenance]:
+    async def update(self, maintenance_id: UUID, data: dict) -> AssetMaintenance | None:
         """Обновить запись обслуживания"""
         await self.session.execute(
             update(AssetMaintenance)

@@ -1,7 +1,13 @@
 from datetime import datetime, timedelta
 
 from repositories.analytics.trend_analytics_repo import TrendAnalyticsRepository
-from schemas.analytics.trends import RepairTrendPointOut, RepairTrendSeriesOut, TrendInterval, TrendPointOut, TrendSeriesOut
+from schemas.analytics.trends import (
+    RepairTrendPointOut,
+    RepairTrendSeriesOut,
+    TrendInterval,
+    TrendPointOut,
+    TrendSeriesOut,
+)
 from utils.helpers import utc_now
 
 
@@ -29,12 +35,22 @@ class TrendAnalyticsService:
         return dt + timedelta(days=1)
 
     def _resolve_period(self, interval: TrendInterval, periods: int):
-        step_days = 1 if interval == TrendInterval.DAILY else 7 if interval == TrendInterval.WEEKLY else 30
+        step_days = (
+            1
+            if interval == TrendInterval.DAILY
+            else 7
+            if interval == TrendInterval.WEEKLY
+            else 30
+        )
         end = utc_now()
-        start = self._align_start(end - timedelta(days=step_days * max(periods - 1, 0)), interval)
+        start = self._align_start(
+            end - timedelta(days=step_days * max(periods - 1, 0)), interval
+        )
         return start, end, step_days
 
-    def _normalize_points(self, rows, interval: TrendInterval, periods: int, with_cost: bool = False):
+    def _normalize_points(
+        self, rows, interval: TrendInterval, periods: int, with_cost: bool = False
+    ):
         start, _, _ = self._resolve_period(interval, periods)
         lookup = {row.bucket_start: row for row in rows}
         points = []
@@ -46,33 +62,50 @@ class TrendAnalyticsService:
             bucket_end = self._advance_bucket(bucket_start, interval)
 
             if with_cost:
-                points.append(RepairTrendPointOut(
-                    bucket_start=bucket_start,
-                    bucket_end=bucket_end,
-                    value=int(row.value if row else 0),
-                    total_cost=float(row.total_cost if row else 0),
-                ))
+                points.append(
+                    RepairTrendPointOut(
+                        bucket_start=bucket_start,
+                        bucket_end=bucket_end,
+                        value=int(row.value if row else 0),
+                        total_cost=float(row.total_cost if row else 0),
+                    )
+                )
             else:
-                points.append(TrendPointOut(
-                    bucket_start=bucket_start,
-                    bucket_end=bucket_end,
-                    value=int(row.value if row else 0),
-                ))
+                points.append(
+                    TrendPointOut(
+                        bucket_start=bucket_start,
+                        bucket_end=bucket_end,
+                        value=int(row.value if row else 0),
+                    )
+                )
             current = bucket_end
 
         return points
 
-    async def assignment_trends(self, interval: TrendInterval, periods: int) -> TrendSeriesOut:
+    async def assignment_trends(
+        self, interval: TrendInterval, periods: int
+    ) -> TrendSeriesOut:
         start, end, _ = self._resolve_period(interval, periods)
         rows = await self.repo.assignment_counts(interval.value, start, end)
-        return TrendSeriesOut(interval=interval, points=self._normalize_points(rows, interval, periods))
+        return TrendSeriesOut(
+            interval=interval, points=self._normalize_points(rows, interval, periods)
+        )
 
-    async def transfer_trends(self, interval: TrendInterval, periods: int) -> TrendSeriesOut:
+    async def transfer_trends(
+        self, interval: TrendInterval, periods: int
+    ) -> TrendSeriesOut:
         start, end, _ = self._resolve_period(interval, periods)
         rows = await self.repo.transfer_counts(interval.value, start, end)
-        return TrendSeriesOut(interval=interval, points=self._normalize_points(rows, interval, periods))
+        return TrendSeriesOut(
+            interval=interval, points=self._normalize_points(rows, interval, periods)
+        )
 
-    async def repair_trends(self, interval: TrendInterval, periods: int) -> RepairTrendSeriesOut:
+    async def repair_trends(
+        self, interval: TrendInterval, periods: int
+    ) -> RepairTrendSeriesOut:
         start, end, _ = self._resolve_period(interval, periods)
         rows = await self.repo.repair_counts(interval.value, start, end)
-        return RepairTrendSeriesOut(interval=interval, points=self._normalize_points(rows, interval, periods, with_cost=True))
+        return RepairTrendSeriesOut(
+            interval=interval,
+            points=self._normalize_points(rows, interval, periods, with_cost=True),
+        )

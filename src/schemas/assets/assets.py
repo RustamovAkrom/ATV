@@ -2,12 +2,12 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import ConfigDict, Field
+from pydantic import Field
 
 from db.models.enums import AssetStatus
-from schemas.pagination import PageOutSchema
-from schemas.base import BaseSchema, TimestampSchema
 from schemas.assets.asset_maintenance import AssetMaintenanceOutSchema
+from schemas.base import BaseSchema, TimestampSchema
+from schemas.pagination import PageOutSchema
 
 
 class AssetRef(BaseSchema):
@@ -147,5 +147,6 @@ class AssetDetailSchema(AssetSchema):
     assignments: list[AssetAssignmentSchema] = Field(default_factory=list)
     history_entries: list[AssetHistorySchema] = Field(default_factory=list)
     maintenances: list[AssetMaintenanceOutSchema] = Field(default_factory=list)
+
 
 AssetPage = PageOutSchema[AssetSchema]

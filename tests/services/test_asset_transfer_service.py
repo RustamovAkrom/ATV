@@ -1,4 +1,4 @@
-﻿from datetime import UTC, datetime
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -66,7 +66,9 @@ class _FakeRepo:
         return None
 
     async def get_warehouse(self, warehouse_id):
-        return SimpleNamespace(id=warehouse_id, region_id=self.region_id, service_id=self.service_id)
+        return SimpleNamespace(
+            id=warehouse_id, region_id=self.region_id, service_id=self.service_id
+        )
 
     async def get_service(self, service_id):
         return SimpleNamespace(id=service_id)
@@ -102,8 +104,12 @@ def transfer_service(monkeypatch):
     import services.assets.asset_transfer_service as module
 
     # bypass permission checks for unit isolation
-    monkeypatch.setattr(module.AccessControl, "check_region_access", lambda *args, **kwargs: None)
-    monkeypatch.setattr(module.AccessControl, "check_service_access", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        module.AccessControl, "check_region_access", lambda *args, **kwargs: None
+    )
+    monkeypatch.setattr(
+        module.AccessControl, "check_service_access", lambda *args, **kwargs: None
+    )
 
     repo = _FakeRepo()
     service = AssetTransferService(repo, _FakeEvents())
@@ -139,7 +145,9 @@ class TestAssetTransferService:
         payload = AssetTransferCreate(to_warehouse_id=repo.warehouse_id)
         created = await service.create_transfer(repo.asset_id, payload, actor)
 
-        result = await service.approve_transfer(repo.asset_id, created.id, actor, comment="ok")
+        result = await service.approve_transfer(
+            repo.asset_id, created.id, actor, comment="ok"
+        )
         assert result.status == TransferStatus.COMPLETED
 
     async def test_approve_transfer_already_completed(self, transfer_service, actor):
@@ -154,7 +162,9 @@ class TestAssetTransferService:
         payload = AssetTransferCreate(to_warehouse_id=repo.warehouse_id)
         created = await service.create_transfer(repo.asset_id, payload, actor)
 
-        result = await service.reject_transfer(repo.asset_id, created.id, actor, comment="no")
+        result = await service.reject_transfer(
+            repo.asset_id, created.id, actor, comment="no"
+        )
         assert result.status == TransferStatus.CANCELLED
 
     async def test_reject_transfer_not_found(self, transfer_service, actor):

@@ -1,5 +1,4 @@
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models.assets.asset import Asset
 from db.models.assets.asset_assignment import AssetAssignment
@@ -42,20 +41,27 @@ class TopAnalyticsRepository(BaseAnalyticsRepository):
             .subquery()
         )
 
-        query = select(
-            Asset.id,
-            Asset.name,
-            func.coalesce(assignments.c.assignment_count, 0).label("assignment_count"),
-            func.coalesce(transfers.c.transfer_count, 0).label("transfer_count"),
-            func.coalesce(repairs.c.repair_count, 0).label("repair_count"),
-        ).outerjoin(assignments, assignments.c.asset_id == Asset.id).outerjoin(
-            transfers, transfers.c.asset_id == Asset.id
-        ).outerjoin(repairs, repairs.c.asset_id == Asset.id).order_by(
-            func.coalesce(assignments.c.assignment_count, 0).desc(),
-            func.coalesce(transfers.c.transfer_count, 0).desc(),
-            func.coalesce(repairs.c.repair_count, 0).desc(),
-            Asset.name.asc(),
-        ).limit(limit)
+        query = (
+            select(
+                Asset.id,
+                Asset.name,
+                func.coalesce(assignments.c.assignment_count, 0).label(
+                    "assignment_count"
+                ),
+                func.coalesce(transfers.c.transfer_count, 0).label("transfer_count"),
+                func.coalesce(repairs.c.repair_count, 0).label("repair_count"),
+            )
+            .outerjoin(assignments, assignments.c.asset_id == Asset.id)
+            .outerjoin(transfers, transfers.c.asset_id == Asset.id)
+            .outerjoin(repairs, repairs.c.asset_id == Asset.id)
+            .order_by(
+                func.coalesce(assignments.c.assignment_count, 0).desc(),
+                func.coalesce(transfers.c.transfer_count, 0).desc(),
+                func.coalesce(repairs.c.repair_count, 0).desc(),
+                Asset.name.asc(),
+            )
+            .limit(limit)
+        )
 
         result = await self.session.execute(query)
         return result.all()
@@ -90,21 +96,28 @@ class TopAnalyticsRepository(BaseAnalyticsRepository):
             .subquery()
         )
 
-        query = select(
-            User.id,
-            User.full_name,
-            User.email,
-            func.coalesce(assignments.c.assignment_count, 0).label("assignment_count"),
-            func.coalesce(transfers.c.transfer_count, 0).label("transfer_count"),
-            func.coalesce(repairs.c.repair_count, 0).label("repair_count"),
-        ).outerjoin(assignments, assignments.c.user_id == User.id).outerjoin(
-            transfers, transfers.c.user_id == User.id
-        ).outerjoin(repairs, repairs.c.user_id == User.id).order_by(
-            func.coalesce(assignments.c.assignment_count, 0).desc(),
-            func.coalesce(transfers.c.transfer_count, 0).desc(),
-            func.coalesce(repairs.c.repair_count, 0).desc(),
-            User.full_name.asc(),
-        ).limit(limit)
+        query = (
+            select(
+                User.id,
+                User.full_name,
+                User.email,
+                func.coalesce(assignments.c.assignment_count, 0).label(
+                    "assignment_count"
+                ),
+                func.coalesce(transfers.c.transfer_count, 0).label("transfer_count"),
+                func.coalesce(repairs.c.repair_count, 0).label("repair_count"),
+            )
+            .outerjoin(assignments, assignments.c.user_id == User.id)
+            .outerjoin(transfers, transfers.c.user_id == User.id)
+            .outerjoin(repairs, repairs.c.user_id == User.id)
+            .order_by(
+                func.coalesce(assignments.c.assignment_count, 0).desc(),
+                func.coalesce(transfers.c.transfer_count, 0).desc(),
+                func.coalesce(repairs.c.repair_count, 0).desc(),
+                User.full_name.asc(),
+            )
+            .limit(limit)
+        )
 
         result = await self.session.execute(query)
         return result.all()
@@ -153,20 +166,27 @@ class TopAnalyticsRepository(BaseAnalyticsRepository):
             .subquery()
         )
 
-        query = select(
-            Service.id,
-            Service.name,
-            func.coalesce(assignments.c.assignment_count, 0).label("assignment_count"),
-            func.coalesce(transfers.c.transfer_count, 0).label("transfer_count"),
-            func.coalesce(repairs.c.repair_count, 0).label("repair_count"),
-        ).outerjoin(assignments, assignments.c.service_id == Service.id).outerjoin(
-            transfers, transfers.c.service_id == Service.id
-        ).outerjoin(repairs, repairs.c.service_id == Service.id).order_by(
-            func.coalesce(assignments.c.assignment_count, 0).desc(),
-            func.coalesce(transfers.c.transfer_count, 0).desc(),
-            func.coalesce(repairs.c.repair_count, 0).desc(),
-            Service.name.asc(),
-        ).limit(limit)
+        query = (
+            select(
+                Service.id,
+                Service.name,
+                func.coalesce(assignments.c.assignment_count, 0).label(
+                    "assignment_count"
+                ),
+                func.coalesce(transfers.c.transfer_count, 0).label("transfer_count"),
+                func.coalesce(repairs.c.repair_count, 0).label("repair_count"),
+            )
+            .outerjoin(assignments, assignments.c.service_id == Service.id)
+            .outerjoin(transfers, transfers.c.service_id == Service.id)
+            .outerjoin(repairs, repairs.c.service_id == Service.id)
+            .order_by(
+                func.coalesce(assignments.c.assignment_count, 0).desc(),
+                func.coalesce(transfers.c.transfer_count, 0).desc(),
+                func.coalesce(repairs.c.repair_count, 0).desc(),
+                Service.name.asc(),
+            )
+            .limit(limit)
+        )
 
         result = await self.session.execute(query)
         return result.all()

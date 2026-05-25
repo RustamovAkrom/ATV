@@ -1,31 +1,34 @@
-from sqladmin import Admin
 from fastapi import FastAPI
+from sqladmin import Admin
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.templating import Jinja2Templates
-from core.database.db_sync import get_db_sync_engine
 
-from core.admin.views.users import UserAdmin, PermissionAdmin, RoleAdmin
+from core.admin.auth import AdminAuth
 from core.admin.views.assets import (
     AssetAdmin,
     AssetAssignmentAdmin,
     AssetCategoryAdmin,
     AssetClassAdmin,
     AssetHistoryAdmin,
+    AssetImageAdmin,
+    AssetMaintenanceAdmin,
     AssetModelAdmin,
     AssetTransferAdmin,
     ManufacturerAdmin,
     WarehouseAdmin,
-    AssetImageAdmin,
-    AssetMaintenanceAdmin,
 )
+from core.admin.views.assets.approvals import ApprovalRequestAdmin
 from core.admin.views.assets.documents import DocumentAdmin, DocumentFileAdmin
+from core.admin.views.assets.misc import (
+    AuditLogAdmin,
+    NotificationAdmin,
+    RefreshTokenAdmin,
+    SystemConfigAdmin,
+)
 from core.admin.views.assets.org import RegionAdmin, ServiceAdmin
 from core.admin.views.assets.repairs import RepairAdmin, RepairPartAdmin
-from core.admin.views.assets.misc import AuditLogAdmin, NotificationAdmin, RefreshTokenAdmin, SystemConfigAdmin
-from core.admin.views.assets.approvals import ApprovalRequestAdmin
-from core.admin.auth import AdminAuth
-
+from core.admin.views.users import PermissionAdmin, RoleAdmin, UserAdmin
 from core.config import Settings
+from core.database.db_sync import get_db_sync_engine
 
 
 def setup_admin(app: FastAPI, settings: Settings):

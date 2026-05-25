@@ -1,13 +1,25 @@
-﻿from datetime import UTC, datetime
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from schemas.analytics.approval import ApprovalAnalyticsDataSchema
-from schemas.analytics.asset import AssetDistributionDataSchema, AssetLifecycleDataSchema, RegionGeoMetricSchema
-from schemas.analytics.base import AnalyticsFilters, AnalyticsPageOut, DurationMetrics, TransferDurationMetrics
+from schemas.analytics.asset import (
+    AssetDistributionDataSchema,
+    AssetLifecycleDataSchema,
+    RegionGeoMetricSchema,
+)
+from schemas.analytics.base import (
+    AnalyticsFilters,
+    AnalyticsPageOut,
+    DurationMetrics,
+    TransferDurationMetrics,
+)
 from schemas.analytics.document import DocumentAnalyticsDataSchema
 from schemas.analytics.repair import RepairAnalyticsDataSchema, RepairAssetMetricSchema
 from schemas.analytics.report import OverviewDataSchema, ReportDataSchema
-from schemas.analytics.transfer import TransferAnalyticsDataSchema, TransferAssetMetricSchema
+from schemas.analytics.transfer import (
+    TransferAnalyticsDataSchema,
+    TransferAssetMetricSchema,
+)
 from schemas.analytics.utilization import (
     UtilizationAnalyticsDataSchema,
     UtilizationEmployeeSchema,
@@ -24,7 +36,9 @@ def test_analytics_schema_models_roundtrip():
     )
     assert approval.pending_approvals == 1
 
-    geo = RegionGeoMetricSchema(region_id="r1", region_name="Region", metrics={"active": 2})
+    geo = RegionGeoMetricSchema(
+        region_id="r1", region_name="Region", metrics={"active": 2}
+    )
     dist = {"labels": ["a"], "values": [1]}
     asset_dist = AssetDistributionDataSchema(
         total_assets=2,
@@ -36,10 +50,17 @@ def test_analytics_schema_models_roundtrip():
     )
     assert asset_dist.total_assets == 2
 
-    lifecycle = AssetLifecycleDataSchema(lifecycle_distribution=dist, critical_assets_percentage=12.0)
+    lifecycle = AssetLifecycleDataSchema(
+        lifecycle_distribution=dist, critical_assets_percentage=12.0
+    )
     assert lifecycle.critical_assets_percentage == 12.0
 
-    filters = AnalyticsFilters(region_id=uuid4(), service_id=uuid4(), date_from=datetime.now(UTC), date_to=datetime.now(UTC))
+    filters = AnalyticsFilters(
+        region_id=uuid4(),
+        service_id=uuid4(),
+        date_from=datetime.now(UTC),
+        date_to=datetime.now(UTC),
+    )
     page = AnalyticsPageOut[str](items=["x"], total=3, page=1, limit=2)
     assert filters.region_id is not None
     assert page.pages == 2
@@ -60,10 +81,17 @@ def test_analytics_schema_models_roundtrip():
     assert duration.duration_formatted == "1d"
     assert transfer_duration.is_pending is False
 
-    document = DocumentAnalyticsDataSchema(total_assets=10, with_documents=8, without_documents=2, missing_compliance_documentation=1)
+    document = DocumentAnalyticsDataSchema(
+        total_assets=10,
+        with_documents=8,
+        without_documents=2,
+        missing_compliance_documentation=1,
+    )
     assert document.with_documents == 8
 
-    repair_asset = RepairAssetMetricSchema(asset_id="a1", asset_name="Asset", repair_count=2, total_repair_cost=100.0)
+    repair_asset = RepairAssetMetricSchema(
+        asset_id="a1", asset_name="Asset", repair_count=2, total_repair_cost=100.0
+    )
     repair = RepairAnalyticsDataSchema(
         average_repair_cost=50.0,
         per_asset=[repair_asset],
@@ -76,7 +104,9 @@ def test_analytics_schema_models_roundtrip():
     assert report.summary == {}
     assert overview.kpis == []
 
-    t_asset = TransferAssetMetricSchema(asset_id="a1", asset_name="Asset", transfer_count=3)
+    t_asset = TransferAssetMetricSchema(
+        asset_id="a1", asset_name="Asset", transfer_count=3
+    )
     transfer = TransferAnalyticsDataSchema(
         transfers_per_period={"labels": ["d1"], "values": [1]},
         most_moved_assets=[t_asset],
@@ -85,8 +115,16 @@ def test_analytics_schema_models_roundtrip():
     assert transfer.most_moved_assets[0].transfer_count == 3
 
     ue = UtilizationEmployeeSchema(user_id="u1", user_name="User", asset_count=3)
-    us = UtilizationServiceSchema(service_id="s1", service_name="Service", asset_count=5)
-    ur = UtilizationRegionLoadSchema(region_id="r1", region_name="Region", asset_count=10, employee_count=2, load_ratio=5.0)
+    us = UtilizationServiceSchema(
+        service_id="s1", service_name="Service", asset_count=5
+    )
+    ur = UtilizationRegionLoadSchema(
+        region_id="r1",
+        region_name="Region",
+        asset_count=10,
+        employee_count=2,
+        load_ratio=5.0,
+    )
     util = UtilizationAnalyticsDataSchema(
         assets_per_employee=[ue],
         assets_per_service=[us],

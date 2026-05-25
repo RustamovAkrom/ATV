@@ -2,10 +2,11 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import ConfigDict, Field, field_validator
-from schemas.base import BaseSchema
+from pydantic import Field, field_validator
+
 from api.v1.analytics._utils import sanitize_search
 from db.models.enums import TransferStatus
+from schemas.base import BaseSchema
 
 
 class AssetTransferFilterInput(BaseSchema):

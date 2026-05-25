@@ -3,15 +3,15 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
+from core.exceptions.errors import BadRequest, Conflict, NotFound
+from db.models.org.service import Service
 from repositories.organization.service_repo import ServiceRepository
 from schemas.organization.service import (
     ServiceCreateSchema,
-    ServiceUpdateSchema,
     ServiceOutSchema,
+    ServiceUpdateSchema,
     ServiceWithRegionsOutSchema,
 )
-from core.exceptions.errors import NotFound, Conflict, BadRequest
-from db.models.org.service import Service
 from utils.slug import slugify
 
 
@@ -55,11 +55,13 @@ class ServiceService:
             raise Conflict(f"Service with name '{data.name}' already exists")
 
         # Создаём сервис
-        service = await self.repo.create({
-            "name": data.name,
-            "slug": slugify(data.name),
-            "description": data.description if data.description else None,
-        })
+        service = await self.repo.create(
+            {
+                "name": data.name,
+                "slug": slugify(data.name),
+                "description": data.description if data.description else None,
+            }
+        )
 
         # Привязываем регионы (если переданы)
         if data.region_ids:
@@ -75,7 +77,9 @@ class ServiceService:
 
         return await self.get(service.id)
 
-    async def update(self, service_id: UUID, data: ServiceUpdateSchema) -> ServiceOutSchema:
+    async def update(
+        self, service_id: UUID, data: ServiceUpdateSchema
+    ) -> ServiceOutSchema:
         """Обновить сервис"""
         service = await self.repo.get(service_id)
         if not service:
@@ -141,5 +145,7 @@ class ServiceService:
                     "parent_id": str(r.parent_id) if r.parent_id else None,
                 }
                 for r in service.regions
-            ] if service.regions else None,
+            ]
+            if service.regions
+            else None,
         )

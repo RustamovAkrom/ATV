@@ -1,32 +1,52 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from api.dependencies.assets.asset_model import get_asset_model_service
+from core.cache.decorators import cached, invalidate_cache
 from core.security.rbac.presets import AssetPermissions
+from core.slowapi import limiter
 from schemas.assets.asset_model import AssetModelCreateSchema, AssetModelOutSchema
 from schemas.common import StatusResponse
 from services.assets.asset_model_service import AssetModelService
 
-
 router = APIRouter(prefix="/asset-models", tags=["Asset models"])
 
 
-@router.get("/", response_model=list[AssetModelOutSchema], dependencies=[Depends(AssetPermissions.CanViewAssets)])
+@router.get(
+    "/",
+    response_model=list[AssetModelOutSchema],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
+)
+@cached(tags=("model:list",))
 async def list_models(service: AssetModelService = Depends(get_asset_model_service)):
     return await service.list()
 
 
-@router.post("/", response_model=AssetModelOutSchema, dependencies=[Depends(AssetPermissions.CanCreateAssets)])
+@router.post(
+    "/",
+    response_model=AssetModelOutSchema,
+    dependencies=[Depends(AssetPermissions.CanCreateAssets)],
+)
+@limiter.limit("20/minute")
+@invalidate_cache(tags=("model:list",))
 async def create_model(
+    request: Request,
     data: AssetModelCreateSchema,
     service: AssetModelService = Depends(get_asset_model_service),
 ):
     return await service.create(data)
 
 
-@router.delete("/{model_id}", response_model=StatusResponse, dependencies=[Depends(AssetPermissions.CanDeleteAssets)])
+@router.delete(
+    "/{model_id}",
+    response_model=StatusResponse,
+    dependencies=[Depends(AssetPermissions.CanDeleteAssets)],
+)
+@limiter.limit("20/minute")
+@invalidate_cache(tags=("model:list",))
 async def delete_model(
+    request: Request,
     model_id: UUID,
     service: AssetModelService = Depends(get_asset_model_service),
 ):

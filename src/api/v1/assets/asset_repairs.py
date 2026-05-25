@@ -1,22 +1,20 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from api.dependencies.assets.asset_repair import get_repair_service
 from core.cache.decorators import invalidate_cache
 from core.security.auth.dependencies import get_current_user
 from core.security.rbac.presets import AssetPermissions
-
-from schemas.auth import CurrentUserSchema
+from core.slowapi import limiter
 from schemas.assets.repairs import (
-    RepairReportRequest,
-    RepairStartRequest,
     RepairCancelRequest,
+    RepairReportRequest,
     RepairSchema,
+    RepairStartRequest,
 )
-
+from schemas.auth import CurrentUserSchema
 from services.assets.repair_service import RepairService
-
 
 router = APIRouter(
     prefix="/assets/{asset_id}/repair",
@@ -29,8 +27,16 @@ router = APIRouter(
     response_model=RepairSchema,
     dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
 )
-@invalidate_cache(tags=("assets:list",))
+@limiter.limit("20/minute")
+@invalidate_cache(
+    tags=(
+        "asset:list",
+        "asset:detail",
+        "asset:history",
+    )
+)
 async def report_asset_repair(
+    request: Request,
     asset_id: UUID,
     data: RepairReportRequest,
     actor: CurrentUserSchema = Depends(get_current_user),
@@ -44,8 +50,16 @@ async def report_asset_repair(
     response_model=RepairSchema,
     dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
 )
-@invalidate_cache(tags=("assets:list",))
+@limiter.limit("20/minute")
+@invalidate_cache(
+    tags=(
+        "asset:list",
+        "asset:detail",
+        "asset:history",
+    )
+)
 async def start_asset_repair(
+    request: Request,
     asset_id: UUID,
     repair_id: UUID,
     data: RepairStartRequest,
@@ -60,8 +74,16 @@ async def start_asset_repair(
     response_model=RepairSchema,
     dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
 )
-@invalidate_cache(tags=("assets:list",))
+@limiter.limit("20/minute")
+@invalidate_cache(
+    tags=(
+        "asset:list",
+        "asset:detail",
+        "asset:history",
+    )
+)
 async def cancel_asset_repair(
+    request: Request,
     asset_id: UUID,
     repair_id: UUID,
     data: RepairCancelRequest,

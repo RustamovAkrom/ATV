@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from schemas.base import BaseSchema
 from schemas.analytics.common import DistributionSchema
+from schemas.base import BaseSchema
 
 
 class RegionGeoMetricSchema(BaseSchema):

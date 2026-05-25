@@ -1,5 +1,6 @@
 # core/events/asset_events.py
 from uuid import UUID
+
 from core.events.domain_event_service import DomainEventService
 from core.notifications.builder import NotificationBuilder
 
@@ -49,11 +50,18 @@ class AssetEventService(DomainEventService):
             action="updated",
             description=f"Updated fields: {', '.join(sorted(fields))}",
             audit_event="asset.updated",
-            audit_payload={"asset_id": str(asset_id), "actor_id": str(actor_id), "fields": fields},
+            audit_payload={
+                "asset_id": str(asset_id),
+                "actor_id": str(actor_id),
+                "fields": fields,
+            },
             notification=lambda: (
                 self.notifications.dispatch(
                     NotificationBuilder.asset_updated(
-                        user_id=owner_id, asset_id=asset_id, name=asset_name, fields=fields
+                        user_id=owner_id,
+                        asset_id=asset_id,
+                        name=asset_name,
+                        fields=fields,
                     )
                 )
                 if owner_id

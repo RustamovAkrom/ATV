@@ -1,5 +1,4 @@
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models.assets.asset import Asset
 from db.models.assets.asset_assignment import AssetAssignment
@@ -21,10 +20,18 @@ class RegionAnalyticsRepository(BaseAnalyticsRepository):
             select(
                 Asset.region_id.label("region_id"),
                 func.count(Asset.id).label("total_assets"),
-                func.count(Asset.id).filter(Asset.status == AssetStatus.ACTIVE).label("active_assets"),
-                func.count(Asset.id).filter(Asset.status == AssetStatus.ASSIGNED).label("assigned_assets"),
-                func.count(Asset.id).filter(Asset.status == AssetStatus.IN_REPAIR).label("in_repair_assets"),
-                func.count(Asset.id).filter(Asset.status == AssetStatus.ARCHIVED).label("archived_assets"),
+                func.count(Asset.id)
+                .filter(Asset.status == AssetStatus.ACTIVE)
+                .label("active_assets"),
+                func.count(Asset.id)
+                .filter(Asset.status == AssetStatus.ASSIGNED)
+                .label("assigned_assets"),
+                func.count(Asset.id)
+                .filter(Asset.status == AssetStatus.IN_REPAIR)
+                .label("in_repair_assets"),
+                func.count(Asset.id)
+                .filter(Asset.status == AssetStatus.ARCHIVED)
+                .label("archived_assets"),
             )
             .where(Asset.region_id.isnot(None))
             .group_by(Asset.region_id)
@@ -95,27 +102,38 @@ class RegionAnalyticsRepository(BaseAnalyticsRepository):
         assignment_load = self._assignment_load_subquery()
         transfers_in, transfers_out = self._transfer_counts_subquery()
 
-        query = select(
-            Region.id,
-            Region.name,
-            Region.latitude,
-            Region.longitude,
-            Region.geojson,
-            func.coalesce(asset_counts.c.total_assets, 0).label("total_assets"),
-            func.coalesce(asset_counts.c.active_assets, 0).label("active_assets"),
-            func.coalesce(asset_counts.c.assigned_assets, 0).label("assigned_assets"),
-            func.coalesce(asset_counts.c.in_repair_assets, 0).label("in_repair_assets"),
-            func.coalesce(asset_counts.c.archived_assets, 0).label("archived_assets"),
-            func.coalesce(repair_counts.c.repairs_count, 0).label("repairs_count"),
-            func.coalesce(assignment_load.c.assignment_load, 0).label("assignment_load"),
-            func.coalesce(transfers_in.c.transfers_in, 0).label("transfers_in"),
-            func.coalesce(transfers_out.c.transfers_out, 0).label("transfers_out"),
-        ).outerjoin(asset_counts, asset_counts.c.region_id == Region.id).outerjoin(
-            repair_counts, repair_counts.c.region_id == Region.id
-        ).outerjoin(assignment_load, assignment_load.c.region_id == Region.id).outerjoin(
-            transfers_in, transfers_in.c.region_id == Region.id
-        ).outerjoin(transfers_out, transfers_out.c.region_id == Region.id
-        ).order_by(Region.name.asc())
+        query = (
+            select(
+                Region.id,
+                Region.name,
+                Region.latitude,
+                Region.longitude,
+                Region.geojson,
+                func.coalesce(asset_counts.c.total_assets, 0).label("total_assets"),
+                func.coalesce(asset_counts.c.active_assets, 0).label("active_assets"),
+                func.coalesce(asset_counts.c.assigned_assets, 0).label(
+                    "assigned_assets"
+                ),
+                func.coalesce(asset_counts.c.in_repair_assets, 0).label(
+                    "in_repair_assets"
+                ),
+                func.coalesce(asset_counts.c.archived_assets, 0).label(
+                    "archived_assets"
+                ),
+                func.coalesce(repair_counts.c.repairs_count, 0).label("repairs_count"),
+                func.coalesce(assignment_load.c.assignment_load, 0).label(
+                    "assignment_load"
+                ),
+                func.coalesce(transfers_in.c.transfers_in, 0).label("transfers_in"),
+                func.coalesce(transfers_out.c.transfers_out, 0).label("transfers_out"),
+            )
+            .outerjoin(asset_counts, asset_counts.c.region_id == Region.id)
+            .outerjoin(repair_counts, repair_counts.c.region_id == Region.id)
+            .outerjoin(assignment_load, assignment_load.c.region_id == Region.id)
+            .outerjoin(transfers_in, transfers_in.c.region_id == Region.id)
+            .outerjoin(transfers_out, transfers_out.c.region_id == Region.id)
+            .order_by(Region.name.asc())
+        )
 
         result = await self.session.execute(query)
         return result.all()
@@ -129,21 +147,29 @@ class RegionAnalyticsRepository(BaseAnalyticsRepository):
             return None, [], []
 
         # Сервисы в регионе
-        service_query = select(
-            Service.id,
-            Service.name,
-            func.count(func.distinct(Asset.id)).label("asset_count"),
-            func.count(func.distinct(AssetAssignment.id))
-            .filter(AssetAssignment.unassigned_at.is_(None))
-            .label("active_assignments"),
-            func.count(func.distinct(Repair.id)).label("repairs_count"),
-        ).select_from(region_services).join(Service, Service.id == region_services.c.service_id).outerjoin(
-            Asset, Asset.service_id == Service.id
-        ).outerjoin(
-            AssetAssignment, (AssetAssignment.asset_id == Asset.id) & AssetAssignment.unassigned_at.is_(None)
-        ).outerjoin(Repair, Repair.asset_id == Asset.id).where(
-            region_services.c.region_id == region_id
-        ).group_by(Service.id, Service.name).order_by(Service.name.asc())
+        service_query = (
+            select(
+                Service.id,
+                Service.name,
+                func.count(func.distinct(Asset.id)).label("asset_count"),
+                func.count(func.distinct(AssetAssignment.id))
+                .filter(AssetAssignment.unassigned_at.is_(None))
+                .label("active_assignments"),
+                func.count(func.distinct(Repair.id)).label("repairs_count"),
+            )
+            .select_from(region_services)
+            .join(Service, Service.id == region_services.c.service_id)
+            .outerjoin(Asset, Asset.service_id == Service.id)
+            .outerjoin(
+                AssetAssignment,
+                (AssetAssignment.asset_id == Asset.id)
+                & AssetAssignment.unassigned_at.is_(None),
+            )
+            .outerjoin(Repair, Repair.asset_id == Asset.id)
+            .where(region_services.c.region_id == region_id)
+            .group_by(Service.id, Service.name)
+            .order_by(Service.name.asc())
+        )
 
         service_rows = await self.session.execute(service_query)
 
@@ -151,7 +177,9 @@ class RegionAnalyticsRepository(BaseAnalyticsRepository):
         repair_parts = (
             select(
                 RepairPart.repair_id.label("repair_id"),
-                func.sum(RepairPart.quantity * RepairPart.unit_price).label("parts_cost"),
+                func.sum(RepairPart.quantity * RepairPart.unit_price).label(
+                    "parts_cost"
+                ),
             )
             .group_by(RepairPart.repair_id)
             .subquery()
@@ -161,7 +189,8 @@ class RegionAnalyticsRepository(BaseAnalyticsRepository):
             select(
                 Repair.asset_id.label("asset_id"),
                 func.sum(
-                    func.coalesce(Repair.labor_cost, 0) + func.coalesce(repair_parts.c.parts_cost, 0)
+                    func.coalesce(Repair.labor_cost, 0)
+                    + func.coalesce(repair_parts.c.parts_cost, 0)
                 ).label("repair_cost"),
             )
             .outerjoin(repair_parts, repair_parts.c.repair_id == Repair.id)
@@ -169,18 +198,26 @@ class RegionAnalyticsRepository(BaseAnalyticsRepository):
             .subquery()
         )
 
-        cost_query = select(
-            Asset.id,
-            Asset.name,
-            func.coalesce(Asset.purchase_cost, 0).label("purchase_cost"),
-            func.coalesce(repair_costs.c.repair_cost, 0).label("repair_cost"),
-        ).outerjoin(repair_costs, repair_costs.c.asset_id == Asset.id).where(
-            Asset.region_id == region_id
-        ).group_by(
-            Asset.id, Asset.name, Asset.purchase_cost, repair_costs.c.repair_cost
-        ).order_by(
-            (func.coalesce(Asset.purchase_cost, 0) + func.coalesce(repair_costs.c.repair_cost, 0)).desc()
-        ).limit(5)
+        cost_query = (
+            select(
+                Asset.id,
+                Asset.name,
+                func.coalesce(Asset.purchase_cost, 0).label("purchase_cost"),
+                func.coalesce(repair_costs.c.repair_cost, 0).label("repair_cost"),
+            )
+            .outerjoin(repair_costs, repair_costs.c.asset_id == Asset.id)
+            .where(Asset.region_id == region_id)
+            .group_by(
+                Asset.id, Asset.name, Asset.purchase_cost, repair_costs.c.repair_cost
+            )
+            .order_by(
+                (
+                    func.coalesce(Asset.purchase_cost, 0)
+                    + func.coalesce(repair_costs.c.repair_cost, 0)
+                ).desc()
+            )
+            .limit(5)
+        )
 
         cost_rows = await self.session.execute(cost_query)
 

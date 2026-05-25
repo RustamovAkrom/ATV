@@ -1,6 +1,7 @@
 from datetime import datetime
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, Field
+
+from pydantic import BaseModel, ConfigDict
 
 
 class BaseSchema(BaseModel):
@@ -9,7 +10,7 @@ class BaseSchema(BaseModel):
         populate_by_name=True,
         use_enum_values=True,
         validate_default=True,
-        extra='forbid' # forbidden extra fields
+        extra="forbid",  # forbidden extra fields
     )
 
 

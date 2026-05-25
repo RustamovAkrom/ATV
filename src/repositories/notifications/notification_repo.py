@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select, update, func
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models.notifications.notification import Notification
@@ -39,7 +39,6 @@ class NotificationRepository(BaseRepository):
         return await self.scalar(
             select(Notification).where(Notification.id == notification_id)
         )
-
 
     async def mark_as_read(self, notification_id: UUID):
         await self.execute(

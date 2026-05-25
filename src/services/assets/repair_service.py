@@ -1,9 +1,9 @@
 from decimal import Decimal
 from uuid import UUID
 
-from core.audit.stream import audit_stream
-from core.events.asset_events import AssetEventService
+from core.events.repair_events import RepairEventService
 from core.exceptions.errors import BadRequest, NotFound
+from core.security.access_control import AccessControl
 from db.models.enums import AssetStatus, RepairStatus, UserStatus
 from db.models.repairs.repair import Repair
 from db.models.repairs.repair_part import RepairPart
@@ -15,10 +15,8 @@ from schemas.assets.repairs import (
     RepairSchema,
     RepairStartRequest,
 )
-from utils.helpers import utc_now
 from schemas.auth.auth import CurrentUserSchema
-from core.security.access_control import AccessControl
-from core.events.repair_events import RepairEventService
+from utils.helpers import utc_now
 
 
 class RepairService:

@@ -1,12 +1,12 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.dependencies.events.asset import get_asset_event_service
+from core.events.asset_events import AssetEventService
 from db.dependencies import get_db_session
 from repositories.assets.asset_maintenance_repo import AssetMaintenanceRepository
 from repositories.assets.asset_repo import AssetRepository
 from services.assets.asset_maintenance_service import AssetMaintenanceService
-from core.events.asset_events import AssetEventService
-from api.dependencies.events.asset import get_asset_event_service
 
 
 def get_asset_maintenance_repo(

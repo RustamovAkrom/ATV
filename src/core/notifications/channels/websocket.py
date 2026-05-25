@@ -1,5 +1,5 @@
-from typing import Dict, Set
 from uuid import UUID
+
 from fastapi import WebSocket
 
 
@@ -9,7 +9,7 @@ class WebSocketManager:
     """
 
     def __init__(self):
-        self.connections: Dict[UUID, Set[WebSocket]] = {}
+        self.connections: dict[UUID, set[WebSocket]] = {}
 
     async def connect(self, user_id: UUID, ws: WebSocket):
         await ws.accept()

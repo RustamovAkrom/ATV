@@ -1,16 +1,12 @@
 from uuid import UUID
 
-from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from db.models.approvals.approval_request import ApprovalRequest
 from db.models.enums import ApprovalStatus
-
-from schemas.pagination import PaginationParamsSchema
-from core.exceptions.errors import Conflict
 from repositories.base import BaseRepository
+from schemas.pagination import PaginationParamsSchema
 
 
 class ApprovalRepository(BaseRepository):

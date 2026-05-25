@@ -45,7 +45,9 @@ async def list_assignments(
     date_to: str | None = Query(None),
     search: str | None = Query(None, max_length=100),
     pagination: PaginationParamsSchema = Depends(),
-    service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
+    service: AssetAssignmentAnalyticsService = Depends(
+        get_asset_assignment_analytics_service
+    ),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
     filters = AssetAssignmentFilterInput(
@@ -74,7 +76,9 @@ async def list_assignments(
 async def list_active_assignments(
     request: Request,
     pagination: PaginationParamsSchema = Depends(),
-    service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
+    service: AssetAssignmentAnalyticsService = Depends(
+        get_asset_assignment_analytics_service
+    ),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
     return await run_analytics_operation(
@@ -95,7 +99,9 @@ async def list_active_assignments(
 async def get_user_assignment_summary(
     request: Request,
     user_id: UUID,
-    service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
+    service: AssetAssignmentAnalyticsService = Depends(
+        get_asset_assignment_analytics_service
+    ),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
     return await run_analytics_operation(
@@ -125,7 +131,9 @@ async def get_user_assignment_summary(
 async def get_asset_assignment_timeline(
     request: Request,
     asset_id: UUID,
-    service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
+    service: AssetAssignmentAnalyticsService = Depends(
+        get_asset_assignment_analytics_service
+    ),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
     return await run_analytics_operation(
@@ -156,7 +164,9 @@ async def get_assignment_aggregates(
     status: AssignmentAnalyticsStatus | None = Query(None),
     date_from: str | None = Query(None),
     date_to: str | None = Query(None),
-    service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
+    service: AssetAssignmentAnalyticsService = Depends(
+        get_asset_assignment_analytics_service
+    ),
 ):
     filters = AssetAssignmentFilterInput(
         asset_id=asset_id,

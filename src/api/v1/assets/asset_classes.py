@@ -2,32 +2,53 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from api.dependencies.assets.asset_class import get_asset_class_service
+from core.cache.decorators import cached, invalidate_cache
 from core.security.rbac.presets import AssetPermissions
+from core.slowapi import limiter
 from schemas.assets.asset_class import AssetClassCreateSchema, AssetClassOutSchema
-from services.assets.asset_class_service import AssetClassService
 from schemas.common import StatusResponse
+from services.assets.asset_class_service import AssetClassService
 
 router = APIRouter(prefix="/asset-classes", tags=["Asset Classes"])
 
 
-@router.get("/", response_model=list[AssetClassOutSchema], dependencies=[Depends(AssetPermissions.CanViewAssets)])
+@router.get(
+    "/",
+    response_model=list[AssetClassOutSchema],
+    dependencies=[Depends(AssetPermissions.CanViewAssets)],
+)
+@cached(tags=("classes:list",))
 async def list_classes(service: AssetClassService = Depends(get_asset_class_service)):
     return await service.list()
 
 
-@router.post("/", response_model=AssetClassOutSchema, dependencies=[Depends(AssetPermissions.CanCreateAssets)])
+@router.post(
+    "/",
+    response_model=AssetClassOutSchema,
+    dependencies=[Depends(AssetPermissions.CanCreateAssets)],
+)
+@limiter.limit("20/minute")
+@invalidate_cache(tags=("classes:list",))
 async def create_class(
+    request: Request,
     data: AssetClassCreateSchema,
     service: AssetClassService = Depends(get_asset_class_service),
 ):
     return await service.create(data)
 
 
-@router.delete("/{class_id}", response_model=StatusResponse, dependencies=[Depends(AssetPermissions.CanDeleteAssets)])
+@router.delete(
+    "/{class_id}",
+    response_model=StatusResponse,
+    dependencies=[Depends(AssetPermissions.CanDeleteAssets)],
+)
+@limiter.limit("20/minute")
+@invalidate_cache(tags=("classes:list",))
 async def delete_class(
+    request: Request,
     class_id: UUID,
     service: AssetClassService = Depends(get_asset_class_service),
 ):

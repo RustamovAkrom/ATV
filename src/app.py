@@ -1,18 +1,19 @@
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import (
     get_redoc_html,
     get_swagger_ui_html,
     get_swagger_ui_oauth2_redirect_html,
 )
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
+from fastapi.staticfiles import StaticFiles
 from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.templating import Jinja2Templates
 
 from api.routers.v1 import router as api_router
+from core.admin.registry import setup_admin
 from core.config import Settings, get_settings
 from core.exceptions.handlers import configure_exception_handlers
 from core.lifespan import lifespan
@@ -23,13 +24,13 @@ from middlewares.logging import LoggingMiddleware
 from middlewares.metrics import MetricsMiddleware
 from middlewares.request_id import RequestIDMiddleware
 
-from core.admin.registry import setup_admin
 
 # ROUTE ID
 def custom_generate_unique_id(route: APIRoute) -> str:
     tag = route.tags[0] if route.tags else "default"
     path = route.path.replace("/", "_").strip("_")
     return f"{tag}_{path}_{route.name}"
+
 
 # APP FACTORY
 def create_app() -> FastAPI:
@@ -59,6 +60,7 @@ def create_app() -> FastAPI:
 
     return app
 
+
 # TEMPLATES (для админ-панели)
 def configure_templates(app: FastAPI, settings: Settings):
     """Настройка Jinja2 шаблонов для админ-панели."""
@@ -74,6 +76,7 @@ def configure_templates(app: FastAPI, settings: Settings):
     # Делаем шаблоны доступными через app.state
     app.state.templates = app.templates
 
+
 # STATIC
 def configure_static(app: FastAPI, settings: Settings):
     static_dir = settings.BASE_DIR / "static"
@@ -86,10 +89,11 @@ def configure_static(app: FastAPI, settings: Settings):
     if storage_dir.exists():
         app.mount("/storage", StaticFiles(directory=storage_dir), name="storage")
 
+
 # DOCS
 def configure_docs(app: FastAPI, settings: Settings):
     if not settings.DEBUG:
-        return # PROD: docs disabled
+        return  # PROD: docs disabled
 
     @app.get("/docs", include_in_schema=False)
     async def custom_swagger_ui_html():
@@ -121,10 +125,7 @@ def configure_routes(app: FastAPI, settings: Settings):
 
 def configure_middlewares(app: FastAPI, settings: Settings):
     # Security first
-    app.add_middleware(
-        TrustedHostMiddleware,
-        allowed_hosts=settings.ALLOWED_HOSTS
-    )
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.ALLOWED_HOSTS)
 
     app.add_middleware(
         CORSMiddleware,

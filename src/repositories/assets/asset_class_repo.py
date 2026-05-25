@@ -12,19 +12,13 @@ class AssetClassRepository(BaseRepository):
         self.session = session
 
     async def list(self):
-        return await self.scalars(
-            select(AssetClass).order_by(AssetClass.name)
-        )
+        return await self.scalars(select(AssetClass).order_by(AssetClass.name))
 
     async def get(self, class_id: UUID):
-        return await self.scalar(
-            select(AssetClass).where(AssetClass.id == class_id)
-        )
+        return await self.scalar(select(AssetClass).where(AssetClass.id == class_id))
 
     async def get_by_slug(self, slug: str):
-        return await self.scalar(
-            select(AssetClass).where(AssetClass.slug == slug)
-        )
+        return await self.scalar(select(AssetClass).where(AssetClass.slug == slug))
 
     async def get_by_normalized_name(self, normalized: str):
         return await self.scalars_first(

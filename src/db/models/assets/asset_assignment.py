@@ -1,6 +1,5 @@
-from typing import TYPE_CHECKING
-
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import DateTime, ForeignKey, Index
@@ -34,7 +33,9 @@ class AssetAssignment(Base, UUIDMixing):
 
     unassigned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
-    asset: Mapped["Asset"] = relationship("Asset", back_populates="assignments", lazy="selectin")
+    asset: Mapped["Asset"] = relationship(
+        "Asset", back_populates="assignments", lazy="selectin"
+    )
     user: Mapped["User"] = relationship("User", lazy="selectin")
 
     __table_args__ = (

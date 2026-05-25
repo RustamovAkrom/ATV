@@ -7,7 +7,7 @@ from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base
-from db.mixins import TimestampMixin, UUIDMixing, SlugMixin
+from db.mixins import SlugMixin, TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
     from db.models.assets.asset import Asset

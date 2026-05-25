@@ -1,12 +1,12 @@
 """Service for expenses management."""
 
+import builtins
 from uuid import UUID
-from typing import List
 
 from core.exceptions.errors import NotFound
 from core.security.access_control import AccessControl
+from db.models.expenses import Expense
 from repositories.assets.expense_repo import ExpenseRepository
-from schemas.auth.auth import CurrentUserSchema
 from schemas.assets.expenses import (
     ExpenseCreateSchema,
     ExpenseOutSchema,
@@ -14,7 +14,8 @@ from schemas.assets.expenses import (
     ExpenseStatsSchema,
     ExpenseUpdateSchema,
 )
-from db.models.expenses import Expense
+from schemas.auth.auth import CurrentUserSchema
+
 
 class ExpenseService:
     """Service for managing expenses."""
@@ -139,7 +140,7 @@ class ExpenseService:
 
     async def get_by_asset(
         self, asset_id: UUID, actor: CurrentUserSchema
-    ) -> List[ExpenseOutSchema]:
+    ) -> builtins.list[ExpenseOutSchema]:
         """Get all expenses for an asset."""
         await self._check_asset_access(asset_id, actor)
         expenses = await self.repo.get_by_asset(asset_id)
@@ -147,7 +148,7 @@ class ExpenseService:
 
     async def get_by_repair(
         self, repair_id: UUID, actor: CurrentUserSchema
-    ) -> List[ExpenseOutSchema]:
+    ) -> builtins.list[ExpenseOutSchema]:
         """Get all expenses for a repair."""
         repair = await self.repo.get_repair(repair_id)
         if not repair:
@@ -156,7 +157,9 @@ class ExpenseService:
         expenses = await self.repo.get_by_repair(repair_id)
         return [await self._to_out(e) for e in expenses]
 
-    async def get_by_region(self, region_id: UUID, actor: CurrentUserSchema) -> List[ExpenseOutSchema]:
+    async def get_by_region(
+        self, region_id: UUID, actor: CurrentUserSchema
+    ) -> builtins.list[ExpenseOutSchema]:
         """Get all expenses for a region."""
         AccessControl.check_region_access(actor, region_id)
         expenses = await self.repo.get_by_region(region_id)

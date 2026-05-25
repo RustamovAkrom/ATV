@@ -1,13 +1,10 @@
 from uuid import UUID
-from typing import List, Optional
 
-from sqlalchemy import select, update, delete
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from db.models.assets.asset_image import AssetImage
 from repositories.base import BaseRepository
-from core.exceptions.errors import NotFound
 
 
 class AssetImageRepository(BaseRepository):
@@ -22,14 +19,14 @@ class AssetImageRepository(BaseRepository):
         await self.refresh(image)
         return image
 
-    async def get(self, image_id: UUID) -> Optional[AssetImage]:
+    async def get(self, image_id: UUID) -> AssetImage | None:
         """Получить изображение по ID"""
         result = await self.session.execute(
             select(AssetImage).where(AssetImage.id == image_id)
         )
         return result.scalar_one_or_none()
 
-    async def get_by_asset(self, asset_id: UUID) -> List[AssetImage]:
+    async def get_by_asset(self, asset_id: UUID) -> list[AssetImage]:
         """Получить все изображения актива"""
         result = await self.session.execute(
             select(AssetImage)
@@ -38,7 +35,7 @@ class AssetImageRepository(BaseRepository):
         )
         return result.scalars().all()
 
-    async def get_primary(self, asset_id: UUID) -> Optional[AssetImage]:
+    async def get_primary(self, asset_id: UUID) -> AssetImage | None:
         """Получить главное изображение актива"""
         result = await self.session.execute(
             select(AssetImage)
@@ -57,9 +54,7 @@ class AssetImageRepository(BaseRepository):
         )
         # Установить новый primary
         await self.session.execute(
-            update(AssetImage)
-            .where(AssetImage.id == image_id)
-            .values(is_primary=True)
+            update(AssetImage).where(AssetImage.id == image_id).values(is_primary=True)
         )
         await self.flush()
 

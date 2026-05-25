@@ -1,17 +1,16 @@
-from sqladmin import ModelView
-from sqladmin.helpers import get_object_identifier
 from loguru import logger
+from sqladmin import ModelView
 
 
 class BaseAdmin(ModelView):
     """Базовый класс для всех админ-моделей с настройками безопасности."""
 
     # Безопасность по умолчанию
-    can_create = False      # Создание требует явного разрешения
-    can_edit = False        # Редактирование требует явного разрешения
-    can_delete = False      # Удаление требует явного разрешения
+    can_create = False  # Создание требует явного разрешения
+    can_edit = False  # Редактирование требует явного разрешения
+    can_delete = False  # Удаление требует явного разрешения
     can_view_details = True  # Просмотр обычно разрешён
-    can_export = True        # Экспорт данных
+    can_export = True  # Экспорт данных
 
     page_size = 50
     column_default_sort = ("id", True)

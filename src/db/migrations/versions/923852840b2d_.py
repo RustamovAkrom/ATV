@@ -4,17 +4,17 @@ Revises: b122b9d74fad
 Create Date: 2026-05-12 02:25:47.286627
 
 """
-from typing import Sequence, Union
 
-from alembic import op
+from collections.abc import Sequence
+
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '923852840b2d'
-down_revision: Union[str, Sequence[str], None] = 'b122b9d74fad'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+revision: str = "923852840b2d"
+down_revision: str | Sequence[str] | None = "b122b9d74fad"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -52,122 +52,158 @@ def upgrade() -> None:
     """)
 
     # ========== 2. ТЕПЕРЬ ДОБАВЛЯЕМ КОЛОНКИ ==========
-    op.add_column('users', sa.Column(
-        'department',
-        sa.String(length=255),
-        nullable=True,
-        comment='Department/division'
-    ))
+    op.add_column(
+        "users",
+        sa.Column(
+            "department",
+            sa.String(length=255),
+            nullable=True,
+            comment="Department/division",
+        ),
+    )
 
-    op.add_column('users', sa.Column(
-        'employment_type',
-        sa.Enum('FULL_TIME', 'PART_TIME', 'CONTRACTOR', 'INTERN', name='employment_type'),
-        nullable=True,
-        comment='Type of employment'
-    ))
+    op.add_column(
+        "users",
+        sa.Column(
+            "employment_type",
+            sa.Enum(
+                "FULL_TIME", "PART_TIME", "CONTRACTOR", "INTERN", name="employment_type"
+            ),
+            nullable=True,
+            comment="Type of employment",
+        ),
+    )
 
-    op.add_column('users', sa.Column(
-        'date_of_birth',
-        sa.Date(),
-        nullable=True,
-        comment='Date of birth'
-    ))
+    op.add_column(
+        "users",
+        sa.Column("date_of_birth", sa.Date(), nullable=True, comment="Date of birth"),
+    )
 
-    op.add_column('users', sa.Column(
-        'gender',
-        sa.Enum('MALE', 'FEMALE', name='gender'),
-        nullable=True,
-        comment='Gender'
-    ))
+    op.add_column(
+        "users",
+        sa.Column(
+            "gender",
+            sa.Enum("MALE", "FEMALE", name="gender"),
+            nullable=True,
+            comment="Gender",
+        ),
+    )
 
-    op.add_column('users', sa.Column(
-        'avatar_url',
-        sa.String(length=500),
-        nullable=True,
-        comment='URL user avatar'
-    ))
+    op.add_column(
+        "users",
+        sa.Column(
+            "avatar_url",
+            sa.String(length=500),
+            nullable=True,
+            comment="URL user avatar",
+        ),
+    )
 
-    op.add_column('users', sa.Column(
-        'avatar_thumbnail_url',
-        sa.String(length=500),
-        nullable=True,
-        comment='URL miniature avatar'
-    ))
+    op.add_column(
+        "users",
+        sa.Column(
+            "avatar_thumbnail_url",
+            sa.String(length=500),
+            nullable=True,
+            comment="URL miniature avatar",
+        ),
+    )
 
-    op.add_column('users', sa.Column(
-        'language',
-        sa.Enum('RU', 'UZ', 'EN', name='user_language'),
-        nullable=False,
-        server_default='RU',
-        comment='Interface language'
-    ))
+    op.add_column(
+        "users",
+        sa.Column(
+            "language",
+            sa.Enum("RU", "UZ", "EN", name="user_language"),
+            nullable=False,
+            server_default="RU",
+            comment="Interface language",
+        ),
+    )
 
-    op.add_column('users', sa.Column(
-        'timezone',
-        sa.String(length=50),
-        nullable=True,
-        server_default='Asia/Tashkent',
-        comment='Timezone (IANA)'
-    ))
+    op.add_column(
+        "users",
+        sa.Column(
+            "timezone",
+            sa.String(length=50),
+            nullable=True,
+            server_default="Asia/Tashkent",
+            comment="Timezone (IANA)",
+        ),
+    )
 
-    op.add_column('users', sa.Column(
-        'theme_preference',
-        sa.String(length=20),
-        nullable=True,
-        server_default='light',
-        comment='Theme preference'
-    ))
+    op.add_column(
+        "users",
+        sa.Column(
+            "theme_preference",
+            sa.String(length=20),
+            nullable=True,
+            server_default="light",
+            comment="Theme preference",
+        ),
+    )
 
     # ========== 3. ОБНОВЛЯЕМ КОММЕНТАРИИ ==========
-    op.alter_column('users', 'badge_number',
-               existing_type=sa.VARCHAR(length=50),
-               comment='Employee badge number',
-               existing_nullable=True)
+    op.alter_column(
+        "users",
+        "badge_number",
+        existing_type=sa.VARCHAR(length=50),
+        comment="Employee badge number",
+        existing_nullable=True,
+    )
 
-    op.alter_column('users', 'passport_number',
-               existing_type=sa.VARCHAR(length=50),
-               comment='Passport number',
-               existing_nullable=True)
+    op.alter_column(
+        "users",
+        "passport_number",
+        existing_type=sa.VARCHAR(length=50),
+        comment="Passport number",
+        existing_nullable=True,
+    )
 
     # ========== 4. СОЗДАЕМ ИНДЕКСЫ ==========
-    op.create_index('idx_users_department', 'users', ['department'])
-    op.create_index('idx_users_employment_type', 'users', ['employment_type'])
-    op.create_index('idx_users_language', 'users', ['language'])
-    op.create_index('idx_users_date_of_birth', 'users', ['date_of_birth'])
+    op.create_index("idx_users_department", "users", ["department"])
+    op.create_index("idx_users_employment_type", "users", ["employment_type"])
+    op.create_index("idx_users_language", "users", ["language"])
+    op.create_index("idx_users_date_of_birth", "users", ["date_of_birth"])
 
 
 def downgrade() -> None:
     """Downgrade schema."""
 
     # ========== 1. УДАЛЯЕМ ИНДЕКСЫ ==========
-    op.drop_index('idx_users_date_of_birth', table_name='users')
-    op.drop_index('idx_users_language', table_name='users')
-    op.drop_index('idx_users_employment_type', table_name='users')
-    op.drop_index('idx_users_department', table_name='users')
+    op.drop_index("idx_users_date_of_birth", table_name="users")
+    op.drop_index("idx_users_language", table_name="users")
+    op.drop_index("idx_users_employment_type", table_name="users")
+    op.drop_index("idx_users_department", table_name="users")
 
     # ========== 2. ВОЗВРАЩАЕМ КОММЕНТАРИИ ==========
-    op.alter_column('users', 'passport_number',
-               existing_type=sa.VARCHAR(length=50),
-               comment=None,
-               existing_comment='Passport number',
-               existing_nullable=True)
+    op.alter_column(
+        "users",
+        "passport_number",
+        existing_type=sa.VARCHAR(length=50),
+        comment=None,
+        existing_comment="Passport number",
+        existing_nullable=True,
+    )
 
-    op.alter_column('users', 'badge_number',
-               existing_type=sa.VARCHAR(length=50),
-               comment=None,
-               existing_comment='Employee badge number',
-               existing_nullable=True)
+    op.alter_column(
+        "users",
+        "badge_number",
+        existing_type=sa.VARCHAR(length=50),
+        comment=None,
+        existing_comment="Employee badge number",
+        existing_nullable=True,
+    )
 
     # ========== 3. УДАЛЯЕМ КОЛОНКИ ==========
-    op.drop_column('users', 'theme_preference')
-    op.drop_column('users', 'timezone')
-    op.drop_column('users', 'language')
-    op.drop_column('users', 'avatar_thumbnail_url')
-    op.drop_column('users', 'avatar_url')
-    op.drop_column('users', 'gender')
-    op.drop_column('users', 'date_of_birth')
-    op.drop_column('users', 'employment_type')
-    op.drop_column('users', 'department')
+    op.drop_column("users", "theme_preference")
+    op.drop_column("users", "timezone")
+    op.drop_column("users", "language")
+    op.drop_column("users", "avatar_thumbnail_url")
+    op.drop_column("users", "avatar_url")
+    op.drop_column("users", "gender")
+    op.drop_column("users", "date_of_birth")
+    op.drop_column("users", "employment_type")
+    op.drop_column("users", "department")
 
     # ========== 4. УДАЛЯЕМ ENUM ТИПЫ (ОСТОРОЖНО!) ==========
     # Проверяем, не используются ли типы в других таблицах

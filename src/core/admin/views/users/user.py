@@ -1,8 +1,9 @@
-from wtforms import PasswordField, Form
+from wtforms import PasswordField
 from wtforms.validators import DataRequired, EqualTo
+
 from core.admin.base import BaseAdmin
-from db.models.users.user import User
 from core.security.passwords import hash_password
+from db.models.users.user import User
 
 
 class UserAdmin(BaseAdmin, model=User):
@@ -14,7 +15,7 @@ class UserAdmin(BaseAdmin, model=User):
     can_create = True
     can_delete = True
 
-    async def scaffold_form(self, rules = None):
+    async def scaffold_form(self, rules=None):
         form_class = await super().scaffold_form(rules)
 
         is_create = rules == self._form_create_rules
@@ -26,7 +27,7 @@ class UserAdmin(BaseAdmin, model=User):
                 render_kw={
                     "class": "form-control",
                     "placeholder": "Enter password",
-                }
+                },
             )
 
             form_class.password_confirm = PasswordField(
@@ -38,7 +39,7 @@ class UserAdmin(BaseAdmin, model=User):
                 render_kw={
                     "class": "form-control",
                     "placeholder": "Enter password",
-                }
+                },
             )
 
         return form_class

@@ -4,13 +4,12 @@ from api.dependencies.users import get_user_repo
 from core.exceptions.errors import InvalidToken
 from core.security.blacklist import get_blacklist
 from core.security.jwt import decode_token
-from repositories.users.user_repo import UserRepository
-from schemas.auth import CurrentUserSchema
 from core.security.rbac.permissions import Permissions
 from db.models.enums import UserRole, UserStatus
+from repositories.users.user_repo import UserRepository
+from schemas.auth import CurrentUserSchema
 
 from .extractor import extract_token
-
 
 VALID_PERMISSIONS = set(Permissions.all())
 VALID_ROLES = {r.value for r in UserRole}

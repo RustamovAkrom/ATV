@@ -4,8 +4,9 @@ from datetime import datetime
 from uuid import UUID
 
 from pydantic import ConfigDict, Field, field_validator
-from schemas.base import BaseSchema
+
 from api.v1.analytics._utils import sanitize_search
+from schemas.base import BaseSchema
 
 
 class AssetHistoryFilter(BaseSchema):
