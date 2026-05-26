@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID
 
 from core.exceptions.errors import BadRequest, Conflict, NotFound
@@ -39,7 +38,7 @@ class RegionService:
 
         # Формируем дерево
         roots = []
-        for region_id, region_data in region_dict.items():
+        for _, region_data in region_dict.items():
             parent_id = region_data["parent_id"]
             if parent_id and parent_id in region_dict:
                 region_dict[parent_id]["children"].append(region_data)
@@ -130,7 +129,7 @@ class RegionService:
     def _get_level(self, region: RegionOutSchema) -> int:
         """Вычислить уровень региона (простой способ)"""
         level = 1
-        current_parent_id = region.parent_id
+        # current_parent_id = region.parent_id
         # В реальности нужно загрузить всех родителей
         # Для простоты возвращаем 1
         return level

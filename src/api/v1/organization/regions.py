@@ -1,4 +1,3 @@
-from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -9,13 +8,13 @@ from core.security.auth.dependencies import get_current_user
 from core.security.rbac.presets import RegionPermissions
 from core.slowapi import limiter
 from schemas.auth.auth import CurrentUserSchema
+from schemas.common import StatusResponse
 from schemas.organization.region import (
     RegionCreateSchema,
     RegionOutSchema,
     RegionTreeOutSchema,
     RegionUpdateSchema,
 )
-from schemas.common import StatusResponse
 from services.organization.region_service import RegionService
 
 router = APIRouter(prefix="/regions", tags=["Regions"])

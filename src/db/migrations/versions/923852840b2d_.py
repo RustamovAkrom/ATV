@@ -22,34 +22,40 @@ def upgrade() -> None:
 
     # ========== 1. СНАЧАЛА СОЗДАЕМ ENUM ТИПЫ ==========
     # Создаем ENUM для employment_type
-    op.execute("""
+    op.execute(
+        """
         DO $$
         BEGIN
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'employment_type') THEN
                 CREATE TYPE employment_type AS ENUM ('FULL_TIME', 'PART_TIME', 'CONTRACTOR', 'INTERN');
             END IF;
         END $$;
-    """)
+    """
+    )
 
     # Создаем ENUM для gender
-    op.execute("""
+    op.execute(
+        """
         DO $$
         BEGIN
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'gender') THEN
                 CREATE TYPE gender AS ENUM ('MALE', 'FEMALE');
             END IF;
         END $$;
-    """)
+    """
+    )
 
     # Создаем ENUM для user_language
-    op.execute("""
+    op.execute(
+        """
         DO $$
         BEGIN
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_language') THEN
                 CREATE TYPE user_language AS ENUM ('RU', 'UZ', 'EN');
             END IF;
         END $$;
-    """)
+    """
+    )
 
     # ========== 2. ТЕПЕРЬ ДОБАВЛЯЕМ КОЛОНКИ ==========
     op.add_column(
@@ -207,7 +213,8 @@ def downgrade() -> None:
 
     # ========== 4. УДАЛЯЕМ ENUM ТИПЫ (ОСТОРОЖНО!) ==========
     # Проверяем, не используются ли типы в других таблицах
-    op.execute("""
+    op.execute(
+        """
         DO $$
         BEGIN
             -- Удаляем только если тип существует и не используется
@@ -222,9 +229,11 @@ def downgrade() -> None:
                 DROP TYPE user_language;
             END IF;
         END $$;
-    """)
+    """
+    )
 
-    op.execute("""
+    op.execute(
+        """
         DO $$
         BEGIN
             IF EXISTS (
@@ -238,9 +247,11 @@ def downgrade() -> None:
                 DROP TYPE gender;
             END IF;
         END $$;
-    """)
+    """
+    )
 
-    op.execute("""
+    op.execute(
+        """
         DO $$
         BEGIN
             IF EXISTS (
@@ -254,4 +265,5 @@ def downgrade() -> None:
                 DROP TYPE employment_type;
             END IF;
         END $$;
-    """)
+    """
+    )

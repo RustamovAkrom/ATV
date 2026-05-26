@@ -75,10 +75,7 @@ async def list_assets(
     return await service.list(filters, pagination, actor)
 
 
-@router.get(
-    "/export",
-    dependencies=[Depends(AssetPermissions.CanExportAssets)]
-)
+@router.get("/export", dependencies=[Depends(AssetPermissions.CanExportAssets)])
 async def export_assets(
     filters: AssetFilters = Depends(get_asset_filters),
     format: str = Query("csv", pattern="^(csv|json)$"),

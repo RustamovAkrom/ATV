@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, Request
 from api.dependencies.assets.asset_maintenance import get_asset_maintenance_service
 from core.cache.decorators import cached, invalidate_cache
 from core.security.auth.dependencies import get_current_user
-from core.slowapi import limiter
 from core.security.rbac.presets import MaintenancesPermissions
+from core.slowapi import limiter
 from schemas.assets.asset_maintenance import (
     AssetMaintenanceCreateSchema,
     AssetMaintenanceOutSchema,
@@ -107,4 +107,6 @@ async def delete_asset_maintenance(
 ):
     """Удалить запись о техническом обслуживании"""
     await service.delete(maintenance_id, actor)
-    return StatusResponse(status="deleted", message="Maintenance record deleted successfully")
+    return StatusResponse(
+        status="deleted", message="Maintenance record deleted successfully"
+    )

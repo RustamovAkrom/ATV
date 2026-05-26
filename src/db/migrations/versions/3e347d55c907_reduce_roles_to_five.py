@@ -34,54 +34,68 @@ def upgrade() -> None:
     - AUDITOR -> ANALYST (merge)
     """
     # Step 1: Rename ANALYTIC to ANALYST
-    op.execute("""
+    op.execute(
+        """
         UPDATE roles
         SET slug = 'analyst', name = 'Analyst'
         WHERE slug = 'analytic'
-    """)
+    """
+    )
 
     # Step 2: Reassign users from old roles to new roles
 
     # MODERATOR -> OPERATOR
-    op.execute("""
+    op.execute(
+        """
         UPDATE users
         SET role_id = (SELECT id FROM roles WHERE slug = 'operator')
         WHERE role_id = (SELECT id FROM roles WHERE slug = 'moderator')
-    """)
+    """
+    )
 
     # REGION_ADMIN -> ADMIN
-    op.execute("""
+    op.execute(
+        """
         UPDATE users
         SET role_id = (SELECT id FROM roles WHERE slug = 'admin')
         WHERE role_id = (SELECT id FROM roles WHERE slug = 'region_admin')
-    """)
+    """
+    )
 
     # REGION_MANAGER -> ADMIN
-    op.execute("""
+    op.execute(
+        """
         UPDATE users
         SET role_id = (SELECT id FROM roles WHERE slug = 'admin')
         WHERE role_id = (SELECT id FROM roles WHERE slug = 'region_manager')
-    """)
+    """
+    )
 
     # SERVICE_MANAGER -> ADMIN
-    op.execute("""
+    op.execute(
+        """
         UPDATE users
         SET role_id = (SELECT id FROM roles WHERE slug = 'admin')
         WHERE role_id = (SELECT id FROM roles WHERE slug = 'service_manager')
-    """)
+    """
+    )
 
     # AUDITOR -> ANALYST
-    op.execute("""
+    op.execute(
+        """
         UPDATE users
         SET role_id = (SELECT id FROM roles WHERE slug = 'analyst')
         WHERE role_id = (SELECT id FROM roles WHERE slug = 'auditor')
-    """)
+    """
+    )
 
     # Step 3: Delete old roles from roles table
-    op.execute("""
+    op.execute(
+        """
         DELETE FROM roles
         WHERE slug IN ('moderator', 'region_admin', 'region_manager', 'service_manager', 'auditor')
-    """)
+    """
+    )
 
 
 def downgrade() -> None:
@@ -90,7 +104,8 @@ def downgrade() -> None:
     This will restore old roles but users will remain on merged roles.
     """
     # Recreate old roles (without permissions)
-    op.execute("""
+    op.execute(
+        """
         INSERT INTO roles (slug, name, description) VALUES
         ('moderator', 'Moderator', 'Regional/operational management'),
         ('region_admin', 'Region Admin', 'Region-scoped admin'),
@@ -98,13 +113,16 @@ def downgrade() -> None:
         ('service_manager', 'Service Manager', 'Service-scoped management'),
         ('auditor', 'Auditor', 'Audit and compliance focus')
         ON CONFLICT (slug) DO NOTHING
-    """)
+    """
+    )
 
     # Rename ANALYST back to ANALYTIC
-    op.execute("""
+    op.execute(
+        """
         UPDATE roles
         SET slug = 'analytic', name = 'Analytic'
         WHERE slug = 'analyst' AND id NOT IN (
             SELECT id FROM roles WHERE slug IN ('moderator', 'region_admin', 'region_manager', 'service_manager', 'auditor')
         )
-    """)
+    """
+    )

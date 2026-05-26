@@ -80,7 +80,7 @@ class UserService:
     async def update_avatar(self, user_id: UUID, data: UserAvatarUpdateSchema):
         user = await self.get(user_id)
 
-        await self.user_repo.update(user_id, {"avatar_url": data.avatar_url})
+        await self.user_repo.update(user.id, {"avatar_url": data.avatar_url})
 
         return await self.get(user_id)
 

@@ -221,9 +221,9 @@ class DocumentService:
             ],
             created_at=document.created_at,
             updated_at=document.updated_at,
-            created_by_name=document.created_by.full_name
-            if document.created_by
-            else None,
+            created_by_name=(
+                document.created_by.full_name if document.created_by else None
+            ),
         )
 
     def _to_with_files_schema(
@@ -251,9 +251,9 @@ class DocumentService:
             ],
             created_at=document.created_at,
             updated_at=document.updated_at,
-            created_by_name=document.created_by.full_name
-            if document.created_by
-            else None,
+            created_by_name=(
+                document.created_by.full_name if document.created_by else None
+            ),
             total_files_size=total_size,
             file_count=len(document.files),
         )

@@ -38,9 +38,7 @@ class TrendAnalyticsService:
         step_days = (
             1
             if interval == TrendInterval.DAILY
-            else 7
-            if interval == TrendInterval.WEEKLY
-            else 30
+            else 7 if interval == TrendInterval.WEEKLY else 30
         )
         end = utc_now()
         start = self._align_start(

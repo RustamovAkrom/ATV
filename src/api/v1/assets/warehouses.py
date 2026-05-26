@@ -3,9 +3,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request
 
 from api.dependencies.assets.asset_warehouse import get_warehouse_service
+from core.cache.decorators import cached, invalidate_cache
 from core.security.auth.dependencies import get_current_user
 from core.security.rbac.presets import WarehousePermission
-from core.cache.decorators import cached, invalidate_cache
 from core.slowapi import limiter
 from schemas.assets.warehouses import (
     WarehouseCreateSchema,
@@ -13,8 +13,8 @@ from schemas.assets.warehouses import (
     WarehouseUpdateSchema,
     WarehouseWithDetailsOutSchema,
 )
-from schemas.common import StatusResponse
 from schemas.auth import CurrentUserSchema
+from schemas.common import StatusResponse
 from schemas.pagination import PageOutSchema, PaginationParamsSchema
 from services.assets.warehouse_service import WarehouseService
 
@@ -85,7 +85,12 @@ async def create_warehouse(
     dependencies=[Depends(WarehousePermission.CanUpdateWarehouses)],
 )
 @limiter.limit("20/minute")
-@invalidate_cache(tags=("warehouse:list", "warehouse:detail",))
+@invalidate_cache(
+    tags=(
+        "warehouse:list",
+        "warehouse:detail",
+    )
+)
 async def update_warehouse(
     request: Request,
     warehouse_id: UUID,
@@ -103,7 +108,12 @@ async def update_warehouse(
     dependencies=[Depends(WarehousePermission.CanDeleteWarehouses)],
 )
 @limiter.limit("5/minute")
-@invalidate_cache(tags=("warehouse:list", "warehouse:detail",))
+@invalidate_cache(
+    tags=(
+        "warehouse:list",
+        "warehouse:detail",
+    )
+)
 async def delete_warehouse(
     request: Request,
     warehouse_id: UUID,

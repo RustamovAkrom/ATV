@@ -1,5 +1,4 @@
 from uuid import UUID
-from typing import List
 
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,7 +23,7 @@ class NotificationRepository(BaseRepository):
         is_read: bool | None,
         limit: int,
         offset: int,
-    ) -> List[Notification]:
+    ) -> list[Notification]:
         query = select(Notification).where(Notification.user_id == user_id)
 
         if is_read is not None:

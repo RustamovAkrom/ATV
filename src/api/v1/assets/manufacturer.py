@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, Request
 
 from api.dependencies.assets.asset_manufacturer import get_manufacturer_service
 from core.cache.decorators import cached, invalidate_cache
-from core.slowapi import limiter
 from core.security.rbac.presets import ManufacturePermission
+from core.slowapi import limiter
 from schemas.assets.manufacturer import ManufacturerCreateSchema, ManufacturerOutSchema
 from schemas.common import StatusResponse
 from services.assets.manufacturer_service import ManufacturerService

@@ -4,7 +4,7 @@ from core.email import send_email
 
 @celery_app.task(bind=True, max_retries=3)
 def send_password_reset_email_task(self, email: str, token: str):
-    reset_link = f"http://localhost:5173/change-password?tokne={token}"  # TODO in prod this need to implement to real link to forgot password in frontend
+    reset_link = f"http://localhost:5173/change-password?tokne={token}"
 
     try:
         if not email:

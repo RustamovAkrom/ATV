@@ -49,7 +49,7 @@ class ApprovalAnalyticsRepository(BaseAnalyticsRepository):
             "pending_approvals": row.pending_approvals or 0,
             "rejected_count": row.rejected_count or 0,
             "decided_count": row.decided_count or 0,
-            "avg_approval_hours": float(row.avg_approval_hours)
-            if row.avg_approval_hours
-            else 0,
+            "avg_approval_hours": (
+                float(row.avg_approval_hours) if row.avg_approval_hours else 0
+            ),
         }

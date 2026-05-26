@@ -8,15 +8,14 @@ from api.dependencies.storage import get_file_upload_service
 from core.cache.decorators import cached, invalidate_cache
 from core.config import get_settings
 from core.security.auth.dependencies import get_current_user
+from core.security.rbac.presets import ImagesPermissions
 from core.slowapi import limiter
 from core.storage import FileUploadService
 from core.storage.configs import UploadConfigs
-from core.security.rbac.presets import ImagesPermissions
 from schemas.assets.asset_image import AssetImageCreateSchema, AssetImageOutSchema
 from schemas.auth import CurrentUserSchema
 from schemas.common import StatusResponse
 from services.assets.asset_image_service import AssetImageService
-
 
 router = APIRouter(prefix="/assets/{asset_id}/images", tags=["Asset Images"])
 settings = get_settings()
@@ -40,10 +39,7 @@ async def list_asset_images(
     return await service.get_images(asset_id, actor)
 
 
-@router.get(
-    "/file/{image_id}",
-    dependencies=[Depends(ImagesPermissions.CanViewImages)]
-)
+@router.get("/file/{image_id}", dependencies=[Depends(ImagesPermissions.CanViewImages)])
 @cached(tags=("asset:image:file",))
 async def get_image_file(
     image_id: UUID,

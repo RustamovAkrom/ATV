@@ -50,9 +50,9 @@ class AssetMaintenanceService:
                 "asset_id": asset_id,
                 "maintenance_type": data.maintenance_type.strip(),
                 "performed_at": data.performed_at,
-                "issues_found": data.issues_found.strip()
-                if data.issues_found
-                else None,
+                "issues_found": (
+                    data.issues_found.strip() if data.issues_found else None
+                ),
                 "performed_by_id": data.performed_by_id,
                 "notes": data.notes.strip() if data.notes else None,
             }

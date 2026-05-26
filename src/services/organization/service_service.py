@@ -70,10 +70,11 @@ class ServiceService:
             except Conflict as e:
                 # Если ошибка с регионами, удаляем созданный сервис
                 await self.repo.delete(service.id)
-                raise Conflict(str(e))
+                raise Conflict(str(e)) from e
+
             except Exception as e:
                 await self.repo.delete(service.id)
-                raise BadRequest(f"Failed to attach regions: {str(e)}")
+                raise BadRequest(f"Failed to attach regions: {str(e)}") from e
 
         return await self.get(service.id)
 
@@ -137,14 +138,16 @@ class ServiceService:
             created_at=service.created_at,
             updated_at=service.updated_at,
             region_ids=[r.id for r in service.regions] if service.regions else None,
-            regions=[
-                {
-                    "id": str(r.id),
-                    "name": r.name,
-                    "parent_id": str(r.parent_id) if r.parent_id else None,
-                }
-                for r in service.regions
-            ]
-            if service.regions
-            else None,
+            regions=(
+                [
+                    {
+                        "id": str(r.id),
+                        "name": r.name,
+                        "parent_id": str(r.parent_id) if r.parent_id else None,
+                    }
+                    for r in service.regions
+                ]
+                if service.regions
+                else None
+            ),
         )

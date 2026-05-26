@@ -28,7 +28,6 @@ def _actor():
 
 
 async def test_assign_asset_success(monkeypatch):
-    actor_id = uuid4()
     asset_id = uuid4()
     user_id = uuid4()
     assigned_at = datetime.now(UTC)
@@ -68,7 +67,6 @@ async def test_assign_asset_maps_lock_error(monkeypatch):
     class _LockError(Exception):
         pass
 
-    actor_id = uuid4()
     asset_id = uuid4()
     user_id = uuid4()
     repo = _repo()

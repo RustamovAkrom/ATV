@@ -80,7 +80,9 @@ class AlertAnalyticsService(BaseAnalyticsService):
                     ),
                     entity_id=row.id,
                     entity_name=row.name,
-                    message=f"Asset exceeded {repair_threshold} repairs in the review window",
+                    message=f"""
+                    Asset exceeded {repair_threshold} repairs in the review window
+                    """,
                     metric_value=float(row.repair_count) if row.repair_count else 0,
                     threshold=float(repair_threshold),
                     detected_at=now,
@@ -114,10 +116,12 @@ class AlertAnalyticsService(BaseAnalyticsService):
                     ),
                     entity_id=row.id,
                     entity_name=row.full_name,
-                    message=f"User holds more than {assignment_threshold} active assignments",
-                    metric_value=float(row.active_assignments)
-                    if row.active_assignments
-                    else 0,
+                    message=f"""
+                    User holds more than {assignment_threshold} active assignments
+                    """,
+                    metric_value=(
+                        float(row.active_assignments) if row.active_assignments else 0
+                    ),
                     threshold=float(assignment_threshold),
                     detected_at=now,
                 )

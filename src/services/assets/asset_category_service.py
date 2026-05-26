@@ -2,7 +2,7 @@ from core.exceptions.errors import BadRequest, NotFound
 from db.models.assets.asset_category import AssetCategory
 from repositories.assets.asset_category_repo import AssetCategoryRepository
 from schemas.assets.asset_category import AssetCategoryCreateSchema
-from utils.validators import safe_create, validate_and_prepare
+from utils.validators import safe_create
 
 
 class AssetCategoryService:
