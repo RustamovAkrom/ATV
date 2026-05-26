@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Request
 
 from api.dependencies.assets.asset_category import get_asset_category_service
 from core.cache.decorators import cached, invalidate_cache
-from core.security.rbac.presets import AssetPermissions
+from core.security.rbac.presets import CategoriesPermissions
 from core.slowapi import limiter
 from schemas.assets.asset_category import (
     AssetCategoryCreateSchema,
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/asset-categories", tags=["Asset categories"])
 @router.get(
     "/",
     response_model=list[AssetCategoryOutSchema],
-    dependencies=[Depends(AssetPermissions.CanViewAssets)],
+    dependencies=[Depends(CategoriesPermissions.CanViewCategories)],
 )
 @cached(tags=("categories:list",))
 async def list_categories(
@@ -31,7 +31,7 @@ async def list_categories(
 @router.post(
     "/",
     response_model=AssetCategoryOutSchema,
-    dependencies=[Depends(AssetPermissions.CanCreateAssets)],
+    dependencies=[Depends(CategoriesPermissions.CanCreateCategories)],
 )
 @limiter.limit("20/minute")
 @invalidate_cache(tags=("categories:list",))
@@ -43,7 +43,10 @@ async def create_category(
     return await service.create(data)
 
 
-@router.delete("/{category_id}")
+@router.delete(
+    "/{category_id}",
+    dependencies=[Depends(CategoriesPermissions.CanDeleteCategories)],
+)
 @limiter.limit("20/minute")
 @invalidate_cache(tags=("categories:list",))
 async def delete_category(

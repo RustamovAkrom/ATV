@@ -14,6 +14,12 @@ class ManufacturerService:
     async def list(self):
         return await self.repo.list()
 
+    async def get(self, manufacture_id: UUID):
+        manufacture = await self.repo.get(manufacture_id)
+        if not manufacture:
+            raise NotFound(f"Manufacture {manufacture_id} not found")
+        return self.repo.get(manufacture_id)
+
     async def create(self, data: ManufacturerCreateSchema):
         name, slug = await validate_and_prepare(self.repo, data.name)
 

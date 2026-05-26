@@ -68,6 +68,40 @@ class Permissions:
     REPAIRS_COMPLETE = "repairs.complete"
     REPAIRS_EXPORT = "repairs.export"
 
+    # ======================= Models =============================
+    MODELS_VIEW = "models.view"
+    MODELS_CREATE= "models.create"
+    MODELS_UPDATE = "models.update"
+    MODELS_DELETE = "models.delete"
+    MODELS_EXPORT = "models.export"
+
+    # =================== Classes ==========================
+    CLASSES_VIEW = "classes.view"
+    CLASSES_CREATE = "classes.create"
+    CLASSES_UPDATE = "classes.update"
+    CLASSES_DELETE = "classes.delete"
+    CLASSES_EXPORT = "classes.export"
+
+    # =============== Categories ==================
+    CATEGORIES_VIEW = "categories.view"
+    CATEGORIES_CREATE = "categories.create"
+    CATEGORIES_UPDATE = "categories.update"
+    CATEGORIES_DELETE = "categories.delete"
+    CATEGORIES_EXPORT = "categories.export"
+
+    # ==================== Maintenance =========================
+    MAINTENANCE_VIEW = "maintenance.view"
+    MAINTENANCE_CREATE = "maintenance.create"
+    MAINTENANCE_UPDATE = "maintenance.update"
+    MAINTENANCE_DELETE = "maintenance.delete"
+    MAINTENANCE_EXPORT = "maintenance.export"
+
+    # ==================== Images ============================
+    IMAGES_VIEW = "images.view"
+    IMAGES_UPLOAD = "images.upload"
+    IMAGES_UPDATE = "images.UPDATE"
+    IMAGES_DELETE = "images.delete"
+
     # ======================== DOCUMENTS ========================
     DOCUMENTS_VIEW = "documents.view"
     DOCUMENTS_CREATE = "documents.create"
@@ -94,8 +128,17 @@ class Permissions:
 
     # ======================== WAREHOUSE ========================
     WAREHOUSE_VIEW = "warehouse.view"
-    WAREHOUSE_MANAGE = "warehouse.manage"
+    WAREHOUSE_CREATE = "warehouse.create"
+    WAREHOUSE_UPDATE = "warehouse.update"
+    WAREHOUSE_DELETE = "warehouse.delete"
     WAREHOUSE_EXPORT = "warehouse.export"
+
+    # ====================== MANUFACTURE ==========================
+    MANUFACTURE_VIEW = "manufacture.view"
+    MANUFACTURE_CREATE = "manufacture.create"
+    MANUFACTURE_UPDATE = "manufacture.update"
+    MANUFACTURE_DELETE = "manufacture.delete"
+    MANUFACTURE_EXPORT = "manufacture.export"
 
     # ======================== SYSTEM ========================
     SYSTEM_SETTINGS = "system.settings"
@@ -155,15 +198,46 @@ OPERATOR_PERMS = _set(
     Permissions.ASSETS_VIEW,
     Permissions.ASSETS_CREATE,
     Permissions.ASSETS_UPDATE,
+
+    Permissions.WAREHOUSE_VIEW,
+    Permissions.WAREHOUSE_CREATE,
+    Permissions.WAREHOUSE_UPDATE,
+
+    Permissions.MANUFACTURE_VIEW,
+    Permissions.MANUFACTURE_CREATE,
+    Permissions.MANUFACTURE_UPDATE,
+
     Permissions.REPAIRS_VIEW,
     Permissions.REPAIRS_CREATE,
     Permissions.REPAIRS_UPDATE,
+
+    Permissions.MODELS_VIEW,
+    Permissions.MODELS_CREATE,
+    Permissions.MODELS_UPDATE,
+
+    Permissions.CLASSES_VIEW,
+    Permissions.CLASSES_CREATE,
+    Permissions.CLASSES_UPDATE,
+
+    Permissions.CATEGORIES_VIEW,
+    Permissions.CATEGORIES_CREATE,
+    Permissions.CATEGORIES_UPDATE,
+
+    Permissions.IMAGES_VIEW,
+    Permissions.IMAGES_UPLOAD,
+    Permissions.IMAGES_UPDATE,
+
+    Permissions.MAINTENANCE_VIEW,
+    Permissions.MAINTENANCE_CREATE,
+    Permissions.MAINTENANCE_UPDATE,
+
     Permissions.DOCUMENTS_VIEW,
     Permissions.DOCUMENTS_CREATE,
     Permissions.DOCUMENTS_UPDATE,
+
     Permissions.APPROVALS_VIEW,
     Permissions.APPROVALS_CREATE,
-    Permissions.WAREHOUSE_VIEW,
+
     Permissions.ANALYTICS_VIEW,
 )
 
@@ -173,28 +247,58 @@ APPROVER_PERMS = _set(
     Permissions.APPROVALS_REJECT,
     Permissions.ASSETS_VIEW,
     Permissions.REPAIRS_VIEW,
+    Permissions.MODELS_VIEW,
+    Permissions.IMAGES_VIEW,
+    Permissions.MAINTENANCE_VIEW,
     Permissions.DOCUMENTS_VIEW,
+    Permissions.CLASSES_VIEW,
+    Permissions.CATEGORIES_VIEW,
     Permissions.ANALYTICS_VIEW,
 )
 
 ANALYST_PERMS = _set(
     Permissions.AUDIT_VIEW,
     Permissions.AUDIT_EXPORT,
+
     Permissions.USERS_VIEW,
+
     Permissions.ASSETS_VIEW,
     Permissions.ASSETS_EXPORT,
+
     Permissions.REPAIRS_VIEW,
     Permissions.REPAIRS_EXPORT,
+
+    Permissions.MODELS_VIEW,
+    Permissions.MODELS_EXPORT,
+
+    Permissions.IMAGES_VIEW,
+
+    Permissions.MAINTENANCE_VIEW,
+    Permissions.MAINTENANCE_EXPORT,
+
     Permissions.DOCUMENTS_VIEW,
     Permissions.DOCUMENTS_EXPORT,
+
+    Permissions.CLASSES_VIEW,
+    Permissions.CLASSES_EXPORT,
+
+    Permissions.CATEGORIES_VIEW,
+    Permissions.CATEGORIES_EXPORT,
+
     Permissions.WAREHOUSE_VIEW,
     Permissions.WAREHOUSE_EXPORT,
+
+    Permissions.MANUFACTURE_VIEW,
+    Permissions.MANUFACTURE_EXPORT,
+
     Permissions.ANALYTICS_VIEW,
     Permissions.ANALYTICS_DASHBOARD,
     Permissions.ANALYTICS_EXPORT,
     Permissions.ANALYTICS_FORECAST,
+
     Permissions.EXPENSES_VIEW,
     Permissions.EXPENSES_EXPORT,
+
     Permissions.SYSTEM_HEALTH,
     Permissions.SYSTEM_LOGS,
 )
@@ -207,10 +311,13 @@ ADMIN_PERMS = _set(
     Permissions.USERS_PASSWORD_RESET,
     Permissions.USERS_BULK_EDIT,
     Permissions.USERS_BULK_DELETE,
+
     Permissions.SESSIONS_VIEW,
     Permissions.SESSIONS_REVOKE,
     Permissions.SESSIONS_REVOKE_ALL,
+
     Permissions.ROLES_VIEW,
+
     Permissions.ASSETS_VIEW,
     Permissions.ASSETS_CREATE,
     Permissions.ASSETS_UPDATE,
@@ -219,36 +326,81 @@ ADMIN_PERMS = _set(
     Permissions.ASSETS_TRANSFER,
     Permissions.ASSETS_EXPORT,
     Permissions.ASSETS_ARCHIVE,
+
     Permissions.REPAIRS_VIEW,
     Permissions.REPAIRS_CREATE,
     Permissions.REPAIRS_UPDATE,
     Permissions.REPAIRS_COMPLETE,
     Permissions.REPAIRS_EXPORT,
+
+    Permissions.MODELS_VIEW,
+    Permissions.MODELS_CREATE,
+    Permissions.MODELS_UPDATE,
+    Permissions.MODELS_DELETE,
+    Permissions.MODELS_EXPORT,
+
+    Permissions.CLASSES_VIEW,
+    Permissions.CLASSES_CREATE,
+    Permissions.CLASSES_UPDATE,
+    Permissions.CLASSES_DELETE,
+    Permissions.CLASSES_EXPORT,
+
+    Permissions.CATEGORIES_VIEW,
+    Permissions.CATEGORIES_CREATE,
+    Permissions.CATEGORIES_UPDATE,
+    Permissions.CATEGORIES_DELETE,
+    Permissions.CATEGORIES_EXPORT,
+
+    Permissions.IMAGES_VIEW,
+    Permissions.IMAGES_UPLOAD,
+    Permissions.IMAGES_UPDATE,
+    Permissions.IMAGES_DELETE,
+
+    Permissions.MAINTENANCE_VIEW,
+    Permissions.MAINTENANCE_CREATE,
+    Permissions.MAINTENANCE_UPDATE,
+    Permissions.MAINTENANCE_DELETE,
+    Permissions.MAINTENANCE_EXPORT,
+
     Permissions.DOCUMENTS_VIEW,
     Permissions.DOCUMENTS_CREATE,
     Permissions.DOCUMENTS_UPDATE,
     Permissions.DOCUMENTS_DELETE,
     Permissions.DOCUMENTS_EXPORT,
+
     Permissions.APPROVALS_VIEW,
     Permissions.APPROVALS_CREATE,
     Permissions.APPROVALS_APPROVE,
     Permissions.APPROVALS_REJECT,
+
     Permissions.WAREHOUSE_VIEW,
-    Permissions.WAREHOUSE_MANAGE,
+    Permissions.WAREHOUSE_CREATE,
+    Permissions.WAREHOUSE_UPDATE,
+    Permissions.WAREHOUSE_DELETE,
     Permissions.WAREHOUSE_EXPORT,
+
+    Permissions.MANUFACTURE_VIEW,
+    Permissions.MANUFACTURE_CREATE,
+    Permissions.MANUFACTURE_UPDATE,
+    Permissions.MANUFACTURE_DELETE,
+    Permissions.MANUFACTURE_EXPORT,
+
     Permissions.ORG_REGIONS_VIEW,
     Permissions.ORG_REGIONS_CREATE,
     Permissions.ORG_REGIONS_UPDATE,
     Permissions.ORG_REGIONS_DELETE,
+
     Permissions.ORG_SERVICES_VIEW,
     Permissions.ORG_SERVICES_CREATE,
     Permissions.ORG_SERVICES_UPDATE,
     Permissions.ORG_SERVICES_DELETE,
+
     Permissions.EXPENSES_VIEW,
     Permissions.EXPENSES_CREATE,
     Permissions.EXPENSES_UPDATE,
     Permissions.EXPENSES_DELETE,
     Permissions.EXPENSES_EXPORT,
+
     Permissions.AUDIT_VIEW,
     Permissions.ANALYTICS_VIEW,
     Permissions.SYSTEM_SETTINGS,

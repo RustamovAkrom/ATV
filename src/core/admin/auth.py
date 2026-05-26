@@ -5,7 +5,7 @@ from starlette.requests import Request
 from core.config import get_settings
 from core.database.db_sync import get_sync_session_factory
 from core.security.passwords import verify_password
-from db.models.enums import UserRole
+from db.models.enums import UserRole, UserStatus
 from db.models.users.user import User
 
 settings = get_settings()
@@ -36,7 +36,7 @@ class AdminAuth(AuthenticationBackend):
             # Проверка пароля и прав супер-админа
             is_password_valid = verify_password(password, user.password_hash)
             is_superadmin = user.role and user.role.slug == UserRole.SUPERADMIN.value
-            is_active = user.status and user.status.value == "active"
+            is_active = user.status and user.status.value == UserStatus.ACTIVE.value
 
             if is_password_valid and is_superadmin and is_active:
                 request.session["user_id"] = str(user.id)
@@ -80,7 +80,7 @@ class AdminAuth(AuthenticationBackend):
                     .filter(User.id == request.session["user_id"])
                     .first()
                 )
-                if not user or user.status.value != "active":
+                if not user or user.status.value != UserStatus.ACTIVE.value:
                     await self.logout(request)
                     return False
 

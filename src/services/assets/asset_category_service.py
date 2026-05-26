@@ -13,13 +13,7 @@ class AssetCategoryService:
         return await self.repo.list()
 
     async def create(self, data: AssetCategoryCreateSchema):
-        name, slug = await validate_and_prepare(self.repo, data.name)
-
-        obj = AssetCategory(
-            name=name,
-            slug=slug,
-        )
-
+        obj = AssetCategory(**data)
         return await safe_create(self.repo, obj)
 
     async def delete(self, category_id):

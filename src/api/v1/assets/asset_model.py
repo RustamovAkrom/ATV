@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Request
 
 from api.dependencies.assets.asset_model import get_asset_model_service
 from core.cache.decorators import cached, invalidate_cache
-from core.security.rbac.presets import AssetPermissions
+from core.security.rbac.presets import ModelsPermissions
 from core.slowapi import limiter
 from schemas.assets.asset_model import AssetModelCreateSchema, AssetModelOutSchema
 from schemas.common import StatusResponse
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/asset-models", tags=["Asset models"])
 @router.get(
     "/",
     response_model=list[AssetModelOutSchema],
-    dependencies=[Depends(AssetPermissions.CanViewAssets)],
+    dependencies=[Depends(ModelsPermissions.CanViewModels)],
 )
 @cached(tags=("model:list",))
 async def list_models(service: AssetModelService = Depends(get_asset_model_service)):
@@ -26,7 +26,7 @@ async def list_models(service: AssetModelService = Depends(get_asset_model_servi
 @router.post(
     "/",
     response_model=AssetModelOutSchema,
-    dependencies=[Depends(AssetPermissions.CanCreateAssets)],
+    dependencies=[Depends(ModelsPermissions.CanCreateModels)],
 )
 @limiter.limit("20/minute")
 @invalidate_cache(tags=("model:list",))
@@ -41,7 +41,7 @@ async def create_model(
 @router.delete(
     "/{model_id}",
     response_model=StatusResponse,
-    dependencies=[Depends(AssetPermissions.CanDeleteAssets)],
+    dependencies=[Depends(ModelsPermissions.CanDeleteModels)],
 )
 @limiter.limit("20/minute")
 @invalidate_cache(tags=("model:list",))

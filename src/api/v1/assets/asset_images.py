@@ -11,9 +11,12 @@ from core.security.auth.dependencies import get_current_user
 from core.slowapi import limiter
 from core.storage import FileUploadService
 from core.storage.configs import UploadConfigs
+from core.security.rbac.presets import ImagesPermissions
 from schemas.assets.asset_image import AssetImageCreateSchema, AssetImageOutSchema
 from schemas.auth import CurrentUserSchema
+from schemas.common import StatusResponse
 from services.assets.asset_image_service import AssetImageService
+
 
 router = APIRouter(prefix="/assets/{asset_id}/images", tags=["Asset Images"])
 settings = get_settings()
@@ -22,7 +25,11 @@ settings = get_settings()
 # ========== GET запросы (без rate limit) ==========
 
 
-@router.get("/", response_model=list[AssetImageOutSchema])
+@router.get(
+    "/",
+    response_model=list[AssetImageOutSchema],
+    dependencies=[Depends(ImagesPermissions.CanViewImages)],
+)
 @cached(tags=("asset:image:list",))
 async def list_asset_images(
     asset_id: UUID,
@@ -33,7 +40,10 @@ async def list_asset_images(
     return await service.get_images(asset_id, actor)
 
 
-@router.get("/file/{image_id}")
+@router.get(
+    "/file/{image_id}",
+    dependencies=[Depends(ImagesPermissions.CanViewImages)]
+)
 @cached(tags=("asset:image:file",))
 async def get_image_file(
     image_id: UUID,
@@ -62,7 +72,11 @@ async def get_image_file(
 # ========== POST/PATCH/DELETE запросы (с rate limit) ==========
 
 
-@router.post("/", response_model=AssetImageOutSchema)
+@router.post(
+    "/",
+    response_model=AssetImageOutSchema,
+    dependencies=[Depends(ImagesPermissions.CanUploadImages)],
+)
 @limiter.limit("20/minute")
 @invalidate_cache(
     tags=(
@@ -116,7 +130,10 @@ async def upload_asset_image(
     return await service.upload_image(asset_id, create_data, actor)
 
 
-@router.put("/{image_id}/primary")
+@router.put(
+    "/{image_id}/primary",
+    dependencies=[Depends(ImagesPermissions.CanUploadImages)],
+)
 @limiter.limit("10/minute")
 @invalidate_cache(
     tags=(
@@ -139,7 +156,11 @@ async def set_primary_image(
     return {"status": "ok", "message": "Primary image set"}
 
 
-@router.delete("/{image_id}")
+@router.delete(
+    "/{image_id}",
+    response_model=StatusResponse,
+    dependencies=[Depends(ImagesPermissions.CanDeleteImages)],
+)
 @limiter.limit("10/minute")
 @invalidate_cache(
     tags=(
@@ -171,10 +192,14 @@ async def delete_asset_image(
 
     # Удаляем запись из БД
     await service.delete_image(image_id, asset_id, actor)
-    return {"status": "deleted", "message": "Image deleted successfully"}
+    return StatusResponse(status="deleted", message="Image deleted successfully")
 
 
-@router.post("/reorder")
+@router.post(
+    "/reorder",
+    response_model=StatusResponse,
+    dependencies=[Depends(ImagesPermissions.CanUpdateImages)],
+)
 @limiter.limit("10/minute")
 @invalidate_cache(
     tags=(
@@ -192,4 +217,4 @@ async def reorder_images(
 ):
     """Изменить порядок изображений"""
     await service.reorder_images(asset_id, ordered_ids, actor)
-    return {"status": "ok", "message": "Order updated"}
+    return StatusResponse(status="ok", message="Order updated")

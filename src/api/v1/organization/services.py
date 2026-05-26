@@ -11,6 +11,7 @@ from core.security.auth.dependencies import get_current_user
 from core.security.rbac.presets import ServicePermissions
 from core.slowapi import limiter
 from schemas.auth.auth import CurrentUserSchema
+from schemas.common import StatusResponse
 from schemas.organization.service import (
     ServiceCreateSchema,
     ServiceOutSchema,
@@ -113,7 +114,7 @@ async def update_service(
 
 @router.delete(
     "/{service_id}",
-    response_model=dict[str, Any],
+    response_model=StatusResponse,
     dependencies=[Depends(ServicePermissions.CanDeleteServices)],
 )
 @limiter.limit("5/minute")
@@ -131,4 +132,5 @@ async def delete_service(
     _: CurrentUserSchema = Depends(get_current_user),
 ):
     """Delete a service."""
-    return await service.delete(service_id)
+    await service.delete(service_id)
+    return StatusResponse(status="deleted", message="Service deletedy successfully")

@@ -20,8 +20,6 @@ class AssetAdmin(BaseAdmin, model=Asset):
     icon = "fa-solid fa-box"
 
     can_edit = True
-    can_create = True
-    can_delete = True
 
     form_excluded_columns = ["meta", "slug", "created_at", "updated_at"]
 
@@ -55,9 +53,9 @@ class AssetAssignmentAdmin(BaseAdmin, model=AssetAssignment):
     name_plural = "Asset Assignments"
     icon = "fa-solid fa-user-check"
 
-    can_edit = True
-    can_create = True
-    can_delete = True
+    # can_edit = True
+    # can_create = True
+    # can_delete = True
 
     column_list = [
         "id",
@@ -79,8 +77,6 @@ class AssetImageAdmin(BaseAdmin, model=AssetImage):
     name_plural = "Asset Images"
     icon = "fa-solid fa-image"
 
-    can_edit = True
-    can_create = True
     can_delete = True
 
     # Список колонок для отображения в таблице
@@ -146,10 +142,9 @@ class AssetCategoryAdmin(BaseAdmin, model=AssetCategory):
     can_delete = True
 
     column_list = ["id", "name", "slug", "created_at"]
-
     column_searchable_list = ["name", "slug"]
 
-    form_excluded_columns = ["slug"]
+    form_excluded_columns = ["slug", "created_at", "updated_at"]
 
 
 class AssetClassAdmin(BaseAdmin, model=AssetClass):

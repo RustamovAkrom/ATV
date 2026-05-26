@@ -15,6 +15,7 @@ from schemas.organization.region import (
     RegionTreeOutSchema,
     RegionUpdateSchema,
 )
+from schemas.common import StatusResponse
 from services.organization.region_service import RegionService
 
 router = APIRouter(prefix="/regions", tags=["Regions"])
@@ -113,7 +114,7 @@ async def update_region(
 
 @router.delete(
     "/{region_id}",
-    response_model=dict[str, Any],
+    response_model=StatusResponse,
     dependencies=[Depends(RegionPermissions.CanDeleteRegions)],
 )
 @limiter.limit("5/minute")
@@ -131,4 +132,5 @@ async def delete_region(
     _: CurrentUserSchema = Depends(get_current_user),
 ):
     """Delete a region (only if no children)."""
-    return await service.delete(region_id)
+    await service.delete(region_id)
+    return StatusResponse(status="deleted", message="Service deletedy successfully")

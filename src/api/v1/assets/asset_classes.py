@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Request
 
 from api.dependencies.assets.asset_class import get_asset_class_service
 from core.cache.decorators import cached, invalidate_cache
-from core.security.rbac.presets import AssetPermissions
+from core.security.rbac.presets import ClassesPermissions
 from core.slowapi import limiter
 from schemas.assets.asset_class import AssetClassCreateSchema, AssetClassOutSchema
 from schemas.common import StatusResponse
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/asset-classes", tags=["Asset Classes"])
 @router.get(
     "/",
     response_model=list[AssetClassOutSchema],
-    dependencies=[Depends(AssetPermissions.CanViewAssets)],
+    dependencies=[Depends(ClassesPermissions.CanViewClasses)],
 )
 @cached(tags=("classes:list",))
 async def list_classes(service: AssetClassService = Depends(get_asset_class_service)):
@@ -28,7 +28,7 @@ async def list_classes(service: AssetClassService = Depends(get_asset_class_serv
 @router.post(
     "/",
     response_model=AssetClassOutSchema,
-    dependencies=[Depends(AssetPermissions.CanCreateAssets)],
+    dependencies=[Depends(ClassesPermissions.CanCreateClasses)],
 )
 @limiter.limit("20/minute")
 @invalidate_cache(tags=("classes:list",))
@@ -43,7 +43,7 @@ async def create_class(
 @router.delete(
     "/{class_id}",
     response_model=StatusResponse,
-    dependencies=[Depends(AssetPermissions.CanDeleteAssets)],
+    dependencies=[Depends(ClassesPermissions.CanDeleteClasses)],
 )
 @limiter.limit("20/minute")
 @invalidate_cache(tags=("classes:list",))

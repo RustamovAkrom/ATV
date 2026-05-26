@@ -121,12 +121,11 @@ class RegionService:
 
         return self._to_out_schema(updated)
 
-    async def delete(self, region_id: UUID) -> dict[str, Any]:
+    async def delete(self, region_id: UUID):
         region = await self.repo.get(region_id)
         if not region:
             raise NotFound(f"Region {region_id} not found")
         await self.repo.delete(region_id)
-        return {"message": "Region deleted successfully"}
 
     def _get_level(self, region: RegionOutSchema) -> int:
         """Вычислить уровень региона (простой способ)"""

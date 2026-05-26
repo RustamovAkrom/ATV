@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Request
 from api.dependencies.assets.asset_repair import get_repair_service
 from core.cache.decorators import invalidate_cache
 from core.security.auth.dependencies import get_current_user
-from core.security.rbac.presets import AssetPermissions
+from core.security.rbac.presets import RepairsPermissions
 from core.slowapi import limiter
 from schemas.assets.repairs import (
     RepairCancelRequest,
@@ -25,7 +25,7 @@ router = APIRouter(
 @router.post(
     "/report",
     response_model=RepairSchema,
-    dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
+    dependencies=[Depends(RepairsPermissions.CanUpdateRepairs)],
 )
 @limiter.limit("20/minute")
 @invalidate_cache(
@@ -48,7 +48,7 @@ async def report_asset_repair(
 @router.post(
     "/{repair_id}/start",
     response_model=RepairSchema,
-    dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
+    dependencies=[Depends(RepairsPermissions.CanUpdateRepairs)],
 )
 @limiter.limit("20/minute")
 @invalidate_cache(
@@ -72,7 +72,7 @@ async def start_asset_repair(
 @router.post(
     "/{repair_id}/cancel",
     response_model=RepairSchema,
-    dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
+    dependencies=[Depends(RepairsPermissions.CanUpdateRepairs)],
 )
 @limiter.limit("20/minute")
 @invalidate_cache(

@@ -1,5 +1,5 @@
 from uuid import UUID
-
+from typing import List
 from core.exceptions.errors import BadRequest, NotFound
 from db.models.assets.asset_class import AssetClass
 from repositories.assets.asset_class_repo import AssetClassRepository
@@ -11,21 +11,18 @@ class AssetClassService:
     def __init__(self, repo: AssetClassRepository):
         self.repo = repo
 
-    async def list(self) -> list[AssetClassOutSchema]:
+    async def list(self) -> List[AssetClassOutSchema]:
         return await self.repo.list()
 
     async def create(self, data: AssetClassCreateSchema):
-        name, slug = await validate_and_prepare(self.repo, data.name)
-
         obj = AssetClass(
-            name=name,
-            slug=slug,
+            name=data.name,
             description=data.description,
         )
 
         return await safe_create(self.repo, obj)
 
-    async def delete(self, class_id: UUID):
+    async def delete(self, class_id: UUID) -> None:
         obj = await self.repo.get(class_id)
 
         if not obj:

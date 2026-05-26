@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, Query, Request
 
 from api.dependencies.assets.asset_warehouse import get_warehouse_service
 from core.security.auth.dependencies import get_current_user
-from core.security.rbac.presets import AssetPermissions
+from core.security.rbac.presets import WarehousePermission
+from core.cache.decorators import cached, invalidate_cache
 from core.slowapi import limiter
 from schemas.assets.warehouses import (
     WarehouseCreateSchema,
@@ -12,6 +13,7 @@ from schemas.assets.warehouses import (
     WarehouseUpdateSchema,
     WarehouseWithDetailsOutSchema,
 )
+from schemas.common import StatusResponse
 from schemas.auth import CurrentUserSchema
 from schemas.pagination import PageOutSchema, PaginationParamsSchema
 from services.assets.warehouse_service import WarehouseService
@@ -19,14 +21,12 @@ from services.assets.warehouse_service import WarehouseService
 router = APIRouter(prefix="/warehouses", tags=["Warehouses"])
 
 
-# ========== GET запросы (без rate limit) ==========
-
-
 @router.get(
     "/",
     response_model=PageOutSchema[WarehouseOutSchema],
-    dependencies=[Depends(AssetPermissions.CanViewAssets)],
+    dependencies=[Depends(WarehousePermission.CanViewWarehouses)],
 )
+@cached(tags=("warehouse:list",))
 async def list_warehouses(
     pagination: PaginationParamsSchema = Depends(),
     region_id: UUID | None = Query(None),
@@ -50,8 +50,9 @@ async def list_warehouses(
 @router.get(
     "/{warehouse_id}",
     response_model=WarehouseWithDetailsOutSchema,
-    dependencies=[Depends(AssetPermissions.CanViewAssets)],
+    dependencies=[Depends(WarehousePermission.CanViewWarehouses)],
 )
+@cached(tags=("warehouse:detail",))
 async def get_warehouse(
     warehouse_id: UUID,
     service: WarehouseService = Depends(get_warehouse_service),
@@ -61,15 +62,13 @@ async def get_warehouse(
     return await service.get_warehouse(warehouse_id)
 
 
-# ========== POST/PATCH/DELETE запросы (с rate limit) ==========
-
-
 @router.post(
     "/",
     response_model=WarehouseOutSchema,
-    dependencies=[Depends(AssetPermissions.CanCreateAssets)],
+    dependencies=[Depends(WarehousePermission.CanCreateWarehouses)],
 )
 @limiter.limit("10/minute")
+@invalidate_cache(tags=("warehouse:list",))
 async def create_warehouse(
     request: Request,
     data: WarehouseCreateSchema,
@@ -83,9 +82,10 @@ async def create_warehouse(
 @router.patch(
     "/{warehouse_id}",
     response_model=WarehouseOutSchema,
-    dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
+    dependencies=[Depends(WarehousePermission.CanUpdateWarehouses)],
 )
 @limiter.limit("20/minute")
+@invalidate_cache(tags=("warehouse:list", "warehouse:detail",))
 async def update_warehouse(
     request: Request,
     warehouse_id: UUID,
@@ -99,10 +99,11 @@ async def update_warehouse(
 
 @router.delete(
     "/{warehouse_id}",
-    response_model=dict[str, str],
-    dependencies=[Depends(AssetPermissions.CanDeleteAssets)],
+    response_model=StatusResponse,
+    dependencies=[Depends(WarehousePermission.CanDeleteWarehouses)],
 )
 @limiter.limit("5/minute")
+@invalidate_cache(tags=("warehouse:list", "warehouse:detail",))
 async def delete_warehouse(
     request: Request,
     warehouse_id: UUID,
@@ -111,4 +112,4 @@ async def delete_warehouse(
 ):
     """Удалить склад (только если нет активов)"""
     await service.delete_warehouse(warehouse_id)
-    return {"message": "Warehouse deleted successfully"}
+    return StatusResponse(status="deleted", message="Warehouse deleted successfully")

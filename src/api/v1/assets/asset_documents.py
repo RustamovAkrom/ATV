@@ -8,7 +8,7 @@ from api.dependencies.storage import get_file_upload_service
 from core.cache.decorators import cached, invalidate_cache
 from core.config import get_settings
 from core.security.auth.dependencies import get_current_user
-from core.security.rbac.presets import AssetPermissions
+from core.security.rbac.presets import DocumentsPermissions
 from core.slowapi import limiter
 from core.storage import FileUploadService
 from core.storage.configs import UploadConfigs
@@ -29,7 +29,11 @@ router = APIRouter(prefix="/assets/{asset_id}/documents", tags=["Asset Documents
 # ========== GET запросы (без rate limit) ==========
 
 
-@router.get("/", response_model=list[AssetDocumentOutSchema])
+@router.get(
+    "/",
+    response_model=list[AssetDocumentOutSchema],
+    dependencies=[Depends(DocumentsPermissions.CanViewDocuments)],
+)
 @cached(tags=("document:list",))
 async def list_documents(
     asset_id: UUID,
@@ -40,7 +44,11 @@ async def list_documents(
     return await service.list_by_asset(asset_id, actor)
 
 
-@router.get("/{document_id}", response_model=AssetDocumentWithFilesOutSchema)
+@router.get(
+    "/{document_id}",
+    response_model=AssetDocumentWithFilesOutSchema,
+    dependencies=[Depends(DocumentsPermissions.CanViewDocuments)],
+)
 @cached(tags=("document:detail",))
 async def get_document(
     asset_id: UUID,
@@ -52,7 +60,10 @@ async def get_document(
     return await service.get_document(asset_id, document_id, actor)
 
 
-@router.get("/{document_id}/files/{file_id}")
+@router.get(
+    "/{document_id}/files/{file_id}",
+    dependencies=[Depends(DocumentsPermissions.CanExportDocuments)],
+)
 @cached(tags=("document:download",))
 async def download_file(
     asset_id: UUID,
@@ -93,7 +104,7 @@ async def download_file(
 @router.post(
     "/",
     response_model=AssetDocumentOutSchema,
-    dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
+    dependencies=[Depends(DocumentsPermissions.CanUpdateDocuments)],
 )
 @limiter.limit("20/minute")
 @invalidate_cache(
@@ -170,7 +181,7 @@ async def attach_asset_document(
 @router.patch(
     "/{document_id}",
     response_model=AssetDocumentOutSchema,
-    dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
+    dependencies=[Depends(DocumentsPermissions.CanUpdateDocuments)],
 )
 @limiter.limit("30/minute")
 @invalidate_cache(
@@ -196,7 +207,7 @@ async def update_asset_document(
 @router.post(
     "/{document_id}/files",
     response_model=dict,
-    dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
+    dependencies=[Depends(DocumentsPermissions.CanUpdateDocuments)],
 )
 @limiter.limit("20/minute")
 @invalidate_cache(
@@ -242,7 +253,7 @@ async def add_file_to_document(
 @router.delete(
     "/{document_id}/files/{file_id}",
     response_model=StatusResponse,
-    dependencies=[Depends(AssetPermissions.CanUpdateAssets)],
+    dependencies=[Depends(DocumentsPermissions.CanUpdateDocuments)],
 )
 @limiter.limit("10/minute")
 @invalidate_cache(
@@ -283,7 +294,7 @@ async def delete_file_from_document(
 @router.delete(
     "/{document_id}",
     response_model=StatusResponse,
-    dependencies=[Depends(AssetPermissions.CanDeleteAssets)],
+    dependencies=[Depends(DocumentsPermissions.CanDeleteDocuments)],
 )
 @limiter.limit("5/minute")
 @invalidate_cache(

@@ -116,7 +116,6 @@ class ServiceService:
             raise NotFound(f"Service {service_id} not found")
 
         await self.repo.delete(service_id)
-        return {"message": "Service deleted successfully"}
 
     def _to_out_schema(self, service: Service) -> ServiceOutSchema:
         return ServiceOutSchema(
