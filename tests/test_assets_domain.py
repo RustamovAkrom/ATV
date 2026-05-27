@@ -87,6 +87,9 @@ async def _create_asset(client, token: str, deps: dict, name: str | None = None)
         json=payload,
         headers={"Authorization": f"Bearer {token}"},
     )
+    if response.status_code != 200:
+        print(f"Create asset failed: {response.status_code}")
+        print(f"Response: {response.json()}")
     assert response.status_code == 200
     return response.json()
 
@@ -195,8 +198,14 @@ async def test_repair_lifecycle_flow(client, dbsession, analytics_tokens):
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert completion_request.status_code == 200
+
+    print(f"Completion response: {completion_request.json()}")
+
+    approval_id = completion_request.json().get("id")
+    print(f"Approval ID: {approval_id}")
+
     completed = await client.post(
-        f"/approvals/{completion_request.json()['id']}/approve",
+        f"/approvals/{approval_id}/approve",
         json={"comment": "complete repair"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )

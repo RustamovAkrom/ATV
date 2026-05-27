@@ -7,7 +7,7 @@ from db.models.enums import UserRole
 # =================================================================
 
 
-class AdministrativPermissions:
+class AdministrativePermissions:
     # Только для разработчика/главного админа
     IsSuperAdmin = require_role(UserRole.SUPERADMIN.value)
 
@@ -69,6 +69,17 @@ class AssetPermissions:
     CanUpdateAssets = require_permission(Permissions.ASSETS_UPDATE)
     CanDeleteAssets = require_permission(Permissions.ASSETS_DELETE)
     CanExportAssets = require_permission(Permissions.ASSETS_EXPORT)
+
+
+class AssetAssignmentPermissions:
+    CanViewAssignments = require_permission(Permissions.ASSETS_ASSIGNMENTS_VIEW)
+    CanAssignAssets = require_permission(Permissions.ASSETS_ASSIGN)
+    CanUnassignAssets = require_permission(Permissions.ASSETS_UNASSIGN)
+    CanManageAssignments = require_permission(
+        Permissions.ASSETS_ASSIGN,
+        Permissions.ASSETS_UNASSIGN,
+        Permissions.ASSETS_ASSIGNMENTS_VIEW,
+    )
 
 
 class RepairsPermissions:

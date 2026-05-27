@@ -50,7 +50,9 @@ class Permissions:
     ASSETS_CREATE = "assets.create"
     ASSETS_UPDATE = "assets.update"
     ASSETS_DELETE = "assets.delete"
+    ASSETS_ASSIGNMENTS_VIEW = "assets.assignments.view"
     ASSETS_ASSIGN = "assets.assign"
+    ASSETS_UNASSIGN = "assets.unassign"
     ASSETS_TRANSFER = "assets.transfer"
     ASSETS_EXPORT = "assets.export"
     ASSETS_ARCHIVE = "assets.archive"
@@ -235,6 +237,7 @@ APPROVER_PERMS = _set(
     Permissions.APPROVALS_APPROVE,
     Permissions.APPROVALS_REJECT,
     Permissions.ASSETS_VIEW,
+    Permissions.ASSETS_ASSIGNMENTS_VIEW,
     Permissions.REPAIRS_VIEW,
     Permissions.MODELS_VIEW,
     Permissions.IMAGES_VIEW,
@@ -251,6 +254,7 @@ ANALYST_PERMS = _set(
     Permissions.USERS_VIEW,
     Permissions.ASSETS_VIEW,
     Permissions.ASSETS_EXPORT,
+    Permissions.ASSETS_ASSIGNMENTS_VIEW,
     Permissions.REPAIRS_VIEW,
     Permissions.REPAIRS_EXPORT,
     Permissions.MODELS_VIEW,
@@ -295,6 +299,8 @@ ADMIN_PERMS = _set(
     Permissions.ASSETS_UPDATE,
     Permissions.ASSETS_DELETE,
     Permissions.ASSETS_ASSIGN,
+    Permissions.ASSETS_ASSIGNMENTS_VIEW,
+    Permissions.ASSETS_UNASSIGN,
     Permissions.ASSETS_TRANSFER,
     Permissions.ASSETS_EXPORT,
     Permissions.ASSETS_ARCHIVE,

@@ -1,5 +1,3 @@
-# src/db/models/repairs/repair_part.py
-
 from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID

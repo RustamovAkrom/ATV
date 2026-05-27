@@ -57,7 +57,6 @@ class AssetCreate(BaseSchema):
     class_id: UUID | None = None
     region_id: UUID | None = None
     service_id: UUID | None = None
-    owner_id: UUID | None = None
 
     serial_number: str | None = Field(default=None, max_length=255)
 
@@ -75,6 +74,10 @@ class AssetCreate(BaseSchema):
 
     metadata: dict = Field(default_factory=dict)
 
+    assign_to_self: bool = Field(
+        default=False, description="Назначить актив текущему пользователю"
+    )
+
 
 class AssetUpdate(BaseSchema):
     name: str | None = Field(default=None, min_length=1, max_length=255)
@@ -84,7 +87,7 @@ class AssetUpdate(BaseSchema):
 
     region_id: UUID | None = None
     service_id: UUID | None = None
-    # owner_id: UUID | None = None
+    owner_id: UUID | None = None
 
     serial_number: str | None = Field(default=None, max_length=255)
     commission_date: date | None = None

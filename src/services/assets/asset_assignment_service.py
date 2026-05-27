@@ -148,3 +148,18 @@ class AssetAssignmentService:
             await self.repo.flush()
 
         return await self.assign_asset(asset_id, new_user_id, actor)
+
+    async def get_active_assignment(
+        self, asset_id: UUID
+    ) -> AssetAssignmentActionSchema | None:
+        """Получить активное назначение актива"""
+        assignment = await self.repo.get_active_assignment(asset_id)
+        if not assignment:
+            return None
+
+        return AssetAssignmentActionSchema(
+            asset_id=assignment.asset_id,
+            user_id=assignment.user_id,
+            assigned_at=assignment.assigned_at,
+            unassigned_at=assignment.unassigned_at,
+        )

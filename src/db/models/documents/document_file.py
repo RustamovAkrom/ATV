@@ -1,5 +1,3 @@
-# src/db/models/documents/document_file.py
-
 from typing import TYPE_CHECKING
 from uuid import UUID
 

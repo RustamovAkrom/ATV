@@ -1,5 +1,3 @@
-# src/db/models/assets/asset.py
-
 from datetime import date
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional

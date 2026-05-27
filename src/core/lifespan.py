@@ -19,7 +19,7 @@ async def run_bootstrap():
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     db_engine = get_db_async_engine()
     http_transport = get_http_transport()
-    await run_bootstrap()
+    # await run_bootstrap()
     yield
     await db_engine.dispose()
     await http_transport.aclose()
