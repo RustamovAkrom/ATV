@@ -173,6 +173,7 @@ services:
     volumes:
       - ./src/static:/app/static:ro
       - ./src/storage:/app/storage:ro
+      - ./deployments/compose/nginx/nginx/ssl:/etc/nginx/ssl:ro
     networks:
       - backend_network
     profiles:
