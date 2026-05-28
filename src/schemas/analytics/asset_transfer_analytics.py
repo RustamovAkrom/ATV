@@ -4,9 +4,9 @@ from uuid import UUID
 
 from pydantic import Field, field_validator
 
-from api.v1.analytics._utils import sanitize_search
 from db.models.enums import TransferStatus
 from schemas.base import BaseSchema
+from utils.analytics.filter_utils import sanitize_search
 
 
 class AssetTransferFilterInput(BaseSchema):

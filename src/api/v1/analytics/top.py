@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, Query, Request
 
 from api.dependencies.analytics import get_top_analytics_service
-from api.v1.analytics._utils import run_analytics_operation
 from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.auth.dependencies import get_current_user
@@ -14,6 +13,7 @@ from schemas.analytics.top import (
 )
 from schemas.auth import CurrentUserSchema
 from services.analytics.top_analytics_service import TopAnalyticsService
+from utils.analytics.cache_utils import run_analytics_operation
 
 router = APIRouter(prefix="/analytics/top", tags=["Analytics - Top"])
 settings = get_settings()

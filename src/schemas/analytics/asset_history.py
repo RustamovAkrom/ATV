@@ -5,8 +5,8 @@ from uuid import UUID
 
 from pydantic import ConfigDict, Field, field_validator
 
-from api.v1.analytics._utils import sanitize_search
 from schemas.base import BaseSchema
+from utils.analytics.filter_utils import sanitize_search
 
 
 class AssetHistoryFilter(BaseSchema):

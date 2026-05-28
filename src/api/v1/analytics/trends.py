@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, Query, Request
 
 from api.dependencies.analytics import get_trend_analytics_service
-from api.v1.analytics._utils import run_analytics_operation
 from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.rbac.presets import AssetPermissions
 from schemas.analytics.trends import RepairTrendSeriesOut, TrendInterval, TrendSeriesOut
 from services.analytics.trend_analytics_service import TrendAnalyticsService
+from utils.analytics.cache_utils import run_analytics_operation
 
 router = APIRouter(prefix="/analytics/trends", tags=["Analytics - Trends"])
 settings = get_settings()

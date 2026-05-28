@@ -3,7 +3,6 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request
 
 from api.dependencies.analytics import get_asset_history_analytics_service
-from api.v1.analytics._utils import parse_optional_datetime, run_analytics_operation
 from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.rbac.presets import AssetPermissions
@@ -16,6 +15,8 @@ from schemas.pagination import PageOutSchema, PaginationParamsSchema
 from services.analytics.asset_history_analytics_service import (
     AssetHistoryAnalyticsService,
 )
+from utils.analytics.cache_utils import run_analytics_operation
+from utils.analytics.date_utils import parse_optional_datetime
 
 router = APIRouter(prefix="/analytics/asset-history", tags=["Analytics - History"])
 settings = get_settings()

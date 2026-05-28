@@ -40,6 +40,7 @@ from services.analytics.asset_transfer_analytics_service import (
     AssetTransferAnalyticsService,
 )
 from services.analytics.cost_analytics_service import CostAnalyticsService
+from services.analytics.dashboard_analytics_service import DashboardAnalyticsService
 from services.analytics.document_analytics_service import DocumentAnalyticsDomainService
 from services.analytics.forecast_analytics_service import ForecastAnalyticsService
 from services.analytics.region_analytics_service import RegionAnalyticsService
@@ -118,6 +119,24 @@ def get_asset_transfer_analytics_service(
     repo: AssetTransferAnalyticsRepository = Depends(get_asset_transfer_analytics_repo),
 ) -> AssetTransferAnalyticsService:
     return AssetTransferAnalyticsService(repo)
+
+
+def get_dashboard_analytics_service(
+    assignment_service: AssetAssignmentAnalyticsService = Depends(
+        get_asset_assignment_analytics_service
+    ),
+    transfer_service: AssetTransferAnalyticsService = Depends(
+        get_asset_transfer_analytics_service
+    ),
+    history_service: AssetHistoryAnalyticsService = Depends(
+        get_asset_history_analytics_service
+    ),
+) -> DashboardAnalyticsService:
+    return DashboardAnalyticsService(
+        assignment_service=assignment_service,
+        transfer_service=transfer_service,
+        history_service=history_service,
+    )
 
 
 # ============================================================

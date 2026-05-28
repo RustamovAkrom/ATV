@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, Query, Request
 
 from api.dependencies.analytics import get_forecast_analytics_service
-from api.v1.analytics._utils import run_analytics_operation
 from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.rbac.presets import AssetPermissions
 from schemas.analytics.forecast import ForecastSeriesOut
 from schemas.analytics.trends import TrendInterval
 from services.analytics.forecast_analytics_service import ForecastAnalyticsService
+from utils.analytics.cache_utils import run_analytics_operation
 
 router = APIRouter(prefix="/analytics/forecast", tags=["Analytics - Forecast"])
 settings = get_settings()

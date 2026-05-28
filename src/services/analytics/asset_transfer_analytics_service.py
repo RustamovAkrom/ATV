@@ -19,10 +19,12 @@ from schemas.analytics.asset_transfer_analytics import (
     WarehouseTransferMetrics,
 )
 from schemas.pagination import PageOutSchema, PaginationParamsSchema
+from services.analytics.base_analytics_service import BaseAnalyticsService
+from utils.analytics.aggregation_utils import percentage
 from utils.helpers import utc_now
 
 
-class AssetTransferAnalyticsService:
+class AssetTransferAnalyticsService(BaseAnalyticsService):
     """Service for transfer analytics."""
 
     def __init__(self, repo: AssetTransferAnalyticsRepository):
@@ -124,31 +126,19 @@ class AssetTransferAnalyticsService:
             TransferStatusBreakdown(
                 status="completed",
                 count=agg_dict["completed_transfers"],
-                percentage=(
-                    Decimal(100 * agg_dict["completed_transfers"] / total)
-                    if total > 0
-                    else Decimal(0)
-                ),
+                percentage=percentage(agg_dict["completed_transfers"], total),
                 average_pending_days=None,
             ),
             TransferStatusBreakdown(
                 status="pending",
                 count=agg_dict["pending_transfers"],
-                percentage=(
-                    Decimal(100 * agg_dict["pending_transfers"] / total)
-                    if total > 0
-                    else Decimal(0)
-                ),
+                percentage=percentage(agg_dict["pending_transfers"], total),
                 average_pending_days=Decimal(0),  # Could calculate separately if needed
             ),
             TransferStatusBreakdown(
                 status="cancelled",
                 count=agg_dict["cancelled_transfers"],
-                percentage=(
-                    Decimal(100 * agg_dict["cancelled_transfers"] / total)
-                    if total > 0
-                    else Decimal(0)
-                ),
+                percentage=percentage(agg_dict["cancelled_transfers"], total),
                 average_pending_days=None,
             ),
         ]

@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 
 from api.dependencies.analytics import get_cost_analytics_service
-from api.v1.analytics._utils import run_analytics_operation
 from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.rbac.presets import AssetPermissions
@@ -12,6 +11,7 @@ from schemas.analytics.costs import (
 )
 from schemas.pagination import PageOutSchema, PaginationParamsSchema
 from services.analytics.cost_analytics_service import CostAnalyticsService
+from utils.analytics.cache_utils import run_analytics_operation
 
 router = APIRouter(prefix="/analytics/costs", tags=["Analytics - Costs"])
 settings = get_settings()

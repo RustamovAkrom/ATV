@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from api.v1.analytics._utils import sanitize_search
+from utils.analytics.filter_utils import sanitize_search
 
 
 class AssignmentAnalyticsStatus(StrEnum):

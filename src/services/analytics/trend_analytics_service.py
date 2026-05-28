@@ -8,7 +8,20 @@ from schemas.analytics.trends import (
     TrendPointOut,
     TrendSeriesOut,
 )
+from utils.analytics.date_utils import (
+    AnalyticsPeriod,
+    advance_period,
+    align_period_start,
+)
 from utils.helpers import utc_now
+
+
+def _to_analytics_period(interval: TrendInterval) -> AnalyticsPeriod:
+    if interval == TrendInterval.MONTHLY:
+        return AnalyticsPeriod.MONTH
+    if interval == TrendInterval.WEEKLY:
+        return AnalyticsPeriod.WEEK
+    return AnalyticsPeriod.DAY
 
 
 class TrendAnalyticsService:
@@ -17,22 +30,11 @@ class TrendAnalyticsService:
 
     @staticmethod
     def _align_start(dt: datetime, interval: TrendInterval) -> datetime:
-        if interval == TrendInterval.MONTHLY:
-            return dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        if interval == TrendInterval.WEEKLY:
-            aligned = dt - timedelta(days=dt.weekday())
-            return aligned.replace(hour=0, minute=0, second=0, microsecond=0)
-        return dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        return align_period_start(dt, _to_analytics_period(interval))
 
     @staticmethod
     def _advance_bucket(dt: datetime, interval: TrendInterval) -> datetime:
-        if interval == TrendInterval.MONTHLY:
-            year = dt.year + (1 if dt.month == 12 else 0)
-            month = 1 if dt.month == 12 else dt.month + 1
-            return dt.replace(year=year, month=month, day=1)
-        if interval == TrendInterval.WEEKLY:
-            return dt + timedelta(days=7)
-        return dt + timedelta(days=1)
+        return advance_period(dt, _to_analytics_period(interval))
 
     def _resolve_period(self, interval: TrendInterval, periods: int):
         step_days = (

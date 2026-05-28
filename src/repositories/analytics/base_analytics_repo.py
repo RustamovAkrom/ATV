@@ -1,79 +1,81 @@
 from __future__ import annotations
 
-from datetime import date, datetime, time
-from typing import TypeVar
+from datetime import date, datetime
+from typing import Any, TypeVar
 from uuid import UUID
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from repositories.base import BaseRepository
+from utils.analytics.date_utils import normalize_date_end, normalize_date_start
+from utils.analytics.filter_utils import scoped_region_service_filters
 
 T = TypeVar("T")
 
 
 class BaseAnalyticsRepository(BaseRepository):
-    """Базовый репозиторий для аналитики с общими методами"""
+    """Base repository for analytics queries.
 
-    def __init__(self, session: AsyncSession):
+    The repository owns SQLAlchemy query helpers only: scope filters, date
+    filters, count queries, and pagination. Domain-specific aggregation remains
+    in specialized repositories.
+    """
+
+    def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
     @staticmethod
     def scope_filters(
-        asset_table,
+        asset_table: Any,
         region_id: UUID | None = None,
         service_id: UUID | None = None,
         scoped_region_id: UUID | None = None,
         scoped_service_id: UUID | None = None,
     ) -> list:
-        """Создает фильтры по региону и сервису с учетом скоупа"""
-        filters = []
-        if scoped_region_id or region_id:
-            target_region_id = scoped_region_id or region_id
-            if target_region_id:
-                filters.append(asset_table.region_id == target_region_id)
-        if scoped_service_id or service_id:
-            target_service_id = scoped_service_id or service_id
-            if target_service_id:
-                filters.append(asset_table.service_id == target_service_id)
-        return filters
+        """Build SQLAlchemy filters for region/service scope."""
+        return scoped_region_service_filters(
+            asset_table,
+            region_id=region_id,
+            service_id=service_id,
+            scoped_region_id=scoped_region_id,
+            scoped_service_id=scoped_service_id,
+        )
 
     @staticmethod
     def date_filters(
-        table_column,
+        table_column: Any,
         date_from: date | datetime | None = None,
         date_to: date | datetime | None = None,
     ) -> list:
-        """Создает фильтры по дате"""
+        """Build SQLAlchemy filters for a date range."""
         filters = []
-        if date_from:
-            if isinstance(date_from, date) and not isinstance(date_from, datetime):
-                date_from = datetime.combine(date_from, time.min)
-            filters.append(table_column >= date_from)
-        if date_to:
-            if isinstance(date_to, date) and not isinstance(date_to, datetime):
-                date_to = datetime.combine(date_to, time.max)
-            filters.append(table_column <= date_to)
+        normalized_from = normalize_date_start(date_from)
+        normalized_to = normalize_date_end(date_to)
+        if normalized_from:
+            filters.append(table_column >= normalized_from)
+        if normalized_to:
+            filters.append(table_column <= normalized_to)
         return filters
 
-    async def get_count(self, table, filters: list = None) -> int:
-        """Получает количество записей с фильтрами"""
+    async def get_count(self, table: Any, filters: list | None = None) -> int:
+        """Return the number of rows matching optional filters."""
         query = select(func.count(table.id))
         if filters:
             query = query.where(*filters)
         result = await self.session.scalar(query)
         return result or 0
 
-    async def execute_with_pagination(self, query, pagination, order_by=None):
-        """Выполняет запрос с пагинацией"""
-        if order_by:
+    async def execute_with_pagination(
+        self, query: Any, pagination: Any, order_by: Any | None = None
+    ) -> tuple[Any, int]:
+        """Execute a SQLAlchemy query and return the page plus total count."""
+        if order_by is not None:
             query = query.order_by(order_by)
 
-        # Считаем общее количество
         count_query = select(func.count()).select_from(query.subquery())
         total = await self.session.scalar(count_query) or 0
 
-        # Пагинация
         query = query.limit(pagination.limit).offset(pagination.offset())
         result = await self.session.execute(query)
 

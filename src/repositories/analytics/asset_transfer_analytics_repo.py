@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 from db.models.assets.asset import Asset
 from db.models.assets.asset_transfer import AssetTransfer
 from db.models.enums import TransferStatus
+from db.models.warehouse.warehouse import Warehouse
 from repositories.analytics.base_analytics_repo import BaseAnalyticsRepository
 from schemas.analytics.asset_transfer_analytics import AssetTransferFilterInput
 from schemas.pagination import PaginationParamsSchema
@@ -284,6 +285,65 @@ class AssetTransferAnalyticsRepository(BaseAnalyticsRepository):
             "oldest_pending_transfer_id": oldest_pending_id,
             "transfers_pending_over_7_days": int(bottlenecks_row.over_7_days or 0),
             "transfers_pending_over_30_days": int(bottlenecks_row.over_30_days or 0),
+        }
+
+    async def get_warehouse_transfer_metrics(self, warehouse_id: UUID) -> dict:
+        """Return transfer metrics for a single warehouse."""
+        warehouse_name = await self.session.scalar(
+            select(Warehouse.name).where(Warehouse.id == warehouse_id)
+        )
+
+        aggregate = (
+            await self.session.execute(
+                select(
+                    func.count(AssetTransfer.id)
+                    .filter(AssetTransfer.from_warehouse_id == warehouse_id)
+                    .label("transfers_from"),
+                    func.count(AssetTransfer.id)
+                    .filter(AssetTransfer.to_warehouse_id == warehouse_id)
+                    .label("transfers_to"),
+                    func.count(AssetTransfer.id)
+                    .filter(
+                        and_(
+                            AssetTransfer.to_warehouse_id == warehouse_id,
+                            AssetTransfer.status == TransferStatus.PENDING,
+                        )
+                    )
+                    .label("pending_in"),
+                    func.count(AssetTransfer.id)
+                    .filter(
+                        and_(
+                            AssetTransfer.from_warehouse_id == warehouse_id,
+                            AssetTransfer.status == TransferStatus.PENDING,
+                        )
+                    )
+                    .label("pending_out"),
+                    func.avg(AssetTransfer.transferred_at - AssetTransfer.created_at)
+                    .filter(
+                        and_(
+                            AssetTransfer.status == TransferStatus.COMPLETED,
+                            AssetTransfer.transferred_at.isnot(None),
+                            or_(
+                                AssetTransfer.from_warehouse_id == warehouse_id,
+                                AssetTransfer.to_warehouse_id == warehouse_id,
+                            ),
+                        )
+                    )
+                    .label("average_duration"),
+                )
+            )
+        ).one()
+
+        return {
+            "warehouse_id": warehouse_id,
+            "warehouse_name": warehouse_name or "Unknown",
+            "transfers_from": int(aggregate.transfers_from or 0),
+            "transfers_to": int(aggregate.transfers_to or 0),
+            "pending_in": int(aggregate.pending_in or 0),
+            "pending_out": int(aggregate.pending_out or 0),
+            "average_duration_days": self._interval_to_days(
+                aggregate.average_duration
+            ),
         }
 
     @staticmethod

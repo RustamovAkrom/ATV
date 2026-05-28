@@ -3,7 +3,6 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request
 
 from api.dependencies.analytics import get_region_analytics_service
-from api.v1.analytics._utils import run_analytics_operation
 from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.rbac.presets import AssetPermissions
@@ -13,6 +12,7 @@ from schemas.analytics.regions import (
     RegionOverviewOut,
 )
 from services.analytics.region_analytics_service import RegionAnalyticsService
+from utils.analytics.cache_utils import run_analytics_operation
 
 router = APIRouter(prefix="/analytics/regions", tags=["Analytics - Regions"])
 settings = get_settings()

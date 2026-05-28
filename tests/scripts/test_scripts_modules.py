@@ -67,6 +67,12 @@ async def test_cleanup_expired_tokens_and_run(monkeypatch):
         async def execute(self, *args, **kwargs):
             return _Result()
 
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
         def begin(self):
             return _Ctx()
 
@@ -75,7 +81,7 @@ async def test_cleanup_expired_tokens_and_run(monkeypatch):
 
     class _Ctx:
         async def __aenter__(self):
-            return _Session()
+            return self
 
         async def __aexit__(self, exc_type, exc, tb):
             return False
@@ -83,11 +89,14 @@ async def test_cleanup_expired_tokens_and_run(monkeypatch):
         def begin(self):
             return self
 
+        async def execute(self, *args, **kwargs):
+            return _Result()
+
     class _Factory:
         def __call__(self):
             return _Ctx()
 
-    monkeypatch.setattr(module, "get_sync_session_factory", lambda: _Factory())
+    monkeypatch.setattr(module, "get_async_session_factory", lambda: _Factory())
     await module._run()
 
 

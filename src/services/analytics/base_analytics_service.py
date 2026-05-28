@@ -1,4 +1,3 @@
-from abc import ABC
 from datetime import datetime
 from decimal import Decimal
 from typing import Any
@@ -7,15 +6,28 @@ from core.exceptions.errors import ValidationError
 from db.models.enums import UserRole
 from schemas.analytics.common import AnalyticsFilters
 from schemas.auth import CurrentUserSchema
+from utils.analytics.aggregation_utils import safe_money
 from utils.helpers import utc_now
 
 
-class BaseAnalyticsService(ABC):
-    """Базовый сервис для аналитики"""
+class BaseAnalyticsService:
+    """Base service for analytics business rules.
+
+    Services own validation, privacy filtering, DTO conversion helpers, and
+    calculations that are not better handled by the database.
+    """
 
     @staticmethod
     def validate_filters(filters: AnalyticsFilters, user: CurrentUserSchema) -> None:
-        """Валидация фильтров с учетом прав пользователя"""
+        """Validate date and scope filters for the current user.
+
+        Args:
+            filters: Region, service, and date filters requested by the client.
+            user: Authenticated user used for scope checks.
+
+        Raises:
+            ValidationError: If date or scope filters are invalid.
+        """
         if (
             filters.date_from
             and filters.date_to
@@ -39,7 +51,7 @@ class BaseAnalyticsService(ABC):
 
     @staticmethod
     def filter_email(email: str, user: CurrentUserSchema) -> str:
-        """Фильтрация email в зависимости от прав"""
+        """Hide email addresses from non-admin analytics viewers."""
         if user.has_role(UserRole.ADMIN.value, UserRole.SUPERADMIN.value):
             return email
         return ""
@@ -48,7 +60,7 @@ class BaseAnalyticsService(ABC):
     def calculate_duration_days(
         start: datetime, end: datetime | None
     ) -> Decimal | None:
-        """Расчет длительности в днях"""
+        """Calculate duration in days between two datetimes."""
         if end is None:
             return None
         duration = end - start
@@ -56,7 +68,7 @@ class BaseAnalyticsService(ABC):
 
     @staticmethod
     def format_duration(start: datetime, end: datetime | None) -> str:
-        """Форматирование длительности"""
+        """Format a duration as a compact days/hours string."""
         effective_end = end or utc_now()
         duration = effective_end - start
         total_hours = int(duration.total_seconds() // 3600)
@@ -65,14 +77,18 @@ class BaseAnalyticsService(ABC):
 
     @staticmethod
     def safe_money(value: Any) -> float:
-        """Безопасное преобразование в деньги"""
-        return float(value or 0)
+        """Convert nullable numeric DB values to a frontend-safe float."""
+        return safe_money(value)
 
     @staticmethod
     def to_distribution(
-        rows, total: int, id_field="id", name_field="name", count_field="asset_count"
+        rows: list,
+        total: int,
+        id_field: str = "id",
+        name_field: str = "name",
+        count_field: str = "asset_count",
     ):
-        """Преобразование в DistributionSchema"""
+        """Convert aggregate rows to ``DistributionSchema``."""
         from schemas.analytics.common import AggregationResultSchema, DistributionSchema
 
         items = []
@@ -91,7 +107,7 @@ class BaseAnalyticsService(ABC):
                 )
             )
         return DistributionSchema(
-            labels=[i.label for i in items],
-            values=[i.count for i in items],
+            labels=[item.label for item in items],
+            values=[item.count for item in items],
             items=items,
         )
