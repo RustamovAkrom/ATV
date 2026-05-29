@@ -31,9 +31,9 @@ jobs:
           cache: pip
 
       - name: Install Taskfile runner
-        uses: go-task/task-action@v5
-        with:
-          task-version: latest
+        run: |
+          curl -sSfL https://taskfile.dev/install.sh | sh -s -- -d /usr/local/bin
+          task --version
 
       - name: Install Python dependency manager
         run: |
