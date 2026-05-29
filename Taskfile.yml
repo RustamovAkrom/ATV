@@ -261,14 +261,20 @@ tasks:
 # ═══════════════════════════════════════════
 # TESTS
 # ═══════════════════════════════════════════
+  test-setup:
+    desc: Setup test environment (DB, Redis)
+    cmds:
+      - docker compose --env-file .env.test down -v postgres-test || true
+      - docker compose --env-file .env.test up -d --wait postgres-test
+    env:
+      ENV: test
 
   test:
     desc: Run unit tests
     env:
       ENV: test
     cmds:
-      - docker compose down -v postgres-test || true
-      - docker compose up -d --wait postgres-test
+      - task: test-setup
       - "{{.RUNNER}} python -m pytest -vv"
 
   test-cov:
@@ -276,8 +282,7 @@ tasks:
     env:
       ENV: test
     cmds:
-      - docker compose down -v postgres-test || true
-      - docker compose up -d --wait postgres-test
+      - task: test-setup
       - "{{.RUNNER}} python -m coverage run -m pytest -vv"
       - "{{.RUNNER}} python -m coverage report -m --fail-under=80"
 
