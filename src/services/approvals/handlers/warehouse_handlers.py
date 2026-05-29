@@ -1,11 +1,12 @@
 # src/services/approvals/handlers/warehouse_handlers.py
-from typing import Any, Dict
+from typing import Any
 from uuid import UUID
+
 from pydantic import BaseModel, Field
 
-from services.approvals.handlers.base import BaseApprovalHandler
-from schemas.auth.auth import CurrentUserSchema
 from schemas.assets.warehouses import WarehouseMoveRequest
+from schemas.auth.auth import CurrentUserSchema
+from services.approvals.handlers.base import BaseApprovalHandler
 
 
 class WarehouseMovePayload(BaseModel):
@@ -42,7 +43,7 @@ class WarehouseMoveHandler(BaseApprovalHandler):
         return WarehouseMovePayload
 
     async def execute(
-        self, entity_id: UUID, payload: Dict[str, Any], actor: CurrentUserSchema
+        self, entity_id: UUID, payload: dict[str, Any], actor: CurrentUserSchema
     ):
         """
         Выполнение перемещения актива на склад после одобрения

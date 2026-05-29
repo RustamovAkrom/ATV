@@ -1,2 +1,1 @@
 """Shared analytics helpers."""
-

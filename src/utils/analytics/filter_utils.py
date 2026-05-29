@@ -35,4 +35,3 @@ def scoped_region_service_filters(
     if target_service_id:
         filters.append(asset_table.service_id == target_service_id)
     return filters
-

@@ -1,8 +1,8 @@
+import os
+import sys
 from collections.abc import AsyncGenerator
 from typing import Any
 from uuid import uuid4
-import os
-import sys
 
 import pytest
 from fastapi import FastAPI

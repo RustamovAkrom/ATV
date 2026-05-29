@@ -20,4 +20,3 @@ def average(values: Iterable[int | float | Decimal]) -> float:
     if not values:
         return 0.0
     return float(sum(values) / len(values))
-

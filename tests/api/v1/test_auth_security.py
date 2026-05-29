@@ -47,9 +47,7 @@ async def test_refresh_token_reuse_attack(client, create_user):
 async def test_logout_blacklists_access_token(client, create_user):
     user = await create_user()
 
-    login_response = await login(
-        client, user.login, "password", return_response=True
-    )
+    login_response = await login(client, user.login, "password", return_response=True)
 
     access = login_response.cookies.get("access_token")
     refresh = login_response.json()["refresh_token"]
@@ -110,9 +108,7 @@ async def test_logout_all_revokes_all_sessions(client, create_user):
 async def test_access_token_cannot_be_used_as_refresh(client, create_user):
     user = await create_user()
 
-    login_response = await login(
-        client, user.login, "password", return_response=True
-    )
+    login_response = await login(client, user.login, "password", return_response=True)
     access = login_response.json()["access_token"]
 
     r = await client.post(
@@ -126,9 +122,7 @@ async def test_access_token_cannot_be_used_as_refresh(client, create_user):
 async def test_expired_refresh_token(client, create_user, dbsession):
     user = await create_user()
 
-    login_response = await login(
-        client, user.login, "password", return_response=True
-    )
+    login_response = await login(client, user.login, "password", return_response=True)
     refresh = login_response.json()["refresh_token"]
 
     # manually expire in DB

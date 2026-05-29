@@ -21,7 +21,6 @@ from core.observability.monitoring import router as monitoring_router
 from core.slowapi import limiter
 from middlewares.audit import AuditMiddleware
 from middlewares.logging import LoggingMiddleware
-from middlewares.metrics import MetricsMiddleware
 from middlewares.request_id import RequestIDMiddleware
 
 
@@ -126,7 +125,11 @@ def configure_routes(app: FastAPI, settings: Settings):
 
 def configure_middlewares(app: FastAPI, settings: Settings):
     # Security first
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.ALLOWED_HOSTS)
+    allowed_hosts = list(settings.ALLOWED_HOSTS)
+    if settings.ENV != "prod":
+        allowed_hosts.extend(["test", "testserver"])
+
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts)
 
     app.add_middleware(
         CORSMiddleware,

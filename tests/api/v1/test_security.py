@@ -134,7 +134,9 @@ async def test_reset_token_reuse(client, dbsession, monkeypatch, create_user):
 
 
 @pytest.mark.anyio
-async def test_password_changed_after_reset(client, dbsession, monkeypatch, create_user):
+async def test_password_changed_after_reset(
+    client, dbsession, monkeypatch, create_user
+):
     monkeypatch.setattr(
         "utils.reset_tokens.generate_token",
         lambda: "test-token",

@@ -61,7 +61,9 @@ async def list_assignments(
         "analytics.assignments.list",
         filters.model_dump(mode="json"),
         lambda: service.list_assignments(filters, pagination, current_user),
-        lambda: PageOutSchema(items=[], total=0, page=pagination.page, limit=pagination.limit),
+        lambda: PageOutSchema(
+            items=[], total=0, page=pagination.page, limit=pagination.limit
+        ),
     )
 
 
@@ -84,7 +86,9 @@ async def list_active_assignments(
         "analytics.assignments.active",
         {"page": pagination.page, "limit": pagination.limit},
         lambda: service.list_active_assignments(pagination, current_user),
-        lambda: PageOutSchema(items=[], total=0, page=pagination.page, limit=pagination.limit),
+        lambda: PageOutSchema(
+            items=[], total=0, page=pagination.page, limit=pagination.limit
+        ),
     )
 
 

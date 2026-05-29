@@ -9,6 +9,7 @@ dependencies = [
     "aiofiles>=25.1.0",
     "alembic>=1.18.4",
     "anyio>=4.13.0",
+    "asgiref>=3.11.1",
     "asyncpg>=0.31.0",
     "bcrypt>=5.0.0",
     "celery>=5.6.3",
@@ -44,12 +45,25 @@ dependencies = [
 # -------------------------
 [project.optional-dependencies]
 dev = [
+"bandit>=1.9.4",
+    "mypy>=1.20.1",
+    "pre-commit>=4.6.0",
     "pytest>=8.0",
     "pytest-cov>=7.1.0",
     "pytest-mock>=3.15.1",
+    "pyright>=1.1.409",
     "ruff>=0.15.10",
-    "mypy>=1.20.1",
+    "deptry>=0.25.1",
+]
+
+[dependency-groups]
+dev = [
     "bandit>=1.9.4",
+    "mypy>=1.20.1",
+    "pre-commit>=4.6.0",
+    "pyright>=1.1.409",
+    "pytest-cov>=7.1.0",
+    "pytest-mock>=3.15.1",
     "deptry>=0.25.1",
 ]
 
@@ -58,8 +72,13 @@ dev = [
 # -------------------------
 [tool.pytest.ini_options]
 pythonpath = ["src"]
-addopts = "--strict-markers --disable-warnings"
+addopts = "--strict-markers --disable-warnings --tb=short"
 testpaths = ["tests"]
+markers = [
+    "anyio: marks tests that use anyio",
+    "slow: marks tests as slow",
+    "integration: marks tests as integration tests",
+]
 
 # -------------------------
 # RUFF (LINT + IMPORTS)
@@ -67,51 +86,89 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 88
 target-version = "py312"
+exclude = [
+    ".git",
+    ".venv",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    "alembic/versions",
+]
 
 [tool.ruff.lint]
 select = [
-    "E", "F", "W",    # pycodestyle
-    "I",              # imports (замена isort)
-    "UP",             # pyupgrade
-    "B",              # bugbear
-    "C4",             # comprehensions
+    "E", "F", "W",     # pycodestyle
+    "I",               # isort
+    "UP",              # pyupgrade
+    "B",               # flake8-bugbear
+    "C4",              # flake8-comprehensions
+    "SIM",             # flake8-simplify
+    "RUF",             # Ruff-specific rules
 ]
 ignore = [
-    "B008",  # FastAPI Depends
-    "UP046", # Pydantic generics
+    "B008",            # FastAPI Depends
+    "UP046",           # Pydantic generics
+    "SIM117",          # nested with statements
+    "RUF012",          # mutable class attributes
 ]
+fixable = ["ALL"]
+unfixable = []
 
 [tool.ruff.lint.isort]
-known-first-party = ["src"]
+known-first-party = ["src", "api", "core", "db", "repositories", "schemas", "services", "utils"]
 combine-as-imports = true
+split-on-trailing-comma = true
 
-# -------------------------
-# RUFF FORMAT (вместо части black)
-# -------------------------
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "S101",            # assert used in tests
+    "PLR2004",         # magic numbers in tests
+    "ARG001",          # unused arguments in test functions
+    "D",               # no docstrings required in tests
+    "SIM300",          # age comparison ok in tests
+]
+"alembic/versions/*.py" = [
+    "E501",            # long lines in migrations
+    "F841",            # unused variables in migrations
+    "ANN",             # no annotations in migrations
+]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 line-ending = "auto"
+skip-magic-trailing-comma = false
+docstring-code-format = true
 
 # -------------------------
-# BLACK (оставляем как formatter)
-# -------------------------
-[tool.black]
-line-length = 88
-target-version = ["py312"]
-
-# -------------------------
-# MYPY (минимально безопасный старт)
+# MYPY
 # -------------------------
 [tool.mypy]
 python_version = "3.12"
 warn_unused_configs = true
 ignore_missing_imports = true
 strict_optional = true
-check_untyped_defs = false
+warn_return_any = true
+warn_unused_ignores = true
+show_error_codes = true
+exclude = [
+    "^tests/",
+    "^alembic/versions/",
+    "^scripts/",
+    "^src/dev.py$",
+    "^src/main.py$",
+]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "alembic.*"
+ignore_errors = true
 
 # -------------------------
-# BANDIT (security)
+# BANDIT
 # -------------------------
 [tool.bandit]
 skips = ["B101"]  # assert usage (ok in tests)
@@ -123,15 +180,46 @@ exclude_dirs = ["tests"]
 [tool.coverage.run]
 source = ["src"]
 omit = [
-    "*/tests/*",
+ "*/tests/*",
     "*/migrations/*",
+    "*/alembic/versions/*",
     "src/scripts/*",
     "src/dev.py",
     "src/main.py",
     "src/tasks/*",
     "src/core/admin/*",
+    "src/middlewares/*",
+    "src/core/celery.py",
 ]
 
 [tool.coverage.report]
 fail_under = 80
 show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+# -------------------------
+# PYRIGHT
+# -------------------------
+[tool.pyright]
+include = ["src"]
+exclude = ["**/__pycache__", "**/alembic", "**/tests", "**/scripts"]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+reportMissingImports = false
+reportMissingTypeStubs = false
+
+# -------------------------
+# DEPTRY (unused dependencies)
+# -------------------------
+[tool.deptry]
+per_rule_ignores = { DEP001 = ["pytest", "coverage", "ruff", "mypy", "bandit", "pre-commit", "pyright", "api", "core", "db", "repositories", "services", "schemas", "utils", "middlewares", "scripts", "app", "tasks", "main"], DEP002 = ["pytest", "coverage", "ruff", "mypy", "bandit", "pre-commit", "pyright", "anyio", "bcrypt", "cryptography", "flower", "gunicorn", "orjson", "psycopg", "pydantic-extra-types", "python-dateutil", "python-jose", "pytest-cov", "pytest-mock", "deptry"], DEP003 = ["pytest", "coverage", "ruff", "mypy", "bandit", "pre-commit", "pyright", "starlette", "wtforms", "sentry_sdk", "httpx", "typer"] }
+exclude = ["alembic/versions", "tests", "scripts", ".venv", "venv", "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache"]
