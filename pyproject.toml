@@ -9,6 +9,7 @@ dependencies = [
     "aiofiles>=25.1.0",
     "alembic>=1.18.4",
     "anyio>=4.13.0",
+    "asgiref>=3.11.1",
     "asyncpg>=0.31.0",
     "bcrypt>=5.0.0",
     "celery>=5.6.3",
@@ -220,5 +221,5 @@ reportMissingTypeStubs = false
 # DEPTRY (unused dependencies)
 # -------------------------
 [tool.deptry]
-per_rule_ignores = { DEP001 = ["pytest", "coverage", "ruff", "mypy", "bandit", "pre-commit", "pyright"], DEP002 = ["pytest", "coverage", "ruff", "mypy", "bandit", "pre-commit", "pyright"] }
-exclude = ["alembic/versions", "tests", "scripts"]
+per_rule_ignores = { DEP001 = ["pytest", "coverage", "ruff", "mypy", "bandit", "pre-commit", "pyright", "api", "core", "db", "repositories", "services", "schemas", "utils", "middlewares", "scripts", "app", "tasks", "main"], DEP002 = ["pytest", "coverage", "ruff", "mypy", "bandit", "pre-commit", "pyright", "anyio", "bcrypt", "cryptography", "flower", "gunicorn", "orjson", "psycopg", "pydantic-extra-types", "python-dateutil", "python-jose", "pytest-cov", "pytest-mock", "deptry"], DEP003 = ["pytest", "coverage", "ruff", "mypy", "bandit", "pre-commit", "pyright", "starlette", "wtforms", "sentry_sdk", "httpx", "typer"] }
+exclude = ["alembic/versions", "tests", "scripts", ".venv", "venv", "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache"]

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
 from typing import Any
 from uuid import UUID
@@ -18,11 +20,9 @@ class AuditRepository(BaseRepository):
     def _normalize_payload(
         data: AuditCreateSchema | Mapping[str, Any],
     ) -> dict[str, Any]:
-        if hasattr(data, "model_dump"):
-            return data.model_dump()
-        if isinstance(data, Mapping):
-            return dict(data)
-        raise TypeError("AuditRepository.create expects AuditCreate or mapping")
+        if isinstance(data, AuditCreateSchema):
+            return data.model_dump(exclude_none=True)
+        return dict(data)
 
     @staticmethod
     def _base_query():
@@ -84,7 +84,7 @@ class AuditRepository(BaseRepository):
 
         return query
 
-    async def create(self, data: AuditCreateSchema | Mapping[str, Any]):
+    async def create(self, data: AuditCreateSchema | Mapping[str, Any]) -> AuditLog:
         payload = self._normalize_payload(data)
         audit = AuditLog(**payload)
         self.add(audit)
@@ -92,24 +92,28 @@ class AuditRepository(BaseRepository):
         await self.refresh(audit)
         return audit
 
-    async def list(self, filters: AuditFiltersSchema | None, limit: int, offset: int):
+    async def list(
+        self, filters: AuditFiltersSchema | None, limit: int, offset: int
+    ) -> tuple[list[AuditLog], int]:
         query = self._apply_filters(self._base_query(), filters).order_by(
             AuditLog.created_at.desc()
         )
         items = await self.scalars(query.limit(limit).offset(offset))
 
         total = await self.session.scalar(self._count_query(query))
-        return items, int(total or 0)
+        return list(items), int(total or 0)
 
-    async def get_recent(self, limit: int, offset: int):
+    async def get_recent(self, limit: int, offset: int) -> tuple[list[AuditLog], int]:
         query = self._base_query().order_by(AuditLog.created_at.desc())
 
         items = await self.scalars(query.limit(limit).offset(offset))
 
         total = await self.session.scalar(select(func.count()).select_from(AuditLog))
-        return items, int(total or 0)
+        return list(items), int(total or 0)
 
-    async def get_by_request_id(self, request_id: str, limit: int, offset: int):
+    async def get_by_request_id(
+        self, request_id: str, limit: int, offset: int
+    ) -> tuple[list[AuditLog], int]:
         query = (
             self._base_query()
             .where(AuditLog.request_id == request_id)
@@ -123,9 +127,11 @@ class AuditRepository(BaseRepository):
                 select(AuditLog).where(AuditLog.request_id == request_id).subquery()
             )
         )
-        return items, int(total or 0)
+        return list(items), int(total or 0)
 
-    async def get_by_user(self, user_id: UUID, limit: int, offset: int):
+    async def get_by_user(
+        self, user_id: UUID, limit: int, offset: int
+    ) -> tuple[list[AuditLog], int]:
         query = (
             self._base_query()
             .where(AuditLog.user_id == str(user_id))
@@ -139,9 +145,11 @@ class AuditRepository(BaseRepository):
                 select(AuditLog).where(AuditLog.user_id == str(user_id)).subquery()
             )
         )
-        return items, int(total or 0)
+        return list(items), int(total or 0)
 
-    async def get_by_status_code(self, status_code: int, limit: int, offset: int):
+    async def get_by_status_code(
+        self, status_code: int, limit: int, offset: int
+    ) -> tuple[list[AuditLog], int]:
         query = (
             self._base_query()
             .where(AuditLog.status_code == status_code)
@@ -155,9 +163,9 @@ class AuditRepository(BaseRepository):
                 select(AuditLog).where(AuditLog.status_code == status_code).subquery()
             )
         )
-        return items, int(total or 0)
+        return list(items), int(total or 0)
 
-    async def get_errors(self, limit: int, offset: int):
+    async def get_errors(self, limit: int, offset: int) -> tuple[list[AuditLog], int]:
         query = (
             self._base_query()
             .where(AuditLog.status_code >= 400)
@@ -171,9 +179,9 @@ class AuditRepository(BaseRepository):
                 select(AuditLog).where(AuditLog.status_code >= 400).subquery()
             )
         )
-        return items, int(total or 0)
+        return list(items), int(total or 0)
 
-    async def get_stats(self):
+    async def get_stats(self) -> dict[str, int]:
         result = await self.session.execute(
             select(
                 func.count().label("total"),

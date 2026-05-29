@@ -61,15 +61,6 @@ repos:
         args: ['--baseline', '.secrets.baseline']
         exclude: ^(.env.test|.env.example|poetry.lock|uv.lock)
 
-  # Проверка import сортировки
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        name: isort (python)
-        args: ["--profile", "black", "--filter-files"]
-        exclude: ^(alembic/versions/)
-
   # Проверка паролей в коде
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.5

@@ -125,7 +125,11 @@ def configure_routes(app: FastAPI, settings: Settings):
 
 def configure_middlewares(app: FastAPI, settings: Settings):
     # Security first
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.ALLOWED_HOSTS)
+    allowed_hosts = list(settings.ALLOWED_HOSTS)
+    if settings.ENV != "prod":
+        allowed_hosts.extend(["test", "testserver"])
+
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts)
 
     app.add_middleware(
         CORSMiddleware,
