@@ -51,7 +51,7 @@ class TestNotificationEndpoints:
         self, client, analytics_tokens, override_notification_service
     ):
         response = await client.get(
-            "/notifications/",
+            "/api/v1/notifications/",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         assert response.status_code == 200
@@ -63,7 +63,7 @@ class TestNotificationEndpoints:
         self, client, analytics_tokens, override_notification_service
     ):
         response = await client.post(
-            f"/notifications/{uuid4()}/read",
+            f"/api/v1/notifications/{uuid4()}/read",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         assert response.status_code == 200
@@ -72,7 +72,7 @@ class TestNotificationEndpoints:
         self, client, analytics_tokens, override_notification_service
     ):
         response = await client.post(
-            "/notifications/read-all",
+            "/api/v1/notifications/read-all",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         assert response.status_code == 200
@@ -81,7 +81,7 @@ class TestNotificationEndpoints:
         self, client, analytics_tokens, override_notification_service
     ):
         response = await client.get(
-            "/notifications/unread-count",
+            "/api/v1/notifications/unread-count",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         assert response.status_code == 200

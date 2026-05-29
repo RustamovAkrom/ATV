@@ -83,7 +83,7 @@ async def _create_asset(client, token: str, deps: dict, name: str | None = None)
         "serial_number": f"SN-{uuid4().hex[:8]}",
     }
     response = await client.post(
-        "/assets/",
+        "/api/v1/assets/",
         json=payload,
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -103,7 +103,7 @@ async def test_asset_assignment_flow(client, dbsession, analytics_tokens, create
     asset = await _create_asset(client, superadmin_token, deps)
 
     request_assignment = await client.post(
-        f"/assets/{asset['id']}/approval-requests/assignment",
+        f"/api/v1/assets/{asset['id']}/approval-requests/assignment",
         json={"user_id": str(owner_1.id)},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
@@ -111,41 +111,41 @@ async def test_asset_assignment_flow(client, dbsession, analytics_tokens, create
     approval_id = request_assignment.json()["id"]
 
     response = await client.post(
-        f"/approvals/{approval_id}/approve",
+        f"/api/v1/approvals/{approval_id}/approve",
         json={"comment": "approve assignment"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert response.status_code == 200
 
     assigned_asset = await client.get(
-        f"/assets/{asset['id']}",
+        f"/api/v1/assets/{asset['id']}",
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert assigned_asset.status_code == 200
     assert assigned_asset.json()["owner"]["id"] == str(owner_1.id)
 
     request_reassign = await client.post(
-        f"/assets/{asset['id']}/approval-requests/assignment",
+        f"/api/v1/assets/{asset['id']}/approval-requests/assignment",
         json={"user_id": str(owner_2.id)},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert request_reassign.status_code == 200
     response = await client.post(
-        f"/approvals/{request_reassign.json()['id']}/approve",
+        f"/api/v1/approvals/{request_reassign.json()['id']}/approve",
         json={"comment": "approve reassignment"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert response.status_code == 200
 
     reassigned_asset = await client.get(
-        f"/assets/{asset['id']}",
+        f"/api/v1/assets/{asset['id']}",
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert reassigned_asset.status_code == 200
     assert reassigned_asset.json()["owner"]["id"] == str(owner_2.id)
 
     history = await client.get(
-        f"/assets/{asset['id']}/history",
+        f"/api/v1/assets/{asset['id']}/history",
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert history.status_code == 200
@@ -160,7 +160,7 @@ async def test_repair_lifecycle_flow(client, dbsession, analytics_tokens):
     asset = await _create_asset(client, superadmin_token, deps, name="RepairAsset")
 
     reported = await client.post(
-        f"/assets/{asset['id']}/repair/report",
+        f"/api/v1/assets/{asset['id']}/repair/report",
         json={"description": "Broken display"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
@@ -169,7 +169,7 @@ async def test_repair_lifecycle_flow(client, dbsession, analytics_tokens):
     assert repair["status"] == "reported"
 
     started = await client.post(
-        f"/assets/{asset['id']}/repair/{repair['id']}/start",
+        f"/api/v1/assets/{asset['id']}/repair/{repair['id']}/start",
         json={
             "labor_cost": "50.00",
             "parts": [
@@ -185,7 +185,7 @@ async def test_repair_lifecycle_flow(client, dbsession, analytics_tokens):
     assert started_body["total_cost"] == "80.00"
 
     asset_in_repair = await client.get(
-        f"/assets/{asset['id']}",
+        f"/api/v1/assets/{asset['id']}",
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert asset_in_repair.status_code == 200
@@ -193,7 +193,7 @@ async def test_repair_lifecycle_flow(client, dbsession, analytics_tokens):
     assert asset_in_repair.json()["failure_count"] == 0
 
     completion_request = await client.post(
-        f"/assets/{asset['id']}/approval-requests/repair/{repair['id']}/complete",
+        f"/api/v1/assets/{asset['id']}/approval-requests/repair/{repair['id']}/complete",
         json={"labor_cost": "75.00"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
@@ -205,14 +205,14 @@ async def test_repair_lifecycle_flow(client, dbsession, analytics_tokens):
     print(f"Approval ID: {approval_id}")
 
     completed = await client.post(
-        f"/approvals/{approval_id}/approve",
+        f"/api/v1/approvals/{approval_id}/approve",
         json={"comment": "complete repair"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert completed.status_code == 200
 
     repaired_asset = await client.get(
-        f"/assets/{asset['id']}",
+        f"/api/v1/assets/{asset['id']}",
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert repaired_asset.status_code == 200
@@ -229,7 +229,7 @@ async def test_document_attach_and_delete_flow(client, dbsession, analytics_toke
     asset = await _create_asset(client, superadmin_token, deps, name="DocumentAsset")
 
     attached = await client.post(
-        f"/assets/{asset['id']}/documents/",
+        f"/api/v1/assets/{asset['id']}/documents/",
         data={"title": "Warranty", "document_type": "warranty"},
         files=[
             (
@@ -245,7 +245,7 @@ async def test_document_attach_and_delete_flow(client, dbsession, analytics_toke
     assert len(document["files"]) == 1
 
     deleted = await client.delete(
-        f"/assets/{asset['id']}/documents/{document['id']}",
+        f"/api/v1/assets/{asset['id']}/documents/{document['id']}",
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert deleted.status_code == 200
@@ -271,7 +271,7 @@ async def test_locked_asset_transfer_is_rejected(client, dbsession, analytics_to
     await dbsession.commit()
 
     response = await client.post(
-        f"/assets/{asset['id']}/approval-requests/transfer",
+        f"/api/v1/assets/{asset['id']}/approval-requests/transfer",
         json={
             "from_warehouse_id": str(deps["warehouse"].id),
             "to_warehouse_id": str(deps["target_warehouse"].id),

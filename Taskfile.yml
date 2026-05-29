@@ -269,7 +269,7 @@ tasks:
     cmds:
       - docker compose down -v postgres-test || true
       - docker compose up -d --wait postgres-test
-      - "{{.RUNNER}} pytest -vv"
+      - "{{.RUNNER}} python -m pytest -vv"
 
   test-cov:
     desc: Run tests with coverage (min 80%)
@@ -278,8 +278,8 @@ tasks:
     cmds:
       - docker compose down -v postgres-test || true
       - docker compose up -d --wait postgres-test
-      - "{{.RUNNER}} coverage run -m pytest -vv"
-      - "{{.RUNNER}} coverage report -m --fail-under=80"
+      - "{{.RUNNER}} python -m coverage run -m pytest -vv"
+      - "{{.RUNNER}} python -m coverage report -m --fail-under=80"
 
 # ═══════════════════════════════════════════
 # DEPENDENCIES

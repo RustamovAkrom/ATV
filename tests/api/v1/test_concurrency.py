@@ -34,7 +34,7 @@ async def _seed_asset_dependencies(dbsession):
 
 async def _create_asset(client, token: str, deps: dict, name: str):
     response = await client.post(
-        "/assets/",
+        "/api/v1/assets/",
         json={
             "name": name,
             "model_id": str(deps["model"].id),
@@ -69,7 +69,7 @@ async def test_assign_race_keeps_single_active_assignment(
     async def assign_first():
         start_event.set()
         response = await client.post(
-            "/assets/bulk/assign",
+            "/api/v1/assets/bulk/assign",
             json={"asset_ids": [asset_id], "user_id": str(owner_1.id)},
             headers={"Authorization": f"Bearer {superadmin_token}"},
         )
@@ -80,7 +80,7 @@ async def test_assign_race_keeps_single_active_assignment(
         await asyncio.sleep(0.05)  # даём первому начать транзакцию
 
         response = await client.post(
-            "/assets/bulk/assign",
+            "/api/v1/assets/bulk/assign",
             json={"asset_ids": [asset_id], "user_id": str(owner_2.id)},
             headers={"Authorization": f"Bearer {superadmin_token}"},
         )
@@ -90,7 +90,7 @@ async def test_assign_race_keeps_single_active_assignment(
 
     # Проверка
     response = await client.get(
-        f"/assets/{asset_id}",
+        f"/api/v1/assets/{asset_id}",
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     data = response.json()
@@ -122,7 +122,7 @@ async def test_row_lock_is_applied_for_assignment_repo(
     async def hold_lock():
         start_event.set()
         await client.post(
-            "/assets/bulk/assign",
+            "/api/v1/assets/bulk/assign",
             json={"asset_ids": [asset_id], "user_id": str(user.id)},
             headers={"Authorization": f"Bearer {superadmin_token}"},
         )
@@ -133,7 +133,7 @@ async def test_row_lock_is_applied_for_assignment_repo(
         await asyncio.sleep(0.05)
 
         response = await client.post(
-            "/assets/bulk/assign",
+            "/api/v1/assets/bulk/assign",
             json={"asset_ids": [asset_id], "user_id": str(user.id)},
             headers={"Authorization": f"Bearer {superadmin_token}"},
         )

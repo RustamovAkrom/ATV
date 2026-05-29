@@ -29,7 +29,7 @@ async def _seed_asset_dependencies(dbsession):
 
 async def _create_asset(client, token: str, deps: dict, name: str):
     response = await client.post(
-        "/assets/",
+        "/api/v1/assets/",
         json={
             "name": name,
             "model_id": str(deps["model"].id),
@@ -51,7 +51,7 @@ async def test_bulk_partial_success(client, dbsession, superadmin_token, create_
     asset_2 = await _create_asset(client, superadmin_token, deps, "BulkHardAssetTwo")
 
     response = await client.post(
-        "/assets/bulk/assign",
+        "/api/v1/assets/bulk/assign",
         json={
             "asset_ids": [asset_1["id"], asset_2["id"], str(uuid4())],
             "user_id": str(user.id),
@@ -77,7 +77,7 @@ async def test_bulk_limit_exceeded(client, dbsession, superadmin_token, create_u
         asset_ids.append(asset["id"])
 
     response = await client.post(
-        "/assets/bulk/assign",
+        "/api/v1/assets/bulk/assign",
         json={"asset_ids": asset_ids, "user_id": str(user.id)},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
@@ -92,7 +92,7 @@ async def test_bulk_invalid_items_return_failed_entries(
     asset = await _create_asset(client, superadmin_token, deps, "BulkStatusAsset")
 
     response = await client.post(
-        "/assets/bulk/status",
+        "/api/v1/assets/bulk/status",
         json={"asset_ids": [asset["id"], str(uuid4())], "status": "archived"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )

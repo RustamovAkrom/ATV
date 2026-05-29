@@ -3,20 +3,9 @@ from datetime import UTC
 import pytest
 
 from core.security.jwt import decode_token
+from tests.utils.auth import auth_client, login
 
-
-async def login_user(client, username: str, password: str = "password"):
-    response = await client.post(
-        "/auth/login",
-        data={"username": username, "password": password},
-    )
-    assert response.status_code == 200
-    return response
-
-
-def auth_client(client, access_token: str):
-    client.cookies.set("access_token", access_token)
-    return client
+pytestmark = pytest.mark.anyio
 
 
 @pytest.mark.anyio
@@ -24,13 +13,13 @@ async def test_list_sessions(client, create_user):
     # Arrange
     user = await create_user()
 
-    r = await login_user(client, user.login)
+    r = await login(client, user.login, "password", return_response=True)
     access = r.cookies.get("access_token")
 
     auth_client(client, access)
 
     # Act
-    response = await client.get("/sessions/")
+    response = await client.get("/api/v1/sessions/")
 
     # Assert
     assert response.status_code == 200
@@ -47,8 +36,8 @@ async def test_revoke_session(client, create_user):
     # Arrange
     user = await create_user()
 
-    r1 = await login_user(client, user.login)
-    _ = await login_user(client, user.login)
+    r1 = await login(client, user.login, "password", return_response=True)
+    _ = await login(client, user.login, "password", return_response=True)
 
     t1 = r1.json()
     access = r1.cookies.get("access_token")
@@ -59,14 +48,14 @@ async def test_revoke_session(client, create_user):
     auth_client(client, access)
 
     # Act
-    response = await client.delete(f"/sessions/{session_id}")
+    response = await client.delete(f"/api/v1/sessions/{session_id}")
 
     # Assert
     assert response.status_code == 200
 
     # session must be revoked
     r = await client.post(
-        "/auth/refresh",
+        "/api/v1/auth/refresh",
         json={"refresh_token": t1["refresh_token"]},
     )
     assert r.status_code == 401
@@ -78,8 +67,8 @@ async def test_revoke_session_not_owned(client, create_user):
     user1 = await create_user("user1")
     user2 = await create_user("user2")
 
-    r1 = await login_user(client, user1.login)
-    r2 = await login_user(client, user2.login)
+    r1 = await login(client, user1.login, "password", return_response=True)
+    r2 = await login(client, user2.login, "password", return_response=True)
 
     t2 = r2.json()
     access1 = r1.cookies.get("access_token")
@@ -90,7 +79,7 @@ async def test_revoke_session_not_owned(client, create_user):
     auth_client(client, access1)
 
     # Act
-    response = await client.delete(f"/sessions/{чужая_session}")
+    response = await client.delete(f"/api/v1/sessions/{чужая_session}")
 
     # Assert
     assert response.status_code in (403, 404)
@@ -101,7 +90,7 @@ async def test_revoke_current_session_forbidden(client, create_user):
     # Arrange
     user = await create_user()
 
-    r = await login_user(client, user.login)
+    r = await login(client, user.login, "password", return_response=True)
     tokens = r.json()
     access = r.cookies.get("access_token")
 
@@ -111,7 +100,7 @@ async def test_revoke_current_session_forbidden(client, create_user):
     auth_client(client, access)
 
     # Act
-    response = await client.delete(f"/sessions/{session_id}")
+    response = await client.delete(f"/api/v1/sessions/{session_id}")
 
     # Assert
     assert response.status_code == 200
@@ -122,8 +111,8 @@ async def test_logout_all_sessions(client, create_user):
     # Arrange
     user = await create_user()
 
-    r1 = await login_user(client, user.login)
-    r2 = await login_user(client, user.login)
+    r1 = await login(client, user.login, "password", return_response=True)
+    r2 = await login(client, user.login, "password", return_response=True)
 
     t1 = r1.json()
     t2 = r2.json()
@@ -132,20 +121,20 @@ async def test_logout_all_sessions(client, create_user):
     auth_client(client, access)
 
     # Act
-    response = await client.post("/sessions/logout-all")
+    response = await client.post("/api/v1/sessions/logout-all")
 
     # Assert
     assert response.status_code == 200
 
     # both sessions must be dead
     r = await client.post(
-        "/auth/refresh",
+        "/api/v1/auth/refresh",
         json={"refresh_token": t1["refresh_token"]},
     )
     assert r.status_code == 401
 
     r = await client.post(
-        "/auth/refresh",
+        "/api/v1/auth/refresh",
         json={"refresh_token": t2["refresh_token"]},
     )
     assert r.status_code == 401
@@ -162,7 +151,7 @@ async def test_cleanup_sessions(client, create_user, dbsession):
 
     user = await create_user()
 
-    r = await login_user(client, user.login)
+    r = await login(client, user.login, "password", return_response=True)
     access = r.cookies.get("access_token")
 
     auth_client(client, access)
@@ -174,7 +163,7 @@ async def test_cleanup_sessions(client, create_user, dbsession):
     await dbsession.commit()
 
     # Act
-    response = await client.post("/sessions/cleanup")
+    response = await client.post("/api/v1/sessions/cleanup")
 
     # Assert
     assert response.status_code == 200
@@ -186,13 +175,13 @@ async def test_session_is_active_flag(client, create_user):
     # Arrange
     user = await create_user()
 
-    r = await login_user(client, user.login)
+    r = await login(client, user.login, "password", return_response=True)
     access = r.cookies.get("access_token")
 
     auth_client(client, access)
 
     # Act
-    response = await client.get("/sessions/")
+    response = await client.get("/api/v1/sessions/")
 
     # Assert
     sessions = response.json()

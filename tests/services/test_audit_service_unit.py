@@ -117,7 +117,7 @@ async def test_filter_by_search(dbsession, sample_payload):
     service = AuditService(AuditRepository(dbsession))
 
     await service.persist_audit(
-        sample_payload.model_copy(update={"path": "/search/test"})
+        sample_payload.model_copy(update={"path": "/api/v1/search/test"})
     )
 
     page = await service.list_audit_logs(

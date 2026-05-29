@@ -1,7 +1,8 @@
 import pytest
 
-from tests.factories.user import create_user
 from tests.utils.auth import auth_client, login
+
+pytestmark = pytest.mark.anyio
 
 # =========================================================
 # FORGOT PASSWORD
@@ -9,11 +10,11 @@ from tests.utils.auth import auth_client, login
 
 
 @pytest.mark.anyio
-async def test_forgot_password_existing_user(client, dbsession):
-    user = await create_user(dbsession)
+async def test_forgot_password_existing_user(client, dbsession, create_user):
+    user = await create_user()
 
     response = await client.post(
-        "/security/forgot-password",
+        "/api/v1/security/forgot-password",
         json={"login": user.login},
     )
 
@@ -24,7 +25,7 @@ async def test_forgot_password_existing_user(client, dbsession):
 @pytest.mark.anyio
 async def test_forgot_password_non_existing_user(client):
     response = await client.post(
-        "/security/forgot-password",
+        "/api/v1/security/forgot-password",
         json={"login": "not_exist"},
     )
 
@@ -39,23 +40,23 @@ async def test_forgot_password_non_existing_user(client):
 
 
 @pytest.mark.anyio
-async def test_reset_password_success(client, dbsession, monkeypatch):
+async def test_reset_password_success(client, dbsession, monkeypatch, create_user):
     monkeypatch.setattr(
         "utils.reset_tokens.generate_token",
         lambda: "test-token",
     )
 
-    user = await create_user(dbsession, password="oldpass")
+    user = await create_user(password="oldpass")
 
     # forgot password
     await client.post(
-        "/security/forgot-password",
+        "/api/v1/security/forgot-password",
         json={"login": user.login},
     )
 
     # reset
     r = await client.post(
-        "/security/reset-password",
+        "/api/v1/security/reset-password",
         json={
             "token": "test-token",
             "new_password": "Newpass123",
@@ -66,14 +67,14 @@ async def test_reset_password_success(client, dbsession, monkeypatch):
 
     # старый пароль больше не работает
     r = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         data={"username": user.login, "password": "oldpass"},
     )
     assert r.status_code == 401
 
     # новый работает
     r = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         data={"username": user.login, "password": "Newpass123"},
     )
     assert r.status_code == 200
@@ -82,7 +83,7 @@ async def test_reset_password_success(client, dbsession, monkeypatch):
 @pytest.mark.anyio
 async def test_reset_password_invalid_token(client):
     response = await client.post(
-        "/security/reset-password",
+        "/api/v1/security/reset-password",
         json={
             "token": "invalid",
             "new_password": "Newpass123",
@@ -98,29 +99,29 @@ async def test_reset_password_invalid_token(client):
 
 
 @pytest.mark.anyio
-async def test_reset_token_reuse(client, dbsession, monkeypatch):
+async def test_reset_token_reuse(client, dbsession, monkeypatch, create_user):
     monkeypatch.setattr(
         "utils.reset_tokens.generate_token",
         lambda: "test-token",
     )
 
-    user = await create_user(dbsession)
+    user = await create_user()
 
     await client.post(
-        "/security/forgot-password",
+        "/api/v1/security/forgot-password",
         json={"login": user.login},
     )
 
     # первый reset
     r1 = await client.post(
-        "/security/reset-password",
+        "/api/v1/security/reset-password",
         json={"token": "test-token", "new_password": "Newpass123"},
     )
     assert r1.status_code == 200
 
     # второй reset (reuse)
     r2 = await client.post(
-        "/security/reset-password",
+        "/api/v1/security/reset-password",
         json={"token": "test-token", "new_password": "Newpass123"},
     )
 
@@ -133,27 +134,27 @@ async def test_reset_token_reuse(client, dbsession, monkeypatch):
 
 
 @pytest.mark.anyio
-async def test_password_changed_after_reset(client, dbsession, monkeypatch):
+async def test_password_changed_after_reset(client, dbsession, monkeypatch, create_user):
     monkeypatch.setattr(
         "utils.reset_tokens.generate_token",
         lambda: "test-token",
     )
 
-    user = await create_user(dbsession, password="oldpass")
+    user = await create_user(password="oldpass")
 
     await client.post(
-        "/security/forgot-password",
+        "/api/v1/security/forgot-password",
         json={"login": user.login},
     )
 
     await client.post(
-        "/security/reset-password",
+        "/api/v1/security/reset-password",
         json={"token": "test-token", "new_password": "Newpass123"},
     )
 
     # проверка
     r = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         data={"username": user.login, "password": "Newpass123"},
     )
     assert r.status_code == 200
@@ -169,6 +170,7 @@ async def test_sessions_revoked_after_password_reset(
     client,
     dbsession,
     monkeypatch,
+    create_user,
 ):
     # 🔥 подменяем generate_token
     monkeypatch.setattr(
@@ -176,7 +178,7 @@ async def test_sessions_revoked_after_password_reset(
         lambda: "test-token",
     )
 
-    user = await create_user(dbsession)
+    user = await create_user()
 
     # login
     tokens, access = await login(client, user.login, "password")
@@ -184,13 +186,13 @@ async def test_sessions_revoked_after_password_reset(
 
     # request reset
     await client.post(
-        "/security/forgot-password",
+        "/api/v1/security/forgot-password",
         json={"login": user.login},
     )
 
     # reset с тем же token
     r = await client.post(
-        "/security/reset-password",
+        "/api/v1/security/reset-password",
         json={
             "token": "test-token",
             "new_password": "Newpass123",
@@ -200,7 +202,7 @@ async def test_sessions_revoked_after_password_reset(
     assert r.status_code == 200
 
     # access должен стать невалидным
-    r = await client.get("/sessions/")
+    r = await client.get("/api/v1/sessions/")
     assert r.status_code in (401, 403)
 
 
@@ -213,7 +215,7 @@ async def test_sessions_revoked_after_password_reset(
 async def test_forgot_password_rate_limit(client):
     for _ in range(5):
         await client.post(
-            "/security/forgot-password",
+            "/api/v1/security/forgot-password",
             json={"login": "user"},
         )
 

@@ -39,9 +39,6 @@ class PageOutSchema(BaseModel, Generic[T]):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def __init__(self, items: list[T], total: int, page: int, limit: int):
-        super().__init__(items=items, total=total, page=page, limit=limit)
-
     @computed_field
     @property
     def pages(self) -> int:

@@ -1,6 +1,8 @@
 from collections.abc import AsyncGenerator
 from typing import Any
 from uuid import uuid4
+import os
+import sys
 
 import pytest
 from fastapi import FastAPI
@@ -12,6 +14,11 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+
+ROOT_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+SRC_DIR = os.path.abspath(os.path.join(ROOT_DIR, "src"))
+if SRC_DIR not in sys.path:
+    sys.path.insert(0, SRC_DIR)
 
 from app import create_app
 from core.config import get_settings
@@ -192,7 +199,7 @@ async def permission_id(dbsession):
 @pytest.fixture
 async def role_id(client, superadmin_token):
     res = await client.post(
-        "/rbac/roles",
+        "/api/v1/rbac/roles",
         json={"name": "TestRole", "slug": "testrole"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
@@ -229,7 +236,7 @@ async def approver_token(create_user, client):
     user = await create_user(login="approver_user")
 
     response = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         data={
             "username": user.login,
             "password": "password",  # если у тебя дефолт

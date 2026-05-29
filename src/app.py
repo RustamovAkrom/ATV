@@ -119,8 +119,9 @@ def configure_docs(app: FastAPI, settings: Settings):
 
 
 def configure_routes(app: FastAPI, settings: Settings):
+    """Configure routes."""
     app.include_router(router=monitoring_router, tags=["Monitoring"])
-    app.include_router(router=api_router)
+    app.include_router(router=api_router, prefix="/api/v1")
 
 
 def configure_middlewares(app: FastAPI, settings: Settings):
@@ -145,7 +146,7 @@ def configure_middlewares(app: FastAPI, settings: Settings):
     app.add_middleware(SlowAPIMiddleware)  # rate limit (SowAPI)
 
     # Observability (LAST)
-    app.add_middleware(MetricsMiddleware)  # Metrics
+    # app.add_middleware(MetricsMiddleware)  # Metrics
 
     # Session (для админ-панели)
     app.add_middleware(

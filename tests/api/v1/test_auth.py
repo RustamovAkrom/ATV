@@ -1,13 +1,14 @@
 import pytest
 
-from tests.factories.user import create_user
 from tests.utils.auth import login
+
+pytestmark = pytest.mark.anyio
 
 
 @pytest.mark.anyio
-async def test_login_success(client, dbsession):
+async def test_login_success(client, create_user):
     # Arrange
-    user = await create_user(dbsession, "admin", "admin123")
+    user = await create_user("admin", "admin123")
 
     # Act
     data, access_cookie = await login(client, user.login, "admin123")
@@ -19,13 +20,13 @@ async def test_login_success(client, dbsession):
 
 
 @pytest.mark.anyio
-async def test_login_invalid_password(client, dbsession):
+async def test_login_invalid_password(client, create_user):
     # Arrange
-    user = await create_user(dbsession, "admin", "correct")
+    user = await create_user("admin", "correct")
 
     # Act
     response = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         data={"username": user.login, "password": "wrong"},
     )
 

@@ -35,7 +35,7 @@ async def test_audit_middleware_prod_enqueues_task(monkeypatch):
     scope = {
         "type": "http",
         "method": "post",
-        "path": "/assets",
+        "path": "/api/v1/assets",
         "query_string": b"q=1",
         "headers": [(b"user-agent", b"pytest-agent"), (b"x-forwarded-for", b"1.2.3.4")],
         "client": ("9.9.9.9", 1234),
@@ -65,6 +65,6 @@ async def test_audit_middleware_prod_enqueues_task(monkeypatch):
     delay.assert_called_once()
     payload = delay.call_args.args[0]
     assert payload["method"] == "POST"
-    assert payload["path"] == "/assets"
+    assert payload["path"] == "/api/v1/assets"
     assert payload["status_code"] == 201
     assert payload["ip"] == "1.2.3.4"

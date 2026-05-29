@@ -54,7 +54,7 @@ async def list_asset_history(
         "analytics.history.list",
         filters.model_dump(mode="json"),
         lambda: service.list(filters, pagination),
-        lambda: PageOutSchema([], 0, pagination.page, pagination.limit),
+        lambda: PageOutSchema(items=[], total=0, page=pagination.page, limit=pagination.limit),
     )
 
 

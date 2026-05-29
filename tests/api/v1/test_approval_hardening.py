@@ -34,7 +34,7 @@ async def _seed_asset_dependencies(dbsession):
 
 async def _create_asset(client, token: str, deps: dict, name: str):
     response = await client.post(
-        "/assets/",
+        "/api/v1/assets/",
         json={
             "name": name,
             "model_id": str(deps["model"].id),
@@ -56,7 +56,7 @@ async def test_double_approve_fails(
     asset = await _create_asset(client, superadmin_token, deps, "DoubleApproveAsset")
 
     created = await client.post(
-        "/approvals/",
+        "/api/v1/approvals/",
         json={
             "entity_type": "asset_archive",
             "entity_id": asset["id"],
@@ -69,7 +69,7 @@ async def test_double_approve_fails(
     approval_id = created.json()["id"]
 
     first = await client.post(
-        f"/approvals/{approval_id}/approve",
+        f"/api/v1/approvals/{approval_id}/approve",
         json={"comment": "approve once"},
         headers={"Authorization": f"Bearer {approver_token}"},
     )
@@ -77,7 +77,7 @@ async def test_double_approve_fails(
     assert first.json()["executed"] is True
 
     second = await client.post(
-        f"/approvals/{approval_id}/approve",
+        f"/api/v1/approvals/{approval_id}/approve",
         json={"comment": "approve twice"},
         headers={"Authorization": f"Bearer {approver_token}"},
     )
@@ -92,7 +92,7 @@ async def test_replay_after_approve_fails(
     asset = await _create_asset(client, superadmin_token, deps, "ReplayApprovalAsset")
 
     created = await client.post(
-        "/approvals/",
+        "/api/v1/approvals/",
         json={
             "entity_type": "asset_archive",
             "entity_id": asset["id"],
@@ -105,14 +105,14 @@ async def test_replay_after_approve_fails(
     approval_id = created.json()["id"]
 
     approved = await client.post(
-        f"/approvals/{approval_id}/approve",
+        f"/api/v1/approvals/{approval_id}/approve",
         json={"comment": "done"},
         headers={"Authorization": f"Bearer {approver_token}"},
     )
     assert approved.status_code == 200
 
     replay = await client.post(
-        f"/approvals/{approval_id}/reject",
+        f"/api/v1/approvals/{approval_id}/reject",
         json={"comment": "too late"},
         headers={"Authorization": f"Bearer {approver_token}"},
     )
@@ -133,7 +133,7 @@ async def test_invalid_approval_payload_fails(client, dbsession, superadmin_toke
     )
 
     response = await client.post(
-        "/approvals/",
+        "/api/v1/approvals/",
         json={
             "entity_type": "repair",
             "entity_id": asset["id"],

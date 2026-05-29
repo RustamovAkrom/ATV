@@ -69,7 +69,7 @@ async def list_transfers(
         "analytics.transfers.list",
         filters.model_dump(mode="json"),
         lambda: service.list_transfers(filters, pagination),
-        lambda: PageOutSchema([], 0, pagination.page, pagination.limit),
+        lambda: PageOutSchema(items=[], total=0, page=pagination.page, limit=pagination.limit),
     )
 
 
@@ -91,7 +91,7 @@ async def list_pending_transfers(
         "analytics.transfers.pending",
         {"page": pagination.page, "limit": pagination.limit},
         lambda: service.list_pending_transfers(pagination),
-        lambda: PageOutSchema([], 0, pagination.page, pagination.limit),
+        lambda: PageOutSchema(items=[], total=0, page=pagination.page, limit=pagination.limit),
     )
 
 

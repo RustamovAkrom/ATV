@@ -7,7 +7,7 @@ from tests.utils.auth import auth_client, login
 @pytest.mark.anyio
 async def test_list_audit_logs_requires_authentication(client):
     """Неавторизованный пользователь не должен читать audit-логи."""
-    response = await client.get("/audit/")
+    response = await client.get("/api/v1/audit/")
     assert response.status_code == 401
 
 
@@ -22,7 +22,7 @@ async def test_list_audit_logs_success_as_admin(client, create_user, dbsession):
         [
             AuditLog(
                 method="POST",
-                path="/assets",
+                path="/api/v1/assets",
                 status_code=201,
                 user_id=str(admin.id),
                 request_id="req-post",
@@ -34,7 +34,7 @@ async def test_list_audit_logs_success_as_admin(client, create_user, dbsession):
             ),
             AuditLog(
                 method="GET",
-                path="/health",
+                path="/healthcheck",
                 status_code=200,
                 user_id=str(admin.id),
                 request_id="req-get",
@@ -49,7 +49,7 @@ async def test_list_audit_logs_success_as_admin(client, create_user, dbsession):
     await dbsession.commit()
 
     response = await client.get(
-        "/audit/", params={"limit": 10, "page": 1, "method": "POST"}
+        "/api/v1/audit/", params={"limit": 10, "page": 1, "method": "POST"}
     )
 
     assert response.status_code == 200
@@ -109,7 +109,7 @@ async def test_audit_stats_returns_expected_counters(client, create_user, dbsess
     )
     await dbsession.commit()
 
-    response = await client.get("/audit/stats")
+    response = await client.get("/api/v1/audit/stats")
     assert response.status_code == 200
     stats = response.json()
     assert stats == {
@@ -131,7 +131,7 @@ async def test_audit_stats_returns_expected_counters(client, create_user, dbsess
 #     target_event = {
 #         "user_id": str(uuid4()),
 #         "method": "POST",
-#         "path": "/assets",
+#         "path": "/api/v1/assets",
 #         "status_code": 201,
 #         "latency_ms": 15,
 #         "ip": "127.0.0.1",

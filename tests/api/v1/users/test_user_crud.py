@@ -36,7 +36,7 @@ class TestUserEndpoints:
     ):
         role_id = await _get_role_id(dbsession)
         response = await client.post(
-            "/users/",
+            "/api/v1/users/",
             headers=_auth(analytics_tokens["superadmin"]),
             json={
                 "login": f"newuser_{uuid.uuid4().hex[:8]}",
@@ -57,7 +57,7 @@ class TestUserEndpoints:
         email = f"dup_{uuid.uuid4().hex[:8]}@example.com"
 
         first = await client.post(
-            "/users/",
+            "/api/v1/users/",
             headers=_auth(analytics_tokens["superadmin"]),
             json={
                 "login": f"u1_{uuid.uuid4().hex[:8]}",
@@ -70,7 +70,7 @@ class TestUserEndpoints:
         assert first.status_code == 400
 
         second = await client.post(
-            "/users/",
+            "/api/v1/users/",
             headers=_auth(analytics_tokens["superadmin"]),
             json={
                 "login": f"u2_{uuid.uuid4().hex[:8]}",
@@ -85,7 +85,7 @@ class TestUserEndpoints:
     async def test_update_user_success(self, client, analytics_tokens, analytics_users):
         user = analytics_users["admin"]
         response = await client.patch(
-            f"/users/{user.id}",
+            f"/api/v1/users/{user.id}",
             headers=_auth(analytics_tokens["superadmin"]),
             json={
                 "role_id": str(user.role_id),
@@ -102,7 +102,7 @@ class TestUserEndpoints:
     async def test_update_user_not_found(self, client, analytics_tokens):
         fake_id = uuid.uuid4()
         response = await client.patch(
-            f"/users/{fake_id}",
+            f"/api/v1/users/{fake_id}",
             headers=_auth(analytics_tokens["superadmin"]),
             json={"role_id": None, "status": None, "position": "Updated"},
         )
@@ -110,7 +110,7 @@ class TestUserEndpoints:
 
     async def test_update_user_invalid_uuid(self, client, analytics_tokens):
         response = await client.patch(
-            "/users/not-a-uuid",
+            "/api/v1/users/not-a-uuid",
             headers=_auth(analytics_tokens["superadmin"]),
             json={"role_id": None, "status": None, "position": "Updated"},
         )
@@ -122,21 +122,21 @@ class TestUserEndpoints:
         user_id = analytics_users["analyst"].id
 
         blocked = await client.post(
-            f"/users/{user_id}/block",
+            f"/api/v1/users/{user_id}/block",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         assert blocked.status_code == 200
         assert blocked.json()["status"] == "blocked"
 
         activated = await client.post(
-            f"/users/{user_id}/activate",
+            f"/api/v1/users/{user_id}/activate",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         assert activated.status_code == 200
         assert activated.json()["status"] == "active"
 
         archived = await client.delete(
-            f"/users/{user_id}",
+            f"/api/v1/users/{user_id}",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         assert archived.status_code == 200
@@ -144,7 +144,7 @@ class TestUserEndpoints:
 
     async def test_search_users(self, client, analytics_tokens):
         response = await client.get(
-            "/users/search",
+            "/api/v1/users/search",
             params={"q": "admin"},
             headers=_auth(analytics_tokens["superadmin"]),
         )
@@ -153,7 +153,7 @@ class TestUserEndpoints:
 
     async def test_change_password_success(self, client, superadmin_token):
         response = await client.post(
-            "/users/me/change-password",
+            "/api/v1/users/me/change-password",
             headers=_auth(superadmin_token),
             json={"old_password": "password", "new_password": "new123"},
         )
@@ -165,7 +165,7 @@ class TestUserEndpoints:
     ):
         role_id = await _get_role_id(dbsession)
         response = await client.post(
-            "/users/",
+            "/api/v1/users/",
             headers=_auth(analytics_tokens["analyst"]),
             json={
                 "login": f"denied_{uuid.uuid4().hex[:8]}",
@@ -181,7 +181,7 @@ class TestUserEndpoints:
 class TestUserEndpointsAdditional:
     async def test_list_users_pagination(self, client, analytics_tokens):
         response = await client.get(
-            "/users/",
+            "/api/v1/users/",
             params={"page": 1, "limit": 5},
             headers=_auth(analytics_tokens["superadmin"]),
         )
@@ -195,7 +195,7 @@ class TestUserEndpointsAdditional:
     ):
         q = analytics_users["admin"].login[:3]
         response = await client.get(
-            "/users/search",
+            "/api/v1/users/search",
             params={"q": q},
             headers=_auth(analytics_tokens["superadmin"]),
         )
@@ -207,7 +207,7 @@ class TestUserEndpointsAdditional:
     ):
         user_id = analytics_users["admin"].id
         response = await client.get(
-            f"/users/{user_id}",
+            f"/api/v1/users/{user_id}",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         assert response.status_code == 200
@@ -216,7 +216,7 @@ class TestUserEndpointsAdditional:
     async def test_get_user_by_id_not_found(self, client, analytics_tokens):
         fake_id = uuid.uuid4()
         response = await client.get(
-            f"/users/{fake_id}",
+            f"/api/v1/users/{fake_id}",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         assert response.status_code == 400
@@ -227,7 +227,7 @@ class TestUserEndpointsAdditional:
         target = analytics_users["analyst"]
         role_id = await _get_role_id(dbsession)
         response = await client.patch(
-            f"/users/{target.id}",
+            f"/api/v1/users/{target.id}",
             headers=_auth(analytics_tokens["superadmin"]),
             json={"role_id": str(role_id), "status": "active"},
         )
@@ -239,7 +239,7 @@ class TestUserEndpointsAdditional:
     ):
         me = analytics_users["superadmin"]
         response = await client.patch(
-            f"/users/{me.id}",
+            f"/api/v1/users/{me.id}",
             headers=_auth(analytics_tokens["superadmin"]),
             json={"role_id": str(me.role_id), "status": "active"},
         )
@@ -250,7 +250,7 @@ class TestUserEndpointsAdditional:
     ):
         target = analytics_users["admin"]
         response = await client.post(
-            f"/users/{target.id}/block",
+            f"/api/v1/users/{target.id}/block",
             headers=_auth(analytics_tokens["analyst"]),
         )
         assert response.status_code in {401, 403}
@@ -258,7 +258,7 @@ class TestUserEndpointsAdditional:
     async def test_archive_user_not_found(self, client, analytics_tokens):
         fake_id = uuid.uuid4()
         response = await client.delete(
-            f"/users/{fake_id}",
+            f"/api/v1/users/{fake_id}",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         # Service currently updates status without strict existence validation.

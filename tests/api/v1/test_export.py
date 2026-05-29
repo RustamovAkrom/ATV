@@ -37,7 +37,7 @@ async def _seed_asset_dependencies(dbsession):
 
 async def _create_asset(client, token: str, deps: dict, name: str):
     response = await client.post(
-        "/assets/",
+        "/api/v1/assets/",
         json={
             "name": name,
             "model_id": str(deps["model"].id),
@@ -119,7 +119,7 @@ async def test_csv_export(client, dbsession, superadmin_token):
     await _create_asset(client, superadmin_token, deps, "CsvExportAsset")
 
     response = await client.get(
-        "/assets/export",
+        "/api/v1/assets/export",
         params={"format": "csv", "search": "CsvExportAsset"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
@@ -136,7 +136,7 @@ async def test_export_row_limit(client, dbsession, superadmin_token, monkeypatch
     monkeypatch.setattr(ExportService, "MAX_EXPORT_ROWS", 1)
 
     response = await client.get(
-        "/assets/export",
+        "/api/v1/assets/export",
         params={"format": "json"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
@@ -151,28 +151,28 @@ async def test_export_permissions(client, dbsession, superadmin_token):
     analyst = await _create_role_user(dbsession, "analyst", "export_analyst")
 
     operator_login = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         data={"username": operator.login, "password": "password"},
     )
     assert operator_login.status_code == 200
     operator_token = operator_login.cookies.get("access_token")
 
     analyst_login = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         data={"username": analyst.login, "password": "password"},
     )
     assert analyst_login.status_code == 200
     analyst_token = analyst_login.cookies.get("access_token")
 
     operator_response = await client.get(
-        "/assets/export",
+        "/api/v1/assets/export",
         params={"format": "json"},
         headers={"Authorization": f"Bearer {operator_token}"},
     )
     assert operator_response.status_code == 403
 
     analyst_response = await client.get(
-        "/assets/export",
+        "/api/v1/assets/export",
         params={"format": "json", "search": "PermissionExportAsset"},
         headers={"Authorization": f"Bearer {analyst_token}"},
     )

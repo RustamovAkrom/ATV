@@ -1,6 +1,6 @@
 async def test_create_role(client, superadmin_token):
     res = await client.post(
-        "/rbac/roles",
+        "/api/v1/rbac/roles",
         json={"name": "Admin", "slug": "admin"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
@@ -10,13 +10,13 @@ async def test_create_role(client, superadmin_token):
 
 async def test_duplicate_role_slug(client, superadmin_token):
     await client.post(
-        "/rbac/roles",
+        "/api/v1/rbac/roles",
         json={"name": "Admin", "slug": "admin"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
 
     res = await client.post(
-        "/rbac/roles",
+        "/api/v1/rbac/roles",
         json={"name": "Admin2", "slug": "admin"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
@@ -26,7 +26,7 @@ async def test_duplicate_role_slug(client, superadmin_token):
 
 async def test_set_permissions(client, superadmin_token, permission_id, role_id):
     res = await client.put(
-        f"/rbac/roles/{role_id}/permissions",
+        f"/api/v1/rbac/roles/{role_id}/permissions",
         json={"permission_ids": [str(permission_id)]},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
@@ -39,7 +39,7 @@ async def test_delete_role_with_users_forbidden(
     client, superadmin_token, role_with_users
 ):
     res = await client.delete(
-        f"/rbac/roles/{role_with_users}",
+        f"/api/v1/rbac/roles/{role_with_users}",
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
 

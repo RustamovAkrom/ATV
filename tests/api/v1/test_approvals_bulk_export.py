@@ -32,7 +32,7 @@ async def _seed_asset_dependencies(dbsession):
 
 async def _create_asset(client, token: str, deps: dict, name: str):
     response = await client.post(
-        "/assets/",
+        "/api/v1/assets/",
         json={
             "name": name,
             "model_id": str(deps["model"].id),
@@ -54,7 +54,7 @@ async def test_create_and_approve_archive_request(
     asset = await _create_asset(client, superadmin_token, deps, "NeedsApprovalArchive")
 
     created = await client.post(
-        "/approvals/",
+        "/api/v1/approvals/",
         json={
             "entity_type": "asset_archive",
             "entity_id": asset["id"],
@@ -68,7 +68,7 @@ async def test_create_and_approve_archive_request(
     assert approval["status"] == "pending"
 
     approved = await client.post(
-        f"/approvals/{approval['id']}/approve",
+        f"/api/v1/approvals/{approval['id']}/approve",
         json={"comment": "Approved archive"},
         headers={"Authorization": f"Bearer {approver_token}"},
     )
@@ -76,7 +76,7 @@ async def test_create_and_approve_archive_request(
     assert approved.json()["status"] == "approved"
 
     asset_response = await client.get(
-        f"/assets/{asset['id']}",
+        f"/api/v1/assets/{asset['id']}",
         headers={"Authorization": f"Bearer {approver_token}"},
     )
     assert asset_response.status_code == 200
@@ -91,7 +91,7 @@ async def test_reject_transfer_approval_request(
     asset = await _create_asset(client, superadmin_token, deps, "NeedsApprovalTransfer")
 
     created = await client.post(
-        "/approvals/",
+        "/api/v1/approvals/",
         json={
             "entity_type": "asset_transfer",
             "entity_id": asset["id"],
@@ -106,7 +106,7 @@ async def test_reject_transfer_approval_request(
     assert created.status_code == 200
 
     rejected = await client.post(
-        f"/approvals/{created.json()['id']}/reject",
+        f"/api/v1/approvals/{created.json()['id']}/reject",
         json={"comment": "Not needed"},
         headers={"Authorization": f"Bearer {approver_token}"},
     )
@@ -129,7 +129,7 @@ async def test_bulk_assign_partial_success(
     asset_2 = await _create_asset(client, superadmin_token, deps, "BulkAssignTwo")
 
     response = await client.post(
-        "/assets/bulk/assign",
+        "/api/v1/assets/bulk/assign",
         json={
             "asset_ids": [asset_1["id"], asset_2["id"], str(uuid4())],
             "user_id": str(user.id),
@@ -149,7 +149,7 @@ async def test_export_assets_csv_with_filter(client, dbsession, superadmin_token
     await _create_asset(client, superadmin_token, deps, "OtherAsset")
 
     response = await client.get(
-        "/assets/export",
+        "/api/v1/assets/export",
         params={"format": "csv", "search": "ExportTarget"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
@@ -167,7 +167,7 @@ async def test_export_assets_json_returns_filtered_payload(
     asset = await _create_asset(client, superadmin_token, deps, "JsonExportAsset")
 
     response = await client.get(
-        "/assets/export",
+        "/api/v1/assets/export",
         params={"format": "json", "search": "JsonExportAsset"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )

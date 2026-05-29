@@ -33,7 +33,7 @@ async def get_repair_costs(
         "analytics.costs.repairs",
         {"page": pagination.page, "limit": pagination.limit},
         lambda: service.get_repair_costs(pagination),
-        lambda: PageOutSchema([], 0, pagination.page, pagination.limit),
+        lambda: PageOutSchema(items=[], total=0, page=pagination.page, limit=pagination.limit),
     )
 
 
@@ -53,7 +53,7 @@ async def get_asset_costs(
         "analytics.costs.assets",
         {"page": pagination.page, "limit": pagination.limit},
         lambda: service.get_asset_costs(pagination),
-        lambda: PageOutSchema([], 0, pagination.page, pagination.limit),
+        lambda: PageOutSchema(items=[], total=0, page=pagination.page, limit=pagination.limit),
     )
 
 
@@ -73,5 +73,5 @@ async def get_region_costs(
         "analytics.costs.regions",
         {"page": pagination.page, "limit": pagination.limit},
         lambda: service.get_region_costs(pagination),
-        lambda: PageOutSchema([], 0, pagination.page, pagination.limit),
+        lambda: PageOutSchema(items=[], total=0, page=pagination.page, limit=pagination.limit),
     )
