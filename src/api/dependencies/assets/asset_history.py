@@ -1,8 +1,9 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from db.dependencies import get_db_session
-from services.assets.asset_history_service import AssetHistoryService
 from repositories.assets.asset_history_repo import AssetHistoryRepository
+from services.assets.asset_history_service import AssetHistoryService
 
 
 def get_asset_history_repo(

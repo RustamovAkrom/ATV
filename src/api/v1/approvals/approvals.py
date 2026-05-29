@@ -1,18 +1,18 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
-from db.models.enums import ApprovalStatus
+from fastapi import APIRouter, Depends, Query, Request
 
 from api.dependencies.assets.asset_approval import get_approval_service
+from api.dependencies.paginations import get_pagination
+from core.cache.decorators import invalidate_cache
 from core.security.auth.dependencies import get_current_user
 from core.security.rbac.presets import AssetApprovalPermissions
+from core.slowapi import limiter
+from db.models.enums import ApprovalStatus
 from schemas.assets.approvals import ApprovalCreate, ApprovalDecision, ApprovalSchema
 from schemas.auth import CurrentUserSchema
+from schemas.pagination import PageOutSchema, PaginationParamsSchema
 from services.approvals.approval_service import ApprovalService
-from schemas.pagination import PaginationParamsSchema
-from schemas.pagination import PageOutSchema
-from api.dependencies.paginations import get_pagination
-
 
 router = APIRouter(prefix="/approvals", tags=["Approvals"])
 
@@ -34,10 +34,14 @@ async def list_approvals(
     return await service.list(status, pagination)
 
 
-@router.post( # BU togridan togri frontenda ishlatilmaydi
-    "/", response_model=ApprovalSchema, dependencies=[Depends(AssetApprovalPermissions.CanCreateApprovals)]
+@router.post(
+    "/",
+    response_model=ApprovalSchema,
+    dependencies=[Depends(AssetApprovalPermissions.CanCreateApprovals)],
 )
+@limiter.limit("20/minute")
 async def create_approval(
+    request: Request,
     data: ApprovalCreate,
     current_user: CurrentUserSchema = Depends(get_current_user),
     service: ApprovalService = Depends(get_approval_service),
@@ -54,7 +58,16 @@ async def create_approval(
     response_model=ApprovalSchema,
     dependencies=[Depends(AssetApprovalPermissions.CanApproveApprovals)],
 )
+@limiter.limit("10/minute")
+@invalidate_cache(
+    tags=(
+        "asset:list",
+        "asset:detail",
+        "asset:history",
+    )
+)
 async def approve_approval(
+    request: Request,
     approval_id: UUID,
     data: ApprovalDecision,
     current_user: CurrentUserSchema = Depends(get_current_user),
@@ -79,7 +92,16 @@ async def approve_approval(
     response_model=ApprovalSchema,
     dependencies=[Depends(AssetApprovalPermissions.CanRejectApprovals)],
 )
+@limiter.limit("10/minute")
+@invalidate_cache(
+    tags=(
+        "asset:list",
+        "asset:detail",
+        "asset:history",
+    )
+)
 async def reject_approval(
+    request: Request,
     approval_id: UUID,
     data: ApprovalDecision,
     current_user: CurrentUserSchema = Depends(get_current_user),

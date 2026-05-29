@@ -12,10 +12,11 @@ This complements the base permission system for more nuanced control.
 from uuid import UUID
 
 from fastapi import Depends
+
 from core.exceptions.errors import PermissionDenied
-from schemas.auth import CurrentUserSchema
-from db.models.enums import ApprovalStatus, UserRole
 from core.security.auth.dependencies import get_current_user
+from db.models.enums import ApprovalStatus, UserRole
+from schemas.auth import CurrentUserSchema
 
 
 class AccessControl:

@@ -1,6 +1,7 @@
 # core/notifications/builder.py
-from uuid import UUID
 from typing import Any
+from uuid import UUID
+
 from core.notifications.types import NotificationType
 
 
@@ -31,7 +32,9 @@ class NotificationBuilder:
     # ==================== ASSET NOTIFICATIONS ====================
 
     @classmethod
-    def asset_created(cls, *, user_id: UUID, asset_id: UUID, name: str) -> dict[str, Any]:
+    def asset_created(
+        cls, *, user_id: UUID, asset_id: UUID, name: str
+    ) -> dict[str, Any]:
         return cls._base(
             user_id=user_id,
             type=NotificationType.ASSET_CREATED,
@@ -41,7 +44,9 @@ class NotificationBuilder:
         )
 
     @classmethod
-    def asset_assigned(cls, *, user_id: UUID, asset_id: UUID, asset_name: str) -> dict[str, Any]:
+    def asset_assigned(
+        cls, *, user_id: UUID, asset_id: UUID, asset_name: str
+    ) -> dict[str, Any]:
         return cls._base(
             user_id=user_id,
             type=NotificationType.ASSET_ASSIGNED,
@@ -61,7 +66,14 @@ class NotificationBuilder:
         )
 
     @classmethod
-    def asset_updated(cls, *, user_id: UUID, asset_id: UUID, name: str, fields: list[str] | None = None) -> dict[str, Any]:
+    def asset_updated(
+        cls,
+        *,
+        user_id: UUID,
+        asset_id: UUID,
+        name: str,
+        fields: list[str] | None = None,
+    ) -> dict[str, Any]:
         data = {"asset_id": str(asset_id)}
         if fields:
             data["fields"] = fields
@@ -90,7 +102,9 @@ class NotificationBuilder:
         )
 
     @classmethod
-    def asset_deleted(cls, *, user_id: UUID, asset_id: UUID, name: str) -> dict[str, Any]:
+    def asset_deleted(
+        cls, *, user_id: UUID, asset_id: UUID, name: str
+    ) -> dict[str, Any]:
         return cls._base(
             user_id=user_id,
             type=NotificationType.ASSET_DELETED,
@@ -171,7 +185,12 @@ class NotificationBuilder:
 
     @classmethod
     def repair_canceled(
-        cls, *, user_id: UUID, asset_id: UUID, repair_id: UUID, reason: str | None = None
+        cls,
+        *,
+        user_id: UUID,
+        asset_id: UUID,
+        repair_id: UUID,
+        reason: str | None = None,
     ) -> dict[str, Any]:
         message = "Repair has been canceled"
         if reason:

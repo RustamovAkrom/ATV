@@ -1,1 +1,1 @@
-from .notification import * # noqa
+from .notification import *  # noqa

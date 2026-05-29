@@ -4,6 +4,7 @@ from uuid import UUID
 
 from core.events.warehouse_events import WarehouseEventService
 from core.exceptions.errors import BadRequest, Conflict, NotFound
+from core.security.access_control import AccessControl
 from db.models.warehouse.warehouse import Warehouse
 from repositories.assets.asset_repo import AssetRepository
 from repositories.assets.warehouse_repo import WarehouseRepository
@@ -18,7 +19,6 @@ from schemas.assets.warehouses import (
 )
 from schemas.auth.auth import CurrentUserSchema
 from schemas.pagination import PaginationParamsSchema
-from core.security.access_control import AccessControl
 
 
 class WarehouseService:
@@ -81,7 +81,9 @@ class WarehouseService:
         if isinstance(data, dict):
             data = WarehouseUpdateSchema(**data)
 
-        if data.slug and await self.repo.check_slug_exists(data.slug, exclude_id=warehouse_id):
+        if data.slug and await self.repo.check_slug_exists(
+            data.slug, exclude_id=warehouse_id
+        ):
             raise Conflict(f"Warehouse with slug '{data.slug}' already exists")
 
         update_data = data.model_dump(exclude_unset=True)
@@ -140,7 +142,9 @@ class WarehouseService:
 
         return asset.id
 
-    def _to_out_schema(self, warehouse: Warehouse, assets_count: int = 0) -> WarehouseOutSchema:
+    def _to_out_schema(
+        self, warehouse: Warehouse, assets_count: int = 0
+    ) -> WarehouseOutSchema:
         created_at = getattr(warehouse, "created_at", datetime.utcnow())
         updated_at = getattr(warehouse, "updated_at", created_at)
         return WarehouseOutSchema(
@@ -176,7 +180,9 @@ class WarehouseService:
             assets_count=assets_count,
             region_name=getattr(getattr(warehouse, "region", None), "name", None),
             service_name=getattr(getattr(warehouse, "service", None), "name", None),
-            manager_name=getattr(getattr(warehouse, "manager_user", None), "full_name", None),
+            manager_name=getattr(
+                getattr(warehouse, "manager_user", None), "full_name", None
+            ),
         )
 
     async def create_warehouse_legacy(
@@ -188,7 +194,9 @@ class WarehouseService:
         data = WarehouseCreateSchema(name=name, region_id=region_id, slug=slug)
         return await self.create_warehouse(data)
 
-    async def get_warehouse_legacy(self, warehouse_id: UUID) -> WarehouseWithDetailsOutSchema:
+    async def get_warehouse_legacy(
+        self, warehouse_id: UUID
+    ) -> WarehouseWithDetailsOutSchema:
         return await self.get_warehouse(warehouse_id)
 
     async def update_warehouse_legacy(
@@ -280,7 +288,9 @@ class WarehouseService:
             "size": size,
         }
 
-    async def get_part_movements(self, warehouse_id: UUID, part_id: UUID) -> list[dict[str, Any]]:
+    async def get_part_movements(
+        self, warehouse_id: UUID, part_id: UUID
+    ) -> list[dict[str, Any]]:
         items = await self.repo.get_part_movements(warehouse_id, part_id)
         return [self._to_movement_dict(item) for item in items]
 
@@ -305,7 +315,9 @@ class WarehouseService:
         page: int = 1,
         size: int = 20,
     ) -> dict[str, Any]:
-        items, total = await self.repo.list_parts(warehouse_id=warehouse_id, page=page, size=size)
+        items, total = await self.repo.list_parts(
+            warehouse_id=warehouse_id, page=page, size=size
+        )
         return {
             "items": [self._to_part_dict(item) for item in items],
             "total": total,

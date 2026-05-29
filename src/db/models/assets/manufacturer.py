@@ -4,7 +4,7 @@ from sqlalchemy import Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base
-from db.mixins import TimestampMixin, UUIDMixing, SlugMixin
+from db.mixins import SlugMixin, TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
     from .asset_model import AssetModel

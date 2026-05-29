@@ -1,5 +1,5 @@
-from uuid import UUID
 from typing import Any
+from uuid import UUID
 
 from core.exceptions.errors import NotFound, PermissionDenied
 from db.models.notifications.notification import Notification
@@ -45,7 +45,9 @@ class NotificationService:
         is_read: bool | None,
         pagination: PaginationParamsSchema,
     ):
-        items = await self.repo.list_by_user(user_id, is_read, pagination.limit, pagination.offset())
+        items = await self.repo.list_by_user(
+            user_id, is_read, pagination.limit, pagination.offset()
+        )
 
         return [NotificationSchema.model_validate(i) for i in items]
 

@@ -2,7 +2,7 @@ import asyncio
 import json
 from typing import Literal
 
-from fastapi import APIRouter, Query, Request, Depends
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 
@@ -41,7 +41,9 @@ def _match_filters(
     return True
 
 
-@router.get("/", include_in_schema=False, dependencies=[Depends(AuditPermissions.CanViewAudit)])
+@router.get(
+    "/", include_in_schema=False, dependencies=[Depends(AuditPermissions.CanViewAudit)]
+)
 async def stream_audit(
     request: Request,
     user_id: str | None = Query(None),
@@ -61,7 +63,6 @@ async def stream_audit(
             yield "retry: 3000\n\n"
 
             try:
-
                 while True:
                     if await request.is_disconnected():
                         break

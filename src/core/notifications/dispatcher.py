@@ -1,5 +1,5 @@
 # core/notifications/dispatcher.py
-from typing import Sequence
+from collections.abc import Sequence
 
 
 class NotificationDispatcher:

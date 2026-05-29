@@ -1,6 +1,6 @@
-from datetime import datetime
-from uuid import UUID
 from typing import Any
+from uuid import UUID
+
 from pydantic import Field, field_validator
 
 from schemas.base import BaseSchema, TimestampSchema
@@ -8,6 +8,7 @@ from schemas.base import BaseSchema, TimestampSchema
 
 class RegionBaseSchema(BaseSchema):
     """Базовые поля региона"""
+
     name: str = Field(min_length=2, max_length=255, description="Название региона")
     parent_id: UUID | None = Field(None, description="ID родительского региона")
     latitude: float | None = Field(None, ge=-90, le=90, description="Широта")
@@ -26,12 +27,16 @@ class RegionBaseSchema(BaseSchema):
 
 class RegionCreateSchema(RegionBaseSchema):
     """Схема для создания региона"""
+
     pass
 
 
 class RegionUpdateSchema(BaseSchema):
     """Схема для обновления региона (все поля опциональны)"""
-    name: str | None = Field(None, min_length=2, max_length=255, description="Название региона")
+
+    name: str | None = Field(
+        None, min_length=2, max_length=255, description="Название региона"
+    )
     parent_id: UUID | None = Field(None, description="ID родительского региона")
     latitude: float | None = Field(None, ge=-90, le=90, description="Широта")
     longitude: float | None = Field(None, ge=-180, le=180, description="Долгота")
@@ -51,6 +56,7 @@ class RegionUpdateSchema(BaseSchema):
 
 class RegionOutSchema(TimestampSchema):
     """Схема для ответа (вывод региона)"""
+
     id: UUID
     name: str
     latitude: float | None
@@ -68,17 +74,22 @@ class RegionOutSchema(TimestampSchema):
 
 class RegionTreeOutSchema(RegionOutSchema):
     """Схема для древовидного вывода региона"""
-    children: list["RegionTreeOutSchema"] = Field(default_factory=list, description="Дочерние регионы")
+
+    children: list["RegionTreeOutSchema"] = Field(
+        default_factory=list, description="Дочерние регионы"
+    )
 
 
 class RegionWithServicesOutSchema(RegionOutSchema):
     """Регион с привязанными сервисами"""
+
     service_ids: list[UUID] | None = Field(None, description="ID сервисов в регионе")
     service_names: list[str] | None = Field(None, description="Названия сервисов")
 
 
 class RegionStatsOutSchema(BaseSchema):
     """Статистика по региону"""
+
     region_id: UUID
     region_name: str
     total_assets: int = Field(0, description="Всего активов")

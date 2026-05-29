@@ -2,7 +2,7 @@ from core.exceptions.errors import BadRequest, NotFound
 from db.models.assets.asset_category import AssetCategory
 from repositories.assets.asset_category_repo import AssetCategoryRepository
 from schemas.assets.asset_category import AssetCategoryCreateSchema
-from utils.validators import safe_create, validate_and_prepare
+from utils.validators import safe_create
 
 
 class AssetCategoryService:
@@ -13,13 +13,7 @@ class AssetCategoryService:
         return await self.repo.list()
 
     async def create(self, data: AssetCategoryCreateSchema):
-        name, slug = await validate_and_prepare(self.repo, data.name)
-
-        obj = AssetCategory(
-            name=name,
-            slug=slug,
-        )
-
+        obj = AssetCategory(**data)
         return await safe_create(self.repo, obj)
 
     async def delete(self, category_id):

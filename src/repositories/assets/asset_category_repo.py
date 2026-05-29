@@ -2,8 +2,7 @@ from uuid import UUID
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
-from core.exceptions.errors import Conflict
+
 from db.models.assets.asset_category import AssetCategory
 from repositories.base import BaseRepository
 
@@ -13,9 +12,7 @@ class AssetCategoryRepository(BaseRepository):
         self.session = session
 
     async def list(self):
-        return await self.scalars(
-            select(AssetCategory).order_by(AssetCategory.name)
-        )
+        return await self.scalars(select(AssetCategory).order_by(AssetCategory.name))
 
     async def get(self, category_id: UUID):
         return await self.scalar(
@@ -33,9 +30,12 @@ class AssetCategoryRepository(BaseRepository):
         )
 
     async def exists_by_slug(self, slug: str) -> bool:
-        return await self.scalar(
-            select(AssetCategory.id).where(AssetCategory.slug == slug)
-        ) is not None
+        return (
+            await self.scalar(
+                select(AssetCategory.id).where(AssetCategory.slug == slug)
+            )
+            is not None
+        )
 
     async def create(self, obj: AssetCategory):
         self.add(obj)

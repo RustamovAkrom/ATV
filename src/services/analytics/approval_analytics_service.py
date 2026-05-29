@@ -18,5 +18,7 @@ class ApprovalAnalyticsDomainService(BaseAnalyticsService):
         return {
             "pending_approvals": int(row.pending_approvals or 0),
             "average_approval_time_hours": round(float(row.avg_approval_hours or 0), 2),
-            "rejection_rate": round((rejected / decided * 100.0) if decided else 0.0, 2),
+            "rejection_rate": round(
+                (rejected / decided * 100.0) if decided else 0.0, 2
+            ),
         }

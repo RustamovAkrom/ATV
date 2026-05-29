@@ -1,4 +1,3 @@
-﻿from datetime import UTC, datetime
 from decimal import Decimal
 from types import SimpleNamespace
 from uuid import uuid4
@@ -7,7 +6,12 @@ import pytest
 
 from core.exceptions.errors import BadRequest, NotFound
 from db.models.enums import AssetStatus, RepairStatus, UserStatus
-from schemas.assets.repairs import RepairCancelRequest, RepairCompleteRequest, RepairReportRequest, RepairStartRequest
+from schemas.assets.repairs import (
+    RepairCancelRequest,
+    RepairCompleteRequest,
+    RepairReportRequest,
+    RepairStartRequest,
+)
 from schemas.auth.auth import CurrentUserSchema
 from services.assets.repair_service import RepairService
 
@@ -92,8 +96,12 @@ def actor():
 def repair_service(monkeypatch):
     import services.assets.repair_service as module
 
-    monkeypatch.setattr(module.AccessControl, "check_region_access", lambda *args, **kwargs: None)
-    monkeypatch.setattr(module.AccessControl, "check_service_access", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        module.AccessControl, "check_region_access", lambda *args, **kwargs: None
+    )
+    monkeypatch.setattr(
+        module.AccessControl, "check_service_access", lambda *args, **kwargs: None
+    )
 
     repo = _FakeRepo()
     service = RepairService(repo, _FakeEvents())
@@ -104,7 +112,9 @@ class TestRepairService:
     async def test_report_start_complete_cancel_flow(self, repair_service, actor):
         service, repo = repair_service
 
-        reported = await service.report_repair(repo.asset_id, RepairReportRequest(description="Issue"), actor)
+        reported = await service.report_repair(
+            repo.asset_id, RepairReportRequest(description="Issue"), actor
+        )
         assert reported.status == RepairStatus.REPORTED
 
         started = await service.start_repair(
@@ -136,21 +146,31 @@ class TestRepairService:
         service, repo = repair_service
 
         with pytest.raises(NotFound):
-            await service.report_repair(uuid4(), RepairReportRequest(description="x"), actor)
+            await service.report_repair(
+                uuid4(), RepairReportRequest(description="x"), actor
+            )
 
         repo.asset.status = AssetStatus.ASSIGNED
         with pytest.raises(BadRequest):
-            await service.report_repair(repo.asset_id, RepairReportRequest(description="x"), actor)
+            await service.report_repair(
+                repo.asset_id, RepairReportRequest(description="x"), actor
+            )
 
         repo.asset.status = AssetStatus.ACTIVE
         repo.repair.status = RepairStatus.DONE
         with pytest.raises(BadRequest):
-            await service.start_repair(repo.asset_id, repo.repair_id, RepairStartRequest(), actor)
+            await service.start_repair(
+                repo.asset_id, repo.repair_id, RepairStartRequest(), actor
+            )
 
         repo.repair.status = RepairStatus.REPORTED
         with pytest.raises(BadRequest):
-            await service.complete_repair(repo.asset_id, repo.repair_id, RepairCompleteRequest(), actor)
+            await service.complete_repair(
+                repo.asset_id, repo.repair_id, RepairCompleteRequest(), actor
+            )
 
         repo.repair.status = RepairStatus.DONE
         with pytest.raises(BadRequest):
-            await service.cancel_repair(repo.asset_id, repo.repair_id, RepairCancelRequest(reason="x"), actor)
+            await service.cancel_repair(
+                repo.asset_id, repo.repair_id, RepairCancelRequest(reason="x"), actor
+            )

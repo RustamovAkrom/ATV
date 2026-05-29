@@ -1,14 +1,11 @@
-from datetime import datetime
-from uuid import UUID
 from typing import TYPE_CHECKING
+from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Index
+from sqlalchemy import ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.sql import func
-
 
 from db.base import Base
-from db.mixins import  UUIDMixing, TimestampMixin
+from db.mixins import TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
     from db.models.assets.asset import Asset
@@ -16,12 +13,11 @@ if TYPE_CHECKING:
 
 class AssetImage(Base, UUIDMixing, TimestampMixin):
     """Изображения актива (несколько на один актив)"""
+
     __tablename__ = "asset_images"
 
     asset_id: Mapped[UUID] = mapped_column(
-        ForeignKey("assets.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
+        ForeignKey("assets.id", ondelete="CASCADE"), nullable=False, index=True
     )
     file_name: Mapped[str] = mapped_column(String(255), nullable=False)
     file_path: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -35,7 +31,9 @@ class AssetImage(Base, UUIDMixing, TimestampMixin):
     alt_text: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Связь с активом
-    asset: Mapped["Asset"] = relationship("Asset", back_populates="images", lazy="selectin")
+    asset: Mapped["Asset"] = relationship(
+        "Asset", back_populates="images", lazy="selectin"
+    )
 
     __table_args__ = (
         Index("ix_asset_images_asset_primary", "asset_id", "is_primary"),

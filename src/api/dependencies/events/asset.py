@@ -1,6 +1,5 @@
 # api/dependencies/events/asset.py
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies.assets.asset_history import get_asset_history_service
 from api.dependencies.events.base import get_base_event_service

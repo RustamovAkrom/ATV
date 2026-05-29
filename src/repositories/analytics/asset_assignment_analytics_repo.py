@@ -1,4 +1,4 @@
-﻿from sqlalchemy import func, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from db.models.assets.asset import Asset
@@ -31,7 +31,9 @@ class AssetAssignmentAnalyticsRepository(AssignmentBaseRepository):
 
     async def get_aggregates(self, filters: AssetAssignmentFilterInput) -> dict:
         base_query = select(AssetAssignment.id)
-        base_query = self.apply_assignment_filters(base_query, filters, with_joins=False)
+        base_query = self.apply_assignment_filters(
+            base_query, filters, with_joins=False
+        )
         filtered = base_query.subquery()
 
         aggregates = (
@@ -62,7 +64,9 @@ class AssetAssignmentAnalyticsRepository(AssignmentBaseRepository):
 
         return {
             "total_active_assignments": int(aggregates.total_active_assignments or 0),
-            "total_inactive_assignments": int(aggregates.total_inactive_assignments or 0),
+            "total_inactive_assignments": int(
+                aggregates.total_inactive_assignments or 0
+            ),
             "total_assignments": int(aggregates.total_assignments or 0),
             "average_assignment_duration_days": (
                 aggregates.average_assignment_duration.total_seconds() / 86400
@@ -99,13 +103,19 @@ class AssetAssignmentAnalyticsRepository(AssignmentBaseRepository):
                     .filter(AssetAssignment.unassigned_at.is_(None))
                     .label("active_assignments_count"),
                     func.count(AssetAssignment.id).label("total_assignments_count"),
-                    func.avg(AssetAssignment.unassigned_at - AssetAssignment.assigned_at)
+                    func.avg(
+                        AssetAssignment.unassigned_at - AssetAssignment.assigned_at
+                    )
                     .filter(AssetAssignment.unassigned_at.isnot(None))
                     .label("average_duration"),
-                    func.max(AssetAssignment.unassigned_at - AssetAssignment.assigned_at)
+                    func.max(
+                        AssetAssignment.unassigned_at - AssetAssignment.assigned_at
+                    )
                     .filter(AssetAssignment.unassigned_at.isnot(None))
                     .label("longest_duration"),
-                    func.max(AssetAssignment.assigned_at).label("recent_assignment_date"),
+                    func.max(AssetAssignment.assigned_at).label(
+                        "recent_assignment_date"
+                    ),
                 )
                 .select_from(User)
                 .join(AssetAssignment, AssetAssignment.user_id == User.id, isouter=True)
@@ -148,7 +158,9 @@ class AssetAssignmentAnalyticsRepository(AssignmentBaseRepository):
     async def get_most_assigned_asset(self):
         row = (
             await self.session.execute(
-                select(Asset.id, Asset.name, func.count(AssetAssignment.id).label("cnt"))
+                select(
+                    Asset.id, Asset.name, func.count(AssetAssignment.id).label("cnt")
+                )
                 .join(AssetAssignment, AssetAssignment.asset_id == Asset.id)
                 .group_by(Asset.id, Asset.name)
                 .order_by(func.count(AssetAssignment.id).desc(), Asset.name.asc())
@@ -160,7 +172,9 @@ class AssetAssignmentAnalyticsRepository(AssignmentBaseRepository):
     async def get_most_active_user(self):
         row = (
             await self.session.execute(
-                select(User.id, User.full_name, func.count(AssetAssignment.id).label("cnt"))
+                select(
+                    User.id, User.full_name, func.count(AssetAssignment.id).label("cnt")
+                )
                 .join(AssetAssignment, AssetAssignment.user_id == User.id)
                 .where(AssetAssignment.unassigned_at.is_(None))
                 .group_by(User.id, User.full_name)

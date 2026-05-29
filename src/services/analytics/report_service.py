@@ -38,7 +38,11 @@ class ReportService:
         )
         return {
             "kpis": [
-                KPIResponseSchema(key="total_assets", label="Total Assets", value=assets["total_assets"]),
+                KPIResponseSchema(
+                    key="total_assets",
+                    label="Total Assets",
+                    value=assets["total_assets"],
+                ),
                 KPIResponseSchema(
                     key="critical_lifecycle_pct",
                     label="Critical Lifecycle %",
@@ -65,16 +69,22 @@ class ReportService:
         }
 
     async def report(self, filters: AnalyticsFilters, user: CurrentUserSchema):
-        summary, assets, repairs, documents, utilization, transfers, approvals = (
-            await asyncio.gather(
-                self.overview(filters, user),
-                self.asset_service.distribution(filters, user),
-                self.repair_service.get(filters, user),
-                self.document_service.get(filters, user),
-                self.utilization_service.get(filters, user),
-                self.transfer_service.get(filters, user),
-                self.approval_service.get(filters, user),
-            )
+        (
+            summary,
+            assets,
+            repairs,
+            documents,
+            utilization,
+            transfers,
+            approvals,
+        ) = await asyncio.gather(
+            self.overview(filters, user),
+            self.asset_service.distribution(filters, user),
+            self.repair_service.get(filters, user),
+            self.document_service.get(filters, user),
+            self.utilization_service.get(filters, user),
+            self.transfer_service.get(filters, user),
+            self.approval_service.get(filters, user),
         )
         return {
             "version": "1.0",

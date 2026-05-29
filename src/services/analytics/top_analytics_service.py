@@ -1,5 +1,10 @@
 from repositories.analytics.top_analytics_repo import TopAnalyticsRepository
-from schemas.analytics.top import TopAssetAnalyticsOut, TopMetric, TopServiceAnalyticsOut, TopUserAnalyticsOut
+from schemas.analytics.top import (
+    TopAssetAnalyticsOut,
+    TopMetric,
+    TopServiceAnalyticsOut,
+    TopUserAnalyticsOut,
+)
 from schemas.auth import CurrentUserSchema
 from services.analytics.base_analytics_service import BaseAnalyticsService
 
@@ -15,11 +20,17 @@ class TopAnalyticsService(BaseAnalyticsService):
             return int(row.repair_count or 0)
         return int(row.assignment_count or 0)
 
-    async def get_top_assets(self, metric: TopMetric, limit: int) -> list[TopAssetAnalyticsOut]:
+    async def get_top_assets(
+        self, metric: TopMetric, limit: int
+    ) -> list[TopAssetAnalyticsOut]:
         rows = await self.repo.get_top_assets(max(limit, 50))
         if not rows:
             return []
-        rows = sorted(rows, key=lambda row: (self._pick_metric(row, metric), str(row.id)), reverse=True)
+        rows = sorted(
+            rows,
+            key=lambda row: (self._pick_metric(row, metric), str(row.id)),
+            reverse=True,
+        )
 
         return [
             TopAssetAnalyticsOut(
@@ -35,11 +46,17 @@ class TopAnalyticsService(BaseAnalyticsService):
             for row in rows[:limit]
         ]
 
-    async def get_top_users(self, metric: TopMetric, limit: int, current_user: CurrentUserSchema) -> list[TopUserAnalyticsOut]:
+    async def get_top_users(
+        self, metric: TopMetric, limit: int, current_user: CurrentUserSchema
+    ) -> list[TopUserAnalyticsOut]:
         rows = await self.repo.get_top_users(max(limit, 50))
         if not rows:
             return []
-        rows = sorted(rows, key=lambda row: (self._pick_metric(row, metric), str(row.id)), reverse=True)
+        rows = sorted(
+            rows,
+            key=lambda row: (self._pick_metric(row, metric), str(row.id)),
+            reverse=True,
+        )
 
         return [
             TopUserAnalyticsOut(
@@ -55,11 +72,17 @@ class TopAnalyticsService(BaseAnalyticsService):
             for row in rows[:limit]
         ]
 
-    async def get_top_services(self, metric: TopMetric, limit: int) -> list[TopServiceAnalyticsOut]:
+    async def get_top_services(
+        self, metric: TopMetric, limit: int
+    ) -> list[TopServiceAnalyticsOut]:
         rows = await self.repo.get_top_services(max(limit, 50))
         if not rows:
             return []
-        rows = sorted(rows, key=lambda row: (self._pick_metric(row, metric), str(row.id)), reverse=True)
+        rows = sorted(
+            rows,
+            key=lambda row: (self._pick_metric(row, metric), str(row.id)),
+            reverse=True,
+        )
 
         return [
             TopServiceAnalyticsOut(

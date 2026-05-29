@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends, Request, status
 
 from api.dependencies.auth.security import get_security_service
 from core.slowapi import limiter
-from schemas.common import StatusResponse
 from schemas.auth.security import (
     ForgotPasswordRequestSchema,
     ResetPasswordRequestSchema,
 )
+from schemas.common import StatusResponse
 from services.auth.security_service import SecurityService
 
 router = APIRouter(prefix="/security", tags=["Security"])

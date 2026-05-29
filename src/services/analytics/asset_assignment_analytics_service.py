@@ -1,6 +1,8 @@
 from uuid import UUID
 
-from repositories.analytics.asset_assignment_analytics_repo import AssetAssignmentAnalyticsRepository
+from repositories.analytics.asset_assignment_analytics_repo import (
+    AssetAssignmentAnalyticsRepository,
+)
 from schemas.analytics.asset_assignment_analytics import (
     AssetAssignmentDetailOut,
     AssetAssignmentFilterInput,
@@ -35,20 +37,29 @@ class AssetAssignmentAnalyticsService(BaseAnalyticsService):
                 asset_name=a.asset.name if a.asset else "Unknown",
                 user_id=a.user_id,
                 user_name=a.user.full_name if a.user else "Unknown",
-                user_email=self.filter_email(a.user.email if a.user else "", current_user),
+                user_email=self.filter_email(
+                    a.user.email if a.user else "", current_user
+                ),
                 assigned_at=a.assigned_at,
                 unassigned_at=a.unassigned_at,
                 status="active" if a.unassigned_at is None else "inactive",
                 duration_metrics=AssignmentDurationMetrics(
-                    duration_days=self.calculate_duration_days(a.assigned_at, a.unassigned_at) or 0,
-                    duration_formatted=self.format_duration(a.assigned_at, a.unassigned_at),
+                    duration_days=self.calculate_duration_days(
+                        a.assigned_at, a.unassigned_at
+                    )
+                    or 0,
+                    duration_formatted=self.format_duration(
+                        a.assigned_at, a.unassigned_at
+                    ),
                     is_active=a.unassigned_at is None,
                 ),
             )
             for a in assignments
         ]
 
-        return PageOutSchema(items=items, total=total, page=pagination.page, limit=pagination.limit)
+        return PageOutSchema(
+            items=items, total=total, page=pagination.page, limit=pagination.limit
+        )
 
     async def list_active_assignments(
         self,
@@ -59,12 +70,16 @@ class AssetAssignmentAnalyticsService(BaseAnalyticsService):
         filters = AssetAssignmentFilterInput(status="active")
         return await self.list_assignments(filters, pagination, current_user)
 
-    async def get_user_summary(self, user_id: UUID, current_user: CurrentUserSchema) -> UserAssignmentSummary:
+    async def get_user_summary(
+        self, user_id: UUID, current_user: CurrentUserSchema
+    ) -> UserAssignmentSummary:
         summary = await self.repo.get_user_assignment_summary(user_id)
         summary["user_email"] = self.filter_email(summary["user_email"], current_user)
         return UserAssignmentSummary(**summary)
 
-    async def get_asset_timeline(self, asset_id: UUID, current_user: CurrentUserSchema) -> AssetAssignmentTimeline:
+    async def get_asset_timeline(
+        self, asset_id: UUID, current_user: CurrentUserSchema
+    ) -> AssetAssignmentTimeline:
         assignments = await self.repo.get_assignment_timeline(asset_id)
         asset = assignments[0].asset if assignments else None
 
@@ -75,7 +90,9 @@ class AssetAssignmentAnalyticsService(BaseAnalyticsService):
                 unassigned_at=a.unassigned_at,
                 user_id=a.user_id,
                 user_name=a.user.full_name if a.user else "Unknown",
-                duration_days=self.calculate_duration_days(a.assigned_at, a.unassigned_at),
+                duration_days=self.calculate_duration_days(
+                    a.assigned_at, a.unassigned_at
+                ),
             )
             for i, a in enumerate(assignments)
         ]
@@ -89,7 +106,9 @@ class AssetAssignmentAnalyticsService(BaseAnalyticsService):
                     asset_name=asset.name if asset else "Unknown",
                     user_id=a.user_id,
                     user_name=a.user.full_name if a.user else "Unknown",
-                    user_email=self.filter_email(a.user.email if a.user else "", current_user),
+                    user_email=self.filter_email(
+                        a.user.email if a.user else "", current_user
+                    ),
                     assigned_at=a.assigned_at,
                     unassigned_at=a.unassigned_at,
                     status="active",
@@ -104,7 +123,9 @@ class AssetAssignmentAnalyticsService(BaseAnalyticsService):
             timeline=timeline_entries,
         )
 
-    async def get_aggregates(self, filters: AssetAssignmentFilterInput) -> AssignmentAggregates:
+    async def get_aggregates(
+        self, filters: AssetAssignmentFilterInput
+    ) -> AssignmentAggregates:
         agg_dict = await self.repo.get_aggregates(filters)
 
         most_assigned = await self.repo.get_most_assigned_asset()

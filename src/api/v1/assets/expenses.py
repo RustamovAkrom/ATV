@@ -6,11 +6,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request, status
 
 from api.dependencies.assets.asset_expense import get_expense_service
+from core.cache.decorators import cached, invalidate_cache
 from core.security.auth.dependencies import get_current_user
 from core.security.rbac.presets import ExpensePermission
 from core.slowapi import limiter
-from schemas.auth import CurrentUserSchema
-from schemas.common import StatusResponse
 from schemas.assets.expenses import (
     ExpenseCreateSchema,
     ExpenseOutSchema,
@@ -18,6 +17,8 @@ from schemas.assets.expenses import (
     ExpenseStatsSchema,
     ExpenseUpdateSchema,
 )
+from schemas.auth import CurrentUserSchema
+from schemas.common import StatusResponse
 from services.assets.expense_service import ExpenseService
 
 router = APIRouter(prefix="/expenses", tags=["Expenses"])
@@ -28,6 +29,7 @@ router = APIRouter(prefix="/expenses", tags=["Expenses"])
     response_model=ExpenseStatsSchema,
     dependencies=[Depends(ExpensePermission.CanViewExpenses)],
 )
+@cached(tags=("expense:statistics",))
 async def get_expense_statistics(
     service: ExpenseService = Depends(get_expense_service),
     _: CurrentUserSchema = Depends(get_current_user),
@@ -41,6 +43,7 @@ async def get_expense_statistics(
     response_model=ExpensePageSchema,
     dependencies=[Depends(ExpensePermission.CanViewExpenses)],
 )
+@cached(tags=("expense:list",))
 async def list_expenses(
     request: Request,
     service: ExpenseService = Depends(get_expense_service),
@@ -73,6 +76,7 @@ async def list_expenses(
     response_model=list[ExpenseOutSchema],
     dependencies=[Depends(ExpensePermission.CanViewExpenses)],
 )
+@cached(tags=("expense:asset:detail",))
 async def get_asset_expenses(
     asset_id: UUID,
     service: ExpenseService = Depends(get_expense_service),
@@ -87,6 +91,7 @@ async def get_asset_expenses(
     response_model=list[ExpenseOutSchema],
     dependencies=[Depends(ExpensePermission.CanViewExpenses)],
 )
+@cached(tags=("expense:repair:detail",))
 async def get_repair_expenses(
     repair_id: UUID,
     service: ExpenseService = Depends(get_expense_service),
@@ -101,6 +106,7 @@ async def get_repair_expenses(
     response_model=ExpenseOutSchema,
     dependencies=[Depends(ExpensePermission.CanViewExpenses)],
 )
+@cached(tags=("expense:detail",))
 async def get_expense(
     expense_id: UUID,
     service: ExpenseService = Depends(get_expense_service),
@@ -117,6 +123,12 @@ async def get_expense(
     dependencies=[Depends(ExpensePermission.CanCreateExpenses)],
 )
 @limiter.limit("20/minute")
+@invalidate_cache(
+    tags=(
+        "expense:statistics",
+        "expense:list",
+    )
+)
 async def create_expense(
     request: Request,
     data: ExpenseCreateSchema,
@@ -133,6 +145,15 @@ async def create_expense(
     dependencies=[Depends(ExpensePermission.CanUpdateExpenses)],
 )
 @limiter.limit("30/minute")
+@invalidate_cache(
+    tags=(
+        "expense:statistics",
+        "expense:list",
+        "expense:asset:detail",
+        "expense:repair:detail",
+        "expense:detail",
+    )
+)
 async def update_expense(
     request: Request,
     expense_id: UUID,
@@ -150,6 +171,15 @@ async def update_expense(
     dependencies=[Depends(ExpensePermission.CanDeleteExpenses)],
 )
 @limiter.limit("10/minute")
+@invalidate_cache(
+    tags=(
+        "expense:statistics",
+        "expense:list",
+        "expense:asset:detail",
+        "expense:repair:detail",
+        "expense:detail",
+    )
+)
 async def delete_expense(
     request: Request,
     expense_id: UUID,

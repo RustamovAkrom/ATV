@@ -1,5 +1,3 @@
-from uuid import uuid4
-
 import pytest
 
 pytestmark = pytest.mark.anyio
@@ -11,7 +9,7 @@ def _auth(token: str) -> dict[str, str]:
 
 async def _create_expense(client, token: str) -> dict:
     response = await client.post(
-        "/expenses/",
+        "/api/v1/expenses/",
         headers=_auth(token),
         json={
             "amount": 1500.50,
@@ -33,7 +31,7 @@ class TestExpenseEndpoints:
 
     async def test_create_expense_negative_amount(self, client, analytics_tokens):
         response = await client.post(
-            "/expenses/",
+            "/api/v1/expenses/",
             headers=_auth(analytics_tokens["superadmin"]),
             json={"amount": -100, "currency": "UZS", "expense_type": "other"},
         )
@@ -42,7 +40,7 @@ class TestExpenseEndpoints:
     async def test_list_expenses(self, client, analytics_tokens):
         await _create_expense(client, analytics_tokens["superadmin"])
         response = await client.get(
-            "/expenses/",
+            "/api/v1/expenses/",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         assert response.status_code == 200
@@ -52,7 +50,7 @@ class TestExpenseEndpoints:
     async def test_get_expense_by_id(self, client, analytics_tokens):
         created = await _create_expense(client, analytics_tokens["superadmin"])
         response = await client.get(
-            f"/expenses/{created['id']}",
+            f"/api/v1/expenses/{created['id']}",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         assert response.status_code == 200
@@ -61,7 +59,7 @@ class TestExpenseEndpoints:
     async def test_update_expense(self, client, analytics_tokens):
         created = await _create_expense(client, analytics_tokens["superadmin"])
         response = await client.patch(
-            f"/expenses/{created['id']}",
+            f"/api/v1/expenses/{created['id']}",
             headers=_auth(analytics_tokens["superadmin"]),
             json={"description": "Updated description"},
         )
@@ -71,14 +69,14 @@ class TestExpenseEndpoints:
     async def test_delete_expense(self, client, analytics_tokens):
         created = await _create_expense(client, analytics_tokens["superadmin"])
         response = await client.delete(
-            f"/expenses/{created['id']}",
+            f"/api/v1/expenses/{created['id']}",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         assert response.status_code == 200
         assert response.json()["status"] == "deleted"
 
         missing = await client.get(
-            f"/expenses/{created['id']}",
+            f"/api/v1/expenses/{created['id']}",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         # Deleted expense must not be retrievable anymore.

@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import get_settings
 from core.notifications.channels.db_channel import DBChannel
-from core.notifications.channels.websocket import WebSocketManager
 from core.notifications.channels.ws_channel import WebSocketChannel
 from core.notifications.dispatcher import NotificationDispatcher
 from core.notifications.router import NotificationRouter
@@ -21,6 +20,7 @@ _memory_ws_backend: InMemoryWSBackend | None = None
 
 # ==================== REPOSITORY ====================
 
+
 def get_notification_repo(
     db: AsyncSession = Depends(get_db_session),
 ) -> NotificationRepository:
@@ -30,6 +30,7 @@ def get_notification_repo(
 
 # ==================== SERVICE ====================
 
+
 def get_notification_service(
     repo: NotificationRepository = Depends(get_notification_repo),
 ) -> NotificationService:
@@ -38,6 +39,7 @@ def get_notification_service(
 
 
 # ==================== WEBSOCKET BACKEND ====================
+
 
 def get_redis_client():
     """Get Redis client for WebSocket."""
@@ -63,6 +65,7 @@ def get_ws_memory_backend():
 
 # ==================== DISPATCHER ====================
 
+
 def get_notification_dispatcher(
     notification_service: NotificationService = Depends(get_notification_service),
     ws_backend=Depends(get_ws_backend),
@@ -78,6 +81,7 @@ def get_notification_dispatcher(
 
 # ==================== REDIS LISTENER ====================
 
+
 def get_redis_listener(
     redis=Depends(get_redis_client),
     memory_backend=Depends(get_ws_memory_backend),
@@ -89,6 +93,7 @@ def get_redis_listener(
 
 
 # ==================== ROUTER (опционально) ====================
+
 
 def get_notification_router(
     dispatcher: NotificationDispatcher = Depends(get_notification_dispatcher),

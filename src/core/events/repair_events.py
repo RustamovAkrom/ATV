@@ -5,14 +5,7 @@ from core.notifications.builder import NotificationBuilder
 
 
 class RepairEventService(DomainEventService):
-
-    async def reported(
-        self,
-        *,
-        asset_id: UUID,
-        repair_id: UUID,
-        actor_id: UUID
-    ):
+    async def reported(self, *, asset_id: UUID, repair_id: UUID, actor_id: UUID):
         await self.base.execute(
             history=lambda: self.history.log(
                 asset_id,

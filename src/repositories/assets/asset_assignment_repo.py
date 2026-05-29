@@ -3,9 +3,8 @@ from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload, lazyload
-from sqlalchemy.exc import IntegrityError
-from core.exceptions.errors import Conflict
+from sqlalchemy.orm import lazyload, selectinload
+
 from db.models.assets.asset import Asset
 from db.models.assets.asset_assignment import AssetAssignment
 from db.models.users.permission import Role
@@ -28,9 +27,7 @@ class AssetAssignmentRepository(BaseRepository):
         )
 
     async def get_asset_plain(self, asset_id: UUID) -> Asset | None:
-        return await self.scalar(
-            select(Asset).where(Asset.id == asset_id)
-        )
+        return await self.scalar(select(Asset).where(Asset.id == asset_id))
 
     async def get_asset_for_update(self, asset_id: UUID, nowait: bool = False) -> Asset:
         stmt = (

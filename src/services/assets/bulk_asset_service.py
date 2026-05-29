@@ -2,15 +2,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.exceptions.base import APIException
 from core.exceptions.errors import BadRequest
+from core.security.rbac.guards import check_permissions
+from core.security.rbac.permissions import Permissions
 from schemas.assets.asset_transfers import AssetTransferCreate
 from schemas.assets.assets import AssetStatusChangeRequest
 from schemas.assets.bulk import BulkFailedItem, BulkResult
 from schemas.auth.auth import CurrentUserSchema
-from core.security.rbac.permissions import Permissions
-from core.security.rbac.guards import check_permissions
 from services.assets.asset_assignment_service import AssetAssignmentService
-from services.assets.asset_transfer_service import AssetTransferService
 from services.assets.asset_service import AssetService
+from services.assets.asset_transfer_service import AssetTransferService
 
 
 class BulkAssetService:
@@ -91,7 +91,9 @@ class BulkAssetService:
             atomic=atomic,
         )
 
-    async def _process_items(self, asset_ids, callback, atomic: bool = False) -> BulkResult:
+    async def _process_items(
+        self, asset_ids, callback, atomic: bool = False
+    ) -> BulkResult:
         success = []
         failed = []
 

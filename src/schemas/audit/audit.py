@@ -3,7 +3,8 @@
 import uuid
 from datetime import datetime
 
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import Field, field_validator
+
 from schemas.base import BaseSchema
 
 

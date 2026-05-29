@@ -1,9 +1,11 @@
 import uuid
-import aiofiles
 from pathlib import Path
+
+import aiofiles
 from fastapi import UploadFile
 
 from core.config import get_settings
+
 from .base import BaseStorageStrategy, FileUploadResult
 
 settings = get_settings()
@@ -24,7 +26,7 @@ class LocalStorageStrategy(BaseStorageStrategy):
             # Очищаем оригинальное имя от опасных символов
             safe_name = "".join(c for c in original_name if c.isalnum() or c in "._-")
             if len(safe_name) > settings.STORAGE_FILENAME_MAX_LENGTH:
-                safe_name = safe_name[:settings.STORAGE_FILENAME_MAX_LENGTH - 8]
+                safe_name = safe_name[: settings.STORAGE_FILENAME_MAX_LENGTH - 8]
             return f"{safe_name}_{uuid.uuid4().hex[:8]}{ext}"
 
         return f"{uuid.uuid4().hex}{ext}"
@@ -48,7 +50,7 @@ class LocalStorageStrategy(BaseStorageStrategy):
         # Сохраняем файл
         try:
             content = await file.read()  # Читаем асинхронно
-            async with aiofiles.open(full_path, 'wb') as buffer:
+            async with aiofiles.open(full_path, "wb") as buffer:
                 await buffer.write(content)
         except Exception as e:
             raise RuntimeError(f"Failed to save file: {str(e)}")

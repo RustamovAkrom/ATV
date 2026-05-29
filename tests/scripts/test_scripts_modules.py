@@ -1,4 +1,4 @@
-﻿from types import SimpleNamespace
+from types import SimpleNamespace
 
 import pytest
 
@@ -28,7 +28,9 @@ async def test_seed_rbac_runs_with_fake_db(monkeypatch):
         async def flush(self):
             return None
 
-    monkeypatch.setattr(module.Permissions, "all", staticmethod(lambda: ["users.view", "users.edit"]))
+    monkeypatch.setattr(
+        module.Permissions, "all", staticmethod(lambda: ["users.view", "users.edit"])
+    )
 
     db = _FakeDB()
     await module.seed_rbac(db)
@@ -65,6 +67,12 @@ async def test_cleanup_expired_tokens_and_run(monkeypatch):
         async def execute(self, *args, **kwargs):
             return _Result()
 
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
         def begin(self):
             return _Ctx()
 
@@ -73,7 +81,7 @@ async def test_cleanup_expired_tokens_and_run(monkeypatch):
 
     class _Ctx:
         async def __aenter__(self):
-            return _Session()
+            return self
 
         async def __aexit__(self, exc_type, exc, tb):
             return False
@@ -81,11 +89,14 @@ async def test_cleanup_expired_tokens_and_run(monkeypatch):
         def begin(self):
             return self
 
+        async def execute(self, *args, **kwargs):
+            return _Result()
+
     class _Factory:
         def __call__(self):
             return _Ctx()
 
-    monkeypatch.setattr(module, "get_sync_session_factory", lambda: _Factory())
+    monkeypatch.setattr(module, "get_async_session_factory", lambda: _Factory())
     await module._run()
 
 
@@ -93,10 +104,8 @@ def test_runner_and_cli_and_entrypoints(monkeypatch):
     import importlib
     import sys
 
-    from scripts import runner
-    from scripts import cli
     import main
-    import dev
+    from scripts import cli, runner
 
     async def _async_fn(session):
         return None
@@ -131,8 +140,13 @@ def test_runner_and_cli_and_entrypoints(monkeypatch):
     assert len(called) >= 4
 
     uvicorn_called = {}
-    monkeypatch.setattr(main, "get_settings", lambda: SimpleNamespace(APP_HOST="127.0.0.1", APP_PORT=8000, APP_RELOAD=False))
-    monkeypatch.setattr(main.uvicorn, "run", lambda *args, **kwargs: uvicorn_called.update(kwargs))
+    monkeypatch.setattr(
+        main,
+        "get_settings",
+        lambda: SimpleNamespace(APP_HOST="127.0.0.1", APP_PORT=8000, APP_RELOAD=False),
+    )
+    monkeypatch.setattr(
+        main.uvicorn, "run", lambda *args, **kwargs: uvicorn_called.update(kwargs)
+    )
     main.main()
     assert uvicorn_called.get("host") == "127.0.0.1"
-    assert hasattr(dev, "hash_password")

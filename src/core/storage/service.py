@@ -1,7 +1,9 @@
-from typing import Callable, Awaitable
-from fastapi import UploadFile, HTTPException
+from collections.abc import Awaitable, Callable
+
+from fastapi import HTTPException, UploadFile
 
 from core.config import get_settings
+
 from .base import BaseStorageStrategy, FileUploadResult
 
 settings = get_settings()
@@ -27,13 +29,13 @@ class FileValidator:
         if file.size and file.size > max_size:
             raise HTTPException(
                 status_code=400,
-                detail=f"File too large. Max size: {self.max_size_mb}MB"
+                detail=f"File too large. Max size: {self.max_size_mb}MB",
             )
 
         if file.content_type not in self.allowed_mimetypes:
             raise HTTPException(
                 status_code=400,
-                detail=f"File type not allowed. Allowed: {', '.join(self.allowed_mimetypes)}"
+                detail=f"File type not allowed. Allowed: {', '.join(self.allowed_mimetypes)}",
             )
 
         if self.custom_validator:

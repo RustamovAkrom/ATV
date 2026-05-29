@@ -1,12 +1,11 @@
 # api/dependencies/events/document.py
 from fastapi import Depends
 
-from api.dependencies.notifications.notification import get_notification_dispatcher
 from api.dependencies.assets.asset_history import get_asset_history_service
-from api.dependencies.events.base import get_base_event_service
+from api.dependencies.events.base import BaseEventService, get_base_event_service
+from api.dependencies.notifications.notification import get_notification_dispatcher
 from core.events.document_events import DocumentEventService
 from core.notifications.dispatcher import NotificationDispatcher
-from api.dependencies.events.base import BaseEventService
 from services.assets.asset_history_service import AssetHistoryService
 
 

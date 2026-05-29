@@ -1,4 +1,5 @@
 from fastapi.params import Query
+
 from schemas.pagination import PaginationParamsSchema
 
 

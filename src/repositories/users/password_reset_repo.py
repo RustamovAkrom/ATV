@@ -5,8 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import func
 
 from db.models.auth.password_reset import PasswordReset
-from utils.helpers import utc_now
 from repositories.base import BaseRepository
+from utils.helpers import utc_now
 
 
 class PasswordResetRepository(BaseRepository):

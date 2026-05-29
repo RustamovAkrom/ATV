@@ -1,22 +1,19 @@
 from uuid import UUID
-from pathlib import Path
-from typing import Any
 
 from core.config import get_settings
-from core.exceptions.errors import NotFound, BadRequest
+from core.events.document_events import DocumentEventService
+from core.exceptions.errors import NotFound
+from core.security.access_control import AccessControl
 from db.models.documents.document import Document
-from db.models.documents.document_file import DocumentFile
 from repositories.documents.document_repo import DocumentRepository
+from schemas.auth.auth import CurrentUserSchema
 from schemas.documents.document import (
     AssetDocumentCreateSchema,
-    AssetDocumentUpdateSchema,
     AssetDocumentOutSchema,
+    AssetDocumentUpdateSchema,
     AssetDocumentWithFilesOutSchema,
     DocumentFileOutSchema,
 )
-from schemas.auth.auth import CurrentUserSchema
-from core.events.document_events import DocumentEventService
-from core.security.access_control import AccessControl
 
 settings = get_settings()
 
@@ -31,9 +28,7 @@ class DocumentService:
         self.events = events
 
     async def list_by_asset(
-        self,
-        asset_id: UUID,
-        actor: CurrentUserSchema
+        self, asset_id: UUID, actor: CurrentUserSchema
     ) -> list[AssetDocumentOutSchema]:
         """Список документов актива"""
         asset = await self.repo.get_asset(asset_id)
@@ -46,10 +41,7 @@ class DocumentService:
         return [self._to_out_schema(doc) for doc in documents]
 
     async def get_document(
-        self,
-        asset_id: UUID,
-        document_id: UUID,
-        actor: CurrentUserSchema
+        self, asset_id: UUID, document_id: UUID, actor: CurrentUserSchema
     ) -> AssetDocumentWithFilesOutSchema:
         """Получить документ по ID"""
         asset = await self.repo.get_asset(asset_id)
@@ -134,10 +126,7 @@ class DocumentService:
         return self._to_out_schema(updated)
 
     async def delete_document(
-        self,
-        asset_id: UUID,
-        document_id: UUID,
-        actor: CurrentUserSchema
+        self, asset_id: UUID, document_id: UUID, actor: CurrentUserSchema
     ) -> None:
         """Удалить документ"""
         asset = await self.repo.get_asset(asset_id)
@@ -232,10 +221,14 @@ class DocumentService:
             ],
             created_at=document.created_at,
             updated_at=document.updated_at,
-            created_by_name=document.created_by.full_name if document.created_by else None,
+            created_by_name=(
+                document.created_by.full_name if document.created_by else None
+            ),
         )
 
-    def _to_with_files_schema(self, document: Document) -> AssetDocumentWithFilesOutSchema:
+    def _to_with_files_schema(
+        self, document: Document
+    ) -> AssetDocumentWithFilesOutSchema:
         total_size = sum(f.file_size or 0 for f in document.files)
         return AssetDocumentWithFilesOutSchema(
             id=document.id,
@@ -258,7 +251,9 @@ class DocumentService:
             ],
             created_at=document.created_at,
             updated_at=document.updated_at,
-            created_by_name=document.created_by.full_name if document.created_by else None,
+            created_by_name=(
+                document.created_by.full_name if document.created_by else None
+            ),
             total_files_size=total_size,
             file_count=len(document.files),
         )

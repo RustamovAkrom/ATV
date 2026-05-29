@@ -1,10 +1,9 @@
 import os
-
 from functools import cache
 from pathlib import Path
-from typing import Literal, Any
+from typing import Any, Literal
 
-from pydantic import field_validator, Field, ValidationInfo
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from yarl import URL
 
@@ -52,9 +51,7 @@ class Settings(BaseSettings):
 
     # SECURITY / CORS
     ALLOWED_HOSTS: list[str] = Field(default_factory=lambda: ["*"])
-    CORS_ORIGINS: list[str] = Field(
-        default_factory=lambda: ["http://localhost:3000"]
-    )
+    CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
 
     # POSTGRES
     POSTGRES_HOST: str
@@ -99,9 +96,7 @@ class Settings(BaseSettings):
     CELERY_TASK_SERIALIZER: str = "json"
     CELERY_RESULT_SERIALIZER: str = "json"
 
-    CELERY_ACCEPT_CONTENT: list[str] = Field(
-        default_factory=lambda: ["json"]
-    )
+    CELERY_ACCEPT_CONTENT: list[str] = Field(default_factory=lambda: ["json"])
 
     CELERY_TIMEZONE: str = "UTC"
 
@@ -143,20 +138,30 @@ class Settings(BaseSettings):
 
     # ========== FILE STORAGE SYSTEM ==========
     STORAGE_ROOT_DIR: str = "storage"
-    STORAGE_URL_PREFIX: str = "http://localhost:8000/storage" # or "/storage"
+    STORAGE_URL_PREFIX: str = "http://localhost:8000/storage"  # or "/storage"
 
     STORAGE_DEFAULT_MAX_SIZE_MB: int = 10
     STORAGE_DEFAULT_ALLOWED_MIMETYPES: list[str] = Field(
         default_factory=lambda: [
-            "image/jpeg", "image/png", "image/gif", "image/webp",
-            "application/pdf", "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "image/webp",
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         ]
     )
 
     STORAGE_AVATAR_MAX_SIZE_MB: int = 2
     STORAGE_AVATAR_ALLOWED_MIMETYPES: list[str] = Field(
-        default_factory=lambda: ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"]
+        default_factory=lambda: [
+            "image/jpeg",
+            "image/jpg",
+            "image/png",
+            "image/gif",
+            "image/webp",
+        ]
     )
     STORAGE_AVATAR_FOLDER: str = "avatars"
 
@@ -193,7 +198,15 @@ class Settings(BaseSettings):
             normalized = value.strip().lower()
             if normalized in {"1", "true", "yes", "on", "debug"}:
                 return True
-            if normalized in {"0", "false", "no", "off", "release", "prod", "production"}:
+            if normalized in {
+                "0",
+                "false",
+                "no",
+                "off",
+                "release",
+                "prod",
+                "production",
+            }:
                 return False
         return bool(value)
 

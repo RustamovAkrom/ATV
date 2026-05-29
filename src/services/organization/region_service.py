@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID
 
+from core.exceptions.errors import BadRequest, Conflict, NotFound
+from db.models.org.region import Region
 from repositories.organization.region_repo import RegionRepository
 from schemas.organization.region import (
     RegionCreateSchema,
-    RegionUpdateSchema,
     RegionOutSchema,
     RegionTreeOutSchema,
+    RegionUpdateSchema,
 )
-from core.exceptions.errors import NotFound, Conflict, BadRequest
-from db.models.org.region import Region
 
 
 class RegionService:
@@ -39,7 +38,7 @@ class RegionService:
 
         # Формируем дерево
         roots = []
-        for region_id, region_data in region_dict.items():
+        for _, region_data in region_dict.items():
             parent_id = region_data["parent_id"]
             if parent_id and parent_id in region_dict:
                 region_dict[parent_id]["children"].append(region_data)
@@ -63,9 +62,7 @@ class RegionService:
         return [to_tree(root) for root in roots]
 
     async def list(
-        self,
-        level: int | None = None,
-        parent_id: UUID | None = None
+        self, level: int | None = None, parent_id: UUID | None = None
     ) -> list[RegionOutSchema]:
         regions = await self.repo.list()
         result = [self._to_out_schema(r) for r in regions]
@@ -85,9 +82,7 @@ class RegionService:
         return self._to_out_schema(region)
 
     async def create(
-        self,
-        data: RegionCreateSchema,
-        actor_id: UUID | None = None
+        self, data: RegionCreateSchema, actor_id: UUID | None = None
     ) -> RegionOutSchema:
         if await self.repo.check_name_exists(data.name):
             raise Conflict(f"Region with name '{data.name}' already exists")
@@ -101,15 +96,15 @@ class RegionService:
         return self._to_out_schema(region)
 
     async def update(
-        self,
-        region_id: UUID,
-        data: RegionUpdateSchema
+        self, region_id: UUID, data: RegionUpdateSchema
     ) -> RegionOutSchema:
         region = await self.repo.get(region_id)
         if not region:
             raise NotFound(f"Region {region_id} not found")
 
-        if data.name and await self.repo.check_name_exists(data.name, exclude_id=region_id):
+        if data.name and await self.repo.check_name_exists(
+            data.name, exclude_id=region_id
+        ):
             raise Conflict(f"Region with name '{data.name}' already exists")
 
         if data.parent_id:
@@ -125,17 +120,16 @@ class RegionService:
 
         return self._to_out_schema(updated)
 
-    async def delete(self, region_id: UUID) -> dict[str, Any]:
+    async def delete(self, region_id: UUID):
         region = await self.repo.get(region_id)
         if not region:
             raise NotFound(f"Region {region_id} not found")
         await self.repo.delete(region_id)
-        return {"message": "Region deleted successfully"}
 
     def _get_level(self, region: RegionOutSchema) -> int:
         """Вычислить уровень региона (простой способ)"""
         level = 1
-        current_parent_id = region.parent_id
+        # current_parent_id = region.parent_id
         # В реальности нужно загрузить всех родителей
         # Для простоты возвращаем 1
         return level

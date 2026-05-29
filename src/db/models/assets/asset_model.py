@@ -5,7 +5,7 @@ from sqlalchemy import ForeignKey, Index, Integer, String, UniqueConstraint, fun
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from db.base import Base
-from db.mixins import TimestampMixin, UUIDMixing, SlugMixin
+from db.mixins import SlugMixin, TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
     from .asset import Asset

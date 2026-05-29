@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class StatusResponse(BaseModel):
     status: str = Field(
         ...,
-        pattern=r'^(success|error|ok|archived|active|blocked|deleted|created|updated)$'  # Добавил 'deleted', 'created', 'updated'
+        pattern=r"^(success|error|ok|archived|active|blocked|deleted|created|updated)$",  # Добавил 'deleted', 'created', 'updated'
     )
     message: str | None = Field(None, max_length=500)
 
@@ -13,6 +13,7 @@ class StatusResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     """Стандартный ответ с ошибкой"""
+
     error: str
     message: str
     code: str | None = None
@@ -21,4 +22,5 @@ class ErrorResponse(BaseModel):
 
 class MessageResponse(BaseModel):
     """Простой ответ с сообщением"""
+
     message: str

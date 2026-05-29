@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select, update, func
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models.notifications.notification import Notification
@@ -23,7 +23,7 @@ class NotificationRepository(BaseRepository):
         is_read: bool | None,
         limit: int,
         offset: int,
-    ):
+    ) -> list[Notification]:
         query = select(Notification).where(Notification.user_id == user_id)
 
         if is_read is not None:
@@ -35,31 +35,29 @@ class NotificationRepository(BaseRepository):
             query.order_by(Notification.created_at.desc()).limit(limit).offset(offset)
         )
 
-    async def get_by_id(self, notification_id: UUID):
+    async def get_by_id(self, notification_id: UUID) -> Notification:
         return await self.scalar(
             select(Notification).where(Notification.id == notification_id)
         )
 
-
-    async def mark_as_read(self, notification_id: UUID):
+    async def mark_as_read(self, notification_id: UUID) -> None:
         await self.execute(
             update(Notification)
             .where(Notification.id == notification_id)
             .values(is_read=True)
         )
 
-    async def mark_all_read(self, user_id: UUID):
+    async def mark_all_read(self, user_id: UUID) -> None:
         await self.execute(
             update(Notification)
             .where(Notification.user_id == user_id)
             .values(is_read=True)
         )
 
-    async def count_unread(self, user_id: UUID):
-        result = await self.execute(
+    async def count_unread(self, user_id: UUID) -> None | Notification:
+        return await self.scalar_one(
             select(func.count())
             .select_from(Notification)
             .where(Notification.user_id == user_id)
             .where(Notification.is_read.is_(False))
         )
-        return result.scalar_one()

@@ -1,5 +1,9 @@
 from repositories.analytics.transfer_analytics_repo import TransferAnalyticsRepository
-from schemas.analytics.common import AnalyticsFilters, TimeSeriesPointSchema, TimeSeriesSchema
+from schemas.analytics.common import (
+    AnalyticsFilters,
+    TimeSeriesPointSchema,
+    TimeSeriesSchema,
+)
 from schemas.auth import CurrentUserSchema
 from services.analytics.base_analytics_service import BaseAnalyticsService
 

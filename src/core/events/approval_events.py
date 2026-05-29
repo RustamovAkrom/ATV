@@ -3,7 +3,6 @@ from uuid import UUID
 
 from core.events.domain_event_service import DomainEventService
 from core.notifications.builder import NotificationBuilder
-from services.assets.asset_history_service import AssetHistoryService
 
 
 class ApprovalEventService(DomainEventService):

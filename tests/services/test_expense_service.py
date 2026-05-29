@@ -1,4 +1,4 @@
-﻿# tests/services/test_expense_service.py
+# tests/services/test_expense_service.py
 from datetime import UTC, datetime
 from types import SimpleNamespace
 from uuid import uuid4

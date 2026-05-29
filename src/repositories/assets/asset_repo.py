@@ -3,7 +3,7 @@ from uuid import UUID
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import lazyload, selectinload
+from sqlalchemy.orm import selectinload
 
 from db.models.assets.asset import Asset
 from db.models.assets.asset_assignment import AssetAssignment
@@ -14,9 +14,9 @@ from db.models.org.region import Region
 from db.models.org.service import Service
 from db.models.users.permission import Role
 from db.models.users.user import User
+from repositories.base import BaseRepository
 from schemas.assets.assets import AssetFilters
 from schemas.pagination import PaginationParamsSchema
-from repositories.base import BaseRepository
 
 
 class AssetRepository(BaseRepository):
@@ -129,8 +129,10 @@ class AssetRepository(BaseRepository):
     async def get_by_id(
         self, asset_id: UUID, include_history: bool = True
     ) -> Asset | None:
-        query = select(Asset).where(Asset.id == asset_id).execution_options(
-            populate_existing=True
+        query = (
+            select(Asset)
+            .where(Asset.id == asset_id)
+            .execution_options(populate_existing=True)
         )
 
         options = self._detail_options() if include_history else self._list_options()
@@ -211,4 +213,3 @@ class AssetRepository(BaseRepository):
         await self.flush()
         await self.refresh(assignment)
         return assignment
-

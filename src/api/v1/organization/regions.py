@@ -1,22 +1,21 @@
-from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
 
 from api.dependencies.organizations.regions import get_region_service
+from core.cache.decorators import cached, invalidate_cache
 from core.security.auth.dependencies import get_current_user
 from core.security.rbac.presets import RegionPermissions
-from core.cache.decorators import cached, invalidate_cache
 from core.slowapi import limiter
 from schemas.auth.auth import CurrentUserSchema
+from schemas.common import StatusResponse
 from schemas.organization.region import (
     RegionCreateSchema,
-    RegionUpdateSchema,
     RegionOutSchema,
     RegionTreeOutSchema,
+    RegionUpdateSchema,
 )
 from services.organization.region_service import RegionService
-
 
 router = APIRouter(prefix="/regions", tags=["Regions"])
 
@@ -72,7 +71,12 @@ async def get_region(
     dependencies=[Depends(RegionPermissions.CanCreateRegions)],
 )
 @limiter.limit("10/minute")
-@invalidate_cache(tags=("region:tree", "region:list",))
+@invalidate_cache(
+    tags=(
+        "region:tree",
+        "region:list",
+    )
+)
 async def create_region(
     request: Request,
     data: RegionCreateSchema,
@@ -89,7 +93,13 @@ async def create_region(
     dependencies=[Depends(RegionPermissions.CanUpdateRegions)],
 )
 @limiter.limit("20/minute")
-@invalidate_cache(tags=("region:tree", "region:list", "region:detail",))
+@invalidate_cache(
+    tags=(
+        "region:tree",
+        "region:list",
+        "region:detail",
+    )
+)
 async def update_region(
     request: Request,
     region_id: UUID,
@@ -103,11 +113,17 @@ async def update_region(
 
 @router.delete(
     "/{region_id}",
-    response_model=dict[str, Any],
+    response_model=StatusResponse,
     dependencies=[Depends(RegionPermissions.CanDeleteRegions)],
 )
 @limiter.limit("5/minute")
-@invalidate_cache(tags=("region:tree", "region:list", "region:detail",))
+@invalidate_cache(
+    tags=(
+        "region:tree",
+        "region:list",
+        "region:detail",
+    )
+)
 async def delete_region(
     request: Request,
     region_id: UUID,
@@ -115,4 +131,5 @@ async def delete_region(
     _: CurrentUserSchema = Depends(get_current_user),
 ):
     """Delete a region (only if no children)."""
-    return await service.delete(region_id)
+    await service.delete(region_id)
+    return StatusResponse(status="deleted", message="Service deletedy successfully")

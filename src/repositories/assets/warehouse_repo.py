@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select, update, delete, func
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
-from db.models.warehouse.warehouse import Warehouse
 from db.models.assets.asset import Asset
+from db.models.warehouse.warehouse import Warehouse
 from repositories.base import BaseRepository
-from core.exceptions.errors import Conflict
 
 
 class WarehouseRepository(BaseRepository):
@@ -76,9 +74,7 @@ class WarehouseRepository(BaseRepository):
     async def update(self, warehouse_id: UUID, data: dict) -> Warehouse | None:
         """Обновить склад"""
         await self.execute(
-            update(Warehouse)
-            .where(Warehouse.id == warehouse_id)
-            .values(**data)
+            update(Warehouse).where(Warehouse.id == warehouse_id).values(**data)
         )
         await self.flush()
         return await self.get(warehouse_id)
@@ -91,7 +87,9 @@ class WarehouseRepository(BaseRepository):
         await self.flush()
         return result.rowcount > 0
 
-    async def check_slug_exists(self, slug: str, exclude_id: UUID | None = None) -> bool:
+    async def check_slug_exists(
+        self, slug: str, exclude_id: UUID | None = None
+    ) -> bool:
         """Проверить существование склада с таким slug"""
         if not slug:
             return False
@@ -104,7 +102,9 @@ class WarehouseRepository(BaseRepository):
     async def get_assets_count(self, warehouse_id: UUID) -> int:
         """Получить количество активов на складе"""
         result = await self.session.execute(
-            select(func.count(Asset.id)).where(Asset.current_warehouse_id == warehouse_id)
+            select(func.count(Asset.id)).where(
+                Asset.current_warehouse_id == warehouse_id
+            )
         )
         return result.scalar() or 0
 

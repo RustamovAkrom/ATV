@@ -34,6 +34,8 @@ class RepairAnalyticsDomainService(BaseAnalyticsService):
             "average_repair_cost": round(raw["average_repair_cost"], 2),
             "per_asset": rows,
             "abnormal_repair_frequency_assets": [
-                item for item in rows if item["repair_count"] >= threshold and threshold > 0
+                item
+                for item in rows
+                if item["repair_count"] >= threshold and threshold > 0
             ],
         }

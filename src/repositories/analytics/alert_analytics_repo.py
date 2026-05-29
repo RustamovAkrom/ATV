@@ -14,29 +14,32 @@ class AlertAnalyticsRepository(BaseAnalyticsRepository):
 
     async def stuck_transfers(self, cutoff):
         """Трансферы, зависшие дольше cutoff"""
-        query = select(
-            AssetTransfer.id, Asset.name, AssetTransfer.created_at
-        ).join(Asset, Asset.id == AssetTransfer.asset_id).where(
-            AssetTransfer.status == TransferStatus.PENDING,
-            AssetTransfer.created_at <= cutoff,
-        ).order_by(AssetTransfer.created_at.asc())
+        query = (
+            select(AssetTransfer.id, Asset.name, AssetTransfer.created_at)
+            .join(Asset, Asset.id == AssetTransfer.asset_id)
+            .where(
+                AssetTransfer.status == TransferStatus.PENDING,
+                AssetTransfer.created_at <= cutoff,
+            )
+            .order_by(AssetTransfer.created_at.asc())
+        )
 
         result = await self.session.execute(query)
         return result.all()
 
     async def excessive_repairs(self, since, threshold: int):
         """Активы с частыми ремонтами"""
-        query = select(
-            Asset.id,
-            Asset.name,
-            func.count(Repair.id).label("repair_count"),
-        ).join(Repair, Repair.asset_id == Asset.id).where(
-            Repair.created_at >= since
-        ).group_by(Asset.id, Asset.name).having(
-            func.count(Repair.id) > threshold
-        ).order_by(
-            func.count(Repair.id).desc(),
-            Asset.name.asc()
+        query = (
+            select(
+                Asset.id,
+                Asset.name,
+                func.count(Repair.id).label("repair_count"),
+            )
+            .join(Repair, Repair.asset_id == Asset.id)
+            .where(Repair.created_at >= since)
+            .group_by(Asset.id, Asset.name)
+            .having(func.count(Repair.id) > threshold)
+            .order_by(func.count(Repair.id).desc(), Asset.name.asc())
         )
 
         result = await self.session.execute(query)

@@ -4,10 +4,6 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request
 
 from api.dependencies.analytics import get_asset_assignment_analytics_service
-from api.v1.analytics._utils import (
-    parse_optional_datetime,
-    run_analytics_operation,
-)
 from core.cache.decorators import cached
 from core.config import get_settings
 from core.security.auth.dependencies import get_current_user
@@ -25,6 +21,8 @@ from schemas.pagination import PageOutSchema, PaginationParamsSchema
 from services.analytics.asset_assignment_analytics_service import (
     AssetAssignmentAnalyticsService,
 )
+from utils.analytics.cache_utils import run_analytics_operation
+from utils.analytics.date_utils import parse_optional_datetime
 
 router = APIRouter(prefix="/analytics/assignments", tags=["Analytics - Assignments"])
 settings = get_settings()
@@ -45,7 +43,9 @@ async def list_assignments(
     date_to: str | None = Query(None),
     search: str | None = Query(None, max_length=100),
     pagination: PaginationParamsSchema = Depends(),
-    service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
+    service: AssetAssignmentAnalyticsService = Depends(
+        get_asset_assignment_analytics_service
+    ),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
     filters = AssetAssignmentFilterInput(
@@ -61,7 +61,7 @@ async def list_assignments(
         "analytics.assignments.list",
         filters.model_dump(mode="json"),
         lambda: service.list_assignments(filters, pagination, current_user),
-        lambda: PageOutSchema([], 0, pagination.page, pagination.limit),
+        lambda: PageOutSchema(items=[], total=0, page=pagination.page, limit=pagination.limit),
     )
 
 
@@ -74,7 +74,9 @@ async def list_assignments(
 async def list_active_assignments(
     request: Request,
     pagination: PaginationParamsSchema = Depends(),
-    service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
+    service: AssetAssignmentAnalyticsService = Depends(
+        get_asset_assignment_analytics_service
+    ),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
     return await run_analytics_operation(
@@ -82,7 +84,7 @@ async def list_active_assignments(
         "analytics.assignments.active",
         {"page": pagination.page, "limit": pagination.limit},
         lambda: service.list_active_assignments(pagination, current_user),
-        lambda: PageOutSchema([], 0, pagination.page, pagination.limit),
+        lambda: PageOutSchema(items=[], total=0, page=pagination.page, limit=pagination.limit),
     )
 
 
@@ -95,7 +97,9 @@ async def list_active_assignments(
 async def get_user_assignment_summary(
     request: Request,
     user_id: UUID,
-    service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
+    service: AssetAssignmentAnalyticsService = Depends(
+        get_asset_assignment_analytics_service
+    ),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
     return await run_analytics_operation(
@@ -125,7 +129,9 @@ async def get_user_assignment_summary(
 async def get_asset_assignment_timeline(
     request: Request,
     asset_id: UUID,
-    service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
+    service: AssetAssignmentAnalyticsService = Depends(
+        get_asset_assignment_analytics_service
+    ),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
     return await run_analytics_operation(
@@ -156,7 +162,9 @@ async def get_assignment_aggregates(
     status: AssignmentAnalyticsStatus | None = Query(None),
     date_from: str | None = Query(None),
     date_to: str | None = Query(None),
-    service: AssetAssignmentAnalyticsService = Depends(get_asset_assignment_analytics_service),
+    service: AssetAssignmentAnalyticsService = Depends(
+        get_asset_assignment_analytics_service
+    ),
 ):
     filters = AssetAssignmentFilterInput(
         asset_id=asset_id,

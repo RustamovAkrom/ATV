@@ -1,8 +1,6 @@
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
-from core.exceptions.errors import Conflict
 
 from db.models.assets.asset_history import AssetHistory
 from repositories.base import BaseRepository

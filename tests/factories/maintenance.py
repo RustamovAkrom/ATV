@@ -1,6 +1,6 @@
 """Factories for AssetMaintenance test data."""
+
 from datetime import date
-from uuid import uuid4
 
 from db.models.assets.asset import Asset
 from db.models.assets.asset_maintenance import AssetMaintenance

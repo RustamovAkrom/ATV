@@ -14,9 +14,7 @@ class RBACRepository(BaseRepository):
 
     # ROLES
     async def get_roles(self):
-        return await self.scalars(
-            select(Role).options(selectinload(Role.permissions))
-        )
+        return await self.scalars(select(Role).options(selectinload(Role.permissions)))
 
     async def get_role(self, role_id: UUID):
         return await self.scalar(
@@ -68,9 +66,7 @@ class RBACRepository(BaseRepository):
         if not ids:
             return []
 
-        return await self.scalars(
-            select(Permission).where(Permission.id.in_(ids))
-        )
+        return await self.scalars(select(Permission).where(Permission.id.in_(ids)))
 
     # ROLE-PERMISSIONS
     async def set_role_permissions(self, role: Role, permissions: list[Permission]):

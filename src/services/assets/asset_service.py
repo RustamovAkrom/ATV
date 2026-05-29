@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-from uuid import UUID
 from types import SimpleNamespace
+from uuid import UUID
 
 from pydantic import ValidationError
 
-from core.audit.stream import audit_stream
+from core.events.asset_events import AssetEventService
 from core.exceptions.errors import BadRequest, NotFound
+from core.security.access_control import AccessControl
 from db.models.assets.asset import Asset
-from db.models.assets.asset_assignment import AssetAssignment
-from db.models.assets.asset_history import AssetHistory
 from db.models.enums import AssetStatus, UserStatus
 from repositories.assets.asset_repo import AssetRepository
 from schemas.assets.assets import (
-    AssetAssignRequest,
     AssetCreate,
     AssetDetailSchema,
     AssetFilters,
@@ -21,13 +19,10 @@ from schemas.assets.assets import (
     AssetSchema,
     AssetStatusChangeRequest,
     AssetUpdate,
-    AssetPage,
 )
+from schemas.auth.auth import CurrentUserSchema
 from schemas.pagination import PageOutSchema, PageSchema, PaginationParamsSchema
 from utils.helpers import utc_now
-from schemas.auth.auth import CurrentUserSchema
-from core.security.access_control import AccessControl
-from core.events.asset_events import AssetEventService
 
 
 class AssetService:
@@ -133,22 +128,39 @@ class AssetService:
         AccessControl.check_region_access(actor, data.region_id)
         AccessControl.check_service_access(actor, data.service_id)
 
-        if data.owner_id:
-            owner = await self.asset_repo.get_user(data.owner_id)
+        owner_id = actor.id if data.assign_to_self else None
+
+        if owner_id:
+            owner = await self.asset_repo.get_user(owner_id)
             if not owner:
                 raise BadRequest("Invalid owner")
 
-            # AccessControl.check_region_access(actor, owner.region.id) # TODO bu joyda togirlash kerak region.id None kelayapti
-            # AccessControl.check_service_access(actor, owner.service_id) # TODO bu yerdayam service_id yoq tepadayam region_id yoq shuning uchun region.id qildim lekin None berayapti togirlash kerak
+            if owner.status != UserStatus.ACTIVE.value:
+                raise BadRequest("Owner must be active")
+
+            if owner.assigned_region_id and data.region_id:
+                if owner.assigned_region_id != data.region_id:
+                    raise BadRequest(
+                        f"Owner is assigned to region {owner.assigned_region_id}, "
+                        f"but asset belongs to region {data.region_id}"
+                    )
+            if owner.assigned_service_id and data.service_id:
+                if owner.assigned_service_id != data.service_id:
+                    raise BadRequest(
+                        f"Owner is assigned to service {data.service_id}, "
+                        f"but asset belongs to service {data.service_id}"
+                    )
 
         await self._validate_references(
             data.model_id,
             data.region_id,
             data.service_id,
-            data.owner_id,
+            owner_id,
             data.class_id,
         )
         await self._validate_uniques(data.serial_number)
+
+        status = AssetStatus.ASSIGNED if owner_id else AssetStatus.ACTIVE
 
         asset = Asset(
             name=data.name.strip(),
@@ -166,8 +178,8 @@ class AssetService:
             failure_count=data.failure_count,
             usage_intensity=data.usage_intensity,
             meta=data.metadata,
-            owner_id=data.owner_id, # TODO: buv yerda avtomatik owner_id biriktirilishi kerak datadan olib tashlanishi kerak pydantic modeldanam owner_id ni olib tashlash kerak avtomatic tarizda owner_id biriktirilshi kerak authorizatsiyadan otgan shu assetni yaratayotkan userni id sini qoyish lozim
-            status=AssetStatus.ASSIGNED if data.owner_id else AssetStatus.ACTIVE,
+            owner_id=owner_id,
+            status=status,
         )
 
         await self.asset_repo.create(asset)
@@ -260,8 +272,14 @@ class AssetService:
             asset_id=asset.id,
             actor_id=actor.id,
             owner_id=asset.owner_id,
-            from_status=previous_status.value if hasattr(previous_status, 'value') else str(previous_status),
-            to_status=new_status.value if hasattr(new_status, 'value') else str(new_status),
+            from_status=(
+                previous_status.value
+                if hasattr(previous_status, "value")
+                else str(previous_status)
+            ),
+            to_status=(
+                new_status.value if hasattr(new_status, "value") else str(new_status)
+            ),
         )
 
         return await self.get(asset.id, actor)

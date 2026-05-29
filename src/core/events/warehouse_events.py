@@ -1,10 +1,8 @@
 # core/events/warehouse_events.py
 from uuid import UUID
-from core.events.base import BaseEventService
+
 from core.events.domain_event_service import DomainEventService
 from core.notifications.builder import NotificationBuilder
-from core.notifications.dispatcher import NotificationDispatcher
-from services.assets.asset_history_service import AssetHistoryService
 
 
 class WarehouseEventService(DomainEventService):

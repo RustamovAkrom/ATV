@@ -8,13 +8,7 @@ from core.notifications.builder import NotificationBuilder
 class TransferEventService(DomainEventService):
     """Transfer domain events."""
 
-    async def created(
-        self,
-        *,
-        asset_id: UUID,
-        transfer_id: UUID,
-        actor_id: UUID
-    ):
+    async def created(self, *, asset_id: UUID, transfer_id: UUID, actor_id: UUID):
         await self._execute(
             asset_id=asset_id,
             actor_id=actor_id,

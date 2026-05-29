@@ -6,7 +6,6 @@ from sqlalchemy.orm import lazyload, selectinload
 
 from db.models.assets.asset import Asset
 from db.models.assets.asset_assignment import AssetAssignment
-from db.models.assets.asset_history import AssetHistory
 from db.models.assets.asset_transfer import AssetTransfer
 from db.models.enums import TransferStatus
 from db.models.org.service import Service

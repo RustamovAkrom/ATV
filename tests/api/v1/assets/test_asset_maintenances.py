@@ -1,4 +1,5 @@
 """Tests for AssetMaintenance API endpoints."""
+
 from datetime import date, timedelta
 from uuid import uuid4
 
@@ -25,7 +26,7 @@ async def _create_maintenance(client, asset_id: uuid4, token: str, **kwargs) -> 
     payload = {k: v for k, v in payload.items() if v is not None}
 
     response = await client.post(
-        f"/assets/{asset_id}/maintenances/",
+        f"/api/v1/assets/{asset_id}/maintenances/",
         headers=_auth(token),
         json=payload,
     )
@@ -73,7 +74,7 @@ class TestAssetMaintenanceEndpoints:
         user_id = analytics_users["admin"].id
 
         response = await client.post(
-            f"/assets/{asset_id}/maintenances/",
+            f"/api/v1/assets/{asset_id}/maintenances/",
             json={
                 "maintenance_type": "Test",
                 "performed_at": str(date.today()),
@@ -94,7 +95,7 @@ class TestAssetMaintenanceEndpoints:
         user_id = analytics_users["admin"].id
 
         response = await client.post(
-            f"/assets/{fake_asset_id}/maintenances/",
+            f"/api/v1/assets/{fake_asset_id}/maintenances/",
             headers=_auth(analytics_tokens["superadmin"]),
             json={
                 "maintenance_type": "Test",
@@ -115,7 +116,7 @@ class TestAssetMaintenanceEndpoints:
 
         # Missing performed_by_id
         response = await client.post(
-            f"/assets/{asset_id}/maintenances/",
+            f"/api/v1/assets/{asset_id}/maintenances/",
             headers=_auth(analytics_tokens["superadmin"]),
             json={
                 "maintenance_type": "Test",
@@ -135,7 +136,7 @@ class TestAssetMaintenanceEndpoints:
         asset_id = analytics_seed["asset_primary"].id
 
         response = await client.get(
-            f"/assets/{asset_id}/maintenances/",
+            f"/api/v1/assets/{asset_id}/maintenances/",
             headers=_auth(analytics_tokens["superadmin"]),
         )
 
@@ -159,7 +160,7 @@ class TestAssetMaintenanceEndpoints:
         asset_id = analytics_seed["asset_tertiary"].id
 
         response = await client.get(
-            f"/assets/{asset_id}/maintenances/",
+            f"/api/v1/assets/{asset_id}/maintenances/",
             headers=_auth(analytics_tokens["superadmin"]),
         )
 
@@ -180,7 +181,7 @@ class TestAssetMaintenanceEndpoints:
         maintenance_id = test_maintenance.id
 
         response = await client.patch(
-            f"/assets/{asset_id}/maintenances/{maintenance_id}",
+            f"/api/v1/assets/{asset_id}/maintenances/{maintenance_id}",
             headers=_auth(analytics_tokens["superadmin"]),
             json={
                 "notes": "Updated notes",
@@ -205,7 +206,7 @@ class TestAssetMaintenanceEndpoints:
         fake_id = uuid4()
 
         response = await client.patch(
-            f"/assets/{asset_id}/maintenances/{fake_id}",
+            f"/api/v1/assets/{asset_id}/maintenances/{fake_id}",
             headers=_auth(analytics_tokens["superadmin"]),
             json={"notes": "Test"},
         )
@@ -225,7 +226,7 @@ class TestAssetMaintenanceEndpoints:
 
         # Delete
         response = await client.delete(
-            f"/assets/{asset_id}/maintenances/{maintenance_id}",
+            f"/api/v1/assets/{asset_id}/maintenances/{maintenance_id}",
             headers=_auth(analytics_tokens["superadmin"]),
         )
 
@@ -235,7 +236,7 @@ class TestAssetMaintenanceEndpoints:
 
         # Verify deletion - list should not contain deleted maintenance
         list_response = await client.get(
-            f"/assets/{asset_id}/maintenances/",
+            f"/api/v1/assets/{asset_id}/maintenances/",
             headers=_auth(analytics_tokens["superadmin"]),
         )
         items = list_response.json()
@@ -252,7 +253,7 @@ class TestAssetMaintenanceEndpoints:
         fake_id = uuid4()
 
         response = await client.delete(
-            f"/assets/{asset_id}/maintenances/{fake_id}",
+            f"/api/v1/assets/{asset_id}/maintenances/{fake_id}",
             headers=_auth(analytics_tokens["superadmin"]),
         )
 
@@ -270,7 +271,7 @@ class TestAssetMaintenanceEndpoints:
         user_id = analytics_users["admin"].id
 
         response = await client.post(
-            f"/assets/{asset_id}/maintenances/",
+            f"/api/v1/assets/{asset_id}/maintenances/",
             headers=_auth(analytics_tokens["superadmin"]),
             json={
                 "maintenance_type": "Test",
@@ -293,7 +294,7 @@ class TestAssetMaintenanceEndpoints:
         user_id = analytics_users["admin"].id
 
         response = await client.post(
-            f"/assets/{asset_id}/maintenances/",
+            f"/api/v1/assets/{asset_id}/maintenances/",
             headers=_auth(analytics_tokens["superadmin"]),
             json={
                 "maintenance_type": "",
@@ -341,7 +342,7 @@ class TestAssetMaintenanceEndpoints:
 
         # Update only notes
         response = await client.patch(
-            f"/assets/{asset_id}/maintenances/{maintenance_id}",
+            f"/api/v1/assets/{asset_id}/maintenances/{maintenance_id}",
             headers=_auth(analytics_tokens["superadmin"]),
             json={"notes": "Only notes updated"},
         )
@@ -361,7 +362,7 @@ class TestAssetMaintenanceEndpoints:
         asset_id = analytics_seed["asset_primary"].id
 
         response = await client.get(
-            f"/assets/{asset_id}/maintenances/",
+            f"/api/v1/assets/{asset_id}/maintenances/",
         )
 
         assert response.status_code in (400, 401)

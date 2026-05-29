@@ -31,6 +31,7 @@ dependencies = [
     "python-dateutil>=2.9.0.post0",
     "python-jose>=3.5.0",
     "redis>=7.4.0",
+    "ruff>=0.15.10",
     "slowapi>=0.1.9",
     "sqladmin[full]>=0.24.0",
     "sqlalchemy>=2.0.49",

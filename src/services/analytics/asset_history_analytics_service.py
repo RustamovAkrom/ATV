@@ -44,7 +44,9 @@ class AssetHistoryAnalyticsService:
             limit=pagination.limit,
         )
 
-    async def get_aggregates(self, filters: AssetHistoryFilter) -> AssetHistoryAggregates:
+    async def get_aggregates(
+        self, filters: AssetHistoryFilter
+    ) -> AssetHistoryAggregates:
         agg_dict = await self.repo.get_aggregates(filters)
 
         return AssetHistoryAggregates(

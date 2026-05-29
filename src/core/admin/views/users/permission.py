@@ -8,7 +8,3 @@ class PermissionAdmin(BaseAdmin, model=Permission):
     icon = "fa-solid fa-dashboard"
 
     column_list = ["name"]
-
-    can_edit = True
-    can_create = True
-    can_delete = True

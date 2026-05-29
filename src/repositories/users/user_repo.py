@@ -1,13 +1,13 @@
 from uuid import UUID
 
-from sqlalchemy import or_, select, update, exists
+from sqlalchemy import exists, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from db.models.enums import UserStatus
 from db.models.users import Role, User
-from schemas.pagination import PaginationParamsSchema
 from repositories.base import BaseRepository
+from schemas.pagination import PaginationParamsSchema
 
 
 class UserRepository(BaseRepository):
@@ -65,10 +65,17 @@ class UserRepository(BaseRepository):
         )
 
     async def exists_by_email(self, email: str) -> bool:
-        return await self.scalar(select(exists().where(User.email == email))) is not None
+        return (
+            await self.scalar(select(exists().where(User.email == email))) is not None
+        )
 
     async def exists_by_login(self, login: str) -> bool:
-        return await self.session.scalar(select(exists()).where(User.login == login).limit(1)) is not None
+        return (
+            await self.session.scalar(
+                select(exists()).where(User.login == login).limit(1)
+            )
+            is not None
+        )
 
     async def create(self, user: User) -> User:
         self.add(user)
@@ -77,9 +84,7 @@ class UserRepository(BaseRepository):
         return user
 
     async def update(self, user_id: UUID, data: dict) -> None:
-        await self.execute(
-            update(User).where(User.id == user_id).values(**data)
-        )
+        await self.execute(update(User).where(User.id == user_id).values(**data))
         await self.flush()
 
     async def set_password(self, user_id: UUID, password_hash: str):
@@ -89,9 +94,7 @@ class UserRepository(BaseRepository):
         await self.flush()
 
     async def change_status(self, user_id: UUID, status: str):
-        await self.execute(
-            update(User).where(User.id == user_id).values(status=status)
-        )
+        await self.execute(update(User).where(User.id == user_id).values(status=status))
 
     async def update_role(self, user_id: UUID, role_id: UUID) -> None:
         await self.execute(

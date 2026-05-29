@@ -1,5 +1,5 @@
-from typing import Dict, Set
 from uuid import UUID
+
 from fastapi import WebSocket
 
 from core.notifications.ws.backends.base import WSBackend
@@ -7,7 +7,7 @@ from core.notifications.ws.backends.base import WSBackend
 
 class InMemoryWSBackend(WSBackend):
     def __init__(self):
-        self.connections: Dict[UUID, Set[WebSocket]] = {}
+        self.connections: dict[UUID, set[WebSocket]] = {}
 
     async def connect(self, user_id: UUID, ws: WebSocket):
         await ws.accept()

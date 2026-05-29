@@ -3,6 +3,7 @@
 from datetime import datetime
 from enum import Enum
 from uuid import UUID
+
 from pydantic import ConfigDict, Field
 
 from schemas.base import BaseSchema, NamedRefSchema
@@ -17,12 +18,15 @@ class ExpenseTypeEnum(str, Enum):
     LOGISTICS = "logistics"
     OTHER = "other"
 
+
 AssetRef = NamedRefSchema
 RegionRef = NamedRefSchema
 ServiceRef = NamedRefSchema
+
+
 class ExpenseCreateSchema(BaseSchema):
     amount: float = Field(..., gt=0, le=1e12, description="Amount must be positive")
-    currency: str = Field("UZS", min_length=3, max_length=10, pattern=r'^[A-Z]{3}$')
+    currency: str = Field("UZS", min_length=3, max_length=10, pattern=r"^[A-Z]{3}$")
     expense_type: ExpenseTypeEnum
     description: str | None = Field(None, max_length=1000)
     asset_id: UUID | None = None

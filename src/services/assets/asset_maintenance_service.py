@@ -1,17 +1,16 @@
 from uuid import UUID
-from typing import List, Optional
 
-from core.exceptions.errors import NotFound, BadRequest
+from core.events.asset_events import AssetEventService
+from core.exceptions.errors import NotFound
+from core.security.access_control import AccessControl
 from repositories.assets.asset_maintenance_repo import AssetMaintenanceRepository
 from repositories.assets.asset_repo import AssetRepository
 from schemas.assets.asset_maintenance import (
     AssetMaintenanceCreateSchema,
-    AssetMaintenanceUpdateSchema,
     AssetMaintenanceOutSchema,
+    AssetMaintenanceUpdateSchema,
 )
 from schemas.auth.auth import CurrentUserSchema
-from core.security.access_control import AccessControl
-from core.events.asset_events import AssetEventService
 
 
 class AssetMaintenanceService:
@@ -27,7 +26,9 @@ class AssetMaintenanceService:
         self.asset_repo = asset_repo
         self.asset_events = asset_events
 
-    async def _check_asset_access(self, asset_id: UUID, actor: CurrentUserSchema) -> None:
+    async def _check_asset_access(
+        self, asset_id: UUID, actor: CurrentUserSchema
+    ) -> None:
         """Проверить доступ к активу"""
         asset = await self.asset_repo.get_by_id(asset_id)
         if not asset:
@@ -44,14 +45,18 @@ class AssetMaintenanceService:
         """Создать запись о техническом обслуживании"""
         await self._check_asset_access(asset_id, actor)
 
-        maintenance = await self.repo.create({
-            "asset_id": asset_id,
-            "maintenance_type": data.maintenance_type.strip(),
-            "performed_at": data.performed_at,
-            "issues_found": data.issues_found.strip() if data.issues_found else None,
-            "performed_by_id": data.performed_by_id,
-            "notes": data.notes.strip() if data.notes else None,
-        })
+        maintenance = await self.repo.create(
+            {
+                "asset_id": asset_id,
+                "maintenance_type": data.maintenance_type.strip(),
+                "performed_at": data.performed_at,
+                "issues_found": (
+                    data.issues_found.strip() if data.issues_found else None
+                ),
+                "performed_by_id": data.performed_by_id,
+                "notes": data.notes.strip() if data.notes else None,
+            }
+        )
 
         await self.asset_events.maintenance_performed(
             asset_id=asset_id,
@@ -66,7 +71,7 @@ class AssetMaintenanceService:
         self,
         asset_id: UUID,
         actor: CurrentUserSchema,
-    ) -> List[AssetMaintenanceOutSchema]:
+    ) -> list[AssetMaintenanceOutSchema]:
         """Получить все записи обслуживания актива"""
         await self._check_asset_access(asset_id, actor)
         records = await self.repo.get_by_asset(asset_id)
@@ -88,7 +93,9 @@ class AssetMaintenanceService:
         update_data = data.model_dump(exclude_unset=True)
         if update_data:
             if "maintenance_type" in update_data:
-                update_data["maintenance_type"] = update_data["maintenance_type"].strip()
+                update_data["maintenance_type"] = update_data[
+                    "maintenance_type"
+                ].strip()
             if "issues_found" in update_data and update_data["issues_found"]:
                 update_data["issues_found"] = update_data["issues_found"].strip()
             if "notes" in update_data and update_data["notes"]:
@@ -117,7 +124,9 @@ class AssetMaintenanceService:
     def _to_out(self, record) -> AssetMaintenanceOutSchema:
         performed_by_name = None
         if record.performed_by:
-            performed_by_name = record.performed_by.full_name or record.performed_by.login
+            performed_by_name = (
+                record.performed_by.full_name or record.performed_by.login
+            )
 
         return AssetMaintenanceOutSchema(
             id=record.id,

@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import ConfigDict, Field
+from pydantic import Field
 
 from db.models.enums import RepairStatus
 from schemas.base import BaseSchema

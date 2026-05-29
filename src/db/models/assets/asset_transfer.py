@@ -1,5 +1,5 @@
-from typing import TYPE_CHECKING
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import DateTime, Enum as SAEnum, ForeignKey, String
@@ -10,12 +10,12 @@ from db.base import Base
 from db.mixins import TimestampMixin, UUIDMixing
 from db.models.enums import TransferStatus
 
-
 if TYPE_CHECKING:
     from db.models.assets.asset import Asset
-    from db.models.warehouse.warehouse import Warehouse
     from db.models.org.service import Service
     from db.models.users.user import User
+    from db.models.warehouse.warehouse import Warehouse
+
 
 class AssetTransfer(Base, UUIDMixing, TimestampMixin):
     __tablename__ = "asset_transfers"
@@ -48,7 +48,9 @@ class AssetTransfer(Base, UUIDMixing, TimestampMixin):
     comment: Mapped[str | None] = mapped_column(String(255))
 
     # relationships
-    asset: Mapped["Asset"] = relationship("Asset", back_populates="transfers", lazy="selectin")
+    asset: Mapped["Asset"] = relationship(
+        "Asset", back_populates="transfers", lazy="selectin"
+    )
     from_warehouse: Mapped["Warehouse"] = relationship(
         "Warehouse", foreign_keys=[from_warehouse_id], lazy="selectin"
     )
@@ -70,8 +72,12 @@ class AssetTransfer(Base, UUIDMixing, TimestampMixin):
         ForeignKey("users.id"), nullable=True
     )
 
-    created_by: Mapped["User"] = relationship("User", foreign_keys=[created_by_id], lazy="selectin")
-    received_by: Mapped["User"] = relationship("User", foreign_keys=[received_by_id], lazy="selectin")
+    created_by: Mapped["User"] = relationship(
+        "User", foreign_keys=[created_by_id], lazy="selectin"
+    )
+    received_by: Mapped["User"] = relationship(
+        "User", foreign_keys=[received_by_id], lazy="selectin"
+    )
 
     def __repr__(self):
         return f"{self.asset_id} | {self.from_warehouse} -> {self.to_warehouse}"

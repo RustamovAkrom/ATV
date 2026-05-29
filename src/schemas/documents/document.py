@@ -1,16 +1,18 @@
 from datetime import datetime
 from uuid import UUID
+
 from pydantic import Field, field_validator
 
+from core.config import get_settings
 from db.models.enums import DocumentStatus
 from schemas.base import BaseSchema, TimestampSchema
-from core.config import get_settings
 
 settings = get_settings()
 
 
 class DocumentFileCreateSchema(BaseSchema):
     """Схема для создания файла документа"""
+
     file_name: str = Field(min_length=1, max_length=255)
     file_path: str = Field(min_length=1, max_length=500)
     file_size: int | None = Field(None, ge=0)
@@ -19,6 +21,7 @@ class DocumentFileCreateSchema(BaseSchema):
 
 class DocumentFileOutSchema(BaseSchema):
     """Схема для вывода файла документа"""
+
     id: UUID
     file_name: str
     file_path: str
@@ -35,6 +38,7 @@ class DocumentFileOutSchema(BaseSchema):
 
 class AssetDocumentCreateSchema(BaseSchema):
     """Схема для создания документа (JSON + файлы)"""
+
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(None, max_length=500)
     document_type: str = Field(default="other", min_length=1, max_length=50)
@@ -44,6 +48,7 @@ class AssetDocumentCreateSchema(BaseSchema):
 
 class AssetDocumentUpdateSchema(BaseSchema):
     """Схема для обновления документа"""
+
     title: str | None = Field(None, min_length=1, max_length=255)
     description: str | None = Field(None, max_length=500)
     document_type: str | None = Field(None, min_length=1, max_length=50)
@@ -63,6 +68,7 @@ class AssetDocumentUpdateSchema(BaseSchema):
 
 class AssetDocumentOutSchema(TimestampSchema):
     """Схема для вывода документа"""
+
     id: UUID
     title: str
     description: str | None
@@ -77,6 +83,7 @@ class AssetDocumentOutSchema(TimestampSchema):
 
 class AssetDocumentWithFilesOutSchema(AssetDocumentOutSchema):
     """Документ с полной информацией о файлах"""
+
     total_files_size: int | None = None
     file_count: int = 0
 

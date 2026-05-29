@@ -1,12 +1,12 @@
+from loguru import logger
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
-from starlette.responses import RedirectResponse
-from loguru import logger
-from core.security.passwords import verify_password
-from db.models.users.user import User
-from db.models.enums import UserRole
-from core.database.db_sync import get_sync_session_factory
+
 from core.config import get_settings
+from core.database.db_sync import get_sync_session_factory
+from core.security.passwords import verify_password
+from db.models.enums import UserRole, UserStatus
+from db.models.users.user import User
 
 settings = get_settings()
 
@@ -18,7 +18,9 @@ class AdminAuth(AuthenticationBackend):
         password = form.get("password")
 
         if not username or not password:
-            logger.warning(f"Admin login failed: missing credentials from {request.client.host}")
+            logger.warning(
+                f"Admin login failed: missing credentials from {request.client.host}"
+            )
             return False
 
         session_factory = get_sync_session_factory()
@@ -26,19 +28,23 @@ class AdminAuth(AuthenticationBackend):
             user = session.query(User).filter(User.login == username).first()
 
             if not user:
-                logger.warning(f"Admin login failed: user '{username}' not found from {request.client.host}")
+                logger.warning(
+                    f"Admin login failed: user '{username}' not found from {request.client.host}"
+                )
                 return False
 
             # Проверка пароля и прав супер-админа
             is_password_valid = verify_password(password, user.password_hash)
             is_superadmin = user.role and user.role.slug == UserRole.SUPERADMIN.value
-            is_active = user.status and user.status.value == "active"
+            is_active = user.status and user.status.value == UserStatus.ACTIVE.value
 
             if is_password_valid and is_superadmin and is_active:
                 request.session["user_id"] = str(user.id)
                 request.session["user"] = user.login
                 request.session["role"] = user.role.slug
-                logger.info(f"Admin login successful: '{username}' from {request.client.host}")
+                logger.info(
+                    f"Admin login successful: '{username}' from {request.client.host}"
+                )
                 return True
 
             reason = []
@@ -49,7 +55,9 @@ class AdminAuth(AuthenticationBackend):
             if not is_active:
                 reason.append("user inactive")
 
-            logger.warning(f"Admin login failed for '{username}': {', '.join(reason)} from {request.client.host}")
+            logger.warning(
+                f"Admin login failed for '{username}': {', '.join(reason)} from {request.client.host}"
+            )
             return False
 
     async def logout(self, request: Request) -> bool:
@@ -67,8 +75,12 @@ class AdminAuth(AuthenticationBackend):
         if is_authenticated and "user_id" in request.session:
             session_factory = get_sync_session_factory()
             with session_factory() as session:
-                user = session.query(User).filter(User.id == request.session["user_id"]).first()
-                if not user or user.status.value != "active":
+                user = (
+                    session.query(User)
+                    .filter(User.id == request.session["user_id"])
+                    .first()
+                )
+                if not user or user.status.value != UserStatus.ACTIVE.value:
                     await self.logout(request)
                     return False
 

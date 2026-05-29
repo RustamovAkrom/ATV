@@ -1,13 +1,15 @@
 from uuid import UUID
-from typing import List, Optional
 
-from core.exceptions.errors import NotFound, BadRequest
-from repositories.assets.asset_image_repo import AssetImageRepository
-from repositories.assets.asset_repo import AssetRepository
-from schemas.assets.asset_image import AssetImageCreateSchema, AssetImageOutSchema, AssetImageUpdateSchema
-from schemas.auth.auth import CurrentUserSchema
+from core.exceptions.errors import NotFound
 from core.security.access_control import AccessControl
 from db.models.assets.asset_image import AssetImage
+from repositories.assets.asset_image_repo import AssetImageRepository
+from repositories.assets.asset_repo import AssetRepository
+from schemas.assets.asset_image import (
+    AssetImageCreateSchema,
+    AssetImageOutSchema,
+)
+from schemas.auth.auth import CurrentUserSchema
 
 
 class AssetImageService:
@@ -19,7 +21,9 @@ class AssetImageService:
         self.repo = repo
         self.asset_repo = asset_repo
 
-    async def _check_asset_access(self, asset_id: UUID, actor: CurrentUserSchema) -> None:
+    async def _check_asset_access(
+        self, asset_id: UUID, actor: CurrentUserSchema
+    ) -> None:
         """Проверить доступ к активу"""
         asset = await self.asset_repo.get_by_id(asset_id)
         if not asset:
@@ -40,28 +44,34 @@ class AssetImageService:
         existing = await self.repo.get_by_asset(asset_id)
         is_primary = len(existing) == 0
 
-        image = await self.repo.create({
-            "asset_id": asset_id,
-            "file_name": data.file_name,
-            "file_path": data.file_path,
-            "file_size": data.file_size,
-            "content_type": data.content_type,
-            "is_primary": is_primary,
-            "sort_order": len(existing),
-            "width": data.width,
-            "height": data.height,
-            "alt_text": data.alt_text,
-        })
+        image = await self.repo.create(
+            {
+                "asset_id": asset_id,
+                "file_name": data.file_name,
+                "file_path": data.file_path,
+                "file_size": data.file_size,
+                "content_type": data.content_type,
+                "is_primary": is_primary,
+                "sort_order": len(existing),
+                "width": data.width,
+                "height": data.height,
+                "alt_text": data.alt_text,
+            }
+        )
 
         return self._to_out(image)
 
-    async def get_images(self, asset_id: UUID, actor: CurrentUserSchema) -> List[AssetImageOutSchema]:
+    async def get_images(
+        self, asset_id: UUID, actor: CurrentUserSchema
+    ) -> list[AssetImageOutSchema]:
         """Получить все изображения актива"""
         await self._check_asset_access(asset_id, actor)
         images = await self.repo.get_by_asset(asset_id)
         return [self._to_out(img) for img in images]
 
-    async def set_primary(self, image_id: UUID, asset_id: UUID, actor: CurrentUserSchema) -> None:
+    async def set_primary(
+        self, image_id: UUID, asset_id: UUID, actor: CurrentUserSchema
+    ) -> None:
         """Установить главное изображение"""
         await self._check_asset_access(asset_id, actor)
         image = await self.repo.get(image_id)
@@ -69,7 +79,9 @@ class AssetImageService:
             raise NotFound(f"Image {image_id} not found for asset {asset_id}")
         await self.repo.set_primary(image_id, asset_id)
 
-    async def delete_image(self, image_id: UUID, asset_id: UUID, actor: CurrentUserSchema) -> None:
+    async def delete_image(
+        self, image_id: UUID, asset_id: UUID, actor: CurrentUserSchema
+    ) -> None:
         """Удалить изображение"""
         await self._check_asset_access(asset_id, actor)
         image = await self.repo.get(image_id)
@@ -83,7 +95,9 @@ class AssetImageService:
             if remaining:
                 await self.repo.set_primary(remaining[0].id, asset_id)
 
-    async def reorder_images(self, asset_id: UUID, ordered_ids: List[UUID], actor: CurrentUserSchema) -> None:
+    async def reorder_images(
+        self, asset_id: UUID, ordered_ids: list[UUID], actor: CurrentUserSchema
+    ) -> None:
         """Изменить порядок изображений"""
         await self._check_asset_access(asset_id, actor)
         images = await self.repo.get_by_asset(asset_id)

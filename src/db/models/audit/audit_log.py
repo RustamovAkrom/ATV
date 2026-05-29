@@ -1,5 +1,3 @@
-# src/db/models/audit_log.py
-
 from datetime import datetime
 from uuid import UUID
 

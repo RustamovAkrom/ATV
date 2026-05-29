@@ -1,5 +1,5 @@
-from uuid import UUID
 import json
+from uuid import UUID
 
 from repositories.analytics.region_analytics_repo import RegionAnalyticsRepository
 from schemas.analytics.regions import (

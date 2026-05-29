@@ -1,20 +1,19 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
+from api.dependencies.assets.asset_approval import get_approval_service
+from core.cache.decorators import invalidate_cache
 from core.security.auth.dependencies import get_current_user
 from core.security.rbac.presets import AssetApprovalPermissions
-
-from schemas.auth import CurrentUserSchema
-from schemas.assets.asset_transfers import AssetTransferCreate
+from core.slowapi import limiter
+from schemas.assets.approvals import ApprovalCreate, ApprovalSchema
 from schemas.assets.asset_assignments import AssetAssignmentRequest
+from schemas.assets.asset_transfers import AssetTransferCreate
 from schemas.assets.repairs import RepairCompleteRequest
 from schemas.assets.warehouses import WarehouseMoveRequest
-from schemas.assets.approvals import ApprovalCreate, ApprovalSchema
-
+from schemas.auth import CurrentUserSchema
 from services.approvals.approval_service import ApprovalService
-from api.dependencies.assets.asset_approval import get_approval_service
-
 
 router = APIRouter(
     prefix="/assets/{asset_id}/approval-requests",
@@ -27,7 +26,10 @@ router = APIRouter(
     response_model=ApprovalSchema,
     dependencies=[Depends(AssetApprovalPermissions.CanCreateApprovals)],
 )
+@limiter.limit("10/minute")
+@invalidate_cache(tags=("asset:list", "asset:detail", "asset:history"))
 async def request_assignment(
+    request: Request,
     asset_id: UUID,
     data: AssetAssignmentRequest,
     actor: CurrentUserSchema = Depends(get_current_user),
@@ -49,7 +51,10 @@ async def request_assignment(
     response_model=ApprovalSchema,
     dependencies=[Depends(AssetApprovalPermissions.CanCreateApprovals)],
 )
+@limiter.limit("10/minute")
+@invalidate_cache(tags=("asset:list", "asset:detail", "asset:history"))
 async def request_transfer(
+    request: Request,
     asset_id: UUID,
     data: AssetTransferCreate,
     actor: CurrentUserSchema = Depends(get_current_user),
@@ -71,7 +76,10 @@ async def request_transfer(
     response_model=ApprovalSchema,
     dependencies=[Depends(AssetApprovalPermissions.CanCreateApprovals)],
 )
+@limiter.limit("10/minute")
+@invalidate_cache(tags=("asset:list", "asset:detail", "asset:history", "repair:detail"))
 async def request_repair_complete(
+    request: Request,
     asset_id: UUID,
     repair_id: UUID,
     data: RepairCompleteRequest,
@@ -97,7 +105,10 @@ async def request_repair_complete(
     response_model=ApprovalSchema,
     dependencies=[Depends(AssetApprovalPermissions.CanCreateApprovals)],
 )
+@limiter.limit("10/minute")
+@invalidate_cache(tags=("asset:list", "asset:detail", "asset:history"))
 async def request_warehouse_move(
+    request: Request,
     asset_id: UUID,
     data: WarehouseMoveRequest,
     actor: CurrentUserSchema = Depends(get_current_user),

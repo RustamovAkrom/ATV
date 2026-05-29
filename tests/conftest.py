@@ -1,6 +1,8 @@
 from collections.abc import AsyncGenerator
 from typing import Any
 from uuid import uuid4
+import os
+import sys
 
 import pytest
 from fastapi import FastAPI
@@ -13,6 +15,11 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+ROOT_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+SRC_DIR = os.path.abspath(os.path.join(ROOT_DIR, "src"))
+if SRC_DIR not in sys.path:
+    sys.path.insert(0, SRC_DIR)
+
 from app import create_app
 from core.config import get_settings
 from core.security.passwords import hash_password
@@ -22,8 +29,8 @@ from db.models import load_all_models
 from db.models.enums import UserRole, UserStatus
 from db.models.users.permission import Permission, Role
 from db.models.users.user import User
-from tests.utils.auth import login
 from schemas.auth.auth import CurrentUserSchema
+from tests.utils.auth import login
 
 pytest_plugins = (
     "tests.fixtures.analytics",
@@ -192,7 +199,7 @@ async def permission_id(dbsession):
 @pytest.fixture
 async def role_id(client, superadmin_token):
     res = await client.post(
-        "/rbac/roles",
+        "/api/v1/rbac/roles",
         json={"name": "TestRole", "slug": "testrole"},
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
@@ -229,7 +236,7 @@ async def approver_token(create_user, client):
     user = await create_user(login="approver_user")
 
     response = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         data={
             "username": user.login,
             "password": "password",  # если у тебя дефолт

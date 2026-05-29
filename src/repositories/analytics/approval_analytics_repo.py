@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date
 
 from sqlalchemy import func, select
 
@@ -13,9 +13,7 @@ class ApprovalAnalyticsRepository(BaseAnalyticsRepository):
     """Репозиторий для аналитики согласований"""
 
     async def metrics(
-        self,
-        date_from: date | None = None,
-        date_to: date | None = None
+        self, date_from: date | None = None, date_to: date | None = None
     ) -> dict:
         """Метрики по согласованиям"""
         filters = self.date_filters(ApprovalRequest.created_at, date_from, date_to)
@@ -28,10 +26,17 @@ class ApprovalAnalyticsRepository(BaseAnalyticsRepository):
             .filter(ApprovalRequest.status == ApprovalStatus.REJECTED)
             .label("rejected_count"),
             func.count(ApprovalRequest.id)
-            .filter(ApprovalRequest.status.in_([ApprovalStatus.APPROVED, ApprovalStatus.REJECTED]))
+            .filter(
+                ApprovalRequest.status.in_(
+                    [ApprovalStatus.APPROVED, ApprovalStatus.REJECTED]
+                )
+            )
             .label("decided_count"),
             func.avg(
-                func.extract("epoch", ApprovalRequest.decided_at - ApprovalRequest.created_at) / 3600.0
+                func.extract(
+                    "epoch", ApprovalRequest.decided_at - ApprovalRequest.created_at
+                )
+                / 3600.0
             )
             .filter(ApprovalRequest.decided_at.isnot(None))
             .label("avg_approval_hours"),
@@ -44,5 +49,7 @@ class ApprovalAnalyticsRepository(BaseAnalyticsRepository):
             "pending_approvals": row.pending_approvals or 0,
             "rejected_count": row.rejected_count or 0,
             "decided_count": row.decided_count or 0,
-            "avg_approval_hours": float(row.avg_approval_hours) if row.avg_approval_hours else 0,
+            "avg_approval_hours": (
+                float(row.avg_approval_hours) if row.avg_approval_hours else 0
+            ),
         }

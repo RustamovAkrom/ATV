@@ -1,17 +1,17 @@
+import json
+
 from core.admin.base import BaseAdmin
 from db.models.assets.asset import Asset
 from db.models.assets.asset_assignment import AssetAssignment
 from db.models.assets.asset_category import AssetCategory
 from db.models.assets.asset_class import AssetClass
 from db.models.assets.asset_history import AssetHistory
-from db.models.assets.asset_model import AssetModel
 from db.models.assets.asset_image import AssetImage
+from db.models.assets.asset_maintenance import AssetMaintenance
+from db.models.assets.asset_model import AssetModel
 from db.models.assets.asset_transfer import AssetTransfer
 from db.models.assets.manufacturer import Manufacturer
 from db.models.warehouse.warehouse import Warehouse
-from db.models.assets.asset_maintenance import AssetMaintenance
-
-import json
 
 
 class AssetAdmin(BaseAdmin, model=Asset):
@@ -20,8 +20,6 @@ class AssetAdmin(BaseAdmin, model=Asset):
     icon = "fa-solid fa-box"
 
     can_edit = True
-    can_create = True
-    can_delete = True
 
     form_excluded_columns = ["meta", "slug", "created_at", "updated_at"]
 
@@ -46,17 +44,18 @@ class AssetAdmin(BaseAdmin, model=Asset):
         "warehouse": lambda m, _: m.warehouse.name if m.warehouse else None,
         "region": lambda m, _: m.region.name if m.region else None,
         "service": lambda m, _: m.service.name if m.service else None,
-        "meta": lambda m, _: json.dumps(m.meta, indent=2) if m.meta else "{}"
+        "meta": lambda m, _: json.dumps(m.meta, indent=2) if m.meta else "{}",
     }
+
 
 class AssetAssignmentAdmin(BaseAdmin, model=AssetAssignment):
     name = "Asset Assignment"
     name_plural = "Asset Assignments"
     icon = "fa-solid fa-user-check"
 
-    can_edit = True
-    can_create = True
-    can_delete = True
+    # can_edit = True
+    # can_create = True
+    # can_delete = True
 
     column_list = [
         "id",
@@ -78,8 +77,6 @@ class AssetImageAdmin(BaseAdmin, model=AssetImage):
     name_plural = "Asset Images"
     icon = "fa-solid fa-image"
 
-    can_edit = True
-    can_create = True
     can_delete = True
 
     # Список колонок для отображения в таблице
@@ -103,11 +100,14 @@ class AssetImageAdmin(BaseAdmin, model=AssetImage):
     # Форматтеры
     column_formatters = {
         "asset": lambda m, _: m.asset.name if m.asset else "-",
-        "file_size": lambda m, _: f"{m.file_size / 1024:.1f} KB" if m.file_size else "-",
+        "file_size": lambda m, _: (
+            f"{m.file_size / 1024:.1f} KB" if m.file_size else "-"
+        ),
         "is_primary": lambda m, _: "⭐ Yes" if m.is_primary else "",
         "preview": lambda m, _: (
             f'<img src="{m.file_path}" style="max-width: 50px; max-height: 50px; object-fit: cover;" />'
-            if m.file_path else "-"
+            if m.file_path
+            else "-"
         ),
     }
 
@@ -142,10 +142,9 @@ class AssetCategoryAdmin(BaseAdmin, model=AssetCategory):
     can_delete = True
 
     column_list = ["id", "name", "slug", "created_at"]
-
     column_searchable_list = ["name", "slug"]
 
-    form_excluded_columns = ["slug"]
+    form_excluded_columns = ["slug", "created_at", "updated_at"]
 
 
 class AssetClassAdmin(BaseAdmin, model=AssetClass):
@@ -230,7 +229,9 @@ class AssetTransferAdmin(BaseAdmin, model=AssetTransfer):
     column_formatters = {
         "asset": lambda m, _: m.asset.name if m.asset else None,
         "created_by": lambda m, _: m.created_by.full_name if m.created_by else None,
-        "from_warehouse": lambda m, _: m.from_warehouse.name if m.from_warehouse else None,
+        "from_warehouse": lambda m, _: (
+            m.from_warehouse.name if m.from_warehouse else None
+        ),
         "to_warehouse": lambda m, _: m.to_warehouse.name if m.to_warehouse else None,
     }
 
@@ -284,5 +285,7 @@ class AssetMaintenanceAdmin(BaseAdmin, model=AssetMaintenance):
     column_list = ["id", "asset", "maintenance_type", "performed_at", "performed_by"]
     column_formatters = {
         "asset": lambda m, _: m.asset.name if m.asset else "-",
-        "performed_by": lambda m, _: m.performed_by.full_name if m.performed_by else "-",
+        "performed_by": lambda m, _: (
+            m.performed_by.full_name if m.performed_by else "-"
+        ),
     }

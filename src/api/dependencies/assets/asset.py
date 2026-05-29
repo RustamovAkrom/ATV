@@ -1,16 +1,16 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.dependencies.assets.asset_assignment import get_asset_assignment_service
+from api.dependencies.assets.asset_transfer import get_asset_transfer_service
+from api.dependencies.events.asset import get_asset_event_service
+from core.events.asset_events import AssetEventService
 from db.dependencies import get_db_session
 from repositories.assets.asset_repo import AssetRepository
 from services.assets.asset_assignment_service import AssetAssignmentService
 from services.assets.asset_service import AssetService
 from services.assets.asset_transfer_service import AssetTransferService
 from services.assets.bulk_asset_service import BulkAssetService
-from core.events.asset_events import AssetEventService
-from api.dependencies.events.asset import get_asset_event_service
-from api.dependencies.assets.asset_assignment import get_asset_assignment_service
-from api.dependencies.assets.asset_transfer import get_asset_transfer_service
 
 
 def get_asset_repo(

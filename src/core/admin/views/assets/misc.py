@@ -27,7 +27,6 @@ class AuditLogAdmin(BaseAdmin, model=AuditLog):
     ]
 
 
-
 class NotificationAdmin(BaseAdmin, model=Notification):
     name = "Notification"
     name_plural = "Notifications"

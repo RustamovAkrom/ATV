@@ -2,12 +2,12 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import ConfigDict, Field
+from pydantic import Field
 
 from db.models.enums import AssetStatus
-from schemas.pagination import PageOutSchema
-from schemas.base import BaseSchema, TimestampSchema
 from schemas.assets.asset_maintenance import AssetMaintenanceOutSchema
+from schemas.base import BaseSchema, TimestampSchema
+from schemas.pagination import PageOutSchema
 
 
 class AssetRef(BaseSchema):
@@ -57,7 +57,6 @@ class AssetCreate(BaseSchema):
     class_id: UUID | None = None
     region_id: UUID | None = None
     service_id: UUID | None = None
-    owner_id: UUID | None = None
 
     serial_number: str | None = Field(default=None, max_length=255)
 
@@ -75,6 +74,10 @@ class AssetCreate(BaseSchema):
 
     metadata: dict = Field(default_factory=dict)
 
+    assign_to_self: bool = Field(
+        default=False, description="Назначить актив текущему пользователю"
+    )
+
 
 class AssetUpdate(BaseSchema):
     name: str | None = Field(default=None, min_length=1, max_length=255)
@@ -84,7 +87,7 @@ class AssetUpdate(BaseSchema):
 
     region_id: UUID | None = None
     service_id: UUID | None = None
-    # owner_id: UUID | None = None
+    owner_id: UUID | None = None
 
     serial_number: str | None = Field(default=None, max_length=255)
     commission_date: date | None = None
@@ -147,5 +150,6 @@ class AssetDetailSchema(AssetSchema):
     assignments: list[AssetAssignmentSchema] = Field(default_factory=list)
     history_entries: list[AssetHistorySchema] = Field(default_factory=list)
     maintenances: list[AssetMaintenanceOutSchema] = Field(default_factory=list)
+
 
 AssetPage = PageOutSchema[AssetSchema]

@@ -46,4 +46,3 @@ async def test_close_assignment_sets_unassigned_at():
 
     assert closed.unassigned_at == timestamp
     session.flush.assert_awaited_once()
-

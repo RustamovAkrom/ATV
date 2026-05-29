@@ -1,7 +1,7 @@
 from math import ceil
-from typing import Any, TypeVar, Generic
-from pydantic import BaseModel, ConfigDict, Field, computed_field
+from typing import Generic, TypeVar
 
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 T = TypeVar("T")
 
@@ -38,9 +38,6 @@ class PageOutSchema(BaseModel, Generic[T]):
     limit: int
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    def __init__(self, items: list[T], total: int, page: int, limit: int):
-        super().__init__(items=items, total=total, page=page, limit=limit)
 
     @computed_field
     @property

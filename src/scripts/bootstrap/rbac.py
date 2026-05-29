@@ -1,4 +1,4 @@
-from sqlalchemy import delete, insert, select
+from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from core.security.rbac.permissions import ROLE_PERMISSIONS, Permissions
@@ -9,7 +9,6 @@ from db.models.users.permission import (
     Permission,
     Role,
     role_permissions,
-    user_permissions,
 )
 
 

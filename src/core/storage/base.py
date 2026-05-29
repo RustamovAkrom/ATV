@@ -1,15 +1,17 @@
 from abc import ABC, abstractmethod
 from typing import Any
+
 from pydantic import BaseModel
 
 
 class FileUploadResult(BaseModel):
     """Стандартизированный результат загрузки файла"""
-    file_path: str              # Относительный путь к файлу
-    public_url: str             # Публичный URL для доступа
-    file_size: int              # Размер в байтах
-    original_name: str          # Оригинальное имя файла
-    stored_name: str            # Сгенерированное имя в хранилище
+
+    file_path: str  # Относительный путь к файлу
+    public_url: str  # Публичный URL для доступа
+    file_size: int  # Размер в байтах
+    original_name: str  # Оригинальное имя файла
+    stored_name: str  # Сгенерированное имя в хранилище
     mime_type: str | None = None
     metadata: dict | None = None
 

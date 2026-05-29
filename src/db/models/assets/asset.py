@@ -1,24 +1,30 @@
-# src/db/models/assets/asset.py
-
 from datetime import date
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
-from sqlalchemy.ext.hybrid import hybrid_property
 
-from sqlalchemy import Date, Enum as SAEnum, ForeignKey, Integer, Numeric, String, text, Index
+from sqlalchemy import (
+    Date,
+    Enum as SAEnum,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship, synonym, validates
 
 from db.base import Base
-from db.mixins import TimestampMixin, UUIDMixing, SlugMixin
+from db.mixins import SlugMixin, TimestampMixin, UUIDMixing
+from db.models.assets.asset_image import AssetImage
+from db.models.assets.asset_maintenance import AssetMaintenance
 from db.models.documents.document import Document
 from db.models.enums import AssetStatus
 from db.models.repairs.repair import Repair
 from db.models.warehouse.warehouse import Warehouse
-from db.models.assets.asset_image import AssetImage
-from db.models.assets.asset_maintenance import AssetMaintenance
-
 
 if TYPE_CHECKING:
     from db.models.assets.asset_assignment import AssetAssignment
@@ -114,7 +120,7 @@ class Asset(Base, UUIDMixing, TimestampMixin, SlugMixin):
         JSONB,
         nullable=False,
         default=dict,
-        server_default=text("'{}'::jsonb")
+        server_default=text("'{}'::jsonb"),
     )
 
     # relationships
@@ -175,8 +181,10 @@ class Asset(Base, UUIDMixing, TimestampMixin, SlugMixin):
     )
 
     maintenances: Mapped[list["AssetMaintenance"]] = relationship(
-        "AssetMaintenance", back_populates="asset", lazy="selectin",
-        cascade="all, delete-orphan"
+        "AssetMaintenance",
+        back_populates="asset",
+        lazy="selectin",
+        cascade="all, delete-orphan",
     )
 
     responsible_user_id = synonym("owner_id")
@@ -208,8 +216,8 @@ class Asset(Base, UUIDMixing, TimestampMixin, SlugMixin):
         return self.warranty_end and self.warranty_end >= date.today()
 
     __table_args__ = (
-        Index('ix_assets_status_region', 'status', 'region_id'),
-        Index('ix_assets_service_class', 'service_id', 'class_id'),
+        Index("ix_assets_status_region", "status", "region_id"),
+        Index("ix_assets_service_class", "service_id", "class_id"),
     )
 
     def __repr__(self):

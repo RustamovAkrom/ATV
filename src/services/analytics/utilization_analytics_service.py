@@ -1,4 +1,6 @@
-from repositories.analytics.utilization_analytics_repo import UtilizationAnalyticsRepository
+from repositories.analytics.utilization_analytics_repo import (
+    UtilizationAnalyticsRepository,
+)
 from schemas.analytics.common import AnalyticsFilters
 from schemas.auth import CurrentUserSchema
 from services.analytics.base_analytics_service import BaseAnalyticsService
@@ -21,7 +23,9 @@ class UtilizationAnalyticsDomainService(BaseAnalyticsService):
         for row in raw["region_load"]:
             asset_count = int(row.asset_count or 0)
             employee_count = int(row.employee_count or 0)
-            ratio = (asset_count / employee_count) if employee_count else float(asset_count)
+            ratio = (
+                (asset_count / employee_count) if employee_count else float(asset_count)
+            )
             ratios.append(ratio)
             loads.append(
                 {

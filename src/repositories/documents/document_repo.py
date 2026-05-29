@@ -1,14 +1,12 @@
 from uuid import UUID
-from typing import List
 
-from sqlalchemy import delete, select, func
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from db.models.assets.asset import Asset
 from db.models.documents.document import Document
 from db.models.documents.document_file import DocumentFile
-from db.models.users.user import User
 from repositories.base import BaseRepository
 
 
@@ -43,9 +41,7 @@ class DocumentRepository(BaseRepository):
 
     async def get_asset(self, asset_id: UUID) -> Asset | None:
         """Получить актив по ID"""
-        result = await self.session.execute(
-            select(Asset).where(Asset.id == asset_id)
-        )
+        result = await self.session.execute(select(Asset).where(Asset.id == asset_id))
         return result.scalar_one_or_none()
 
     async def create_document(self, document: Document) -> Document:

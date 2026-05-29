@@ -1,11 +1,6 @@
 from uuid import UUID
 
-from core.exceptions.errors import NotFound
-from core.security.access_control import AccessControl
-from db.models.assets.asset import Asset
 from repositories.assets.asset_history_repo import AssetHistoryRepository
-from schemas.assets.assets import AssetHistorySchema
-from schemas.auth.auth import CurrentUserSchema
 
 
 class AssetHistoryService:

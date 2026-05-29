@@ -3,14 +3,14 @@ from uuid import UUID
 import asyncpg
 from sqlalchemy.exc import DBAPIError
 
+from core.events.asset_events import AssetEventService
 from core.exceptions.errors import BadRequest, NotFound
+from core.security.access_control import AccessControl
 from db.models.enums import AssetStatus, UserStatus
 from repositories.assets.asset_assignment_repo import AssetAssignmentRepository
 from schemas.assets.asset_assignments import AssetAssignmentActionSchema
 from schemas.auth.auth import CurrentUserSchema
 from utils.helpers import utc_now
-from core.security.access_control import AccessControl
-from core.events.asset_events import AssetEventService
 
 
 class AssetAssignmentService:
@@ -148,3 +148,18 @@ class AssetAssignmentService:
             await self.repo.flush()
 
         return await self.assign_asset(asset_id, new_user_id, actor)
+
+    async def get_active_assignment(
+        self, asset_id: UUID
+    ) -> AssetAssignmentActionSchema | None:
+        """Получить активное назначение актива"""
+        assignment = await self.repo.get_active_assignment(asset_id)
+        if not assignment:
+            return None
+
+        return AssetAssignmentActionSchema(
+            asset_id=assignment.asset_id,
+            user_id=assignment.user_id,
+            assigned_at=assignment.assigned_at,
+            unassigned_at=assignment.unassigned_at,
+        )
