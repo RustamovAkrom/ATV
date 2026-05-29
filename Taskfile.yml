@@ -297,3 +297,37 @@ tasks:
   deps-update:
     desc: Update dependencies lock file
     cmd: uv lock --upgrade
+
+# ═══════════════════════════════════════════
+# PRE-COMMIT
+# ═══════════════════════════════════════════
+
+  pre-commit-install:
+    desc: Install pre-commit hooks
+    cmds:
+      - uv run pre-commit install
+      - uv run pre-commit install --hook-type commit-msg
+
+  pre-commit-update:
+    desc: Update pre-commit hooks
+    cmd: uv run pre-commit autoupdate
+
+  pre-commit-run:
+    desc: Run pre-commit on all files
+    cmd: uv run pre-commit run --all-files
+
+  pre-commit:
+    desc: Run pre-commit (staged files only)
+    cmd: uv run pre-commit run
+
+  quality:
+    desc: Run all quality checks
+    cmds:
+      - task: lint
+      - task: typecheck
+      - task: security
+      - task: pre-commit-run
+
+  deptry:
+    desc: Check unused dependencies
+    cmd: uv run deptry .

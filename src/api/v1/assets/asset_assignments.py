@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, Request
 from api.dependencies.assets.asset_assignment import get_asset_assignment_service
 from core.cache.decorators import invalidate_cache
 from core.security.auth.dependencies import get_current_user
-from core.security.rbac.presets import AssetAssignmentPermissions
 from core.slowapi import limiter
 from schemas.assets.asset_assignments import (
     AssetAssignmentActionSchema,

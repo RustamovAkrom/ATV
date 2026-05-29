@@ -14,6 +14,7 @@ from api.v1.analytics.trends import router as trends_analytics_router
 from api.v1.approvals import router as approvals_router
 from api.v1.approvals.requests import router as approval_requests_router
 from api.v1.assets.asset import router as assets_router
+from api.v1.assets.asset_assignments import router as asset_assignments_router
 from api.v1.assets.asset_categories import router as asset_category_router
 from api.v1.assets.asset_classes import router as asset_classes_router
 from api.v1.assets.asset_documents import router as documents_router
@@ -34,8 +35,6 @@ from api.v1.organization.services import router as services_router
 from api.v1.rbac.rbac import router as rbac_router
 from api.v1.users.security import router as security_router
 from api.v1.users.user import router as users_router
-from api.v1.assets.asset_assignments import router as asset_assignments_router
-
 
 router = APIRouter()
 

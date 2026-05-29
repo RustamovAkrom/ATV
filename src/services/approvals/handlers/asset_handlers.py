@@ -1,13 +1,14 @@
 # src/services/approvals/handlers/asset_handlers.py
-from typing import Any, Dict
+from typing import Any
 from uuid import UUID
+
 from pydantic import BaseModel, Field
 
-from services.approvals.handlers.base import BaseApprovalHandler
-from schemas.auth.auth import CurrentUserSchema
+from db.models.enums import AssetStatus
 from schemas.assets.asset_transfers import AssetTransferCreate
 from schemas.assets.assets import AssetStatusChangeRequest
-from db.models.enums import AssetStatus
+from schemas.auth.auth import CurrentUserSchema
+from services.approvals.handlers.base import BaseApprovalHandler
 
 
 class AssetAssignmentPayload(BaseModel):
@@ -43,7 +44,7 @@ class AssetAssignmentHandler(BaseApprovalHandler):
         return AssetAssignmentPayload
 
     async def execute(
-        self, entity_id: UUID, payload: Dict[str, Any], actor: CurrentUserSchema
+        self, entity_id: UUID, payload: dict[str, Any], actor: CurrentUserSchema
     ):
         if not self.asset_assignment_service:
             raise RuntimeError("AssetAssignmentService not injected")
@@ -97,7 +98,7 @@ class AssetTransferHandler(BaseApprovalHandler):
         return AssetTransferPayload
 
     async def execute(
-        self, entity_id: UUID, payload: Dict[str, Any], actor: CurrentUserSchema
+        self, entity_id: UUID, payload: dict[str, Any], actor: CurrentUserSchema
     ):
         if not self.transfer_service:
             raise RuntimeError("AssetTransferService not injected")
@@ -141,7 +142,7 @@ class AssetArchiveHandler(BaseApprovalHandler):
         return AssetArchivePayload
 
     async def execute(
-        self, entity_id: UUID, payload: Dict[str, Any], actor: CurrentUserSchema
+        self, entity_id: UUID, payload: dict[str, Any], actor: CurrentUserSchema
     ):
         if not self.asset_service:
             raise RuntimeError("AssetService not injected")
@@ -179,7 +180,7 @@ class AssetDeleteHandler(BaseApprovalHandler):
         return AssetDeletePayload
 
     async def execute(
-        self, entity_id: UUID, payload: Dict[str, Any], actor: CurrentUserSchema
+        self, entity_id: UUID, payload: dict[str, Any], actor: CurrentUserSchema
     ):
         if not self.asset_service:
             raise RuntimeError("AssetService not injected")

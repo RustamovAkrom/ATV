@@ -19,12 +19,12 @@ from repositories.assets.approval_repo import ApprovalRepository
 from schemas.assets.approvals import ApprovalCreate, ApprovalSchema
 from schemas.auth.auth import CurrentUserSchema
 from schemas.pagination import PageOutSchema, PaginationParamsSchema
+from services.approvals.handlers import ApprovalHandlerRegistry, register_all_handlers
 from services.assets.asset_assignment_service import AssetAssignmentService
 from services.assets.asset_service import AssetService
 from services.assets.asset_transfer_service import AssetTransferService
 from services.assets.repair_service import RepairService
 from services.assets.warehouse_service import WarehouseService
-from services.approvals.handlers import ApprovalHandlerRegistry, register_all_handlers
 from utils.helpers import utc_now
 
 

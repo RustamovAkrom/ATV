@@ -5,7 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database.db_async import get_async_session_factory
 from db.models.refresh_token import RefreshToken
-from db.models.users.user import User  # noqa: F401 - импортируем для инициализации relationship
+from db.models.users.user import (
+    User,  # noqa: F401 - импортируем для инициализации relationship
+)
 
 
 async def cleanup_expired_tokens(db: AsyncSession) -> int:

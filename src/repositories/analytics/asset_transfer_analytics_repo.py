@@ -341,9 +341,7 @@ class AssetTransferAnalyticsRepository(BaseAnalyticsRepository):
             "transfers_to": int(aggregate.transfers_to or 0),
             "pending_in": int(aggregate.pending_in or 0),
             "pending_out": int(aggregate.pending_out or 0),
-            "average_duration_days": self._interval_to_days(
-                aggregate.average_duration
-            ),
+            "average_duration_days": self._interval_to_days(aggregate.average_duration),
         }
 
     @staticmethod

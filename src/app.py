@@ -21,7 +21,6 @@ from core.observability.monitoring import router as monitoring_router
 from core.slowapi import limiter
 from middlewares.audit import AuditMiddleware
 from middlewares.logging import LoggingMiddleware
-from middlewares.metrics import MetricsMiddleware
 from middlewares.request_id import RequestIDMiddleware
 
 

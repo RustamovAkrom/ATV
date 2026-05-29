@@ -32,7 +32,8 @@ async def test_regions_endpoints_return_geo_and_aggregates(
     client, analytics_seed, analytics_tokens
 ):
     overview = await client.get(
-        "/api/v1/analytics/regions/overview", headers=_auth(analytics_tokens["superadmin"])
+        "/api/v1/analytics/regions/overview",
+        headers=_auth(analytics_tokens["superadmin"]),
     )
     assert overview.status_code == 200, overview.text
     overview_payload = overview.json()
@@ -51,7 +52,8 @@ async def test_regions_endpoints_return_geo_and_aggregates(
     assert details_payload["top_cost_assets"]
 
     heatmap = await client.get(
-        "/api/v1/analytics/regions/heatmap", headers=_auth(analytics_tokens["superadmin"])
+        "/api/v1/analytics/regions/heatmap",
+        headers=_auth(analytics_tokens["superadmin"]),
     )
     assert heatmap.status_code == 200
     assert heatmap.json()[0]["score"] > 0
@@ -101,7 +103,8 @@ async def test_transfer_analytics_list_metrics_and_bottlenecks(
     assert listing.json()["total"] == 2
 
     metrics = await client.get(
-        "/api/v1/analytics/transfers/metrics", headers=_auth(analytics_tokens["superadmin"])
+        "/api/v1/analytics/transfers/metrics",
+        headers=_auth(analytics_tokens["superadmin"]),
     )
     assert metrics.status_code == 200
     metrics_payload = metrics.json()
