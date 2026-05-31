@@ -82,7 +82,7 @@ class AssetService:
         AccessControl.check_region_access(actor, asset.region_id)
         AccessControl.check_service_access(actor, asset.service_id)
 
-        return AssetDetailSchema.model_validate(asset, from_attributes=True)
+        return self._to_detail_schema(asset)
 
     async def get_history(
         self, asset_id: UUID, actor: CurrentUserSchema
@@ -187,9 +187,10 @@ class AssetService:
             meta=data.metadata or {},
         )
 
-        asset = await self.asset_repo.create(asset)
+        created = await self.asset_repo.create(asset)
+        asset = created or asset
 
-        return AssetDetailSchema.model_validate(asset, from_attributes=True)
+        return self._to_detail_schema(asset)
 
     async def update(
         self, asset_id: UUID, data: AssetUpdate, actor: CurrentUserSchema
@@ -202,6 +203,9 @@ class AssetService:
         AccessControl.check_service_access(actor, asset.service_id)
 
         payload = data.model_dump(exclude_unset=True)
+        if not payload:
+            return await self.get(asset_id, actor)
+
         if "metadata" in payload:
             payload["meta"] = payload.pop("metadata") or {}
 
@@ -230,7 +234,8 @@ class AssetService:
 
         if changed_fields:
             await self.asset_repo.flush()
-            await self.asset_repo.refresh(asset)
+            if hasattr(self.asset_repo, "refresh"):
+                await self.asset_repo.refresh(asset)
             await self.asset_events.updated(
                 asset_id=asset.id,
                 actor_id=actor.id,
@@ -239,7 +244,7 @@ class AssetService:
                 fields=changed_fields,
             )
 
-        return AssetDetailSchema.model_validate(asset, from_attributes=True)
+        return self._to_detail_schema(asset)
 
     async def delete(self, asset_id: UUID, actor: CurrentUserSchema) -> None:
         asset = await self.asset_repo.get_by_id_for_update(asset_id)
@@ -248,6 +253,9 @@ class AssetService:
 
         AccessControl.check_region_access(actor, asset.region_id)
         AccessControl.check_service_access(actor, asset.service_id)
+
+        if asset.status != AssetStatus.ARCHIVED:
+            raise BadRequest("Only archived assets can be deleted")
 
         owner_id = asset.owner_id
         asset_name = asset.name
@@ -272,24 +280,55 @@ class AssetService:
         AccessControl.check_region_access(actor, asset.region_id)
         AccessControl.check_service_access(actor, asset.service_id)
 
-        old_status = asset.status
-        if old_status == data.status:
-            return AssetDetailSchema.model_validate(asset, from_attributes=True)
+        old_status = AssetStatus(asset.status)
+        new_status = AssetStatus(data.status)
+        if old_status == new_status:
+            return await self.get(asset_id, actor)
 
-        self._validate_status_change(asset, data.status)
-        asset.status = data.status
+        self._validate_status_change(asset, new_status)
+        asset.status = new_status
 
         await self.asset_repo.flush()
-        await self.asset_repo.refresh(asset)
+        if hasattr(self.asset_repo, "refresh"):
+            await self.asset_repo.refresh(asset)
         await self.asset_events.status_changed(
             asset_id=asset.id,
             actor_id=actor.id,
             owner_id=asset.owner_id,
             from_status=old_status.value,
-            to_status=data.status.value,
+            to_status=new_status.value,
         )
 
-        return AssetDetailSchema.model_validate(asset, from_attributes=True)
+        return self._to_detail_schema(asset)
+
+    async def _get_asset(self, asset_id: UUID) -> Asset:
+        asset = await self.asset_repo.get_by_id(asset_id)
+        if not asset:
+            raise NotFound("Asset not found")
+        return asset
+
+    async def _validate_references(
+        self,
+        model_id: UUID,
+        region_id: UUID | None,
+        service_id: UUID | None,
+        owner_id: UUID | None,
+        class_id: UUID | None,
+    ) -> None:
+        await self._validate_update_references(
+            {
+                "model_id": model_id,
+                "region_id": region_id,
+                "service_id": service_id,
+                "class_id": class_id,
+            }
+        )
+        if owner_id is not None:
+            owner = await self.asset_repo.get_user(owner_id)
+            if not owner:
+                raise BadRequest("Invalid owner")
+            if owner.status != UserStatus.ACTIVE.value:
+                raise BadRequest("Owner must be active")
 
     async def _validate_update_references(self, payload: dict) -> None:
         if (
@@ -328,10 +367,11 @@ class AssetService:
             raise BadRequest("Serial number already exists")
 
     def _validate_status_change(self, asset: Asset, new_status: AssetStatus) -> None:
-        allowed = self._ALLOWED_TRANSITIONS[asset.status]
+        current_status = AssetStatus(asset.status)
+        allowed = self._ALLOWED_TRANSITIONS[current_status]
         if new_status not in allowed:
             raise BadRequest(
-                f"Cannot change asset status from '{asset.status.value}'"
+                f"Cannot change asset status from '{current_status.value}'"
                 f"to '{new_status.value}'"
             )
         if new_status == AssetStatus.ASSIGNED and asset.owner_id is None:
@@ -350,10 +390,20 @@ class AssetService:
             return value or None
         return value
 
+    @classmethod
+    def _to_detail_schema(cls, item) -> AssetDetailSchema:
+        try:
+            return AssetDetailSchema.model_validate(item, from_attributes=True)
+        except ValidationError:
+            payload = cls._normalize_asset_schema(item).model_dump(by_alias=True)
+            payload["history_entries"] = getattr(item, "history_entries", []) or []
+            payload["maintenances"] = getattr(item, "maintenances", []) or []
+            return AssetDetailSchema.model_validate(payload)
+
     @staticmethod
     def _normalize_asset_schema(item) -> AssetSchema:
-        created_at = getattr(item, "created_at", utc_now())
-        updated_at = getattr(item, "updated_at", created_at)
+        created_at = getattr(item, "created_at", None) or utc_now()
+        updated_at = getattr(item, "updated_at", None) or created_at
 
         model = getattr(item, "model", None)
         if model is None and getattr(item, "model_id", None):

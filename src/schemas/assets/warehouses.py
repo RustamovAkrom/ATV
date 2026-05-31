@@ -28,7 +28,7 @@ class WarehouseBaseSchema(BaseSchema):
 class WarehouseCreateSchema(WarehouseBaseSchema):
     """Схема для создания склада"""
 
-    pass
+    slug: str | None = None
 
 
 class WarehouseUpdateSchema(BaseSchema):

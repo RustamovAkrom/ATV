@@ -9,6 +9,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     String,
+    func,
 )
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
@@ -172,11 +173,25 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
         return self.status == UserStatus.ACTIVE
 
     @hybrid_property
-    def full_name(self) -> str:
+    def full_name(self) -> str:  # pyright: ignore[reportRedeclaration]
         """Полное имя: Имя Фамилия"""
         parts = [self.first_name, self.last_name]
         full_name = " ".join(part.strip() for part in parts if part and part.strip())
         return full_name or self.login
+
+    @full_name.expression
+    def full_name(cls):
+        return func.coalesce(
+            func.nullif(
+                func.trim(
+                    func.coalesce(cls.first_name, "")
+                    + " "
+                    + func.coalesce(cls.last_name, "")
+                ),
+                "",
+            ),
+            cls.login,
+        )
 
     @property
     def short_name(self) -> str:

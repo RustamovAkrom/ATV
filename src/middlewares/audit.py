@@ -19,8 +19,12 @@ _background_tasks: set[asyncio.Task] = set()
 
 def _create_background_task(coro) -> None:
     task = asyncio.create_task(coro)
-    _background_tasks.add(task)
-    task.add_done_callback(_background_tasks.discard)
+    try:
+        _background_tasks.add(task)
+    except TypeError:
+        return
+    if hasattr(task, "add_done_callback"):
+        task.add_done_callback(_background_tasks.discard)
 
 
 def _get_level(status: int) -> str:

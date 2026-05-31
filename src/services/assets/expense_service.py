@@ -173,6 +173,14 @@ class ExpenseService:
 
     async def _to_out(self, expense: Expense) -> ExpenseOutSchema:
         """Convert expense model to output schema."""
+        created_by_id = getattr(expense, "created_by_id", None)
+        created_by = getattr(expense, "created_by", None)
+        if created_by_id is None and created_by is not None:
+            created_by_id = getattr(created_by, "id", None)
+
+        asset = getattr(expense, "asset", None)
+        region = getattr(expense, "region", None)
+        service = getattr(expense, "service", None)
 
         return ExpenseOutSchema(
             id=UUID(str(expense.id)),
@@ -181,8 +189,18 @@ class ExpenseService:
             expense_type_code=expense.expense_type_code,
             description=expense.description,
             file_url=expense.file_url,
+            asset=asset,
             repair_id=expense.repair_id,
-            created_by_id=UUID(str(expense.created_by_id)),
+            region=region,
+            service=service,
+            created_by_id=UUID(str(created_by_id)) if created_by_id else None,
+            created_by_name=(
+                getattr(created_by, "full_name", None)
+                or getattr(created_by, "name", None)
+                or getattr(created_by, "login", None)
+                if created_by is not None
+                else None
+            ),
             occurred_at=expense.occurred_at,
             created_at=expense.created_at,
             updated_at=expense.updated_at,

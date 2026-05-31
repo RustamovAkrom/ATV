@@ -29,7 +29,10 @@ class RBACService:
         # normalize
         slug = data.slug.lower().strip()
 
-        if await self.rbac_repo.exists_by_slug(slug):
+        existing = await self.rbac_repo.get_role_by_slug(slug)
+        if existing:
+            if existing.name == data.name.strip():
+                return existing
             raise ValidationError("Role slug already exists")
 
         if await self.rbac_repo.exists_by_name(data.name):

@@ -23,6 +23,13 @@ class RBACRepository(BaseRepository):
             .where(Role.id == role_id)
         )
 
+    async def get_role_by_slug(self, slug: str):
+        return await self.scalar(
+            select(Role)
+            .options(selectinload(Role.permissions))
+            .where(Role.slug == slug)
+        )
+
     async def exists_by_slug(self, slug: str, exclude_id: UUID | None = None) -> bool:
         stmt = select(Role.id).where(Role.slug == slug)
         if exclude_id:

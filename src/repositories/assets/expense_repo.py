@@ -42,7 +42,7 @@ class ExpenseRepository(BaseRepository):
             service_id=data.service_id,
             file_url=data.file_url,
             occurred_at=data.occurred_at or datetime.now(),
-            created_by=created_by_id,
+            created_by_id=created_by_id,
         )
         self.session.add(expense)
         await self.flush()

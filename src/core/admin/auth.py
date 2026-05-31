@@ -54,9 +54,7 @@ class AdminAuth(AuthenticationBackend):
                 request.session["user_id"] = str(user.id)
                 request.session["user"] = user.login
                 request.session["role"] = user.role.slug
-                logger.info(
-                    f"Admin login successful: '{username}' from {client_host}"
-                )
+                logger.info(f"Admin login successful: '{username}' from {client_host}")
                 return True
 
             reason = []

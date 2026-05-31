@@ -77,7 +77,7 @@ class StatusMixin:
         )
 
     @validates("status")
-    def validate_status(self, value: str) -> str:
+    def validate_status(self, key: str, value: str) -> str:
         if self.STATUS_ENUM is None:
             raise TypeError("STATUS_ENUM is not configured")
         allowed = {e.value for e in self.STATUS_ENUM}
