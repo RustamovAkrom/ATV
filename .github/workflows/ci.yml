@@ -2,9 +2,16 @@ name: CI
 
 on:
   push:
-    branches: [main, master, dev, "release/**"]
+    branches:
+      - main
+      - master
+      - dev
+      - "release/**"
   pull_request:
-    branches: [main, master, dev]
+    branches:
+      - main
+      - master
+      - dev
   workflow_dispatch:
 
 concurrency:
@@ -24,7 +31,7 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         ports:
-          - "25439:5432"
+          - "5432:5432"
         options: >-
           --health-cmd "pg_isready -U postgres -d test_db"
           --health-interval 5s
@@ -42,15 +49,28 @@ jobs:
 
     env:
       ENV: test
+      SECRET_KEY: test-secret-key-with-sufficient-length-12345
       POSTGRES_HOST: localhost
-      POSTGRES_PORT: "25439"
+      POSTGRES_PORT: "5432"
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: test_db
+      POSTGRES_ECHO: "false"
       REDIS_URL: redis://localhost:6379/1
+      CELERY_BROKER_URL: redis://localhost:6379/0
+      CELERY_RESULT_BACKEND: redis://localhost:6379/1
+      SMTP_HOST: localhost
+      SMTP_PORT: "1025"
+      SMTP_USER: test
+      SMTP_PASSWORD: test
+      SMTP_FROM: test@example.com
+      RATE_LIMIT_ENABLED: "false"
+      LOG_LEVEL: WARNING
+      LOG_INCLUDE_REQUEST_ID: "false"
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -62,22 +82,20 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install Task
-        uses: arduino/setup-task@v2
-        with:
-          version: 3.x
-
       - name: Sync dependencies
-        run: uv sync --dev
+        run: uv sync --dev --frozen
 
-      - name: Run lint
-        run: task lint
+      - name: Ruff lint
+        run: uv run --no-sync ruff check src
 
-      - name: Run typecheck
-        run: task typecheck
+      - name: Ruff format check
+        run: uv run --no-sync ruff format --check src
 
-      - name: Run security
-        run: task security
+      - name: Pyright typecheck
+        run: uv run --no-sync pyright src
+
+      - name: Bandit security scan
+        run: uv run --no-sync bandit -r src -c pyproject.toml -q
 
       - name: Run tests
-        run: task test
+        run: uv run --no-sync pytest -q
