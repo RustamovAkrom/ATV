@@ -1,6 +1,6 @@
 import uuid
 
-from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from core.config import get_settings
 from core.logger import bind_logger
@@ -26,7 +26,7 @@ class RequestIDMiddleware:
         if settings.LOG_INCLUDE_REQUEST_ID:
             scope["state"]["logger"] = bind_logger(request_id)
 
-        async def send_wrapper(message: Send):
+        async def send_wrapper(message: Message):
             if message["type"] == "http.response.start":
                 response_headers = list(message.get("headers", []))
                 response_headers.append((b"X-Request-ID", request_id.encode()))

@@ -62,3 +62,24 @@ class DocumentEventService(DomainEventService):
                 )
             ),
         )
+
+    async def updated(
+        self,
+        *,
+        asset_id: UUID,
+        document_id: UUID,
+        actor_id: UUID,
+    ):
+        await self._execute(
+            asset_id=asset_id,
+            actor_id=actor_id,
+            action="document_updated",
+            description=f"Document {document_id} updated",
+            audit_event="asset.document_updated",
+            audit_payload={
+                "asset_id": str(asset_id),
+                "document_id": str(document_id),
+                "actor_id": str(actor_id),
+            },
+            notification=None,
+        )

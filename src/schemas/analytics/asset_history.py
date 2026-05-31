@@ -16,7 +16,9 @@ class AssetHistoryFilter(BaseSchema):
     date_from: datetime | None = None
     date_to: datetime | None = None
     search: str | None = Field(
-        None, description="Search by asset name/tag or user name", max_length=100
+        default=None,
+        description="Search by asset name/tag or user name",
+        max_length=100,
     )
 
     @field_validator("action", "search")

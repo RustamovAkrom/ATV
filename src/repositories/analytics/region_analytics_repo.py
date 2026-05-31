@@ -96,7 +96,7 @@ class RegionAnalyticsRepository(BaseAnalyticsRepository):
         return inbound, outbound
 
     async def list_overview(self):
-        """Список всех регионов с общими метриками"""
+        """List of all regions with general metrics"""
         asset_counts = self._asset_counts_subquery()
         repair_counts = self._repair_counts_subquery()
         assignment_load = self._assignment_load_subquery()

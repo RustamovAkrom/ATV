@@ -70,7 +70,6 @@ class RegionAnalyticsService:
             RegionAssetCostSummaryOut(
                 asset_id=row.id,
                 asset_name=row.name,
-                asset_tag=getattr(row, "asset_tag", None),
                 purchase_cost=float(row.purchase_cost or 0),
                 repair_cost=float(row.repair_cost or 0),
                 total_cost=float((row.purchase_cost or 0) + (row.repair_cost or 0)),

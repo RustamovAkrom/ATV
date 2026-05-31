@@ -56,8 +56,8 @@ class AssignmentBaseRepository(BaseAnalyticsRepository):
         return query
 
     async def get_assignment_aggregates(self, filters) -> dict:
-        """Получает агрегированные метрики для назначений"""
-        # Базовый подзапрос с фильтрами
+        """Get aggregated metrics for assignments"""
+        # Base subquery with filters
         base_query = select(self.assignment_table.id)
         base_query = self.apply_assignment_filters(
             base_query, filters, with_joins=False

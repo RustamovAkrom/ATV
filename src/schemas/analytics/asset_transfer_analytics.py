@@ -20,12 +20,12 @@ class AssetTransferFilterInput(BaseSchema):
     from_service_id: UUID | None = None
     to_service_id: UUID | None = None
     status: TransferStatus | None = Field(
-        None, description="pending, completed, or cancelled"
+        default=None, description="pending, completed, or cancelled"
     )
     date_from: datetime | None = None
     date_to: datetime | None = None
     search: str | None = Field(
-        None, description="Search by asset name/tag", max_length=100
+        default=None, description="Search by asset name/tag", max_length=100
     )
 
     @field_validator("search")
@@ -57,18 +57,6 @@ class AssetTransferOut(BaseSchema):
     transferred_at: datetime | None
 
     comment: str | None
-
-
-class AssetTransferPageOut(BaseSchema):
-    items: list[AssetTransferOut]
-
-    total: int
-    page: int
-    limit: int
-    pages: int
-
-    has_next: bool
-    has_prev: bool
 
 
 class TransferDurationMetrics(BaseSchema):

@@ -103,9 +103,10 @@ class AssetImageAdmin(BaseAdmin, model=AssetImage):
         "file_size": lambda m, _: (
             f"{m.file_size / 1024:.1f} KB" if m.file_size else "-"
         ),
-        "is_primary": lambda m, _: "⭐ Yes" if m.is_primary else "",
+        "is_primary": lambda m, _: "Yes" if m.is_primary else "",
         "preview": lambda m, _: (
-            f'<img src="{m.file_path}" style="max-width: 50px; max-height: 50px; object-fit: cover;" />'
+            f'<img src="{m.file_path}" '
+            'style="max-width:50px;max-height:50px;object-fit:cover;" />'
             if m.file_path
             else "-"
         ),

@@ -36,7 +36,6 @@ class TopAnalyticsService(BaseAnalyticsService):
             TopAssetAnalyticsOut(
                 asset_id=row.id,
                 asset_name=row.name,
-                asset_tag=row.asset_tag,
                 assignment_count=int(row.assignment_count or 0),
                 transfer_count=int(row.transfer_count or 0),
                 repair_count=int(row.repair_count or 0),

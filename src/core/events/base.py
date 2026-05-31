@@ -1,5 +1,6 @@
 # core/events/base.py
 from collections.abc import Awaitable, Callable
+from contextlib import suppress
 from typing import Any
 
 from core.audit.stream import audit_stream
@@ -19,7 +20,7 @@ class BaseEventService:
         history: Callable[[], Awaitable[Any]] | None = None,
         audit_event: str | None = None,
         audit_payload: dict | None = None,
-        notification: Callable[[], Awaitable[Any]] | None = None,
+        notification: Callable[[], Awaitable[Any] | None] | None = None,
     ):
         # 1. HISTORY (critical)
         if history:
@@ -34,7 +35,7 @@ class BaseEventService:
             await self._safe_notify(notification)
 
     async def _safe_audit(self, event: str, payload: dict):
-        try:
+        with suppress(Exception):
             await audit_stream.publish(
                 {
                     "event": event,
@@ -42,11 +43,9 @@ class BaseEventService:
                     "timestamp": utc_now().timestamp(),
                 }
             )
-        except Exception:
-            pass  # Audit failure should not break business flow
 
-    async def _safe_notify(self, fn: Callable[[], Awaitable[Any]]):
-        try:
-            await fn()
-        except Exception:
-            pass  # Notification failure should not break business flow
+    async def _safe_notify(self, fn: Callable[[], Awaitable[Any] | None]):
+        with suppress(Exception):
+            result = fn()
+            if result is not None:
+                await result

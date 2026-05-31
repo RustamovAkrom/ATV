@@ -63,6 +63,6 @@ class ServiceOutSchema(TimestampSchema):
 
 
 class ServiceWithRegionsOutSchema(ServiceOutSchema):
-    """Схема для вывода сервиса с регионами"""
+    """Schema for service output with regions"""
 
     regions: list[dict[str, Any]] | None = Field(None, description="Attached regions")

@@ -29,7 +29,9 @@ class AssetAssignmentRepository(BaseRepository):
     async def get_asset_plain(self, asset_id: UUID) -> Asset | None:
         return await self.scalar(select(Asset).where(Asset.id == asset_id))
 
-    async def get_asset_for_update(self, asset_id: UUID, nowait: bool = False) -> Asset:
+    async def get_asset_for_update(
+        self, asset_id: UUID, nowait: bool = False
+    ) -> Asset | None:
         stmt = (
             select(Asset)
             .options(

@@ -44,7 +44,7 @@ class ApprovalRepository(BaseRepository):
         self,
         status: ApprovalStatus | None,
         pagination: PaginationParamsSchema,
-    ) -> list[ApprovalRequest]:
+    ) -> tuple[list[ApprovalRequest], int]:
 
         base = select(ApprovalRequest)
 

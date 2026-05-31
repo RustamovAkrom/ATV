@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from core.exceptions.errors import NotFound
 from db.models.enums import AssetStatus
 from schemas.assets.asset_transfers import AssetTransferCreate
 from schemas.assets.assets import AssetStatusChangeRequest
@@ -48,9 +49,13 @@ class AssetAssignmentHandler(BaseApprovalHandler):
     ):
         if not self.asset_assignment_service:
             raise RuntimeError("AssetAssignmentService not injected")
+        if not self.asset_service:
+            raise RuntimeError("AssetService not injected")
 
         user_id = payload.get("user_id")
         asset = await self.asset_service._get_asset(entity_id)
+        if not asset:
+            raise NotFound("Asset not found")
 
         if asset.owner_id is not None:
             return await self.asset_assignment_service.reassign_asset(

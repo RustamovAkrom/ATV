@@ -96,4 +96,4 @@ class Permission(Base, UUIDMixing, TimestampMixin, SlugMixin):
         return self.name
 
 
-__all__ = ["Role", "Permission", "role_permissions", "user_permissions"]
+__all__ = ["Permission", "Role", "role_permissions", "user_permissions"]

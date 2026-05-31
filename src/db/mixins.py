@@ -1,9 +1,10 @@
 import uuid
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from sqlalchemy import DateTime, Integer, String
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, validates
 from sqlalchemy.sql import func
 
@@ -53,7 +54,7 @@ class IDMixin:
 # Mixins
 class UUIDMixin:
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True),
+        PGUUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
     )

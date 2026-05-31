@@ -35,12 +35,14 @@ class FileValidator:
         if file.content_type not in self.allowed_mimetypes:
             raise HTTPException(
                 status_code=400,
-                detail=f"File type not allowed. Allowed: {', '.join(self.allowed_mimetypes)}",
+                detail=(
+                    "File type not allowed. Allowed: "
+                    f"{', '.join(self.allowed_mimetypes)}"
+                ),
             )
 
-        if self.custom_validator:
-            if not await self.custom_validator(file):
-                raise HTTPException(status_code=400, detail="Custom validation failed")
+        if self.custom_validator and not await self.custom_validator(file):
+            raise HTTPException(status_code=400, detail="Custom validation failed")
 
 
 class FileUploadService:

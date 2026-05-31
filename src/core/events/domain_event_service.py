@@ -33,7 +33,7 @@ class DomainEventService:
         description: str,
         audit_event: str,
         audit_payload: dict | None = None,
-        notification: Callable[[], Awaitable[Any]] | None = None,
+        notification: Callable[[], Awaitable[Any] | None] | None = None,
     ):
         """Универсальный метод для всех событий."""
         await self.base.execute(

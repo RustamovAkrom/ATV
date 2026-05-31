@@ -129,6 +129,7 @@ async def get_asset_history(
     tags=(
         "asset:list",
         "asset:history",
+        "asset:detail",
     )
 )
 async def create_asset(

@@ -1,6 +1,7 @@
 """Service for expenses management."""
 
 import builtins
+from datetime import datetime
 from uuid import UUID
 
 from core.exceptions.errors import NotFound
@@ -108,8 +109,8 @@ class ExpenseService:
         region_id: UUID | None = None,
         service_id: UUID | None = None,
         asset_id: UUID | None = None,
-        start_date: str | None = None,
-        end_date: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> ExpensePageSchema:
         """List expenses with pagination and filters."""
         from db.models.enums import UserRole
@@ -172,21 +173,16 @@ class ExpenseService:
 
     async def _to_out(self, expense: Expense) -> ExpenseOutSchema:
         """Convert expense model to output schema."""
-        created_by_id = (
-            expense.created_by.id
-            if hasattr(expense.created_by, "id")
-            else expense.created_by
-        )
 
         return ExpenseOutSchema(
-            id=expense.id,
+            id=UUID(str(expense.id)),
             amount=expense.amount,
             currency=expense.currency,
             expense_type_code=expense.expense_type_code,
             description=expense.description,
             file_url=expense.file_url,
             repair_id=expense.repair_id,
-            created_by_id=created_by_id,
+            created_by_id=UUID(str(expense.created_by_id)),
             occurred_at=expense.occurred_at,
             created_at=expense.created_at,
             updated_at=expense.updated_at,

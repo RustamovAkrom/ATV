@@ -35,7 +35,7 @@ async def list_warehouses(
     service: WarehouseService = Depends(get_warehouse_service),
     _: CurrentUserSchema = Depends(get_current_user),
 ):
-    """Список складов с пагинацией и фильтрацией"""
+    """Warehouse list with pagination and filtering"""
     items, total = await service.list_warehouses(
         pagination=pagination,
         region_id=region_id,
@@ -58,7 +58,7 @@ async def get_warehouse(
     service: WarehouseService = Depends(get_warehouse_service),
     _: CurrentUserSchema = Depends(get_current_user),
 ):
-    """Получить информацию о складе"""
+    """Get warehouse information"""
     return await service.get_warehouse(warehouse_id)
 
 
@@ -98,7 +98,7 @@ async def update_warehouse(
     service: WarehouseService = Depends(get_warehouse_service),
     _: CurrentUserSchema = Depends(get_current_user),
 ):
-    """Обновить информацию о складе"""
+    """Update warehouse information"""
     return await service.update_warehouse(warehouse_id, data)
 
 

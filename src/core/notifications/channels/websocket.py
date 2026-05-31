@@ -5,7 +5,7 @@ from fastapi import WebSocket
 
 class WebSocketManager:
     """
-    Connection manager (как у тебя в audit)
+    Connection manager (similar to audit implementation)
     """
 
     def __init__(self):

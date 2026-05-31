@@ -1,6 +1,6 @@
 import time
 
-from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from core.observability.prometheus import (
     APP_NAME,
@@ -32,7 +32,7 @@ class MetricsMiddleware:
         start_time = time.perf_counter()
         IN_PROGRESS.labels(app=self.app_label).inc()
 
-        async def send_wrapper(message: Send):
+        async def send_wrapper(message: Message):
             if message["type"] == "http.response.start":
                 status_code = message["status"]
                 duration = time.perf_counter() - start_time

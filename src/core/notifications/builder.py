@@ -76,7 +76,7 @@ class NotificationBuilder:
     ) -> dict[str, Any]:
         data = {"asset_id": str(asset_id)}
         if fields:
-            data["fields"] = fields
+            data["fields"] = fields  # type: ignore
         return cls._base(
             user_id=user_id,
             type=NotificationType.ASSET_UPDATED,
@@ -122,7 +122,7 @@ class NotificationBuilder:
         warehouse_id: UUID,
         warehouse_name: str | None = None,
     ) -> dict[str, Any]:
-        """Уведомление о перемещении актива на склад."""
+        """Notification about asset moved to warehouse."""
         warehouse_display = warehouse_name or str(warehouse_id)
         return cls._base(
             user_id=user_id,
@@ -328,7 +328,10 @@ class NotificationBuilder:
             user_id=user_id,
             type=NotificationType.APPROVAL_EXECUTION_FAILED,
             title="Request execution failed",
-            message=f"Execution of your approved request has failed: {entity_type} {action}",
+            message=(
+                "Execution of your approved request has failed: "
+                f"{entity_type} {action.lower()}"
+            ),
             data={
                 "entity_type": entity_type,
                 "entity_id": str(entity_id),

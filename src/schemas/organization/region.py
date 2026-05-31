@@ -81,7 +81,7 @@ class RegionTreeOutSchema(RegionOutSchema):
 
 
 class RegionWithServicesOutSchema(RegionOutSchema):
-    """Регион с привязанными сервисами"""
+    """Region with attached services"""
 
     service_ids: list[UUID] | None = Field(None, description="ID сервисов в регионе")
     service_names: list[str] | None = Field(None, description="Названия сервисов")
@@ -92,9 +92,9 @@ class RegionStatsOutSchema(BaseSchema):
 
     region_id: UUID
     region_name: str
-    total_assets: int = Field(0, description="Всего активов")
-    active_assets: int = Field(0, description="Активных активов")
-    users_count: int = Field(0, description="Количество пользователей")
+    total_assets: int = Field(0, description="Total assets")
+    active_assets: int = Field(0, description="Active assets")
+    users_count: int = Field(0, description="Number of users")
     services_count: int = Field(0, description="Количество сервисов")
 
 

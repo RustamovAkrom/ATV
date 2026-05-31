@@ -66,7 +66,7 @@ class AssetTransferAnalyticsRepository(BaseAnalyticsRepository):
         filters: AssetTransferFilterInput,
         pagination: PaginationParamsSchema,
     ) -> tuple[list[AssetTransfer], int]:
-        """Список трансферов с пагинацией"""
+        """List of transfers with pagination"""
         query = (
             select(AssetTransfer)
             .options(
@@ -84,7 +84,7 @@ class AssetTransferAnalyticsRepository(BaseAnalyticsRepository):
         query = self._apply_filters(query, filters)
         result, total = await self.execute_with_pagination(query, pagination)
 
-        return result.scalars().all(), total
+        return list(result.scalars().all()), total
 
     async def list_pending_transfers(
         self, pagination: PaginationParamsSchema
@@ -105,7 +105,7 @@ class AssetTransferAnalyticsRepository(BaseAnalyticsRepository):
         )
 
         result, total = await self.execute_with_pagination(query, pagination)
-        return result.scalars().all(), total
+        return list(result.scalars().all()), total
 
     async def get_transfer_history_for_asset(
         self, asset_id: UUID
@@ -126,7 +126,7 @@ class AssetTransferAnalyticsRepository(BaseAnalyticsRepository):
         )
 
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_bottlenecks(
         self, critical_days: int = 30, warning_days: int = 7

@@ -99,4 +99,4 @@ def get_notification_router(
     dispatcher: NotificationDispatcher = Depends(get_notification_dispatcher),
 ) -> NotificationRouter:
     """Get notification router."""
-    return NotificationRouter(channels=dispatcher.channels)
+    return NotificationRouter(channels=list(dispatcher.channels))

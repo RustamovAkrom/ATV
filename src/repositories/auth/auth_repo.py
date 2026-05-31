@@ -5,11 +5,12 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models.refresh_token import RefreshToken
+from repositories.base import BaseRepository
 
 
-class AuthRepository:
+class AuthRepository(BaseRepository):
     def __init__(self, session: AsyncSession):
-        self.session = session
+        super().__init__(session)
 
     async def create(self, token: RefreshToken) -> RefreshToken:
         """
@@ -36,7 +37,7 @@ class AuthRepository:
             .where(RefreshToken.user_id == user_id)
             .order_by(RefreshToken.created_at.desc())
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def revoke(self, jti: UUID) -> None:
         """
@@ -66,4 +67,4 @@ class AuthRepository:
         result = await self.session.execute(
             delete(RefreshToken).where(RefreshToken.expires_at < datetime.now(UTC))
         )
-        return result.rowcount or 0
+        return self._rowcount(result)

@@ -1,6 +1,16 @@
 from enum import StrEnum
 
 
+class ExpenseTypeEnum(StrEnum):
+    """Supported expense types."""
+
+    PURCHASE = "purchase"
+    REPAIR = "repair"
+    MAINTENANCE = "maintenance"
+    LOGISTICS = "logistics"
+    OTHER = "other"
+
+
 class UserGender(StrEnum):
     MALE = "male"
     FEMALE = "female"

@@ -37,10 +37,10 @@ class RedisBlacklist:
         if ttl <= 0:
             return
 
-        await self.redis.set(f"bl:{str(jti)}", "1", ex=ttl)
+        await self.redis.set(f"bl:{jti!s}", "1", ex=ttl)
 
     async def contains(self, jti: str) -> bool:
-        return bool(await self.redis.exists(f"bl:{str(jti)}"))
+        return bool(await self.redis.exists(f"bl:{jti!s}"))
 
 
 _blacklist: MemoryBlacklist | RedisBlacklist | None = None

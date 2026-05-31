@@ -56,7 +56,7 @@ async def create_asset_maintenance(
     service: AssetMaintenanceService = Depends(get_asset_maintenance_service),
     actor: CurrentUserSchema = Depends(get_current_user),
 ):
-    """Создать запись о техническом обслуживании"""
+    """Create maintenance record"""
     return await service.create(asset_id, data, actor)
 
 
@@ -81,7 +81,7 @@ async def update_asset_maintenance(
     service: AssetMaintenanceService = Depends(get_asset_maintenance_service),
     actor: CurrentUserSchema = Depends(get_current_user),
 ):
-    """Обновить запись о техническом обслуживании"""
+    """Update maintenance record"""
     return await service.update(maintenance_id, data, actor)
 
 
@@ -105,7 +105,7 @@ async def delete_asset_maintenance(
     service: AssetMaintenanceService = Depends(get_asset_maintenance_service),
     actor: CurrentUserSchema = Depends(get_current_user),
 ):
-    """Удалить запись о техническом обслуживании"""
+    """Delete maintenance record"""
     await service.delete(maintenance_id, actor)
     return StatusResponse(
         status="deleted", message="Maintenance record deleted successfully"

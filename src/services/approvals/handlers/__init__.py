@@ -1,6 +1,4 @@
 # src/services/approvals/handlers/__init__.py
-from typing import Dict, Tuple, Type
-
 from services.approvals.handlers.asset_handlers import (
     AssetArchiveHandler,
     AssetAssignmentHandler,

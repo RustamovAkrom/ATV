@@ -213,7 +213,7 @@ class Asset(Base, UUIDMixing, TimestampMixin, SlugMixin):
     @property
     def is_under_warranty(self) -> bool:
         "Check warranty"
-        return self.warranty_end and self.warranty_end >= date.today()
+        return self.warranty_end is not None and self.warranty_end >= date.today()
 
     __table_args__ = (
         Index("ix_assets_status_region", "status", "region_id"),

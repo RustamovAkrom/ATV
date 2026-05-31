@@ -1,3 +1,4 @@
+import builtins
 from uuid import UUID
 
 from sqlalchemy import exists, or_, select, update
@@ -106,7 +107,7 @@ class UserRepository(BaseRepository):
             self._base_query(include_inactive=True).limit(limit).offset(offset)
         )
 
-    async def set_permissions(self, user: User, permissions: list) -> None:
+    async def set_permissions(self, user: User, permissions: builtins.list) -> None:
         user.direct_permissions = permissions
         await self.flush()
         await self.refresh(user)

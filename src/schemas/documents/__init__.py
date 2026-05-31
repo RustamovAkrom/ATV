@@ -1,8 +1,8 @@
 from .document import (
-    AssetDocumentCreateSchema,
-    AssetDocumentOutSchema,
-    AssetDocumentUpdateSchema,
-    AssetDocumentWithFilesOutSchema,
-    DocumentFileCreateSchema,
-    DocumentFileOutSchema,
+    AssetDocumentCreateSchema as AssetDocumentCreateSchema,
+    AssetDocumentOutSchema as AssetDocumentOutSchema,
+    AssetDocumentUpdateSchema as AssetDocumentUpdateSchema,
+    AssetDocumentWithFilesOutSchema as AssetDocumentWithFilesOutSchema,
+    DocumentFileCreateSchema as DocumentFileCreateSchema,
+    DocumentFileOutSchema as DocumentFileOutSchema,
 )

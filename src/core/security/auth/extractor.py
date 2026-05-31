@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordBearer
 from core.exceptions.errors import AuthenticationError
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/auth/login",
+    tokenUrl="/api/v1/auth/login",
     auto_error=False,
 )
 

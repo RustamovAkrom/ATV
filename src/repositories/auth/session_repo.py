@@ -1,13 +1,15 @@
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models.refresh_token import RefreshToken
+from repositories.base import BaseRepository
 from utils.helpers import utc_now
 
 
-class SessionRepository:
+class SessionRepository(BaseRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
@@ -39,7 +41,7 @@ class SessionRepository:
             )
             .values(is_revoked=True)
         )
-        return result.rowcount > 0
+        return self._rowcount(result) > 0
 
     async def revoke_all(self, user_id: UUID) -> int:
         result = await self.session.execute(
@@ -50,7 +52,7 @@ class SessionRepository:
             )
             .values(is_revoked=True)
         )
-        return result.rowcount or 0
+        return self._rowcount(result)
 
     async def get_active_sessions(self, user_id: UUID):
         now = utc_now()
@@ -62,23 +64,23 @@ class SessionRepository:
                 RefreshToken.expires_at > now,
             )
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def delete_expired_sessions(self) -> int:
         result = await self.session.execute(
             delete(RefreshToken).where(RefreshToken.expires_at < utc_now())
         )
-        return result.rowcount or 0
+        return self._rowcount(result)
 
-    def delete_expired_sessions_sync(self) -> int:
-        result = self.session.execute(
+    async def delete_expired_sessions_sync(self) -> int:
+        result = await self.session.execute(
             delete(RefreshToken).where(RefreshToken.expires_at < utc_now())
         )
-        self.session.commit()
+        await self.session.commit()
 
-        return result.rowcount or 0
+        return self._rowcount(result)
 
-    def _to_schema(self, session: RefreshToken) -> str:
+    def _to_schema(self, session: RefreshToken) -> dict[str, Any]:
         now = utc_now()
 
         return {

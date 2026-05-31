@@ -26,7 +26,7 @@ class AuthService:
     async def login(
         self, login: str, password: str, request: Request
     ) -> TokenPairSchema:
-        user: User = await self.user_repo.get_by_identity(login)
+        user: User | None = await self.user_repo.get_by_identity(login)
 
         if not user:
             raise AuthenticationError()
@@ -69,7 +69,7 @@ class AuthService:
 
         # reuse detection (security event)
         if token.is_revoked:
-            await self.auth_repo.revoke_all_by_user(payload.sub)
+            await self.auth_repo.revoke_all_by_user(UUID(str(payload.sub)))
             raise InvalidToken("Token reuse detected")
 
         # expired
@@ -89,13 +89,16 @@ class AuthService:
             await self.auth_repo.revoke_all_by_user(payload.sub)
             raise InvalidToken("IP mismatched")
 
-        user = await self.user_repo.get_by_id(payload.sub)
+        user: User | None = await self.user_repo.get_by_id(payload.sub)
         if not user:
             raise InvalidToken()
 
-        if user.last_password_change and payload.iat:
-            if payload.iat <= int(user.last_password_change.timestamp()):
-                await self.auth_repo.revoke_all_by_user(user.id)
+            if (
+                user.last_password_change
+                and payload.iat
+                and payload.iat <= int(user.last_password_change.timestamp())
+            ):
+                await self.auth_repo.revoke_all_by_user(UUID(str(user.id)))
                 raise InvalidToken("Token outdated")
 
         await self.auth_repo.revoke(payload.jti)
@@ -148,6 +151,6 @@ class AuthService:
 
         tokens = await self.auth_repo.get_by_user(user_id)
         for token in tokens:
-            await get_blacklist().add(jti=token.id, exp=token.expires_at)
+            await get_blacklist().add(jti=str(token.id), exp=token.expires_at)
 
         await self.auth_repo.revoke_all_by_user(user_id)

@@ -40,7 +40,6 @@ class CostAnalyticsService(BaseAnalyticsService):
             AssetCostAnalyticsOut(
                 asset_id=row.id,
                 asset_name=row.name,
-                asset_tag=getattr(row, "asset_tag", None),
                 purchase_cost=self.safe_money(row.purchase_cost),
                 repair_cost=self.safe_money(row.repair_cost),
                 total_cost=self.safe_money(

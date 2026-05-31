@@ -6,6 +6,7 @@ from uuid import UUID
 from sqlalchemy import (
     CheckConstraint,
     DateTime,
+    Enum,
     ForeignKey,
     Index,
     Numeric,
@@ -18,6 +19,7 @@ from sqlalchemy.sql import func
 
 from db.base import Base
 from db.mixins import TimestampMixin, UUIDMixing
+from db.models.enums import ExpenseTypeEnum
 
 
 class Expense(Base, UUIDMixing, TimestampMixin):
@@ -38,13 +40,13 @@ class Expense(Base, UUIDMixing, TimestampMixin):
     service_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("services.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    created_by: Mapped[UUID | None] = mapped_column(
+    created_by_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
 
     # Core fields
-    expense_type_code: Mapped[str] = mapped_column(
-        String(50), nullable=False, index=True
+    expense_type_code: Mapped[ExpenseTypeEnum] = mapped_column(
+        Enum(ExpenseTypeEnum), nullable=False, index=True
     )  # purchase, repair, maintenance, logistics, other
     amount: Mapped[float] = mapped_column(
         Numeric(18, 2), nullable=False
@@ -66,17 +68,20 @@ class Expense(Base, UUIDMixing, TimestampMixin):
     )
 
     def __repr__(self) -> str:
-        return f"<Expense {self.id}: {self.amount} {self.currency} ({self.expense_type_code})>"
+        return (
+            f"<Expense {self.id}: {self.amount} "
+            f"{self.currency} ({self.expense_type_code})>"
+        )
 
-    @hybrid_property
-    def amount_usd(self) -> float | None:
-        if self.currency == "UZS":
-            return self.amount / 13000  # пример курса
-        return self.amount
+    # @hybrid_property
+    # def amount_usd(self) -> float | None:
+    #     if self.currency == "UZS":
+    #         return self.amount / 13000  # пример курса
+    #     return self.amount
 
     @hybrid_property
     def amount_formatted(self) -> str:
-        """Форматированная сумма с валютой."""
+        """Formatted amount with currency."""
         return f"{self.amount:,.2f} {self.currency}"
 
     @hybrid_property

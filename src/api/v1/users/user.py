@@ -36,10 +36,6 @@ settings = get_settings()
 
 def _to_user_out(user: User) -> UserOutSchema:
     role = getattr(user.role, "slug", None)
-    # permissions = [
-    #     str(getattr(permission, "slug", getattr(permission, "value", permission)))
-    #     for permission in (getattr(user, "permissions", None) or [])
-    # ]
 
     return UserOutSchema(
         id=user.id,
@@ -47,12 +43,11 @@ def _to_user_out(user: User) -> UserOutSchema:
         email=user.email,
         phone=user.phone,
         role=str(role).lower() if role else None,
-        # permissions=permissions,
         first_name=getattr(user, "first_name", None),
         last_name=getattr(user, "last_name", None),
-        status=getattr(user, "status", None),
-        created_at=getattr(user, "created_at", None),
-        updated_at=getattr(user, "updated_at", None),
+        status=user.status,
+        created_at=user.created_at,
+        updated_at=user.updated_at,
         position=getattr(user, "position", None),
         department=getattr(user, "department", None),
         employment_type=getattr(user, "employment_type", None),
@@ -155,9 +150,9 @@ async def upload_avatar(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {e}") from e
 
-    # Получаем старого пользователя
+    # Get old user
     user = await service.get(current_user.id)
     old_avatar_url = user.avatar_url
 

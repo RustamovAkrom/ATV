@@ -46,4 +46,4 @@ def send_email(to: str, subject: str, body: str) -> None:
         raise Exception("SMTP authentication failed") from e
 
     except smtplib.SMTPException as e:
-        raise Exception(f"SMTP error: {str(e)}") from e
+        raise Exception(f"SMTP error: {e!s}") from e

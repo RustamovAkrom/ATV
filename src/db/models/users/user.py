@@ -9,7 +9,6 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     String,
-    func,
 )
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
@@ -61,7 +60,7 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
         nullable=False,
     )
 
-    # ========== ОРГАНИЗАЦИОННАЯ СТРУКТУРА ==========
+    # ========== ORGANIZATIONAL STRUCTURE ==========
     assigned_region_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("regions.id", ondelete="SET NULL"), nullable=True
     )
@@ -124,11 +123,6 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
         DateTime(timezone=True), nullable=True
     )
 
-    # ========== ВАЛИДАЦИЯ ==========
-    @validates
-    def validate_status(self, value):
-        return super().validate_status(value)
-
     @validates("badge_number")
     def validate_badge_number(self, key, value):
         if value and len(value) > 50:
@@ -148,8 +142,8 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
 
             try:
                 zoneinfo.ZoneInfo(value)
-            except zoneinfo.ZoneInfoNotFoundError:
-                raise ValueError(f"Invalid timezone: {value}")
+            except zoneinfo.ZoneInfoNotFoundError as e:
+                raise ValueError(f"Invalid timezone: {value}") from e
         return value
 
     # ========== RELATIONSHIPS ==========
@@ -184,16 +178,6 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
         full_name = " ".join(part.strip() for part in parts if part and part.strip())
         return full_name or self.login
 
-    @full_name.expression
-    def full_name(cls):
-        return func.trim(
-            func.concat(
-                func.coalesce(cls.first_name, ""),
-                " ",
-                func.coalesce(cls.last_name, ""),
-            )
-        )
-
     @property
     def short_name(self) -> str:
         """Короткое имя: Фамилия И."""
@@ -221,7 +205,7 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
             self.hired_at
             and self.hired_at <= date.today()
             and (not self.dismissed_at or self.dismissed_at > date.today())
-        )
+        ) or False
 
     def __repr__(self):
         return self.login

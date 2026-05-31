@@ -1,4 +1,6 @@
+from datetime import datetime
 from decimal import Decimal
+from typing import Any, cast
 from uuid import UUID
 
 from core.events.repair_events import RepairEventService
@@ -28,6 +30,10 @@ class RepairService:
         self.repo = repo
         self.repair_events = repair_events
 
+    @staticmethod
+    def _to_uuid(value: Any) -> UUID:
+        return cast(UUID, UUID(str(value)))
+
     async def report_repair(
         self, asset_id: UUID, data: RepairReportRequest, actor: CurrentUserSchema
     ) -> RepairSchema:
@@ -41,11 +47,13 @@ class RepairService:
         if asset.status != AssetStatus.ACTIVE:
             raise BadRequest("Repairs can only be reported for active assets")
 
-        active_assignment = await self.repo.get_active_assignment(asset.id)
+        active_assignment = await self.repo.get_active_assignment(
+            self._to_uuid(asset.id)
+        )
         if active_assignment:
             raise BadRequest("Cannot report repair for assigned asset")
 
-        if await self.repo.get_active_repair(asset.id):
+        if await self.repo.get_active_repair(self._to_uuid(asset.id)):
             raise BadRequest("Asset already has an active repair")
 
         repair = Repair(
@@ -57,9 +65,9 @@ class RepairService:
         await self.repo.create_repair(repair)
 
         await self.repair_events.reported(
-            asset_id=asset.id,
-            repair_id=repair.id,
-            actor_id=actor.id,
+            asset_id=self._to_uuid(asset.id),
+            repair_id=self._to_uuid(repair.id),
+            actor_id=self._to_uuid(actor.id),
         )
         return self._to_schema(repair)
 
@@ -74,7 +82,7 @@ class RepairService:
         if not asset:
             raise NotFound("Asset not found")
 
-        existing = await self.repo.get_active_repair(asset.id)
+        existing = await self.repo.get_active_repair(self._to_uuid(asset.id))
         if existing and existing.id != repair_id:
             raise BadRequest("Another repair is already in progress for this asset")
 
@@ -108,16 +116,16 @@ class RepairService:
 
         if data.parts:
             await self.repo.replace_parts(
-                repair, self._build_parts(repair.id, data.parts)
+                repair, self._build_parts(self._to_uuid(repair.id), data.parts)
             )
         await self.repo.flush()
 
         if repair.assigned_to_id:
             await self.repair_events.started(
-                asset_id=asset.id,
-                repair_id=repair.id,
-                actor_id=actor.id,
-                assigned_to_id=repair.assigned_to_id,
+                asset_id=self._to_uuid(asset.id),
+                repair_id=self._to_uuid(repair.id),
+                actor_id=self._to_uuid(actor.id),
+                assigned_to_id=self._to_uuid(repair.assigned_to_id),
             )
 
         return self._to_schema(repair)
@@ -146,22 +154,23 @@ class RepairService:
             repair.labor_cost = data.labor_cost
         if data.parts:
             await self.repo.replace_parts(
-                repair, self._build_parts(repair.id, data.parts)
+                repair, self._build_parts(self._to_uuid(repair.id), data.parts)
             )
 
         repair.status = RepairStatus.DONE
-        repair.completed_at = utc_now()
+        completed_at: datetime = utc_now()
+        repair.completed_at = completed_at
         asset.status = AssetStatus.ACTIVE
-        asset.last_repair_date = repair.completed_at.date()
+        asset.last_repair_date = completed_at.date()
         asset.failure_count += 1
         await self.repo.flush()
 
         if repair.reported_by_id:
             await self.repair_events.completed(
-                asset_id=asset.id,
-                repair_id=repair.id,
-                actor_id=actor.id,
-                reported_by_id=repair.reported_by_id,
+                asset_id=self._to_uuid(asset.id),
+                repair_id=self._to_uuid(repair.id),
+                actor_id=self._to_uuid(actor.id),
+                reported_by_id=self._to_uuid(repair.reported_by_id),
             )
 
         return self._to_schema(repair)
@@ -201,10 +210,10 @@ class RepairService:
 
         if repair.reported_by_id:
             await self.repair_events.canceled(
-                asset_id=asset.id,
-                repair_id=repair.id,
-                actor_id=actor.id,
-                reported_by_id=repair.reported_by_id,
+                asset_id=self._to_uuid(asset.id),
+                repair_id=self._to_uuid(repair.id),
+                actor_id=self._to_uuid(actor.id),
+                reported_by_id=self._to_uuid(repair.reported_by_id),
                 reason=data.reason,
             )
 
@@ -216,10 +225,18 @@ class RepairService:
             Decimal(part.unit_price or 0) * part.quantity for part in parts
         )
         return RepairSchema(
-            id=repair.id,
-            asset_id=repair.asset_id,
-            reported_by_id=repair.reported_by_id,
-            assigned_to_id=repair.assigned_to_id,
+            id=self._to_uuid(repair.id),
+            asset_id=self._to_uuid(repair.asset_id),
+            reported_by_id=(
+                self._to_uuid(repair.reported_by_id)
+                if repair.reported_by_id is not None
+                else None
+            ),
+            assigned_to_id=(
+                self._to_uuid(repair.assigned_to_id)
+                if repair.assigned_to_id is not None
+                else None
+            ),
             description=repair.description,
             status=repair.status,
             started_at=repair.started_at,

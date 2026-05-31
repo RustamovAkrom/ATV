@@ -56,8 +56,12 @@ class WarehouseMoveHandler(BaseApprovalHandler):
         if not self.warehouse_service:
             raise RuntimeError("WarehouseService not injected")
 
+        warehouse_id = payload.get("warehouse_id")
+        if not warehouse_id:
+            raise ValueError("warehouse_id is required")
+
         # Создаем запрос на перемещение
-        move_request = WarehouseMoveRequest(warehouse_id=payload.get("warehouse_id"))
+        move_request = WarehouseMoveRequest(warehouse_id=UUID(str(warehouse_id)))
 
         # Выполняем перемещение
         return await self.warehouse_service.move_asset_to_warehouse(

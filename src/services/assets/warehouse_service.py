@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import Any
+from decimal import Decimal
+from typing import Any, cast
 from uuid import UUID
 
 from core.events.warehouse_events import WarehouseEventService
@@ -32,6 +33,10 @@ class WarehouseService:
         self.asset_repo = asset_repo
         self.warehouse_events = warehouse_events
 
+    @staticmethod
+    def _to_uuid(value: Any) -> UUID:
+        return cast(UUID, UUID(str(value)))
+
     async def list_warehouses(
         self,
         pagination: PaginationParamsSchema,
@@ -49,23 +54,20 @@ class WarehouseService:
 
         items = []
         for warehouse in warehouses:
-            assets_count = await self.repo.get_assets_count(warehouse.id)
+            assets_count = await self.repo.get_assets_count(self._to_uuid(warehouse.id))
             items.append(self._to_out_schema(warehouse, assets_count))
 
         return items, total
 
     async def get_warehouse(self, warehouse_id: UUID) -> WarehouseWithDetailsOutSchema:
         warehouse = await self.repo.get(warehouse_id)
-        if not warehouse:
+        if warehouse is None:
             raise NotFound(f"Warehouse {warehouse_id} not found")
 
         assets_count = await self.repo.get_assets_count(warehouse_id)
         return self._to_details_schema(warehouse, assets_count)
 
     async def create_warehouse(self, data: WarehouseCreateSchema) -> WarehouseOutSchema:
-        if data.slug and await self.repo.check_slug_exists(data.slug):
-            raise Conflict(f"Warehouse with slug '{data.slug}' already exists")
-
         warehouse = await self.repo.create(data.model_dump(exclude_unset=True))
         return self._to_out_schema(warehouse)
 
@@ -81,13 +83,10 @@ class WarehouseService:
         if isinstance(data, dict):
             data = WarehouseUpdateSchema(**data)
 
-        if data.slug and await self.repo.check_slug_exists(
-            data.slug, exclude_id=warehouse_id
-        ):
-            raise Conflict(f"Warehouse with slug '{data.slug}' already exists")
-
         update_data = data.model_dump(exclude_unset=True)
         updated = await self.repo.update(warehouse_id, update_data)
+        if updated is None:
+            raise NotFound(f"Warehouse {warehouse_id} not found")
         return self._to_out_schema(updated)
 
     async def delete_warehouse(self, warehouse_id: UUID) -> None:
@@ -130,17 +129,17 @@ class WarehouseService:
         ):
             raise BadRequest("Warehouse service is incompatible with asset service")
 
-        asset.current_warehouse_id = warehouse.id
+        asset.current_warehouse_id = self._to_uuid(warehouse.id)
         await self.asset_repo.flush()
 
         await self.warehouse_events.asset_moved_to_warehouse(
-            asset_id=asset.id,
-            actor_id=actor.id,
-            warehouse_id=warehouse.id,
+            asset_id=self._to_uuid(asset.id),
+            actor_id=self._to_uuid(actor.id),
+            warehouse_id=self._to_uuid(warehouse.id),
             warehouse_name=getattr(warehouse, "name", None),
         )
 
-        return asset.id
+        return self._to_uuid(asset.id)
 
     def _to_out_schema(
         self, warehouse: Warehouse, assets_count: int = 0
@@ -148,12 +147,20 @@ class WarehouseService:
         created_at = getattr(warehouse, "created_at", datetime.utcnow())
         updated_at = getattr(warehouse, "updated_at", created_at)
         return WarehouseOutSchema(
-            id=warehouse.id,
+            id=self._to_uuid(warehouse.id),
             name=warehouse.name,
             slug=getattr(warehouse, "slug", None),
-            region_id=warehouse.region_id,
-            service_id=getattr(warehouse, "service_id", None),
-            manager_user_id=getattr(warehouse, "manager_user_id", None),
+            region_id=self._to_uuid(warehouse.region_id),
+            service_id=(
+                self._to_uuid(warehouse.service_id)
+                if warehouse.service_id is not None
+                else None
+            ),
+            manager_user_id=(
+                self._to_uuid(warehouse.manager_user_id)
+                if warehouse.manager_user_id is not None
+                else None
+            ),
             is_active=getattr(warehouse, "is_active", True),
             created_at=created_at,
             updated_at=updated_at,
@@ -168,12 +175,20 @@ class WarehouseService:
         created_at = getattr(warehouse, "created_at", datetime.utcnow())
         updated_at = getattr(warehouse, "updated_at", created_at)
         return WarehouseWithDetailsOutSchema(
-            id=warehouse.id,
+            id=self._to_uuid(warehouse.id),
             name=warehouse.name,
             slug=getattr(warehouse, "slug", None),
-            region_id=warehouse.region_id,
-            service_id=getattr(warehouse, "service_id", None),
-            manager_user_id=getattr(warehouse, "manager_user_id", None),
+            region_id=self._to_uuid(warehouse.region_id),
+            service_id=(
+                self._to_uuid(warehouse.service_id)
+                if warehouse.service_id is not None
+                else None
+            ),
+            manager_user_id=(
+                self._to_uuid(warehouse.manager_user_id)
+                if warehouse.manager_user_id is not None
+                else None
+            ),
             is_active=getattr(warehouse, "is_active", True),
             created_at=created_at,
             updated_at=updated_at,
@@ -189,9 +204,17 @@ class WarehouseService:
         self,
         name: str,
         region_id: UUID,
-        slug: str | None = None,
+        service_id: UUID | None = None,
+        manager_user_id: UUID | None = None,
+        is_active: bool = True,
     ) -> WarehouseOutSchema:
-        data = WarehouseCreateSchema(name=name, region_id=region_id, slug=slug)
+        data = WarehouseCreateSchema(
+            name=name,
+            region_id=region_id,
+            service_id=service_id,
+            manager_user_id=manager_user_id,
+            is_active=is_active,
+        )
         return await self.create_warehouse(data)
 
     async def get_warehouse_legacy(
@@ -298,15 +321,17 @@ class WarehouseService:
         self,
         name: str,
         slug: str | None = None,
-        unit_price: float | None = None,
+        unit_price: Decimal | None = None,
+        description: str | None = None,
     ) -> dict[str, Any]:
-        data = PartCreateSchema(name=name, code=slug, unit_price=unit_price)
+        data = PartCreateSchema(
+            name=name, unit_price=unit_price, description=description
+        )
         part = await self.repo.create_part(
             name=data.name,
-            slug=data.code,
+            unit_price=data.unit_price if data.unit_price is not None else None,
             description=data.description,
-            unit_price=data.unit_price,
-        )
+        )  # type: ignore[attr-defined]
         return self._to_part_dict(part)
 
     async def list_parts(
@@ -336,6 +361,8 @@ class WarehouseService:
         if not part:
             raise NotFound(f"Part {part_id} not found")
         updated = await self.repo.update_part(part_id, data)
+        if not updated:
+            raise NotFound(f"Part {part_id} not found after update")
         return self._to_part_dict(updated)
 
     async def delete_part(self, part_id: UUID) -> None:

@@ -13,8 +13,8 @@ class BaseRepository:
         self.session.add(obj)
         return obj
 
-    def delete(self, obj):
-        self.session.delete(obj)
+    async def delete(self, obj):
+        await self.session.delete(obj)
 
     # DB Operations (Async)
     async def flush(self) -> None:
@@ -29,6 +29,10 @@ class BaseRepository:
     async def execute(self, stmt) -> Result:
         return await self.session.execute(stmt)
 
+    @staticmethod
+    def _rowcount(result: Result) -> int:
+        return int(getattr(result, "rowcount", 0) or 0)
+
     async def scalar(self, stmt):
         result = await self.execute(stmt)
         return result.scalar_one_or_none()
@@ -39,7 +43,7 @@ class BaseRepository:
 
     async def scalars(self, stmt):
         result = await self.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def scalars_first(self, stmt):
         result = await self.execute(stmt)

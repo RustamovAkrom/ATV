@@ -5,6 +5,6 @@ from .service import FileUploadService
 __all__ = [
     "BaseStorageStrategy",
     "FileUploadResult",
-    "LocalStorageStrategy",
     "FileUploadService",
+    "LocalStorageStrategy",
 ]

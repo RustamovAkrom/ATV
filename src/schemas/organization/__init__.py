@@ -1,9 +1,9 @@
 from .region import (
-    RegionBaseSchema,
-    RegionCreateSchema,
-    RegionOutSchema,
-    RegionStatsOutSchema,
-    RegionTreeOutSchema,
-    RegionUpdateSchema,
-    RegionWithServicesOutSchema,
+    RegionBaseSchema as RegionBaseSchema,
+    RegionCreateSchema as RegionCreateSchema,
+    RegionOutSchema as RegionOutSchema,
+    RegionStatsOutSchema as RegionStatsOutSchema,
+    RegionTreeOutSchema as RegionTreeOutSchema,
+    RegionUpdateSchema as RegionUpdateSchema,
+    RegionWithServicesOutSchema as RegionWithServicesOutSchema,
 )

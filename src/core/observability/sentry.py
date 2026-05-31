@@ -6,7 +6,7 @@ from core.config import get_settings
 def init_sentry() -> None:
     settings = get_settings()
 
-    if not settings.sentry_dsn:
+    if not settings.SENTRY_DSN:
         return
 
     sentry_sdk.init(
