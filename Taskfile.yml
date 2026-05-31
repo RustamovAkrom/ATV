@@ -332,3 +332,29 @@ tasks:
   deptry:
     desc: Check unused dependencies
     cmd: uv run deptry .
+
+# ═══════════════════════════════════════════
+# CI/CD
+# ═══════════════════════════════════════════
+
+  ci:
+    desc: Run all CI checks (lint, typecheck, security, tests)
+    env:
+      ENV: test
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: test_db
+    cmds:
+      - task: lint
+      - task: typecheck
+      - task: security
+      - task: test
+
+  ci-fast:
+    desc: Run fast CI checks (without tests)
+    cmds:
+      - task: lint
+      - task: typecheck
+      - task: security
