@@ -109,7 +109,7 @@ class AssetImageService:
 
     def _to_out(self, image: AssetImage) -> AssetImageOutSchema:
         return AssetImageOutSchema(
-            id=image.id,
+            id=UUID(str(image.id)),
             asset_id=image.asset_id,
             file_name=image.file_name,
             file_path=image.file_path,

@@ -10,14 +10,16 @@ class ApprovalAnalyticsDomainService(BaseAnalyticsService):
 
     async def get(self, filters: AnalyticsFilters, user: CurrentUserSchema) -> dict:
         self.validate_filters(filters, user)
-        row = await self.repo.metrics(filters.date_from, filters.date_to)
+        row: dict = await self.repo.metrics(filters.date_from, filters.date_to)
 
-        decided = int(row.decided_count or 0)
-        rejected = int(row.rejected_count or 0)
+        decided = int(row.get("decided_count") or 0)
+        rejected = int(row.get("rejected_count") or 0)
 
         return {
-            "pending_approvals": int(row.pending_approvals or 0),
-            "average_approval_time_hours": round(float(row.avg_approval_hours or 0), 2),
+            "pending_approvals": int(row.get("pending_approvals") or 0),
+            "average_approval_time_hours": round(
+                float(row.get("avg_approval_hours") or 0), 2
+            ),
             "rejection_rate": round(
                 (rejected / decided * 100.0) if decided else 0.0, 2
             ),

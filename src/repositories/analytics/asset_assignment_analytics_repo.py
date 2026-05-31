@@ -27,7 +27,7 @@ class AssetAssignmentAnalyticsRepository(AssignmentBaseRepository):
         query = query.order_by(AssetAssignment.assigned_at.desc())
 
         result, total = await self.execute_with_pagination(query, pagination)
-        return result.scalars().all(), total
+        return list(result.scalars().all()), total
 
     async def get_aggregates(self, filters: AssetAssignmentFilterInput) -> dict:
         base_query = select(AssetAssignment.id)
@@ -90,7 +90,7 @@ class AssetAssignmentAnalyticsRepository(AssignmentBaseRepository):
             )
             .order_by(AssetAssignment.assigned_at.asc())
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_user_assignment_summary(self, user_id):
         aggregate = (

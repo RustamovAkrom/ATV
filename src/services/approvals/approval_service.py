@@ -51,7 +51,7 @@ class ApprovalService:
         self._init_handlers()
 
     def _init_handlers(self):
-        """Инициализация обработчиков с внедрением зависимостей"""
+        """Initialize handlers with dependency injection"""
         register_all_handlers()
 
         # Внедряем зависимости во все обработчики
@@ -91,7 +91,7 @@ class ApprovalService:
 
         serializable_payload = jsonable_encoder(validated_payload)
 
-        asset = await self.asset_service._get_asset(data.entity_id)
+        asset = await self.asset_service.asset_repo.get_by_id(data.entity_id)
         if not asset:
             raise NotFound("Asset not found")
 
@@ -118,7 +118,7 @@ class ApprovalService:
         approvers = await self._get_approvers(asset, requester_id=actor.id)
 
         await self.approval_events.requested(
-            approval_id=approval.id,
+            approval_id=UUID(str(approval.id)),
             entity_type=approval.entity_type,
             entity_id=approval.entity_id,
             action=approval.action,
@@ -146,7 +146,9 @@ class ApprovalService:
             validated_payload = handler.validate_payload(data.payload or {})
             return validated_payload
         except Exception as exc:
-            raise BadRequest(f"Invalid payload for {entity_type}:{action} - {exc}")
+            raise BadRequest(
+                f"Invalid payload for {entity_type}:{action} - {exc}"
+            ) from exc
 
     async def approve(
         self, approval_id: UUID, actor: CurrentUserSchema, comment: str | None = None
@@ -158,7 +160,9 @@ class ApprovalService:
 
             AccessControl.check_not_creator(actor, approval.created_by_id)
 
-            asset = await self.asset_service._get_asset(approval.entity_id)
+            asset = await self.asset_service.asset_repo.get_by_id(approval.entity_id)
+            if not asset:
+                raise NotFound("Asset not found")
 
             AccessControl.check_region_access(actor, asset.region_id)
             AccessControl.check_service_access(actor, asset.service_id)
@@ -182,7 +186,7 @@ class ApprovalService:
             await self.approval_repo.flush()
 
         await self.approval_events.approved(
-            approval_id=approval.id,
+            approval_id=UUID(str(approval.id)),
             entity_type=approval.entity_type,
             entity_id=approval.entity_id,
             action=approval.action,
@@ -215,7 +219,7 @@ class ApprovalService:
             await self.approval_repo.flush()
 
         await self.approval_events.rejected(
-            approval_id=approval.id,
+            approval_id=UUID(str(approval.id)),
             entity_type=approval.entity_type,
             entity_id=approval.entity_id,
             action=approval.action,
@@ -244,7 +248,7 @@ class ApprovalService:
         )
 
         await self.approval_events.executed(
-            approval_id=approval.id,
+            approval_id=UUID(str(approval.id)),
             entity_type=approval.entity_type,
             entity_id=approval.entity_id,
             action=approval.action,
@@ -292,11 +296,11 @@ class ApprovalService:
         )
         users = result.scalars().all()
         return [
-            user.id
+            UUID(str(user.id))
             for user in users
             if user.role
             and any(
                 str(getattr(p, "slug", "")).lower() == Permissions.APPROVALS_APPROVE
                 for p in (user.role.permissions or [])
             )
-        ]
+        ]  # type: ignore

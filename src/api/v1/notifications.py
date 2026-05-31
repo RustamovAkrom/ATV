@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import suppress
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
@@ -45,19 +46,17 @@ async def ws_notifications(
             await websocket.receive_text()
 
     except WebSocketDisconnect:
-        await memory_backend.disconnect(user_id, websocket)
+        memory_backend.disconnect(user_id, websocket)
 
     except Exception:
-        await memory_backend.disconnect(user_id, websocket)
+        memory_backend.disconnect(user_id, websocket)
         raise
 
     finally:
         if task:
             task.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await task
-            except asyncio.CancelledError:
-                pass
 
 
 @router.get("/", response_model=list[NotificationSchema])

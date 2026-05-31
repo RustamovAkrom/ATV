@@ -27,7 +27,7 @@ class DocumentAnalyticsRepository(BaseAnalyticsRepository):
 
         total = await self.get_count(Asset, filters)
 
-        # Активы с документами
+        # Assets with documents
         with_docs = (
             await self.session.scalar(
                 select(func.count(func.distinct(Asset.id)))

@@ -66,8 +66,8 @@ async def list_expenses(
         region_id=region_id,
         service_id=service_id,
         asset_id=asset_id,
-        start_date=start_date.isoformat() if start_date else None,
-        end_date=end_date.isoformat() if end_date else None,
+        start_date=start_date,
+        end_date=end_date,
     )
 
 

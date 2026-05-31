@@ -47,14 +47,15 @@ class CacheManager:
         if isinstance(value, (UUID, datetime, date, Enum)):
             return str(value)
 
-        if is_dataclass(value):
+        if is_dataclass(value) and not isinstance(value, type):
             return self._normalize(asdict(value))
 
-        if hasattr(value, "model_dump"):
+        model_dump = getattr(value, "model_dump", None)
+        if callable(model_dump):
             try:
-                return self._normalize(value.model_dump(mode="json"))
+                return self._normalize(model_dump(mode="json"))
             except TypeError:
-                return self._normalize(value.model_dump())
+                return self._normalize(model_dump())
 
         if isinstance(value, dict):
             return {

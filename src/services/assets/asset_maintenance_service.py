@@ -42,7 +42,7 @@ class AssetMaintenanceService:
         data: AssetMaintenanceCreateSchema,
         actor: CurrentUserSchema,
     ) -> AssetMaintenanceOutSchema:
-        """Создать запись о техническом обслуживании"""
+        """Create a new maintenance record for an asset"""
         await self._check_asset_access(asset_id, actor)
 
         maintenance = await self.repo.create(
@@ -96,10 +96,10 @@ class AssetMaintenanceService:
                 update_data["maintenance_type"] = update_data[
                     "maintenance_type"
                 ].strip()
-            if "issues_found" in update_data and update_data["issues_found"]:
-                update_data["issues_found"] = update_data["issues_found"].strip()
-            if "notes" in update_data and update_data["notes"]:
-                update_data["notes"] = update_data["notes"].strip()
+            if issues := update_data.get("issues_found"):
+                update_data["issues_found"] = issues.strip()
+            if notes := update_data.get("notes"):
+                update_data["notes"] = notes.strip()
 
             updated = await self.repo.update(maintenance_id, update_data)
             if not updated:

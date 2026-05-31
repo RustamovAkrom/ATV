@@ -68,13 +68,12 @@ class ServiceService:
             try:
                 await self.repo.set_regions(service.id, data.region_ids)
             except Conflict as e:
-                # Если ошибка с регионами, удаляем созданный сервис
                 await self.repo.delete(service.id)
                 raise Conflict(str(e)) from e
 
             except Exception as e:
                 await self.repo.delete(service.id)
-                raise BadRequest(f"Failed to attach regions: {str(e)}") from e
+                raise BadRequest(f"Failed to attach regions: {e!s}") from e
 
         return await self.get(service.id)
 
@@ -110,7 +109,7 @@ class ServiceService:
 
         return await self.get(service_id)
 
-    async def delete(self, service_id: UUID) -> dict[str, Any]:
+    async def delete(self, service_id: UUID) -> None:
         """Удалить сервис"""
         service = await self.repo.get(service_id)
         if not service:

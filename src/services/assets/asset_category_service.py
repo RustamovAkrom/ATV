@@ -13,7 +13,7 @@ class AssetCategoryService:
         return await self.repo.list()
 
     async def create(self, data: AssetCategoryCreateSchema):
-        obj = AssetCategory(**data)
+        obj = AssetCategory(**data.model_dump())
         return await safe_create(self.repo, obj)
 
     async def delete(self, category_id):

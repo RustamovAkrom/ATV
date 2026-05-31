@@ -35,7 +35,7 @@ class NotificationRepository(BaseRepository):
             query.order_by(Notification.created_at.desc()).limit(limit).offset(offset)
         )
 
-    async def get_by_id(self, notification_id: UUID) -> Notification:
+    async def get_by_id(self, notification_id: UUID) -> Notification | None:
         return await self.scalar(
             select(Notification).where(Notification.id == notification_id)
         )
@@ -54,10 +54,13 @@ class NotificationRepository(BaseRepository):
             .values(is_read=True)
         )
 
-    async def count_unread(self, user_id: UUID) -> None | Notification:
-        return await self.scalar_one(
-            select(func.count())
-            .select_from(Notification)
-            .where(Notification.user_id == user_id)
-            .where(Notification.is_read.is_(False))
+    async def count_unread(self, user_id: UUID) -> int:
+        return int(
+            await self.scalar_one(
+                select(func.count())
+                .select_from(Notification)
+                .where(Notification.user_id == user_id)
+                .where(Notification.is_read.is_(False))
+            )
+            or 0
         )

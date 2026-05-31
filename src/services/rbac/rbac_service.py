@@ -29,7 +29,10 @@ class RBACService:
         # normalize
         slug = data.slug.lower().strip()
 
-        if await self.rbac_repo.exists_by_slug(slug):
+        existing = await self.rbac_repo.get_role_by_slug(slug)
+        if existing:
+            if existing.name == data.name.strip():
+                return existing
             raise ValidationError("Role slug already exists")
 
         if await self.rbac_repo.exists_by_name(data.name):
@@ -52,14 +55,14 @@ class RBACService:
 
         payload = data.model_dump(exclude_unset=True)
 
-        if "slug" in payload and payload["slug"]:
-            payload["slug"] = payload["slug"].lower().strip()
-            if await self.rbac_repo.exists_by_slug(payload["slug"], exclude_id=role_id):
+        if slug := payload.get("slug"):
+            payload["slug"] = slug.lower().strip()
+            if await self.rbac_repo.exists_by_slug(slug, exclude_id=role_id):
                 raise ValidationError("Role slug already exists")
 
-        if "name" in payload and payload["name"]:
-            payload["name"] = payload["name"].strip()
-            if await self.rbac_repo.exists_by_name(payload["name"], exclude_id=role_id):
+        if name := payload.get("name"):
+            payload["name"] = name.strip()
+            if await self.rbac_repo.exists_by_name(name, exclude_id=role_id):
                 raise ValidationError("Role name already exists")
 
         return await self.rbac_repo.update_role(role_id, payload)

@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import Depends, Request
 
 from api.dependencies.users import get_user_repo
@@ -6,6 +8,7 @@ from core.security.blacklist import get_blacklist
 from core.security.jwt import decode_token
 from core.security.rbac.permissions import Permissions
 from db.models.enums import UserRole, UserStatus
+from db.models.users.user import User
 from repositories.users.user_repo import UserRepository
 from schemas.auth import CurrentUserSchema
 
@@ -21,7 +24,7 @@ async def get_token_payload(
 ):
     payload = await decode_token(token, expected_type="access")
 
-    if await get_blacklist().contains(payload.jti):
+    if await get_blacklist().contains(str(payload.jti)):
         raise InvalidToken()
 
     if not payload.session_id:
@@ -39,16 +42,19 @@ async def get_current_user(
     user_repo: UserRepository = Depends(get_user_repo),
 ) -> CurrentUserSchema:
 
-    user = await user_repo.get_by_id(payload.sub)
+    user: User | None = await user_repo.get_by_id(payload.sub)
     if not user:
         raise InvalidToken()
 
     if user.status != UserStatus.ACTIVE:
         raise InvalidToken("User inactive")
 
-    if user.last_password_change and payload.iat:
-        if payload.iat <= int(user.last_password_change.timestamp()):
-            raise InvalidToken("Token outdated")
+    if (
+        user.last_password_change
+        and payload.iat
+        and payload.iat <= int(user.last_password_change.timestamp())
+    ):
+        raise InvalidToken("Token outdated")
 
     permissions = list(
         VALID_PERMISSIONS.intersection(
@@ -61,7 +67,7 @@ async def get_current_user(
     )
 
     return CurrentUserSchema(
-        id=user.id,
+        id=UUID(str(user.id)),
         role=role,
         permissions=permissions,
         assigned_region_id=user.assigned_region_id,

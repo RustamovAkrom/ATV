@@ -21,12 +21,14 @@ class AssetAssignmentFilterInput(BaseModel):
     asset_id: UUID | None = None
     user_id: UUID | None = None
     status: AssignmentAnalyticsStatus | None = Field(
-        None, description="active or inactive"
+        default=None, description="active or inactive"
     )
     date_from: datetime | None = None
     date_to: datetime | None = None
     search: str | None = Field(
-        None, description="Search by asset name/tag or user name", max_length=100
+        default=None,
+        description="Search by asset name/tag or user name",
+        max_length=100,
     )
 
     @field_validator("search")
@@ -55,7 +57,7 @@ class AssetAssignmentOut(BaseModel):
 class AssignmentDurationMetrics(BaseModel):
     """Duration metrics for an assignment."""
 
-    duration_days: Decimal
+    duration_days: Decimal | None  # e.g. 12.5
     duration_formatted: str  # "12 days, 5 hours"
     is_active: bool
 

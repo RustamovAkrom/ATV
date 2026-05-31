@@ -49,7 +49,7 @@ class AssetHistoryAnalyticsRepository(BaseAnalyticsRepository):
     async def list(
         self, filters: AssetHistoryFilter, pagination: PaginationParamsSchema
     ) -> tuple[list[AssetHistory], int]:
-        """Список записей истории с пагинацией"""
+        """List of history entries with pagination"""
         query = (
             select(AssetHistory)
             .options(
@@ -62,7 +62,7 @@ class AssetHistoryAnalyticsRepository(BaseAnalyticsRepository):
         query = self._apply_filters(query, filters)
         result, total = await self.execute_with_pagination(query, pagination)
 
-        return result.scalars().all(), total
+        return list(result.scalars().all()), total
 
     async def get_aggregates(self, filters: AssetHistoryFilter) -> dict:
         """Агрегированные метрики по истории"""

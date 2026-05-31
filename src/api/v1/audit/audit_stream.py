@@ -1,5 +1,6 @@
 import asyncio
 import json
+from contextlib import suppress
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -36,9 +37,7 @@ def _match_filters(
         return False
     if level and event.get("level") != level:
         return False
-    if method and str(event.get("method", "")).upper() != method.upper():
-        return False
-    return True
+    return not (method and str(event.get("method", "")).upper() != method.upper())
 
 
 @router.get(
@@ -97,10 +96,8 @@ async def stream_audit(
             pass
 
         finally:
-            try:
+            with suppress(Exception):
                 await subscriber.aclose()
-            except Exception:
-                pass
 
     return StreamingResponse(
         event_generator(),

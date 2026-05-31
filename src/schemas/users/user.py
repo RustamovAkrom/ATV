@@ -86,7 +86,6 @@ class UserOutSchema(TimestampSchema):
     email: str
     phone: str
     role: str | None
-    # permissions: list[str] = Field(default_factory=list)
     first_name: str | None
     last_name: str | None
     status: UserStatus

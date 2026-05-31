@@ -67,18 +67,22 @@ async def unassign_asset(
     service: AssetAssignmentService = Depends(get_asset_assignment_service),
 ):
     """
-    Снять назначение с актива.
+    Unassign asset.
 
-    - Владелец актива может снять назначение с себя (без доп. прав)
-    - Для снятия с другого пользователя нужно право ASSETS_UNASSIGN
+    - Owner can unassign themselves (no extra permissions)
+    - Unassigning from another user requires ASSETS_UNASSIGN permission
     """
     from core.security.rbac.guards import check_permissions
     from core.security.rbac.permissions import Permissions
 
     # Получаем актив чтобы проверить владельца
     asset = await service.repo.get_asset_for_update(asset_id)
+    if asset is None:
+        from core.exceptions.errors import NotFound
 
-    # Если снимаем не с себя - нужны права
+        raise NotFound("Asset not found")
+
+    # If unassigning from someone else - permissions required
     if asset.owner_id != actor.id:
         check_permissions(actor, Permissions.ASSETS_UNASSIGN)
 

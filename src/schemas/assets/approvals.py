@@ -11,10 +11,10 @@ from schemas.base import BaseSchema
 
 class ApprovalCreate(BaseSchema):
     """
-    Схема для создания запроса на согласование.
+    Schema for creating approval request.
 
-    ⚠️ НЕ ИСПОЛЬЗОВАТЬ НАПРЯМУЮ!
-    Используйте специализированные эндпоинты:
+    ⚠️ DO NOT USE DIRECTLY!
+    Use specialized endpoints:
     - POST /assets/{id}/approval-requests/assignment
     - POST /assets/{id}/approval-requests/transfer
     - POST /assets/{id}/approval-requests/repair/{repair_id}/complete

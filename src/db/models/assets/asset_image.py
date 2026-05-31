@@ -30,7 +30,7 @@ class AssetImage(Base, UUIDMixing, TimestampMixin):
     height: Mapped[int | None] = mapped_column(Integer, nullable=True)
     alt_text: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
-    # Связь с активом
+    # Relation to asset
     asset: Mapped["Asset"] = relationship(
         "Asset", back_populates="images", lazy="selectin"
     )

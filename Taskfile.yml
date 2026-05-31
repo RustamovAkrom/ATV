@@ -3,7 +3,8 @@ version: "3"
 vars:
   RUNNER:
     sh: 'echo {{ .RUNNER | default "uv run --no-sync" }}'
-  SOURCES: src tests
+  SOURCES: src
+  TEST_SOURCES: tests
 
 # ═══════════════════════════════════════════
 # DEFAULT
@@ -252,7 +253,7 @@ tasks:
 
   security:
     desc: Security scan (bandit)
-    cmd: "{{.RUNNER}} bandit -r {{.SOURCES}} -q"
+    cmd: "{{.RUNNER}} bandit -r {{.SOURCES}} -c pyproject.toml -q"
 
   pre-commit:
     desc: Run pre-commit hooks

@@ -1,23 +1,12 @@
 """Expense schemas for validation and API responses."""
 
 from datetime import datetime
-from enum import Enum
 from uuid import UUID
 
 from pydantic import ConfigDict, Field
 
+from db.models.enums import ExpenseTypeEnum
 from schemas.base import BaseSchema, NamedRefSchema
-
-
-class ExpenseTypeEnum(str, Enum):
-    """Supported expense types."""
-
-    PURCHASE = "purchase"
-    REPAIR = "repair"
-    MAINTENANCE = "maintenance"
-    LOGISTICS = "logistics"
-    OTHER = "other"
-
 
 AssetRef = NamedRefSchema
 RegionRef = NamedRefSchema

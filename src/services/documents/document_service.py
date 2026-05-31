@@ -1,3 +1,4 @@
+from typing import Any, cast
 from uuid import UUID
 
 from core.config import get_settings
@@ -26,6 +27,10 @@ class DocumentService:
     ):
         self.repo = repo
         self.events = events
+
+    @staticmethod
+    def _to_uuid(value: Any) -> UUID:
+        return cast(UUID, UUID(str(value)))
 
     async def list_by_asset(
         self, asset_id: UUID, actor: CurrentUserSchema
@@ -63,7 +68,7 @@ class DocumentService:
         actor: CurrentUserSchema,
         uploaded_files: list[dict] | None = None,
     ) -> AssetDocumentOutSchema:
-        """Создать документ с файлами"""
+        """Create a new document for an asset"""
         asset = await self.repo.get_asset(asset_id)
         if not asset:
             raise NotFound("Asset not found")
@@ -88,9 +93,9 @@ class DocumentService:
                 await self.repo.add_file(document, file_data)
 
         await self.events.attached(
-            asset_id=asset.id,
-            document_id=document.id,
-            actor_id=actor.id,
+            asset_id=self._to_uuid(asset.id),
+            document_id=self._to_uuid(document.id),
+            actor_id=self._to_uuid(actor.id),
             asset_name=asset.name,
         )
 
@@ -116,11 +121,13 @@ class DocumentService:
 
         update_data = data.model_dump(exclude_unset=True)
         updated = await self.repo.update_document(document_id, update_data)
+        if updated is None:
+            raise NotFound("Document not found")
 
         await self.events.updated(
-            asset_id=asset.id,
-            document_id=document.id,
-            actor_id=actor.id,
+            asset_id=self._to_uuid(asset.id),
+            document_id=self._to_uuid(document.id),
+            actor_id=self._to_uuid(actor.id),
         )
 
         return self._to_out_schema(updated)
@@ -142,9 +149,9 @@ class DocumentService:
         await self.repo.delete_document(document)
 
         await self.events.deleted(
-            asset_id=asset.id,
-            document_id=document.id,
-            actor_id=actor.id,
+            asset_id=self._to_uuid(asset.id),
+            document_id=self._to_uuid(document.id),
+            actor_id=self._to_uuid(actor.id),
         )
 
     async def add_file_to_document(
@@ -168,7 +175,7 @@ class DocumentService:
         file = await self.repo.add_file(document, file_data)
 
         return DocumentFileOutSchema(
-            id=file.id,
+            id=self._to_uuid(file.id),
             file_name=file.file_name,
             file_path=file.file_path,
             file_size=file.file_size,
@@ -201,17 +208,21 @@ class DocumentService:
 
     def _to_out_schema(self, document: Document) -> AssetDocumentOutSchema:
         return AssetDocumentOutSchema(
-            id=document.id,
+            id=self._to_uuid(document.id),
             title=document.title,
             description=document.description,
             document_type=document.document_type,
-            asset_id=document.asset_id,
-            created_by_id=document.created_by_id,
+            asset_id=(
+                self._to_uuid(document.asset_id)
+                if document.asset_id is not None
+                else None
+            ),
+            created_by_id=self._to_uuid(document.created_by_id),
             status=document.status,
             meta=document.meta,
             files=[
                 DocumentFileOutSchema(
-                    id=f.id,
+                    id=self._to_uuid(f.id),
                     file_name=f.file_name,
                     file_path=f.file_path,
                     file_size=f.file_size,
@@ -231,17 +242,21 @@ class DocumentService:
     ) -> AssetDocumentWithFilesOutSchema:
         total_size = sum(f.file_size or 0 for f in document.files)
         return AssetDocumentWithFilesOutSchema(
-            id=document.id,
+            id=self._to_uuid(document.id),
             title=document.title,
             description=document.description,
             document_type=document.document_type,
-            asset_id=document.asset_id,
-            created_by_id=document.created_by_id,
+            asset_id=(
+                self._to_uuid(document.asset_id)
+                if document.asset_id is not None
+                else None
+            ),
+            created_by_id=self._to_uuid(document.created_by_id),
             status=document.status,
             meta=document.meta,
             files=[
                 DocumentFileOutSchema(
-                    id=f.id,
+                    id=self._to_uuid(f.id),
                     file_name=f.file_name,
                     file_path=f.file_path,
                     file_size=f.file_size,

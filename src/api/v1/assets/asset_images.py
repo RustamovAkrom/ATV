@@ -1,3 +1,4 @@
+from contextlib import suppress
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
@@ -12,7 +13,10 @@ from core.security.rbac.presets import ImagesPermissions
 from core.slowapi import limiter
 from core.storage import FileUploadService
 from core.storage.configs import UploadConfigs
-from schemas.assets.asset_image import AssetImageCreateSchema, AssetImageOutSchema
+from schemas.assets.asset_image import (
+    AssetImageCreateSchema,
+    AssetImageOutSchema,
+)
 from schemas.auth import CurrentUserSchema
 from schemas.common import StatusResponse
 from services.assets.asset_image_service import AssetImageService
@@ -35,7 +39,7 @@ async def list_asset_images(
     service: AssetImageService = Depends(get_asset_image_service),
     actor: CurrentUserSchema = Depends(get_current_user),
 ):
-    """Список изображений актива"""
+    """List asset images"""
     return await service.get_images(asset_id, actor)
 
 
@@ -46,12 +50,12 @@ async def get_image_file(
     service: AssetImageService = Depends(get_asset_image_service),
     current_user: CurrentUserSchema = Depends(get_current_user),
 ):
-    """Получить файл изображения"""
+    """Get image file"""
     image = await service.repo.get(image_id)
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
-    # Проверяем доступ к активу
+    # Check asset access
     await service._check_asset_access(image.asset_id, current_user)
 
     full_path = settings.BASE_DIR / image.file_path
@@ -65,7 +69,7 @@ async def get_image_file(
     )
 
 
-# ========== POST/PATCH/DELETE запросы (с rate limit) ==========
+# ========== POST/PATCH/DELETE requests (with rate limit) ==========
 
 
 @router.post(
@@ -87,11 +91,12 @@ async def upload_asset_image(
     request: Request,
     asset_id: UUID,
     file: UploadFile = File(...),
+    alt_text: str | None = None,
     service: AssetImageService = Depends(get_asset_image_service),
     actor: CurrentUserSchema = Depends(get_current_user),
     upload_service: FileUploadService = Depends(get_file_upload_service),
 ):
-    """Загрузить изображение для актива"""
+    """Upload image for asset"""
     try:
         result = await upload_service.upload(
             file=file,
@@ -101,9 +106,9 @@ async def upload_asset_image(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {e}") from e
 
-    # Получаем размеры изображения (если PIL установлен)
+    # Get image dimensions (if PIL installed)
     width, height = None, None
     try:
         from PIL import Image
@@ -118,7 +123,8 @@ async def upload_asset_image(
         file_name=result.original_name,
         file_path=result.file_path,
         file_size=result.file_size,
-        content_type=file.content_type,
+        content_type=str(file.content_type),
+        alt_text=alt_text or "",
         width=width,
         height=height,
     )
@@ -147,7 +153,7 @@ async def set_primary_image(
     service: AssetImageService = Depends(get_asset_image_service),
     actor: CurrentUserSchema = Depends(get_current_user),
 ):
-    """Установить главное изображение"""
+    """Set primary image"""
     await service.set_primary(image_id, asset_id, actor)
     return {"status": "ok", "message": "Primary image set"}
 
@@ -174,19 +180,17 @@ async def delete_asset_image(
     actor: CurrentUserSchema = Depends(get_current_user),
     upload_service: FileUploadService = Depends(get_file_upload_service),
 ):
-    """Удалить изображение"""
-    # Получаем информацию об изображении
+    """Delete image"""
+    # Get image information
     image = await service.repo.get(image_id)
     if not image or image.asset_id != asset_id:
         raise HTTPException(status_code=404, detail="Image not found")
 
-    # Удаляем физический файл
-    try:
+    # Delete physical file
+    with suppress(Exception):
         await upload_service.delete(image.file_path)
-    except Exception:
-        pass  # Логируем, но не прерываем удаление записи
 
-    # Удаляем запись из БД
+    # Delete DB record
     await service.delete_image(image_id, asset_id, actor)
     return StatusResponse(status="deleted", message="Image deleted successfully")
 
@@ -211,6 +215,6 @@ async def reorder_images(
     service: AssetImageService = Depends(get_asset_image_service),
     actor: CurrentUserSchema = Depends(get_current_user),
 ):
-    """Изменить порядок изображений"""
+    """Reorder images"""
     await service.reorder_images(asset_id, ordered_ids, actor)
     return StatusResponse(status="ok", message="Order updated")

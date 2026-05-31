@@ -9,9 +9,12 @@ ROOT_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from core.database.db_async import get_async_session_factory, get_db_async_engine
-from core.requests import get_http_transport
-from scripts.bootstrap.rbac import seed_rbac
+from core.database.db_async import (  # noqa: E402
+    get_async_session_factory,
+    get_db_async_engine,
+)
+from core.requests import get_http_transport  # noqa: E402
+from scripts.bootstrap.rbac import seed_rbac  # noqa: E402
 
 
 async def run_bootstrap():

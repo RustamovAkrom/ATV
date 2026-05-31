@@ -34,9 +34,7 @@ def get_approval_service(
         get_asset_assignment_service
     ),
     warehouse_service: WarehouseService = Depends(get_warehouse_service),
-    approval_events: ApprovalEventService = Depends(
-        get_approval_event_service
-    ),  # <-- добавить ApprovalEventService
+    approval_events: ApprovalEventService = Depends(get_approval_event_service),
 ) -> ApprovalService:
     """Get approval service with all dependencies."""
     return ApprovalService(
@@ -46,5 +44,5 @@ def get_approval_service(
         repair_service=repair_service,
         asset_assignment_service=asset_assignment_service,
         warehouse_service=warehouse_service,
-        approval_events=approval_events,  # <-- только events, без notification_dispatcher
+        approval_events=approval_events,
     )

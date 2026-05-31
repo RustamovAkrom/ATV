@@ -56,6 +56,7 @@ class RegionService:
                 geojson=data["geojson"],
                 created_at=data["created_at"],
                 updated_at=data["updated_at"],
+                level=1,
                 children=[to_tree(child) for child in data["children"]],
             )
 
@@ -129,9 +130,6 @@ class RegionService:
     def _get_level(self, region: RegionOutSchema) -> int:
         """Вычислить уровень региона (простой способ)"""
         level = 1
-        # current_parent_id = region.parent_id
-        # В реальности нужно загрузить всех родителей
-        # Для простоты возвращаем 1
         return level
 
     def _to_out_schema(self, region: Region) -> RegionOutSchema:
@@ -144,4 +142,5 @@ class RegionService:
             geojson=region.geojson,
             created_at=region.created_at,
             updated_at=region.updated_at,
+            level=1,
         )

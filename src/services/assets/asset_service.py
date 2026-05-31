@@ -21,7 +21,7 @@ from schemas.assets.assets import (
     AssetUpdate,
 )
 from schemas.auth.auth import CurrentUserSchema
-from schemas.pagination import PageOutSchema, PageSchema, PaginationParamsSchema
+from schemas.pagination import PageOutSchema, PaginationParamsSchema
 from utils.helpers import utc_now
 
 
@@ -50,7 +50,7 @@ class AssetService:
         filters: AssetFilters,
         pagination: PaginationParamsSchema,
         actor: CurrentUserSchema,
-    ) -> PageSchema[AssetSchema]:
+    ) -> PageOutSchema[AssetSchema]:
 
         if actor.assigned_region_id:
             filters.region_id = actor.assigned_region_id
@@ -75,17 +75,21 @@ class AssetService:
         )
 
     async def get(self, asset_id: UUID, actor: CurrentUserSchema) -> AssetDetailSchema:
-        asset = await self._get_asset(asset_id)
+        asset = await self.asset_repo.get_by_id(asset_id)
+        if not asset:
+            raise NotFound("Asset not found")
 
         AccessControl.check_region_access(actor, asset.region_id)
         AccessControl.check_service_access(actor, asset.service_id)
 
-        return AssetDetailSchema.model_validate(asset, from_attributes=True)
+        return self._to_detail_schema(asset)
 
     async def get_history(
         self, asset_id: UUID, actor: CurrentUserSchema
     ) -> list[AssetHistorySchema]:
-        asset = await self._get_asset(asset_id)
+        asset = await self.asset_repo.get_by_id(asset_id)
+        if not asset:
+            raise NotFound("Asset not found")
 
         AccessControl.check_region_access(actor, asset.region_id)
         AccessControl.check_service_access(actor, asset.service_id)
@@ -138,37 +142,40 @@ class AssetService:
             if owner.status != UserStatus.ACTIVE.value:
                 raise BadRequest("Owner must be active")
 
-            if owner.assigned_region_id and data.region_id:
-                if owner.assigned_region_id != data.region_id:
-                    raise BadRequest(
-                        f"Owner is assigned to region {owner.assigned_region_id}, "
-                        f"but asset belongs to region {data.region_id}"
-                    )
-            if owner.assigned_service_id and data.service_id:
-                if owner.assigned_service_id != data.service_id:
-                    raise BadRequest(
-                        f"Owner is assigned to service {data.service_id}, "
-                        f"but asset belongs to service {data.service_id}"
-                    )
+            if (
+                owner.assigned_region_id
+                and data.region_id
+                and owner.assigned_region_id != data.region_id
+            ):
+                raise BadRequest(
+                    f"Owner is assigned to region {owner.assigned_region_id}, "
+                    f"but asset belongs to region {data.region_id}"
+                )
+            if (
+                owner.assigned_service_id
+                and data.service_id
+                and owner.assigned_service_id != data.service_id
+            ):
+                raise BadRequest(
+                    f"Owner is assigned to service {owner.assigned_service_id}, "
+                    f"but asset belongs to service {data.service_id}"
+                )
 
-        await self._validate_references(
-            data.model_id,
-            data.region_id,
-            data.service_id,
-            owner_id,
-            data.class_id,
-        )
-        await self._validate_uniques(data.serial_number)
+        if data.class_id is not None and not await self.asset_repo.get_asset_class(
+            data.class_id
+        ):
+            raise BadRequest("Invalid asset class")
 
-        status = AssetStatus.ASSIGNED if owner_id else AssetStatus.ACTIVE
-
+        # Create the asset object
         asset = Asset(
-            name=data.name.strip(),
+            name=data.name,
             model_id=data.model_id,
+            serial_number=data.serial_number,
+            status=AssetStatus.ACTIVE,
             class_id=data.class_id,
-            region_id=data.region_id,
             service_id=data.service_id,
-            serial_number=self._clean_optional(data.serial_number),
+            region_id=data.region_id,
+            owner_id=owner_id,
             commission_date=data.commission_date,
             warranty_end=data.warranty_end,
             condition_percent=data.condition_percent,
@@ -177,75 +184,88 @@ class AssetService:
             last_repair_date=data.last_repair_date,
             failure_count=data.failure_count,
             usage_intensity=data.usage_intensity,
-            meta=data.metadata,
-            owner_id=owner_id,
-            status=status,
+            meta=data.metadata or {},
         )
 
-        await self.asset_repo.create(asset)
-        await self.asset_repo.flush()
+        created = await self.asset_repo.create(asset)
+        asset = created or asset
 
-        await self.asset_events.created(
-            asset_id=asset.id,
-            actor_id=actor.id,
-            user_id=asset.owner_id,
-            asset_name=asset.name,
-            status=asset.status.value,
-        )
-
-        return await self.get(asset.id, actor)
+        return self._to_detail_schema(asset)
 
     async def update(
         self, asset_id: UUID, data: AssetUpdate, actor: CurrentUserSchema
     ) -> AssetDetailSchema:
-        asset = await self._get_asset(asset_id, include_history=False, for_update=True)
+        asset = await self.asset_repo.get_by_id_for_update(asset_id)
+        if not asset:
+            raise NotFound("Asset not found")
 
         AccessControl.check_region_access(actor, asset.region_id)
         AccessControl.check_service_access(actor, asset.service_id)
 
         payload = data.model_dump(exclude_unset=True)
         if not payload:
-            return await self.get(asset.id, actor)
+            return await self.get(asset_id, actor)
+
+        if "metadata" in payload:
+            payload["meta"] = payload.pop("metadata") or {}
 
         await self._validate_update_references(payload)
+        await self._validate_uniques(payload.get("serial_number"), exclude_id=asset_id)
 
-        if "region_id" in payload:
-            AccessControl.check_region_access(actor, payload["region_id"])
-        if "service_id" in payload:
-            AccessControl.check_service_access(actor, payload["service_id"])
+        next_region_id = payload.get("region_id", asset.region_id)
+        next_service_id = payload.get("service_id", asset.service_id)
+        AccessControl.check_region_access(actor, next_region_id)
+        AccessControl.check_service_access(actor, next_service_id)
 
-        await self._validate_uniques(
-            self._clean_optional(payload.get("serial_number")),
-            exclude_id=asset_id,
-        )
+        owner_id = payload.get("owner_id")
+        if owner_id is not None:
+            owner = await self.asset_repo.get_user(owner_id)
+            if not owner:
+                raise BadRequest("Invalid owner")
+            if owner.status != UserStatus.ACTIVE.value:
+                raise BadRequest("Owner must be active")
 
-        changes: list[str] = []
-        for field_name, value in payload.items():
-            target_field = "meta" if field_name == "metadata" else field_name
-            normalized_value = (
-                self._clean_optional(value)
-                if field_name in {"serial_number"}
-                else value
+        changed_fields: list[str] = []
+        for field, value in payload.items():
+            value = self._clean_optional(value)
+            if getattr(asset, field, None) != value:
+                setattr(asset, field, value)
+                changed_fields.append(field)
+
+        if changed_fields:
+            await self.asset_repo.flush()
+            if hasattr(self.asset_repo, "refresh"):
+                await self.asset_repo.refresh(asset)
+            await self.asset_events.updated(
+                asset_id=asset.id,
+                actor_id=actor.id,
+                owner_id=asset.owner_id,
+                asset_name=asset.name,
+                fields=changed_fields,
             )
-            if getattr(asset, target_field) == normalized_value:
-                continue
-            setattr(asset, target_field, normalized_value)
-            changes.append(field_name)
 
-        if not changes:
-            return await self.get(asset.id, actor)
+        return self._to_detail_schema(asset)
 
-        await self.asset_repo.flush()
+    async def delete(self, asset_id: UUID, actor: CurrentUserSchema) -> None:
+        asset = await self.asset_repo.get_by_id_for_update(asset_id)
+        if not asset:
+            raise NotFound("Asset not found")
 
-        await self.asset_events.updated(
-            asset_id=asset.id,
+        AccessControl.check_region_access(actor, asset.region_id)
+        AccessControl.check_service_access(actor, asset.service_id)
+
+        if asset.status != AssetStatus.ARCHIVED:
+            raise BadRequest("Only archived assets can be deleted")
+
+        owner_id = asset.owner_id
+        asset_name = asset.name
+        await self.asset_repo.delete(asset)
+        await self.asset_events.deleted(
+            asset_id=asset_id,
             actor_id=actor.id,
-            owner_id=asset.owner_id,
-            asset_name=asset.name,
-            fields=sorted(changes),
+            owner_id=owner_id,
+            asset_name=asset_name,
         )
-
-        return await self.get(asset.id, actor)
 
     async def change_status(
         self,
@@ -253,68 +273,36 @@ class AssetService:
         data: AssetStatusChangeRequest,
         actor: CurrentUserSchema,
     ) -> AssetDetailSchema:
-        asset = await self._get_asset(asset_id, include_history=False, for_update=True)
+        asset = await self.asset_repo.get_by_id_for_update(asset_id)
+        if not asset:
+            raise NotFound("Asset not found")
 
         AccessControl.check_region_access(actor, asset.region_id)
         AccessControl.check_service_access(actor, asset.service_id)
 
-        new_status = data.status
-
-        if asset.status == new_status:
-            return await self.get(asset.id, actor)
+        old_status = AssetStatus(asset.status)
+        new_status = AssetStatus(data.status)
+        if old_status == new_status:
+            return await self.get(asset_id, actor)
 
         self._validate_status_change(asset, new_status)
-        previous_status = asset.status
         asset.status = new_status
-        await self.asset_repo.flush()
 
+        await self.asset_repo.flush()
+        if hasattr(self.asset_repo, "refresh"):
+            await self.asset_repo.refresh(asset)
         await self.asset_events.status_changed(
             asset_id=asset.id,
             actor_id=actor.id,
             owner_id=asset.owner_id,
-            from_status=(
-                previous_status.value
-                if hasattr(previous_status, "value")
-                else str(previous_status)
-            ),
-            to_status=(
-                new_status.value if hasattr(new_status, "value") else str(new_status)
-            ),
+            from_status=old_status.value,
+            to_status=new_status.value,
         )
 
-        return await self.get(asset.id, actor)
+        return self._to_detail_schema(asset)
 
-    async def delete(self, asset_id: UUID, actor: CurrentUserSchema) -> None:
-        asset = await self._get_asset(asset_id, include_history=False, for_update=True)
-
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
-
-        if asset.status in {
-            AssetStatus.ACTIVE,
-            AssetStatus.ASSIGNED,
-            AssetStatus.IN_REPAIR,
-        }:
-            raise BadRequest("Only archived assets can be deleted")
-
-        await self.asset_events.deleted(
-            asset_id=asset.id,
-            actor_id=actor.id,
-            owner_id=asset.owner_id,
-            asset_name=asset.name,
-        )
-        await self.asset_repo.delete(asset)
-
-    async def _get_asset(
-        self, asset_id: UUID, include_history: bool = True, for_update: bool = False
-    ) -> Asset:
-        asset = await (
-            self.asset_repo.get_by_id_for_update(
-                asset_id, include_history=include_history
-            )
-            if for_update
-            else self.asset_repo.get_by_id(asset_id, include_history=include_history)
-        )
+    async def _get_asset(self, asset_id: UUID) -> Asset:
+        asset = await self.asset_repo.get_by_id(asset_id)
         if not asset:
             raise NotFound("Asset not found")
         return asset
@@ -327,16 +315,14 @@ class AssetService:
         owner_id: UUID | None,
         class_id: UUID | None,
     ) -> None:
-        model = await self.asset_repo.get_model(model_id)
-        if not model:
-            raise BadRequest("Invalid asset model")
-        if region_id is not None and not await self.asset_repo.get_region(region_id):
-            raise BadRequest("Invalid region")
-        if service_id is not None and not await self.asset_repo.get_service(service_id):
-            raise BadRequest("Invalid service")
-        if class_id is not None:
-            if not await self.asset_repo.get_asset_class(class_id):
-                raise BadRequest("Invalid asset class")
+        await self._validate_update_references(
+            {
+                "model_id": model_id,
+                "region_id": region_id,
+                "service_id": service_id,
+                "class_id": class_id,
+            }
+        )
         if owner_id is not None:
             owner = await self.asset_repo.get_user(owner_id)
             if not owner:
@@ -345,18 +331,30 @@ class AssetService:
                 raise BadRequest("Owner must be active")
 
     async def _validate_update_references(self, payload: dict) -> None:
-        if "model_id" in payload and payload["model_id"] is not None:
-            if not await self.asset_repo.get_model(payload["model_id"]):
-                raise BadRequest("Invalid asset model")
-        if "region_id" in payload and payload["region_id"] is not None:
-            if not await self.asset_repo.get_region(payload["region_id"]):
-                raise BadRequest("Invalid region")
-        if "service_id" in payload and payload["service_id"] is not None:
-            if not await self.asset_repo.get_service(payload["service_id"]):
-                raise BadRequest("Invalid service")
-        if "class_id" in payload and payload["class_id"] is not None:
-            if not await self.asset_repo.get_asset_class(payload["class_id"]):
-                raise BadRequest("Invalid asset class")
+        if (
+            "model_id" in payload
+            and payload["model_id"] is not None
+            and not await self.asset_repo.get_model(payload["model_id"])
+        ):
+            raise BadRequest("Invalid asset model")
+        if (
+            "region_id" in payload
+            and payload["region_id"] is not None
+            and not await self.asset_repo.get_region(payload["region_id"])
+        ):
+            raise BadRequest("Invalid region")
+        if (
+            "service_id" in payload
+            and payload["service_id"] is not None
+            and not await self.asset_repo.get_service(payload["service_id"])
+        ):
+            raise BadRequest("Invalid service")
+        if (
+            "class_id" in payload
+            and payload["class_id"] is not None
+            and not await self.asset_repo.get_asset_class(payload["class_id"])
+        ):
+            raise BadRequest("Invalid asset class")
 
     async def _validate_uniques(
         self,
@@ -369,10 +367,11 @@ class AssetService:
             raise BadRequest("Serial number already exists")
 
     def _validate_status_change(self, asset: Asset, new_status: AssetStatus) -> None:
-        allowed = self._ALLOWED_TRANSITIONS[asset.status]
+        current_status = AssetStatus(asset.status)
+        allowed = self._ALLOWED_TRANSITIONS[current_status]
         if new_status not in allowed:
             raise BadRequest(
-                f"Cannot change asset status from '{asset.status.value}'"
+                f"Cannot change asset status from '{current_status.value}'"
                 f"to '{new_status.value}'"
             )
         if new_status == AssetStatus.ASSIGNED and asset.owner_id is None:
@@ -391,10 +390,20 @@ class AssetService:
             return value or None
         return value
 
+    @classmethod
+    def _to_detail_schema(cls, item) -> AssetDetailSchema:
+        try:
+            return AssetDetailSchema.model_validate(item, from_attributes=True)
+        except ValidationError:
+            payload = cls._normalize_asset_schema(item).model_dump(by_alias=True)
+            payload["history_entries"] = getattr(item, "history_entries", []) or []
+            payload["maintenances"] = getattr(item, "maintenances", []) or []
+            return AssetDetailSchema.model_validate(payload)
+
     @staticmethod
     def _normalize_asset_schema(item) -> AssetSchema:
-        created_at = getattr(item, "created_at", utc_now())
-        updated_at = getattr(item, "updated_at", created_at)
+        created_at = getattr(item, "created_at", None) or utc_now()
+        updated_at = getattr(item, "updated_at", None) or created_at
 
         model = getattr(item, "model", None)
         if model is None and getattr(item, "model_id", None):

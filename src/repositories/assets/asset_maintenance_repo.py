@@ -14,7 +14,7 @@ class AssetMaintenanceRepository(BaseRepository):
         self.session = session
 
     async def create(self, data: dict) -> AssetMaintenance:
-        """Создать запись о техническом обслуживании"""
+        """Create maintenance record"""
         maintenance = AssetMaintenance(**data)
         self.add(maintenance)
         await self.flush()
@@ -35,7 +35,7 @@ class AssetMaintenanceRepository(BaseRepository):
             .where(AssetMaintenance.asset_id == asset_id)
             .order_by(AssetMaintenance.performed_at.desc())
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def update(self, maintenance_id: UUID, data: dict) -> AssetMaintenance | None:
         """Обновить запись обслуживания"""
@@ -53,7 +53,7 @@ class AssetMaintenanceRepository(BaseRepository):
             delete(AssetMaintenance).where(AssetMaintenance.id == maintenance_id)
         )
         await self.flush()
-        return result.rowcount > 0
+        return self._rowcount(result) > 0
 
     async def delete_by_asset(self, asset_id: UUID) -> int:
         """Удалить все записи обслуживания актива"""
@@ -61,4 +61,4 @@ class AssetMaintenanceRepository(BaseRepository):
             delete(AssetMaintenance).where(AssetMaintenance.asset_id == asset_id)
         )
         await self.flush()
-        return result.rowcount
+        return self._rowcount(result)

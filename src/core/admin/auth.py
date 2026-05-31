@@ -1,5 +1,6 @@
 from loguru import logger
 from sqladmin.authentication import AuthenticationBackend
+from starlette.datastructures import UploadFile as StarletteUploadFile
 from starlette.requests import Request
 
 from core.config import get_settings
@@ -11,15 +12,25 @@ from db.models.users.user import User
 settings = get_settings()
 
 
+def _client_host(request: Request) -> str:
+    return request.client.host if request.client else "unknown"
+
+
 class AdminAuth(AuthenticationBackend):
     async def login(self, request: Request) -> bool:
         form = await request.form()
         username = form.get("username")
         password = form.get("password")
+        client_host = _client_host(request)
+
+        if isinstance(username, StarletteUploadFile):
+            username = None
+        if isinstance(password, StarletteUploadFile):
+            password = None
 
         if not username or not password:
             logger.warning(
-                f"Admin login failed: missing credentials from {request.client.host}"
+                f"Admin login failed: missing credentials from {client_host}"
             )
             return False
 
@@ -29,7 +40,8 @@ class AdminAuth(AuthenticationBackend):
 
             if not user:
                 logger.warning(
-                    f"Admin login failed: user '{username}' not found from {request.client.host}"
+                    "Admin login failed: user "
+                    f"'{username}' not found from {client_host}"
                 )
                 return False
 
@@ -42,9 +54,7 @@ class AdminAuth(AuthenticationBackend):
                 request.session["user_id"] = str(user.id)
                 request.session["user"] = user.login
                 request.session["role"] = user.role.slug
-                logger.info(
-                    f"Admin login successful: '{username}' from {request.client.host}"
-                )
+                logger.info(f"Admin login successful: '{username}' from {client_host}")
                 return True
 
             reason = []
@@ -56,7 +66,8 @@ class AdminAuth(AuthenticationBackend):
                 reason.append("user inactive")
 
             logger.warning(
-                f"Admin login failed for '{username}': {', '.join(reason)} from {request.client.host}"
+                f"Admin login failed for '{username}': "
+                f"{', '.join(reason)} from {client_host}"
             )
             return False
 
@@ -65,7 +76,7 @@ class AdminAuth(AuthenticationBackend):
         request.session.pop("user_id", None)
         request.session.pop("user", None)
         request.session.pop("role", None)
-        logger.info(f"Admin logout: '{user}' from {request.client.host}")
+        logger.info(f"Admin logout: '{user}' from {_client_host(request)}")
         return True
 
     async def authenticate(self, request: Request) -> bool:

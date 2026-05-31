@@ -10,7 +10,6 @@ from schemas.analytics.asset_transfer_analytics import (
     AssetTransferFilterInput,
     AssetTransferHistory,
     AssetTransferOut,
-    AssetTransferPageOut,
     BottleneckReportOut,
     TransferBottleneck,
     TransferHistoryEntry,
@@ -34,7 +33,7 @@ class AssetTransferAnalyticsService(BaseAnalyticsService):
         self,
         filters: AssetTransferFilterInput,
         pagination: PaginationParamsSchema,
-    ) -> AssetTransferPageOut:
+    ) -> PageOutSchema[AssetTransferOut]:
         """List transfers with pagination."""
         transfers, total = await self.repo.list_transfers(filters, pagination)
 
@@ -53,7 +52,7 @@ class AssetTransferAnalyticsService(BaseAnalyticsService):
     async def list_pending_transfers(
         self,
         pagination: PaginationParamsSchema,
-    ) -> AssetTransferPageOut:
+    ) -> PageOutSchema[AssetTransferOut]:
         """List pending transfers."""
         transfers, total = await self.repo.list_pending_transfers(pagination)
 
@@ -81,7 +80,7 @@ class AssetTransferAnalyticsService(BaseAnalyticsService):
         # Build history entries
         history = [
             TransferHistoryEntry(
-                transfer_id=t.id,
+                transfer_id=UUID(str(t.id)),
                 sequence=i + 1,
                 status=t.status.value,
                 from_location=(
@@ -191,7 +190,7 @@ class AssetTransferAnalyticsService(BaseAnalyticsService):
     def _to_transfer_out(self, transfer: AssetTransfer) -> AssetTransferOut:
         """Convert transfer model to output schema."""
         return AssetTransferOut(
-            id=transfer.id,
+            id=UUID(str(transfer.id)),
             asset_id=transfer.asset_id,
             asset_name=transfer.asset.name if transfer.asset else "Unknown",
             status=transfer.status.value,

@@ -53,7 +53,7 @@ class LocalStorageStrategy(BaseStorageStrategy):
             async with aiofiles.open(full_path, "wb") as buffer:
                 await buffer.write(content)
         except Exception as e:
-            raise RuntimeError(f"Failed to save file: {str(e)}")
+            raise RuntimeError(f"Failed to save file: {e}") from e
 
         # Формируем публичный URL
         public_url = f"{settings.STORAGE_URL_PREFIX}/{relative_path.as_posix()}"

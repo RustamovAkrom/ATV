@@ -1,6 +1,6 @@
 import time
 
-from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 
 class LoggingMiddleware:
@@ -22,7 +22,7 @@ class LoggingMiddleware:
         if logger:
             logger.info(f"{method} {path} - started")
 
-        async def send_wrapper(message: Send):
+        async def send_wrapper(message: Message):
             if message["type"] == "http.response.start":
                 duration = round((time.perf_counter() - start_time) * 1000, 2)
                 status = message["status"]

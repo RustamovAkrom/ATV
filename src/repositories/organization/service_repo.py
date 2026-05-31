@@ -19,10 +19,10 @@ class ServiceRepository(BaseRepository):
     async def list(self) -> list[Service]:
         """Получить список всех сервисов"""
         result = await self.session.execute(select(Service).order_by(Service.name))
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get(self, service_id: UUID) -> Service | None:
-        """Получить сервис по ID с загрузкой регионов"""
+        """Get service by ID with regions loaded"""
         result = await self.session.execute(
             select(Service)
             .options(selectinload(Service.regions))
@@ -47,8 +47,8 @@ class ServiceRepository(BaseRepository):
         return await self.get(service_id)
 
     async def delete(self, service_id: UUID) -> bool:
-        """Удалить сервис (сначала удаляем связи с регионами)"""
-        # Сначала удаляем связи с регионами
+        """Delete service (first remove region relations)"""
+        # First remove region relations
         await self.session.execute(
             delete(region_services).where(region_services.c.service_id == service_id)
         )
@@ -57,12 +57,12 @@ class ServiceRepository(BaseRepository):
             delete(Service).where(Service.id == service_id)
         )
         await self.flush()
-        return result.rowcount > 0
+        return self._rowcount(result) > 0
 
     async def check_name_exists(
         self, name: str, exclude_id: UUID | None = None
     ) -> bool:
-        """Проверить существование сервиса с таким именем"""
+        """Check if service with this name exists"""
         query = select(Service).where(Service.name == name)
         if exclude_id:
             query = query.where(Service.id != exclude_id)
@@ -72,7 +72,7 @@ class ServiceRepository(BaseRepository):
     async def check_slug_exists(
         self, slug: str, exclude_id: UUID | None = None
     ) -> bool:
-        """Проверить существование сервиса с таким slug"""
+        """Check if service with this slug exists"""
         if not slug:
             return False
 
@@ -115,4 +115,4 @@ class ServiceRepository(BaseRepository):
             .where(region_services.c.service_id == service_id)
             .order_by(Region.name)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())

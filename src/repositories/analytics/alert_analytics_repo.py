@@ -28,7 +28,7 @@ class AlertAnalyticsRepository(BaseAnalyticsRepository):
         return result.all()
 
     async def excessive_repairs(self, since, threshold: int):
-        """Активы с частыми ремонтами"""
+        """Assets with frequent repairs"""
         query = (
             select(
                 Asset.id,

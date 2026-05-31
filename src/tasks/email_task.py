@@ -1,10 +1,12 @@
 from core.celery import celery_app
+from core.config import get_settings
 from core.email import send_email
 
 
 @celery_app.task(bind=True, max_retries=3)
 def send_password_reset_email_task(self, email: str, token: str):
-    reset_link = f"http://localhost:5173/change-password?tokne={token}"
+    settings = get_settings()
+    reset_link = f"{settings.FRONTEND_DOMAIN}/change-password?token={token}"
 
     try:
         if not email:

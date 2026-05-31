@@ -38,7 +38,7 @@ def setup_admin(app: FastAPI, settings: Settings):
     # Добавляем SessionMiddleware отдельно (правильный способ)
     app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
-    # Подключаем кастомную директорию с шаблонами
+    # Connect custom templates directory
     admin = Admin(
         app,
         engine,

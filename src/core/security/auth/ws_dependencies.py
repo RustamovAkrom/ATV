@@ -20,7 +20,7 @@ async def get_current_user_ws(
 
     payload = await decode_token(token, expected_type="access")
 
-    if await get_blacklist().contains(payload.jti):
+    if await get_blacklist().contains(str(payload.jti)):
         raise InvalidToken()
 
     if not payload.session_id:

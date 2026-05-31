@@ -14,6 +14,18 @@ from schemas.audit import AuditCreateSchema, AuditStreamSchema
 from services.audit.audit_service import AuditService
 from tasks.audit_task import process_audit_log_task
 
+_background_tasks: set[asyncio.Task] = set()
+
+
+def _create_background_task(coro) -> None:
+    task = asyncio.create_task(coro)
+    try:
+        _background_tasks.add(task)
+    except TypeError:
+        return
+    if hasattr(task, "add_done_callback"):
+        task.add_done_callback(_background_tasks.discard)
+
 
 def _get_level(status: int) -> str:
     if status >= 500:
@@ -79,11 +91,12 @@ class AuditMiddleware:
                 user_agent = headers.get(b"user-agent", b"").decode()
 
                 forwarded_for = headers.get(b"x-forwarded-for")
+                client = scope.get("client")
                 ip = (
                     forwarded_for.decode().split(",")[0].strip()
                     if forwarded_for
-                    else scope.get("client")[0]
-                    if scope.get("client")
+                    else client[0]
+                    if client
                     else None
                 )
 
@@ -109,12 +122,12 @@ class AuditMiddleware:
                     timestamp=time.time(),
                 )
 
-                asyncio.create_task(safe_publish(jsonable_encoder(stream_payload)))
+                _create_background_task(safe_publish(jsonable_encoder(stream_payload)))
 
                 if self.settings.ENV == "prod":
                     process_audit_log_task.delay(jsonable_encoder(db_payload))
                 else:
-                    asyncio.create_task(persist_dev(db_payload))
+                    _create_background_task(persist_dev(db_payload))
 
             await send(message)
 

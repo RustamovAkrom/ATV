@@ -1,3 +1,4 @@
+from decimal import Decimal
 from uuid import UUID
 
 from repositories.analytics.asset_assignment_analytics_repo import (
@@ -32,7 +33,7 @@ class AssetAssignmentAnalyticsService(BaseAnalyticsService):
 
         items = [
             AssetAssignmentDetailOut(
-                id=a.id,
+                id=UUID(str(a.id)),
                 asset_id=a.asset_id,
                 asset_name=a.asset.name if a.asset else "Unknown",
                 user_id=a.user_id,
@@ -47,7 +48,7 @@ class AssetAssignmentAnalyticsService(BaseAnalyticsService):
                     duration_days=self.calculate_duration_days(
                         a.assigned_at, a.unassigned_at
                     )
-                    or 0,
+                    or Decimal("0"),
                     duration_formatted=self.format_duration(
                         a.assigned_at, a.unassigned_at
                     ),
@@ -67,7 +68,7 @@ class AssetAssignmentAnalyticsService(BaseAnalyticsService):
         current_user: CurrentUserSchema,
     ) -> PageOutSchema[AssetAssignmentDetailOut]:
         """List currently active assignments only."""
-        filters = AssetAssignmentFilterInput(status="active")
+        filters = AssetAssignmentFilterInput(status="active")  # type: ignore
         return await self.list_assignments(filters, pagination, current_user)
 
     async def get_user_summary(
@@ -101,7 +102,7 @@ class AssetAssignmentAnalyticsService(BaseAnalyticsService):
         for a in assignments:
             if a.unassigned_at is None:
                 active_assignment = AssetAssignmentOut(
-                    id=a.id,
+                    id=UUID(str(a.id)),
                     asset_id=a.asset_id,
                     asset_name=asset.name if asset else "Unknown",
                     user_id=a.user_id,

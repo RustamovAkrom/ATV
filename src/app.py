@@ -1,3 +1,6 @@
+from collections.abc import Callable
+from typing import Any
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import (
@@ -23,9 +26,13 @@ from middlewares.audit import AuditMiddleware
 from middlewares.logging import LoggingMiddleware
 from middlewares.request_id import RequestIDMiddleware
 
+# TYPE ALIASES
+RouteIDFunction = Callable[[APIRoute], str]
 
-# ROUTE ID
+
+# ROUTE ID GENERATOR
 def custom_generate_unique_id(route: APIRoute) -> str:
+    """Generate unique operation ID for OpenAPI."""
     tag = route.tags[0] if route.tags else "default"
     path = route.path.replace("/", "_").strip("_")
     return f"{tag}_{path}_{route.name}"
@@ -33,22 +40,24 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 
 # APP FACTORY
 def create_app() -> FastAPI:
-    settings = get_settings()
+    """Create and configure FastAPI application."""
+    settings: Settings = get_settings()
 
-    app = FastAPI(
+    app: FastAPI = FastAPI(
         title=settings.APP_TITLE,
         version=settings.APP_VERSION,
         description=settings.APP_DESCRIPTION,
         root_path=settings.ROOT_PATH,
-        openapi_url="/openapi.json" if settings.DEBUG else None,
+        openapi_url="/api/v1/openapi.json" if settings.DEBUG else None,
         docs_url=None,
         redoc_url=None,
         lifespan=lifespan,
         generate_unique_id_function=custom_generate_unique_id,
     )
+
     app.state.limiter = limiter
 
-    # Настройка шаблонов для админ-панели
+    # Configure components
     configure_templates(app, settings)
     configure_static(app, settings)
     configure_docs(app, settings)
@@ -60,75 +69,78 @@ def create_app() -> FastAPI:
     return app
 
 
-# TEMPLATES (для админ-панели)
-def configure_templates(app: FastAPI, settings: Settings):
-    """Настройка Jinja2 шаблонов для админ-панели."""
+# TEMPLATES CONFIGURATION
+def configure_templates(app: FastAPI, settings: Settings) -> None:
+    """Configure Jinja2 templates."""
     templates_dir = settings.BASE_DIR / "templates"
 
-    # Создаём директорию если её нет
     if not templates_dir.exists():
         templates_dir.mkdir(parents=True, exist_ok=True)
 
-    # Подключаем шаблоны
-    app.templates = Jinja2Templates(directory=str(templates_dir))
-
-    # Делаем шаблоны доступными через app.state
-    app.state.templates = app.templates
+    app.state.templates = Jinja2Templates(directory=str(templates_dir))
 
 
-# STATIC
-def configure_static(app: FastAPI, settings: Settings):
+# STATIC FILES CONFIGURATION
+def configure_static(app: FastAPI, settings: Settings) -> None:
+    """Configure static files serving."""
     static_dir = settings.BASE_DIR / "static"
-
     if static_dir.exists():
         app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-    # Также монтируем статику SQLAdmin если есть
     storage_dir = settings.BASE_DIR / settings.STORAGE_ROOT_DIR
     if storage_dir.exists():
         app.mount("/storage", StaticFiles(directory=storage_dir), name="storage")
 
 
-# DOCS
-def configure_docs(app: FastAPI, settings: Settings):
+# DOCS CONFIGURATION
+def configure_docs(app: FastAPI, settings: Settings) -> None:
+    """Configure Swagger and ReDoc UI (development only)."""
     if not settings.DEBUG:
-        return  # PROD: docs disabled
+        return
 
     @app.get("/docs", include_in_schema=False)
-    async def custom_swagger_ui_html():
+    async def custom_swagger_ui_html() -> Any:
+        """Serve Swagger UI."""
+        openapi_url: str = app.openapi_url or "/api/v1/openapi.json"
         return get_swagger_ui_html(
-            openapi_url=app.openapi_url,
-            title=app.title + " - Swagger",
+            openapi_url=openapi_url,
+            title=f"{app.title} - Swagger",
             oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
             swagger_js_url="/static/swagger/swagger-ui-bundle.js",
             swagger_css_url="/static/swagger/swagger-ui.css",
         )
 
-    @app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
-    async def swagger_ui_redirect():
+    @app.get(str(app.swagger_ui_oauth2_redirect_url), include_in_schema=False)
+    async def swagger_ui_redirect() -> Any:
+        """Handle OAuth2 redirect for Swagger UI."""
         return get_swagger_ui_oauth2_redirect_html()
 
     @app.get("/redoc", include_in_schema=False)
-    async def redoc():
+    async def redoc_html() -> Any:
+        """Serve ReDoc UI."""
+        openapi_url: str = app.openapi_url or "/api/v1/openapi.json"
         return get_redoc_html(
-            openapi_url=app.openapi_url,
-            title=app.title + " - ReDoc",
+            openapi_url=openapi_url,
+            title=f"{app.title} - ReDoc",
             redoc_js_url="/static/swagger/redoc.standalone.js",
         )
 
 
-def configure_routes(app: FastAPI, settings: Settings):
-    """Configure routes."""
+# ROUTES CONFIGURATION
+def configure_routes(app: FastAPI, settings: Settings) -> None:
+    """Configure application routes."""
     app.include_router(router=monitoring_router, tags=["Monitoring"])
     app.include_router(router=api_router, prefix="/api/v1")
 
 
-def configure_middlewares(app: FastAPI, settings: Settings):
-    # Security first
+# MIDDLEWARES CONFIGURATION
+def configure_middlewares(app: FastAPI, settings: Settings) -> None:
+    """Configure middleware stack (order matters)."""
     allowed_hosts = list(settings.ALLOWED_HOSTS)
     if settings.ENV != "prod":
         allowed_hosts.extend(["test", "testserver"])
 
+    # Security middleware (first)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts)
 
     app.add_middleware(
@@ -138,25 +150,23 @@ def configure_middlewares(app: FastAPI, settings: Settings):
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    # Core infra
-    app.add_middleware(RequestIDMiddleware)  # request id
-    app.add_middleware(LoggingMiddleware)  # logging
 
-    # Business
-    app.add_middleware(AuditMiddleware)  # audit
+    # Core infrastructure
+    app.add_middleware(RequestIDMiddleware)
+    app.add_middleware(LoggingMiddleware)
 
-    # Limits
-    app.add_middleware(SlowAPIMiddleware)  # rate limit (SowAPI)
+    # Business middleware
+    app.add_middleware(AuditMiddleware)
 
-    # Observability (LAST)
-    # app.add_middleware(MetricsMiddleware)  # Metrics
+    # Rate limiting
+    app.add_middleware(SlowAPIMiddleware)
 
-    # Session (для админ-панели)
+    # Session middleware (for admin panel)
     app.add_middleware(
         SessionMiddleware,
         secret_key=settings.SECRET_KEY,
         session_cookie="session",
         max_age=60 * 60 * 24,  # 1 day
         same_site="lax",
-        https_only=not settings.DEBUG,  # secure in prod
+        https_only=not settings.DEBUG,
     )

@@ -30,6 +30,9 @@ class Settings(BaseSettings):
         frozen=True,
         enable_decoding=False,
     )
+    # Backend & Frontend
+    BACKEND_DOMAIN: str = "http://localhost:8000"
+    FRONTEND_DOMAIN: str = "http://localhost:3000"
 
     # App core
     APP_TITLE: str = "TTM"
@@ -258,4 +261,4 @@ class Settings(BaseSettings):
 
 @cache
 def get_settings() -> Settings:
-    return Settings()
+    return Settings()  # type: ignore[call-arg]

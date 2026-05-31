@@ -9,7 +9,6 @@ class WarehouseBaseSchema(BaseSchema):
     """Базовые поля склада"""
 
     name: str = Field(min_length=2, max_length=150, description="Название склада")
-    slug: str | None = Field(None, max_length=50, description="Уникальный код склада")
     region_id: UUID = Field(..., description="ID региона")
     service_id: UUID | None = Field(None, description="ID сервиса")
     manager_user_id: UUID | None = Field(
@@ -25,28 +24,17 @@ class WarehouseBaseSchema(BaseSchema):
             raise ValueError("Warehouse name cannot be empty")
         return cleaned
 
-    @field_validator("slug")
-    @classmethod
-    def validate_slug(cls, v: str | None) -> str | None:
-        if v is not None:
-            cleaned = v.strip().upper()
-            if not cleaned:
-                return None
-            return cleaned
-        return v
-
 
 class WarehouseCreateSchema(WarehouseBaseSchema):
     """Схема для создания склада"""
 
-    pass
+    slug: str | None = None
 
 
 class WarehouseUpdateSchema(BaseSchema):
     """Схема для обновления склада"""
 
     name: str | None = Field(None, min_length=2, max_length=150)
-    slug: str | None = Field(None, max_length=50)
     region_id: UUID | None = None
     service_id: UUID | None = None
     manager_user_id: UUID | None = None
@@ -59,16 +47,6 @@ class WarehouseUpdateSchema(BaseSchema):
             cleaned = v.strip()
             if not cleaned:
                 raise ValueError("Warehouse name cannot be empty")
-            return cleaned
-        return v
-
-    @field_validator("slug")
-    @classmethod
-    def validate_slug(cls, v: str | None) -> str | None:
-        if v is not None:
-            cleaned = v.strip().upper()
-            if not cleaned:
-                return None
             return cleaned
         return v
 
@@ -87,7 +65,7 @@ class WarehouseOutSchema(TimestampSchema):
 
 
 class WarehouseWithDetailsOutSchema(WarehouseOutSchema):
-    """Склад с деталями (регион, сервис, менеджер)"""
+    """Warehouse with details (region, service, manager)"""
 
     region_name: str | None = None
     service_name: str | None = None

@@ -25,5 +25,5 @@ def get_asset_image_service(
     repo: AssetImageRepository = Depends(get_asset_image_repo),
     asset_repo: AssetRepository = Depends(get_asset_repo),
 ) -> AssetImageService:
-    """Получить сервис для работы с изображениями активов."""
+    """Get service for asset images management."""
     return AssetImageService(repo, asset_repo)

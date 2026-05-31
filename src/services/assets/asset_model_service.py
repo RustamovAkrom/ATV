@@ -34,7 +34,7 @@ class AssetModelService:
         name = validate_name(data.name)
         normalized = normalize_name(name)
 
-        # 2. check duplicate (ВАЖНО: с manufacturer)
+        # 2. check duplicate
         existing = await self.repo.get_by_name_and_manufacturer(
             normalized, data.manufacturer_id
         )

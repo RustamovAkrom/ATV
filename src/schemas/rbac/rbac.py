@@ -8,7 +8,7 @@ from schemas.base import BaseSchema
 class PermissionOutSchema(BaseSchema):
     id: UUID
     name: str = Field(max_length=255)
-    slug: str = Field(max_length=50, pattern=r"^[a-z][a-z0-9._]*$")
+    slug: str = Field(max_length=50)
 
 
 class RoleOutSchema(BaseSchema):

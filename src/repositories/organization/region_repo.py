@@ -18,7 +18,7 @@ class RegionRepository(BaseRepository):
     async def list(self) -> list[Region]:
         """Получить все регионы (без детей)"""
         result = await self.session.execute(select(Region).order_by(Region.name))
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get(self, region_id: UUID) -> Region | None:
         """Получить регион по ID"""
@@ -28,7 +28,7 @@ class RegionRepository(BaseRepository):
         return result.scalar_one_or_none()
 
     async def get_with_children(self, region_id: UUID) -> Region | None:
-        """Получить регион с детьми"""
+        """Get region with children"""
         result = await self.session.execute(
             select(Region)
             .options(selectinload(Region.children))
@@ -41,7 +41,7 @@ class RegionRepository(BaseRepository):
         result = await self.session.execute(
             select(Region).where(Region.parent_id.is_(None)).order_by(Region.name)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def create(self, data: dict) -> Region:
         region = Region(**data)
@@ -65,7 +65,7 @@ class RegionRepository(BaseRepository):
 
         result = await self.execute(delete(Region).where(Region.id == region_id))
         await self.flush()
-        return result.rowcount > 0
+        return self._rowcount(result) > 0
 
     async def check_name_exists(
         self, name: str, exclude_id: UUID | None = None
@@ -80,4 +80,4 @@ class RegionRepository(BaseRepository):
         result = await self.session.execute(
             select(Region).where(Region.parent_id == region_id)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())

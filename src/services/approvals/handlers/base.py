@@ -9,34 +9,29 @@ from schemas.auth.auth import CurrentUserSchema
 
 
 class BaseApprovalHandler(ABC):
-    """Базовый класс для всех обработчиков approval запросов"""
+    """Base class for approval handlers. Each handler should implement
+    the execute method to perform the action when approval is granted."""
 
     @property
     @abstractmethod
-    def entity_type(self) -> str:
-        """Тип сущности (asset_assignment, repair, asset_transfer и т.д.)"""
-        pass
+    def entity_type(self) -> str: ...
 
     @property
     @abstractmethod
-    def action(self) -> str:
-        """Действие (assign, complete_repair, create_transfer и т.д.)"""
-        pass
+    def action(self) -> str: ...
 
     @property
     @abstractmethod
-    def payload_schema(self) -> type[BaseModel]:
-        """Pydantic схема для валидации payload"""
-        pass
+    def payload_schema(self) -> type[BaseModel]: ...
 
     @abstractmethod
     async def execute(
         self, entity_id: UUID, payload: dict[str, Any], actor: CurrentUserSchema
-    ) -> Any:
-        """Выполнение действия после одобрения"""
-        pass
+    ) -> Any: ...
 
     def validate_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Валидация payload с использованием Pydantic схемы"""
         validated = self.payload_schema(**payload)
         return validated.model_dump(exclude_none=True)
+
+    @abstractmethod
+    def set_services(self, **services: Any) -> None: ...

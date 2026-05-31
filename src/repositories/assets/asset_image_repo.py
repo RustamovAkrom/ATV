@@ -33,20 +33,20 @@ class AssetImageRepository(BaseRepository):
             .where(AssetImage.asset_id == asset_id)
             .order_by(AssetImage.sort_order)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_primary(self, asset_id: UUID) -> AssetImage | None:
         """Получить главное изображение актива"""
         result = await self.session.execute(
             select(AssetImage)
-            .where(AssetImage.asset_id == asset_id, AssetImage.is_primary == True)
+            .where(AssetImage.asset_id == asset_id, AssetImage.is_primary)
             .limit(1)
         )
         return result.scalar_one_or_none()
 
     async def set_primary(self, image_id: UUID, asset_id: UUID) -> None:
-        """Установить изображение как главное (снимает флаг с других)"""
-        # Снять флаг primary со всех изображений актива
+        """Set image as primary (removes flag from others)"""
+        # Remove primary flag from all asset images
         await self.session.execute(
             update(AssetImage)
             .where(AssetImage.asset_id == asset_id)
@@ -73,7 +73,7 @@ class AssetImageRepository(BaseRepository):
             delete(AssetImage).where(AssetImage.id == image_id)
         )
         await self.flush()
-        return result.rowcount > 0
+        return self._rowcount(result) > 0
 
     async def delete_by_asset(self, asset_id: UUID) -> int:
         """Удалить все изображения актива"""
@@ -81,4 +81,4 @@ class AssetImageRepository(BaseRepository):
             delete(AssetImage).where(AssetImage.asset_id == asset_id)
         )
         await self.flush()
-        return result.rowcount
+        return self._rowcount(result)

@@ -1,8 +1,8 @@
 """
 
-Revision ID: 28fd9a2c7d4f
+Revision ID: 0f41216e19b0
 Revises:
-Create Date: 2026-05-05 14:57:05.533465
+Create Date: 2026-05-31 01:05:53.299826
 
 """
 
@@ -13,7 +13,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = "28fd9a2c7d4f"
+revision: str = "0f41216e19b0"
 down_revision: str | Sequence[str] | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -25,7 +25,6 @@ def upgrade() -> None:
     op.create_table(
         "asset_categories",
         sa.Column("name", sa.String(length=150), nullable=False),
-        sa.Column("code", sa.String(length=50), nullable=True),
         sa.Column("parent_id", sa.UUID(), nullable=True),
         sa.Column("id", sa.UUID(), nullable=False),
         sa.Column(
@@ -40,6 +39,7 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
+        sa.Column("slug", sa.String(length=255), nullable=False),
         sa.ForeignKeyConstraint(
             ["parent_id"],
             ["asset_categories.id"],
@@ -49,11 +49,10 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id", name=op.f("pk_asset_categories")),
     )
     op.create_index(
-        op.f("ix_asset_categories_code"), "asset_categories", ["code"], unique=True
+        op.f("ix_asset_categories_slug"), "asset_categories", ["slug"], unique=True
     )
     op.create_table(
         "asset_classes",
-        sa.Column("code", sa.String(length=50), nullable=False),
         sa.Column("name", sa.String(length=150), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("id", sa.UUID(), nullable=False),
@@ -69,8 +68,11 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
+        sa.Column("slug", sa.String(length=255), nullable=False),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_asset_classes")),
-        sa.UniqueConstraint("code", name=op.f("uq_asset_classes_code")),
+    )
+    op.create_index(
+        op.f("ix_asset_classes_slug"), "asset_classes", ["slug"], unique=True
     )
     op.create_index(
         "uq_asset_class_name_lower",
@@ -81,7 +83,6 @@ def upgrade() -> None:
     op.create_table(
         "manufacturers",
         sa.Column("name", sa.String(length=150), nullable=False),
-        sa.Column("code", sa.String(length=150), nullable=False),
         sa.Column("country", sa.String(length=100), nullable=True),
         sa.Column("website", sa.String(length=255), nullable=True),
         sa.Column("id", sa.UUID(), nullable=False),
@@ -97,11 +98,14 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
+        sa.Column("slug", sa.String(length=255), nullable=False),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_manufacturers")),
-        sa.UniqueConstraint("code", name=op.f("uq_manufacturers_code")),
     )
     op.create_index(
         op.f("ix_manufacturers_name"), "manufacturers", ["name"], unique=False
+    )
+    op.create_index(
+        op.f("ix_manufacturers_slug"), "manufacturers", ["slug"], unique=True
     )
     op.create_index(
         "uq_manufacturer_name_lower",
@@ -112,7 +116,6 @@ def upgrade() -> None:
     op.create_table(
         "permissions",
         sa.Column("name", sa.String(length=255), nullable=False),
-        sa.Column("code", sa.String(length=50), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("id", sa.UUID(), nullable=False),
         sa.Column(
@@ -127,10 +130,11 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
+        sa.Column("slug", sa.String(length=255), nullable=False),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_permissions")),
     )
-    op.create_index(op.f("ix_permissions_code"), "permissions", ["code"], unique=True)
     op.create_index(op.f("ix_permissions_name"), "permissions", ["name"], unique=True)
+    op.create_index(op.f("ix_permissions_slug"), "permissions", ["slug"], unique=True)
     op.create_table(
         "regions",
         sa.Column("name", sa.String(length=255), nullable=False),
@@ -151,6 +155,7 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
+        sa.Column("slug", sa.String(length=255), nullable=False),
         sa.ForeignKeyConstraint(
             ["parent_id"],
             ["regions.id"],
@@ -160,10 +165,10 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id", name=op.f("pk_regions")),
         sa.UniqueConstraint("name", name=op.f("uq_regions_name")),
     )
+    op.create_index(op.f("ix_regions_slug"), "regions", ["slug"], unique=True)
     op.create_table(
         "roles",
         sa.Column("name", sa.String(length=100), nullable=False),
-        sa.Column("code", sa.String(length=50), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("id", sa.UUID(), nullable=False),
         sa.Column(
@@ -178,14 +183,14 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
+        sa.Column("slug", sa.String(length=255), nullable=False),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_roles")),
     )
-    op.create_index(op.f("ix_roles_code"), "roles", ["code"], unique=True)
     op.create_index(op.f("ix_roles_name"), "roles", ["name"], unique=True)
+    op.create_index(op.f("ix_roles_slug"), "roles", ["slug"], unique=True)
     op.create_table(
         "services",
         sa.Column("name", sa.String(length=255), nullable=False),
-        sa.Column("code", sa.String(length=50), nullable=True),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("id", sa.UUID(), nullable=False),
         sa.Column(
@@ -200,10 +205,11 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
+        sa.Column("slug", sa.String(length=255), nullable=False),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_services")),
-        sa.UniqueConstraint("code", name=op.f("uq_services_code")),
         sa.UniqueConstraint("name", name=op.f("uq_services_name")),
     )
+    op.create_index(op.f("ix_services_slug"), "services", ["slug"], unique=True)
     op.create_table(
         "system_configs",
         sa.Column("key", sa.String(length=100), nullable=False),
@@ -230,7 +236,6 @@ def upgrade() -> None:
     op.create_table(
         "asset_models",
         sa.Column("name", sa.String(length=150), nullable=False),
-        sa.Column("code", sa.String(length=150), nullable=False),
         sa.Column("manufacturer_id", sa.UUID(), nullable=False),
         sa.Column("category_id", sa.UUID(), nullable=False),
         sa.Column("lifetime_years", sa.Integer(), nullable=True),
@@ -248,6 +253,7 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
+        sa.Column("slug", sa.String(length=255), nullable=False),
         sa.ForeignKeyConstraint(
             ["category_id"],
             ["asset_categories.id"],
@@ -261,7 +267,6 @@ def upgrade() -> None:
             ondelete="RESTRICT",
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_asset_models")),
-        sa.UniqueConstraint("code", name=op.f("uq_asset_models_code")),
         sa.UniqueConstraint("name", "manufacturer_id", name="uq_model_manufacturer"),
     )
     op.create_index(
@@ -279,6 +284,7 @@ def upgrade() -> None:
     op.create_index(
         op.f("ix_asset_models_name"), "asset_models", ["name"], unique=False
     )
+    op.create_index(op.f("ix_asset_models_slug"), "asset_models", ["slug"], unique=True)
     op.create_index(
         "uq_asset_model_name_lower",
         "asset_models",
@@ -334,14 +340,64 @@ def upgrade() -> None:
         sa.Column("email", sa.String(length=255), nullable=False),
         sa.Column("phone", sa.String(length=20), nullable=False),
         sa.Column("role_id", sa.UUID(), nullable=False),
-        sa.Column("status", sa.String(length=50), nullable=False),
+        sa.Column(
+            "status",
+            sa.Enum("active", "blocked", "archived", name="user_status"),
+            nullable=False,
+        ),
         sa.Column("assigned_region_id", sa.UUID(), nullable=True),
         sa.Column("assigned_service_id", sa.UUID(), nullable=True),
         sa.Column("position", sa.String(length=255), nullable=True),
-        sa.Column("badge_number", sa.String(length=50), nullable=True),
-        sa.Column("passport_number", sa.String(length=50), nullable=True),
+        sa.Column(
+            "department",
+            sa.String(length=255),
+            nullable=True,
+            comment="Department/division",
+        ),
+        sa.Column(
+            "employment_type",
+            sa.Enum(
+                "FULL_TIME", "PART_TIME", "CONTRACTOR", "INTERN", name="employment_type"
+            ),
+            nullable=True,
+            comment="Type of employment",
+        ),
+        sa.Column("date_of_birth", sa.Date(), nullable=True, comment="Date of birth"),
+        sa.Column(
+            "gender",
+            sa.Enum("MALE", "FEMALE", name="gender"),
+            nullable=True,
+            comment="Gender",
+        ),
+        sa.Column(
+            "badge_number",
+            sa.String(length=50),
+            nullable=True,
+            comment="Employee badge number",
+        ),
+        sa.Column(
+            "passport_number",
+            sa.String(length=50),
+            nullable=True,
+            comment="Passport number",
+        ),
         sa.Column("hired_at", sa.Date(), nullable=True),
         sa.Column("dismissed_at", sa.Date(), nullable=True),
+        sa.Column(
+            "avatar_url",
+            sa.String(length=500),
+            nullable=True,
+            comment="URL user avatar",
+        ),
+        sa.Column(
+            "language",
+            sa.Enum("RU", "UZ", "EN", name="user_language"),
+            nullable=False,
+            comment="Interface language",
+        ),
+        sa.Column(
+            "timezone", sa.String(length=50), nullable=True, comment="Timezone (IANA)"
+        ),
         sa.Column("last_login", sa.DateTime(timezone=True), nullable=True),
         sa.Column("last_password_change", sa.DateTime(timezone=True), nullable=True),
         sa.Column("id", sa.UUID(), nullable=False),
@@ -381,6 +437,18 @@ def upgrade() -> None:
         sa.UniqueConstraint("login", name=op.f("uq_users_login")),
         sa.UniqueConstraint("passport_number", name=op.f("uq_users_passport_number")),
         sa.UniqueConstraint("phone", name=op.f("uq_users_phone")),
+    )
+    op.create_index(
+        "ix_users_hired_status", "users", ["hired_at", "status"], unique=False
+    )
+    op.create_index(
+        "ix_users_region_service",
+        "users",
+        ["assigned_region_id", "assigned_service_id"],
+        unique=False,
+    )
+    op.create_index(
+        "ix_users_status_role", "users", ["status", "role_id"], unique=False
     )
     op.create_table(
         "approval_requests",
@@ -631,7 +699,6 @@ def upgrade() -> None:
     op.create_table(
         "warehouses",
         sa.Column("name", sa.String(length=150), nullable=False),
-        sa.Column("code", sa.String(length=50), nullable=True),
         sa.Column("region_id", sa.UUID(), nullable=False),
         sa.Column("service_id", sa.UUID(), nullable=True),
         sa.Column("manager_user_id", sa.UUID(), nullable=True),
@@ -649,6 +716,7 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
+        sa.Column("slug", sa.String(length=255), nullable=False),
         sa.ForeignKeyConstraint(
             ["manager_user_id"],
             ["users.id"],
@@ -667,13 +735,11 @@ def upgrade() -> None:
             ondelete="SET NULL",
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_warehouses")),
-        sa.UniqueConstraint("code", name=op.f("uq_warehouses_code")),
     )
+    op.create_index(op.f("ix_warehouses_slug"), "warehouses", ["slug"], unique=True)
     op.create_table(
         "assets",
         sa.Column("name", sa.String(length=255), nullable=False),
-        sa.Column("type", sa.String(length=100), nullable=False),
-        sa.Column("asset_tag", sa.String(length=255), nullable=True),
         sa.Column("serial_number", sa.String(length=255), nullable=True),
         sa.Column("model_id", sa.UUID(), nullable=False),
         sa.Column(
@@ -714,6 +780,7 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
+        sa.Column("slug", sa.String(length=255), nullable=False),
         sa.ForeignKeyConstraint(
             ["class_id"],
             ["asset_classes.id"],
@@ -752,7 +819,6 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_assets")),
     )
-    op.create_index(op.f("ix_assets_asset_tag"), "assets", ["asset_tag"], unique=True)
     op.create_index(op.f("ix_assets_class_id"), "assets", ["class_id"], unique=False)
     op.create_index(
         op.f("ix_assets_current_warehouse_id"),
@@ -768,9 +834,15 @@ def upgrade() -> None:
         op.f("ix_assets_serial_number"), "assets", ["serial_number"], unique=True
     )
     op.create_index(
+        "ix_assets_service_class", "assets", ["service_id", "class_id"], unique=False
+    )
+    op.create_index(
         op.f("ix_assets_service_id"), "assets", ["service_id"], unique=False
     )
-    op.create_index(op.f("ix_assets_type"), "assets", ["type"], unique=False)
+    op.create_index(op.f("ix_assets_slug"), "assets", ["slug"], unique=True)
+    op.create_index(
+        "ix_assets_status_region", "assets", ["status", "region_id"], unique=False
+    )
     op.create_table(
         "asset_assignments",
         sa.Column("asset_id", sa.UUID(), nullable=False),
@@ -848,6 +920,94 @@ def upgrade() -> None:
     )
     op.create_index(
         op.f("ix_asset_history_asset_id"), "asset_history", ["asset_id"], unique=False
+    )
+    op.create_table(
+        "asset_images",
+        sa.Column("asset_id", sa.UUID(), nullable=False),
+        sa.Column("file_name", sa.String(length=255), nullable=False),
+        sa.Column("file_path", sa.String(length=255), nullable=False),
+        sa.Column("file_size", sa.Integer(), nullable=False),
+        sa.Column("content_type", sa.String(length=100), nullable=False),
+        sa.Column("is_primary", sa.Boolean(), nullable=False),
+        sa.Column("sort_order", sa.Integer(), nullable=False),
+        sa.Column("width", sa.Integer(), nullable=True),
+        sa.Column("height", sa.Integer(), nullable=True),
+        sa.Column("alt_text", sa.String(length=255), nullable=True),
+        sa.Column("id", sa.UUID(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(
+            ["asset_id"],
+            ["assets.id"],
+            name=op.f("fk_asset_images_asset_id_assets"),
+            ondelete="CASCADE",
+        ),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_asset_images")),
+    )
+    op.create_index(
+        op.f("ix_asset_images_asset_id"), "asset_images", ["asset_id"], unique=False
+    )
+    op.create_index(
+        "ix_asset_images_asset_order",
+        "asset_images",
+        ["asset_id", "sort_order"],
+        unique=False,
+    )
+    op.create_index(
+        "ix_asset_images_asset_primary",
+        "asset_images",
+        ["asset_id", "is_primary"],
+        unique=False,
+    )
+    op.create_table(
+        "asset_maintenances",
+        sa.Column("asset_id", sa.UUID(), nullable=False),
+        sa.Column("maintenance_type", sa.String(length=100), nullable=False),
+        sa.Column("performed_at", sa.Date(), nullable=False),
+        sa.Column("issues_found", sa.Text(), nullable=True),
+        sa.Column("performed_by_id", sa.UUID(), nullable=False),
+        sa.Column("notes", sa.Text(), nullable=True),
+        sa.Column("id", sa.UUID(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(
+            ["asset_id"],
+            ["assets.id"],
+            name=op.f("fk_asset_maintenances_asset_id_assets"),
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["performed_by_id"],
+            ["users.id"],
+            name=op.f("fk_asset_maintenances_performed_by_id_users"),
+        ),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_asset_maintenances")),
+    )
+    op.create_index(
+        op.f("ix_asset_maintenances_asset_id"),
+        "asset_maintenances",
+        ["asset_id"],
+        unique=False,
     )
     op.create_table(
         "asset_transfers",
@@ -1060,16 +1220,40 @@ def upgrade() -> None:
         sa.Column("repair_id", sa.UUID(), nullable=True),
         sa.Column("region_id", sa.UUID(), nullable=True),
         sa.Column("service_id", sa.UUID(), nullable=True),
-        sa.Column("created_by", sa.UUID(), nullable=True),
-        sa.Column("expense_type_code", sa.String(length=50), nullable=False),
+        sa.Column("created_by_id", sa.UUID(), nullable=True),
+        sa.Column(
+            "expense_type_code",
+            sa.Enum(
+                "PURCHASE",
+                "REPAIR",
+                "MAINTENANCE",
+                "LOGISTICS",
+                "OTHER",
+                name="expensetypeenum",
+            ),
+            nullable=False,
+        ),
         sa.Column("amount", sa.Numeric(precision=18, scale=2), nullable=False),
         sa.Column("currency", sa.String(length=10), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("file_url", sa.String(length=2048), nullable=True),
         sa.Column("occurred_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("id", sa.UUID(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.CheckConstraint(
+            "amount >= 0", name=op.f("ck_expenses_ck_expense_amount_positive")
+        ),
         sa.ForeignKeyConstraint(
             ["asset_id"],
             ["assets.id"],
@@ -1077,9 +1261,9 @@ def upgrade() -> None:
             ondelete="SET NULL",
         ),
         sa.ForeignKeyConstraint(
-            ["created_by"],
+            ["created_by_id"],
             ["users.id"],
-            name=op.f("fk_expenses_created_by_users"),
+            name=op.f("fk_expenses_created_by_id_users"),
             ondelete="SET NULL",
         ),
         sa.ForeignKeyConstraint(
@@ -1108,7 +1292,15 @@ def upgrade() -> None:
     op.create_index(
         "ix_expenses_asset_region", "expenses", ["asset_id", "region_id"], unique=False
     )
-    op.create_index("ix_expenses_created_by", "expenses", ["created_by"], unique=False)
+    op.create_index(
+        op.f("ix_expenses_created_by_id"), "expenses", ["created_by_id"], unique=False
+    )
+    op.create_index(
+        "ix_expenses_created_occurred",
+        "expenses",
+        ["created_at", "occurred_at"],
+        unique=False,
+    )
     op.create_index(
         op.f("ix_expenses_expense_type_code"),
         "expenses",
@@ -1161,7 +1353,8 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_expenses_repair_id"), table_name="expenses")
     op.drop_index(op.f("ix_expenses_region_id"), table_name="expenses")
     op.drop_index(op.f("ix_expenses_expense_type_code"), table_name="expenses")
-    op.drop_index("ix_expenses_created_by", table_name="expenses")
+    op.drop_index("ix_expenses_created_occurred", table_name="expenses")
+    op.drop_index(op.f("ix_expenses_created_by_id"), table_name="expenses")
     op.drop_index("ix_expenses_asset_region", table_name="expenses")
     op.drop_index(op.f("ix_expenses_asset_id"), table_name="expenses")
     op.drop_table("expenses")
@@ -1177,6 +1370,14 @@ def downgrade() -> None:
     op.drop_table("documents")
     op.drop_index(op.f("ix_asset_transfers_asset_id"), table_name="asset_transfers")
     op.drop_table("asset_transfers")
+    op.drop_index(
+        op.f("ix_asset_maintenances_asset_id"), table_name="asset_maintenances"
+    )
+    op.drop_table("asset_maintenances")
+    op.drop_index("ix_asset_images_asset_primary", table_name="asset_images")
+    op.drop_index("ix_asset_images_asset_order", table_name="asset_images")
+    op.drop_index(op.f("ix_asset_images_asset_id"), table_name="asset_images")
+    op.drop_table("asset_images")
     op.drop_index(op.f("ix_asset_history_asset_id"), table_name="asset_history")
     op.drop_table("asset_history")
     op.drop_index(
@@ -1187,8 +1388,10 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_asset_assignments_user_id"), table_name="asset_assignments")
     op.drop_index(op.f("ix_asset_assignments_asset_id"), table_name="asset_assignments")
     op.drop_table("asset_assignments")
-    op.drop_index(op.f("ix_assets_type"), table_name="assets")
+    op.drop_index("ix_assets_status_region", table_name="assets")
+    op.drop_index(op.f("ix_assets_slug"), table_name="assets")
     op.drop_index(op.f("ix_assets_service_id"), table_name="assets")
+    op.drop_index("ix_assets_service_class", table_name="assets")
     op.drop_index(op.f("ix_assets_serial_number"), table_name="assets")
     op.drop_index(op.f("ix_assets_region_id"), table_name="assets")
     op.drop_index(op.f("ix_assets_owner_id"), table_name="assets")
@@ -1196,8 +1399,8 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_assets_model_id"), table_name="assets")
     op.drop_index(op.f("ix_assets_current_warehouse_id"), table_name="assets")
     op.drop_index(op.f("ix_assets_class_id"), table_name="assets")
-    op.drop_index(op.f("ix_assets_asset_tag"), table_name="assets")
     op.drop_table("assets")
+    op.drop_index(op.f("ix_warehouses_slug"), table_name="warehouses")
     op.drop_table("warehouses")
     op.drop_table("user_permissions")
     op.drop_index(op.f("ix_refresh_tokens_user_id"), table_name="refresh_tokens")
@@ -1232,29 +1435,37 @@ def downgrade() -> None:
     )
     op.drop_index(op.f("ix_approval_requests_action"), table_name="approval_requests")
     op.drop_table("approval_requests")
+    op.drop_index("ix_users_status_role", table_name="users")
+    op.drop_index("ix_users_region_service", table_name="users")
+    op.drop_index("ix_users_hired_status", table_name="users")
     op.drop_table("users")
     op.drop_table("role_permissions")
     op.drop_table("region_services")
     op.drop_index("uq_asset_model_name_lower", table_name="asset_models")
+    op.drop_index(op.f("ix_asset_models_slug"), table_name="asset_models")
     op.drop_index(op.f("ix_asset_models_name"), table_name="asset_models")
     op.drop_index(op.f("ix_asset_models_manufacturer_id"), table_name="asset_models")
     op.drop_index(op.f("ix_asset_models_category_id"), table_name="asset_models")
     op.drop_table("asset_models")
     op.drop_index(op.f("ix_system_configs_key"), table_name="system_configs")
     op.drop_table("system_configs")
+    op.drop_index(op.f("ix_services_slug"), table_name="services")
     op.drop_table("services")
+    op.drop_index(op.f("ix_roles_slug"), table_name="roles")
     op.drop_index(op.f("ix_roles_name"), table_name="roles")
-    op.drop_index(op.f("ix_roles_code"), table_name="roles")
     op.drop_table("roles")
+    op.drop_index(op.f("ix_regions_slug"), table_name="regions")
     op.drop_table("regions")
+    op.drop_index(op.f("ix_permissions_slug"), table_name="permissions")
     op.drop_index(op.f("ix_permissions_name"), table_name="permissions")
-    op.drop_index(op.f("ix_permissions_code"), table_name="permissions")
     op.drop_table("permissions")
     op.drop_index("uq_manufacturer_name_lower", table_name="manufacturers")
+    op.drop_index(op.f("ix_manufacturers_slug"), table_name="manufacturers")
     op.drop_index(op.f("ix_manufacturers_name"), table_name="manufacturers")
     op.drop_table("manufacturers")
     op.drop_index("uq_asset_class_name_lower", table_name="asset_classes")
+    op.drop_index(op.f("ix_asset_classes_slug"), table_name="asset_classes")
     op.drop_table("asset_classes")
-    op.drop_index(op.f("ix_asset_categories_code"), table_name="asset_categories")
+    op.drop_index(op.f("ix_asset_categories_slug"), table_name="asset_categories")
     op.drop_table("asset_categories")
     # ### end Alembic commands ###

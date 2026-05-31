@@ -18,7 +18,7 @@ class ApprovalEventService(DomainEventService):
         requester_id: UUID,
         approver_ids: list[UUID],
     ):
-        """Уведомление о создании запроса на согласование."""
+        """Notification about approval request creation."""
         for approver_id in approver_ids:
             await self._execute(
                 asset_id=entity_id,  # entity_id это asset_id в большинстве случаев
@@ -34,12 +34,14 @@ class ApprovalEventService(DomainEventService):
                     "requester_id": str(requester_id),
                     "approver_id": str(approver_id),
                 },
-                notification=lambda: self.notifications.dispatch(
-                    NotificationBuilder.approval_requested(
-                        user_id=approver_id,
-                        entity_type=entity_type,
-                        entity_id=entity_id,
-                        action=action,
+                notification=(
+                    lambda approver_id=approver_id: self.notifications.dispatch(
+                        NotificationBuilder.approval_requested(
+                            user_id=approver_id,
+                            entity_type=entity_type,
+                            entity_id=entity_id,
+                            action=action,
+                        )
                     )
                 ),
             )
@@ -54,7 +56,7 @@ class ApprovalEventService(DomainEventService):
         requester_id: UUID,
         approver_id: UUID,
     ):
-        """Уведомление об одобрении запроса."""
+        """Notification about request approval."""
         await self._execute(
             asset_id=entity_id,
             actor_id=approver_id,
@@ -90,7 +92,7 @@ class ApprovalEventService(DomainEventService):
         approver_id: UUID,
         reason: str | None = None,
     ):
-        """Уведомление об отклонении запроса."""
+        """Notification about request rejection."""
         await self._execute(
             asset_id=entity_id,
             actor_id=approver_id,
@@ -125,7 +127,7 @@ class ApprovalEventService(DomainEventService):
         action: str,
         requester_id: UUID,
     ):
-        """Уведомление об успешном выполнении одобренного действия."""
+        """Notification about successful execution of approved action."""
         await self._execute(
             asset_id=entity_id,
             actor_id=requester_id,

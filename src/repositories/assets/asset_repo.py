@@ -34,7 +34,8 @@ class AssetRepository(BaseRepository):
         )
 
     def _detail_options(self):
-        return self._list_options() + (
+        return (
+            *self._list_options(),
             selectinload(Asset.assignments).selectinload(AssetAssignment.user),
             selectinload(Asset.history_entries).selectinload(AssetHistory.user),
             selectinload(Asset.maintenances),

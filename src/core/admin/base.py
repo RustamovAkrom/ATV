@@ -3,7 +3,7 @@ from sqladmin import ModelView
 
 
 class BaseAdmin(ModelView):
-    """Базовый класс для всех админ-моделей с настройками безопасности."""
+    """Base class for all admin models with security settings."""
 
     # Безопасность по умолчанию
     can_create = False  # Создание требует явного разрешения
@@ -31,13 +31,9 @@ class BaseAdmin(ModelView):
 
     @classmethod
     def is_accessible(cls, request) -> bool:
-        """Проверка доступа к админ-панели."""
-        # Проверяем, есть ли пользователь в сессии
-        if "user" not in request.session:
-            return False
-
-        # TODO: можно добавить дополнительную проверку прав
-        return True
+        """Check access to admin panel."""
+        # Check if user is in session
+        return "user" in request.session
 
     async def after_create(self, request, obj):
         """Логирование после создания."""

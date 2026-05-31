@@ -1,3 +1,4 @@
+from contextlib import suppress
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
@@ -40,7 +41,7 @@ async def list_documents(
     service: DocumentService = Depends(get_document_service),
     actor: CurrentUserSchema = Depends(get_current_user),
 ):
-    """Список всех документов актива"""
+    """List all asset documents"""
     return await service.list_by_asset(asset_id, actor)
 
 
@@ -56,7 +57,7 @@ async def get_document(
     service: DocumentService = Depends(get_document_service),
     actor: CurrentUserSchema = Depends(get_current_user),
 ):
-    """Получить информацию о документе"""
+    """Get document information"""
     return await service.get_document(asset_id, document_id, actor)
 
 
@@ -73,10 +74,10 @@ async def download_file(
     actor: CurrentUserSchema = Depends(get_current_user),
 ):
     """Скачать файл документа"""
-    # Проверяем существование документа
+    # Check document existence
     document = await service.get_document(asset_id, document_id, actor)
 
-    # Находим файл
+    # Find file
     file_info = None
     for f in document.files:
         if f.id == file_id:
@@ -98,7 +99,7 @@ async def download_file(
     )
 
 
-# ========== POST/PATCH/DELETE запросы (с rate limit) ==========
+# ========== POST/PATCH/DELETE requests (with rate limit) ==========
 
 
 @router.post(
@@ -128,18 +129,18 @@ async def attach_asset_document(
     upload_service: FileUploadService = Depends(get_file_upload_service),
 ):
     """
-    Создать документ с загрузкой файлов.
-    Поддерживает multipart/form-data с файлами.
+    Create document with file upload.
+    Supports multipart/form-data with files.
     """
-    # Проверяем допустимые статусы
+    # Check allowed statuses
     from db.models.enums import DocumentStatus
 
     try:
         doc_status = DocumentStatus(status)
-    except ValueError:
-        raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid status: {status}") from e
 
-    # Создаем документ
+    # Create document
     create_data = AssetDocumentCreateSchema(
         title=title,
         description=description,
@@ -149,7 +150,7 @@ async def attach_asset_document(
 
     document = await service.create_document(asset_id, create_data, actor)
 
-    # Сохраняем файлы через единую систему загрузки
+    # Save files through unified upload system
     uploaded_files = []
     for upload_file in files:
         try:
@@ -167,11 +168,11 @@ async def attach_asset_document(
                 }
             )
         except HTTPException as e:
-            # Если файл не прошёл валидацию, удаляем созданный документ
+            # If file validation failed, delete created document
             await service.delete_document(asset_id, document.id, actor)
             raise e
 
-    # Добавляем файлы к документу
+    # Add files to document
     for file_data in uploaded_files:
         await service.add_file_to_document(asset_id, document.id, file_data, actor)
 
@@ -200,7 +201,7 @@ async def update_asset_document(
     actor: CurrentUserSchema = Depends(get_current_user),
     service: DocumentService = Depends(get_document_service),
 ):
-    """Обновить информацию о документе"""
+    """Update document information"""
     return await service.update_document(asset_id, document_id, data, actor)
 
 
@@ -227,7 +228,7 @@ async def add_file_to_document(
     service: DocumentService = Depends(get_document_service),
     upload_service: FileUploadService = Depends(get_file_upload_service),
 ):
-    """Добавить файл к существующему документу"""
+    """Add file to existing document"""
     try:
         result = await upload_service.upload(
             file=file,
@@ -273,8 +274,8 @@ async def delete_file_from_document(
     service: DocumentService = Depends(get_document_service),
     upload_service: FileUploadService = Depends(get_file_upload_service),
 ):
-    """Удалить файл из документа"""
-    # Получаем информацию о файле перед удалением
+    """Delete file from document"""
+    # Get file information before deletion
     document = await service.get_document(asset_id, document_id, actor)
     file_to_delete = None
     for f in document.files:
@@ -283,10 +284,10 @@ async def delete_file_from_document(
             break
 
     if file_to_delete:
-        # Удаляем физический файл
+        # Delete physical file
         await upload_service.delete(file_to_delete.file_path)
 
-    # Удаляем запись из БД
+    # Delete DB record
     await service.delete_file_from_document(asset_id, document_id, file_id, actor)
     return StatusResponse(status="deleted", message="File deleted successfully")
 
@@ -313,18 +314,16 @@ async def delete_asset_document(
     service: DocumentService = Depends(get_document_service),
     upload_service: FileUploadService = Depends(get_file_upload_service),
 ):
-    """Удалить документ (каскадно удаляет все файлы)"""
-    # Получаем документ с файлами
+    """Delete document (cascades to all files)"""
+    # Get document with files
     document = await service.get_document(asset_id, document_id, actor)
 
-    # Удаляем физические файлы
+    # Delete physical files
     for file in document.files:
-        try:
+        with suppress(Exception):
             await upload_service.delete(file.file_path)
-        except Exception:
-            pass  # Логируем, но не прерываем удаление документа
 
-    # Удаляем документ из БД
+    # Delete document from DB
     await service.delete_document(asset_id, document_id, actor)
     return StatusResponse(
         status="deleted", message="Asset document successfully deleted"

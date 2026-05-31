@@ -50,7 +50,7 @@ class RepairCompleteHandler(BaseApprovalHandler):
         )
 
     def validate_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Валидация с добавлением repair_id из payload"""
+        """Validate payload and ensure repair_id is present"""
         # Ремонт ID должен быть в payload
         repair_id = payload.get("repair_id")
         if not repair_id:

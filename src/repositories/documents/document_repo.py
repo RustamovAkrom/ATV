@@ -25,7 +25,7 @@ class DocumentRepository(BaseRepository):
             .where(Document.asset_id == asset_id)
             .order_by(Document.created_at.desc())
         )
-        return result.unique().scalars().all()
+        return list(result.unique().scalars().all())
 
     async def get_document(self, document_id: UUID) -> Document | None:
         """Получить документ по ID"""
@@ -97,7 +97,7 @@ class DocumentRepository(BaseRepository):
             delete(DocumentFile).where(DocumentFile.id == file_id)
         )
         await self.flush()
-        return result.rowcount > 0
+        return self._rowcount(result) > 0
 
     async def get_document_stats(self, asset_id: UUID) -> dict:
         """Статистика по документам актива"""

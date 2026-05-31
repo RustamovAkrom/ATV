@@ -61,7 +61,7 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
         nullable=False,
     )
 
-    # ========== ОРГАНИЗАЦИОННАЯ СТРУКТУРА ==========
+    # ========== ORGANIZATIONAL STRUCTURE ==========
     assigned_region_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("regions.id", ondelete="SET NULL"), nullable=True
     )
@@ -124,11 +124,6 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
         DateTime(timezone=True), nullable=True
     )
 
-    # ========== ВАЛИДАЦИЯ ==========
-    @validates
-    def validate_status(self, value):
-        return super().validate_status(value)
-
     @validates("badge_number")
     def validate_badge_number(self, key, value):
         if value and len(value) > 50:
@@ -148,8 +143,8 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
 
             try:
                 zoneinfo.ZoneInfo(value)
-            except zoneinfo.ZoneInfoNotFoundError:
-                raise ValueError(f"Invalid timezone: {value}")
+            except zoneinfo.ZoneInfoNotFoundError as e:
+                raise ValueError(f"Invalid timezone: {value}") from e
         return value
 
     # ========== RELATIONSHIPS ==========
@@ -178,7 +173,7 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
         return self.status == UserStatus.ACTIVE
 
     @hybrid_property
-    def full_name(self) -> str:
+    def full_name(self) -> str:  # pyright: ignore[reportRedeclaration]
         """Полное имя: Имя Фамилия"""
         parts = [self.first_name, self.last_name]
         full_name = " ".join(part.strip() for part in parts if part and part.strip())
@@ -186,12 +181,16 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
 
     @full_name.expression
     def full_name(cls):
-        return func.trim(
-            func.concat(
-                func.coalesce(cls.first_name, ""),
-                " ",
-                func.coalesce(cls.last_name, ""),
-            )
+        return func.coalesce(
+            func.nullif(
+                func.trim(
+                    func.coalesce(cls.first_name, "")
+                    + " "
+                    + func.coalesce(cls.last_name, "")
+                ),
+                "",
+            ),
+            cls.login,
         )
 
     @property
@@ -221,7 +220,7 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
             self.hired_at
             and self.hired_at <= date.today()
             and (not self.dismissed_at or self.dismissed_at > date.today())
-        )
+        ) or False
 
     def __repr__(self):
         return self.login

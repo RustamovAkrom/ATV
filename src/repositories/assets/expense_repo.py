@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Repository for expenses operations."""
+
+from __future__ import annotations
 
 from datetime import datetime, timedelta
 from uuid import UUID
@@ -22,7 +22,9 @@ class ExpenseRepository(BaseRepository):
         """Initialize repository with database session."""
         self.session = session
 
-    async def create(self, data: ExpenseCreateSchema, created_by_id: UUID) -> Expense:
+    async def create(
+        self, data: ExpenseCreateSchema, created_by_id: UUID | None
+    ) -> Expense:
         """Create a new expense record."""
         expense_type_code = (
             data.expense_type.value
@@ -40,7 +42,7 @@ class ExpenseRepository(BaseRepository):
             service_id=data.service_id,
             file_url=data.file_url,
             occurred_at=data.occurred_at or datetime.now(),
-            created_by=created_by_id,
+            created_by_id=created_by_id,
         )
         self.session.add(expense)
         await self.flush()
@@ -71,7 +73,7 @@ class ExpenseRepository(BaseRepository):
             .where(Expense.asset_id == asset_id)
             .order_by(desc(Expense.occurred_at))
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_by_repair(self, repair_id: UUID) -> list[Expense]:
         """Get all expenses for a repair."""
@@ -80,7 +82,7 @@ class ExpenseRepository(BaseRepository):
             .where(Expense.repair_id == repair_id)
             .order_by(desc(Expense.occurred_at))
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_by_region(self, region_id: UUID) -> list[Expense]:
         """Get all expenses for a region."""
@@ -89,7 +91,7 @@ class ExpenseRepository(BaseRepository):
             .where(Expense.region_id == region_id)
             .order_by(desc(Expense.occurred_at))
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def list(
         self,
@@ -128,7 +130,7 @@ class ExpenseRepository(BaseRepository):
         query = query.offset((page - 1) * limit).limit(limit)
 
         result = await self.session.execute(query)
-        items = result.scalars().all()
+        items = list(result.scalars().all())
 
         return items, total
 
@@ -285,4 +287,4 @@ class ExpenseRepository(BaseRepository):
             .where(Expense.occurred_at >= cutoff)
             .order_by(desc(Expense.occurred_at))
         )
-        return result.scalars().all()
+        return list(result.scalars().all())

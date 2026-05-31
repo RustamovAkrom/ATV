@@ -82,7 +82,7 @@ class AssetDocumentOutSchema(TimestampSchema):
 
 
 class AssetDocumentWithFilesOutSchema(AssetDocumentOutSchema):
-    """Документ с полной информацией о файлах"""
+    """Document with full file information"""
 
     total_files_size: int | None = None
     file_count: int = 0
