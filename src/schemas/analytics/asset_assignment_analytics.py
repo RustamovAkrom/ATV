@@ -5,8 +5,9 @@ from decimal import Decimal
 from enum import StrEnum
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field, field_validator
 
+from schemas.base import BaseRequestSchema, BaseResponseSchema
 from utils.analytics.filter_utils import sanitize_search
 
 
@@ -14,8 +15,7 @@ class AssignmentAnalyticsStatus(StrEnum):
     ACTIVE = "active"
     INACTIVE = "inactive"
 
-
-class AssetAssignmentFilterInput(BaseModel):
+class AssetAssignmentFilterInput(BaseRequestSchema):
     """Filters for asset assignment analytics queries."""
 
     asset_id: UUID | None = None
@@ -37,8 +37,7 @@ class AssetAssignmentFilterInput(BaseModel):
         cleaned = sanitize_search(value)
         return cleaned or None
 
-
-class AssetAssignmentOut(BaseModel):
+class AssetAssignmentOut(BaseResponseSchema):
     """Single assignment record."""
 
     id: UUID
@@ -53,22 +52,19 @@ class AssetAssignmentOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-
-class AssignmentDurationMetrics(BaseModel):
+class AssignmentDurationMetrics(BaseResponseSchema):
     """Duration metrics for an assignment."""
 
     duration_days: Decimal | None  # e.g. 12.5
     duration_formatted: str  # "12 days, 5 hours"
     is_active: bool
 
-
 class AssetAssignmentDetailOut(AssetAssignmentOut):
     """Assignment with duration metrics."""
 
     duration_metrics: AssignmentDurationMetrics
 
-
-class UserAssignmentSummary(BaseModel):
+class UserAssignmentSummary(BaseResponseSchema):
     """Summary of assignments for a user."""
 
     user_id: UUID
@@ -80,8 +76,7 @@ class UserAssignmentSummary(BaseModel):
     longest_assignment_days: Decimal | None
     recent_assignment_date: datetime | None
 
-
-class AssetAssignmentHistoryOut(BaseModel):
+class AssetAssignmentHistoryOut(BaseResponseSchema):
     """Assignment history with duration."""
 
     assignment_id: UUID
@@ -94,8 +89,7 @@ class AssetAssignmentHistoryOut(BaseModel):
     duration_days: Decimal | None
     status: str
 
-
-class AssignmentTimelineEntry(BaseModel):
+class AssignmentTimelineEntry(BaseResponseSchema):
     """Timeline entry for a single asset."""
 
     sequence: int
@@ -105,8 +99,7 @@ class AssignmentTimelineEntry(BaseModel):
     user_name: str
     duration_days: Decimal | None
 
-
-class AssetAssignmentTimeline(BaseModel):
+class AssetAssignmentTimeline(BaseResponseSchema):
     """Complete timeline for an asset's assignments."""
 
     asset_id: UUID
@@ -115,8 +108,7 @@ class AssetAssignmentTimeline(BaseModel):
     active_assignment: AssetAssignmentOut | None
     timeline: list[AssignmentTimelineEntry]
 
-
-class AssignmentAggregates(BaseModel):
+class AssignmentAggregates(BaseResponseSchema):
     """Aggregated metrics for assignments."""
 
     total_active_assignments: int
@@ -129,8 +121,7 @@ class AssignmentAggregates(BaseModel):
     most_active_user_id: UUID | None
     most_active_user_name: str | None
 
-
-class AssignmentPageOut(BaseModel):
+class AssignmentPageOut(BaseResponseSchema):
     """Paginated assignment list."""
 
     items: list[AssetAssignmentOut]
@@ -138,8 +129,7 @@ class AssignmentPageOut(BaseModel):
     page: int
     limit: int
 
-
-class AssetAssignmentPageOut(BaseModel):
+class AssetAssignmentPageOut(BaseResponseSchema):
     """
     Paginated response for assignment analytics.
     Includes list + aggregates for dashboards.

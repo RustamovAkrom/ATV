@@ -4,22 +4,40 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
 
-class BaseSchema(BaseModel):
+class BaseRequestSchema(BaseModel):
+    """Base class for incoming API payloads."""
+
+    model_config = ConfigDict(
+        from_attributes=False,
+        populate_by_name=True,
+        use_enum_values=True,
+        validate_default=True,
+        extra="forbid",
+    )
+
+
+class BaseResponseSchema(BaseModel):
+    """Base class for outgoing API payloads and ORM serialization."""
+
     model_config = ConfigDict(
         from_attributes=True,
         populate_by_name=True,
         use_enum_values=True,
         validate_default=True,
-        extra="forbid",  # forbidden extra fields
+        extra="ignore",
     )
 
 
-class TimestampSchema(BaseSchema):
+class BaseSchema(BaseResponseSchema):
+    """Backward-compatible response schema base."""
+
+
+class TimestampSchema(BaseResponseSchema):
     created_at: datetime
     updated_at: datetime
 
 
-class UUIDRefSchema(BaseSchema):
+class UUIDRefSchema(BaseResponseSchema):
     id: UUID
 
 

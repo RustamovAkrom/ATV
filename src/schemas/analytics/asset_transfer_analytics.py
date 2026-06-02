@@ -5,11 +5,11 @@ from uuid import UUID
 from pydantic import Field, field_validator
 
 from db.models.enums import TransferStatus
-from schemas.base import BaseSchema
+from schemas.base import BaseRequestSchema, BaseSchema
 from utils.analytics.filter_utils import sanitize_search
 
 
-class AssetTransferFilterInput(BaseSchema):
+class AssetTransferFilterInput(BaseRequestSchema):
     """Filters for asset transfer analytics queries."""
 
     asset_id: UUID | None = None
@@ -34,7 +34,6 @@ class AssetTransferFilterInput(BaseSchema):
         cleaned = sanitize_search(value)
         return cleaned or None
 
-
 class AssetTransferOut(BaseSchema):
     """Transfer record with location details."""
 
@@ -58,7 +57,6 @@ class AssetTransferOut(BaseSchema):
 
     comment: str | None
 
-
 class TransferDurationMetrics(BaseSchema):
     """Duration metrics for a transfer."""
 
@@ -69,12 +67,10 @@ class TransferDurationMetrics(BaseSchema):
     days_to_completion: Decimal | None  # Transfer time after approval
     is_pending: bool
 
-
 class AssetTransferDetailOut(AssetTransferOut):
     """Transfer with duration metrics."""
 
     duration_metrics: TransferDurationMetrics
-
 
 class TransferHistoryEntry(BaseSchema):
     """Transfer history entry for an asset."""
@@ -89,7 +85,6 @@ class TransferHistoryEntry(BaseSchema):
     created_by_name: str
     duration_days: Decimal | None
 
-
 class AssetTransferHistory(BaseSchema):
     """Complete transfer history for an asset."""
 
@@ -101,7 +96,6 @@ class AssetTransferHistory(BaseSchema):
     cancelled_transfers: int
     history: list[TransferHistoryEntry]
 
-
 class TransferStatusBreakdown(BaseSchema):
     """Breakdown of transfers by status."""
 
@@ -109,7 +103,6 @@ class TransferStatusBreakdown(BaseSchema):
     count: int
     percentage: Decimal
     average_pending_days: Decimal | None  # Only for pending transfers
-
 
 class TransferBottleneck(BaseSchema):
     """Bottleneck analysis - transfers waiting too long."""
@@ -122,7 +115,6 @@ class TransferBottleneck(BaseSchema):
     from_location: str | None
     to_location: str | None
     created_at: datetime
-
 
 class TransferMetrics(BaseSchema):
     """Aggregated transfer metrics."""
@@ -145,7 +137,6 @@ class TransferMetrics(BaseSchema):
     # Timeline data
     status_breakdown: list[TransferStatusBreakdown]
 
-
 class WarehouseTransferMetrics(BaseSchema):
     """Transfer metrics per warehouse."""
 
@@ -157,7 +148,6 @@ class WarehouseTransferMetrics(BaseSchema):
     pending_out: int
     average_duration_days: Decimal | None
 
-
 class TransferPageOut(BaseSchema):
     """Paginated transfer list."""
 
@@ -165,7 +155,6 @@ class TransferPageOut(BaseSchema):
     total: int
     page: int
     limit: int
-
 
 class BottleneckReportOut(BaseSchema):
     """Report of transfer bottlenecks."""

@@ -4,10 +4,10 @@ from uuid import UUID
 from pydantic import ConfigDict, EmailStr, Field, field_validator
 
 from db.models.enums import EmploymentType, UserGender, UserLanguage, UserStatus
-from schemas.base import BaseSchema, TimestampSchema
+from schemas.base import BaseRequestSchema, TimestampSchema
 
 
-class UserCreateSchema(BaseSchema):
+class UserCreateSchema(BaseRequestSchema):
     login: str = Field(min_length=3, max_length=100, pattern=r"^[a-zA-Z0-9_]+$")
     email: EmailStr
     phone: str = Field(min_length=7, max_length=20)
@@ -29,8 +29,7 @@ class UserCreateSchema(BaseSchema):
     language: UserLanguage | None = UserLanguage.UZ
     timezone: str | None = Field("Asia/Tashkent", max_length=50)
 
-
-class UserUpdateSchema(BaseSchema):
+class UserUpdateSchema(BaseRequestSchema):
     first_name: str | None = Field(None, max_length=100)
     last_name: str | None = Field(None, max_length=100)
     phone: str | None = Field(None, min_length=7, max_length=20)
@@ -48,8 +47,7 @@ class UserUpdateSchema(BaseSchema):
     language: UserLanguage | None = None
     timezone: str | None = Field(None, max_length=50)
 
-
-class AdminUserUpdateSchema(BaseSchema):
+class AdminUserUpdateSchema(BaseRequestSchema):
     role_id: UUID | None
     status: str | None
     # Admin can change this values
@@ -63,8 +61,7 @@ class AdminUserUpdateSchema(BaseSchema):
     hired_at: date | None = None
     dismissed_at: date | None = None
 
-
-class ChangePasswordRequestSchema(BaseSchema):
+class ChangePasswordRequestSchema(BaseRequestSchema):
     old_password: str
     new_password: str = Field(min_length=6)
 
@@ -75,10 +72,8 @@ class ChangePasswordRequestSchema(BaseSchema):
             raise ValueError("Password must be at least 5 charecters")
         return v
 
-
-class UserAvatarUpdateSchema(BaseSchema):
+class UserAvatarUpdateSchema(BaseRequestSchema):
     avatar_url: str | None = Field(None, max_length=500)
-
 
 class UserOutSchema(TimestampSchema):
     id: UUID

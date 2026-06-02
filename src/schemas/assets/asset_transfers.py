@@ -4,10 +4,10 @@ from uuid import UUID
 from pydantic import Field, model_validator
 
 from db.models.enums import TransferStatus
-from schemas.base import BaseSchema
+from schemas.base import BaseRequestSchema, BaseSchema
 
 
-class AssetTransferCreate(BaseSchema):
+class AssetTransferCreate(BaseRequestSchema):
     from_warehouse_id: UUID | None = Field(None, description="Source warehouse")
     to_warehouse_id: UUID | None = None
     to_service_id: UUID | None = None
@@ -22,10 +22,8 @@ class AssetTransferCreate(BaseSchema):
             raise ValueError("Transfer cannot have both warehouse and service targets")
         return self
 
-
-class AssetTransferDecision(BaseSchema):
+class AssetTransferDecision(BaseRequestSchema):
     comment: str | None = Field(default=None, max_length=255)
-
 
 class AssetTransferSchema(BaseSchema):
     id: UUID

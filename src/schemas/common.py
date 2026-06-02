@@ -1,7 +1,9 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+
+from schemas.base import BaseResponseSchema
 
 
-class StatusResponse(BaseModel):
+class StatusResponse(BaseResponseSchema):
     status: str = Field(
         ...,
         pattern=r"^(success|error|ok|archived|active|blocked|deleted|created|updated)$",
@@ -10,8 +12,7 @@ class StatusResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-
-class ErrorResponse(BaseModel):
+class ErrorResponse(BaseResponseSchema):
     """Standard error response"""
 
     error: str
@@ -19,8 +20,7 @@ class ErrorResponse(BaseModel):
     code: str | None = None
     trace_id: str | None = None
 
-
-class MessageResponse(BaseModel):
+class MessageResponse(BaseResponseSchema):
     """Simple message response"""
 
     message: str

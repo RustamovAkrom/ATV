@@ -3,10 +3,10 @@ from uuid import UUID
 
 from pydantic import Field, field_validator
 
-from schemas.base import BaseSchema, TimestampSchema
+from schemas.base import BaseRequestSchema, BaseSchema, TimestampSchema
 
 
-class RegionBaseSchema(BaseSchema):
+class RegionBaseSchema(BaseRequestSchema):
     """Базовые поля региона"""
 
     name: str = Field(min_length=2, max_length=255, description="Название региона")
@@ -24,14 +24,12 @@ class RegionBaseSchema(BaseSchema):
             raise ValueError("Region name cannot be empty")
         return cleaned
 
-
 class RegionCreateSchema(RegionBaseSchema):
     """Схема для создания региона"""
 
     pass
 
-
-class RegionUpdateSchema(BaseSchema):
+class RegionUpdateSchema(BaseRequestSchema):
     """Схема для обновления региона (все поля опциональны)"""
 
     name: str | None = Field(
@@ -53,7 +51,6 @@ class RegionUpdateSchema(BaseSchema):
             return cleaned
         return v
 
-
 class RegionOutSchema(TimestampSchema):
     """Схема для ответа (вывод региона)"""
 
@@ -71,7 +68,6 @@ class RegionOutSchema(TimestampSchema):
         """Валидация UUID"""
         return v
 
-
 class RegionTreeOutSchema(RegionOutSchema):
     """Схема для древовидного вывода региона"""
 
@@ -79,13 +75,11 @@ class RegionTreeOutSchema(RegionOutSchema):
         default_factory=list, description="Дочерние регионы"
     )
 
-
 class RegionWithServicesOutSchema(RegionOutSchema):
     """Region with attached services"""
 
     service_ids: list[UUID] | None = Field(None, description="ID сервисов в регионе")
     service_names: list[str] | None = Field(None, description="Названия сервисов")
-
 
 class RegionStatsOutSchema(BaseSchema):
     """Статистика по региону"""
@@ -96,7 +90,6 @@ class RegionStatsOutSchema(BaseSchema):
     active_assets: int = Field(0, description="Active assets")
     users_count: int = Field(0, description="Number of users")
     services_count: int = Field(0, description="Количество сервисов")
-
 
 # Регистрация рекурсивной модели
 RegionTreeOutSchema.model_rebuild()

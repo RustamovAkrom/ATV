@@ -1,15 +1,13 @@
 from uuid import UUID
 
-from schemas.base import BaseSchema
+from schemas.base import BaseRequestSchema, BaseSchema
 
 
-class AssetCategoryCreateSchema(BaseSchema):
+class AssetCategoryCreateSchema(BaseRequestSchema):
     name: str
 
-
-class AssetCategoryUpdateSchema(BaseSchema):
+class AssetCategoryUpdateSchema(BaseRequestSchema):
     name: str | None = None
-
 
 class AssetCategoryOutSchema(BaseSchema):
     id: UUID

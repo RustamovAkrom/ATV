@@ -4,13 +4,12 @@ from uuid import UUID
 
 from pydantic import Field
 
-from schemas.base import BaseSchema
+from schemas.base import BaseRequestSchema, BaseSchema
 
 
-class AssetClassCreateSchema(BaseSchema):
+class AssetClassCreateSchema(BaseRequestSchema):
     name: str = Field(min_length=2, max_length=150)
     description: str | None = None
-
 
 class AssetClassOutSchema(BaseSchema):
     id: UUID

@@ -6,14 +6,13 @@ from uuid import UUID
 from pydantic import ConfigDict, Field
 
 from db.models.enums import ExpenseTypeEnum
-from schemas.base import BaseSchema, NamedRefSchema
+from schemas.base import BaseRequestSchema, BaseSchema, NamedRefSchema
 
 AssetRef = NamedRefSchema
 RegionRef = NamedRefSchema
 ServiceRef = NamedRefSchema
 
-
-class ExpenseCreateSchema(BaseSchema):
+class ExpenseCreateSchema(BaseRequestSchema):
     amount: float = Field(..., gt=0, le=1e12, description="Amount must be positive")
     currency: str = Field("UZS", min_length=3, max_length=10, pattern=r"^[A-Z]{3}$")
     expense_type: ExpenseTypeEnum
@@ -25,14 +24,12 @@ class ExpenseCreateSchema(BaseSchema):
     occurred_at: datetime | None = None
     file_url: str | None = Field(None, max_length=2048)
 
-
-class ExpenseUpdateSchema(BaseSchema):
+class ExpenseUpdateSchema(BaseRequestSchema):
     amount: float | None = Field(None, gt=0)
     currency: str | None = Field(None, min_length=3, max_length=10)
     expense_type: ExpenseTypeEnum | None = None
     description: str | None = Field(None, max_length=1000)
     file_url: str | None = Field(None, max_length=2048)
-
 
 class ExpenseOutSchema(BaseSchema):
     id: UUID
@@ -51,7 +48,6 @@ class ExpenseOutSchema(BaseSchema):
     created_at: datetime
     updated_at: datetime
 
-
 class ExpensePageSchema(BaseSchema):
     """Paginated expenses response."""
 
@@ -61,7 +57,6 @@ class ExpensePageSchema(BaseSchema):
     items: list[ExpenseOutSchema]
 
     model_config = ConfigDict(from_attributes=True)
-
 
 class ExpenseStatsSchema(BaseSchema):
     """Statistics about expenses."""

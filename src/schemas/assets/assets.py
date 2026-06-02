@@ -6,7 +6,7 @@ from pydantic import Field
 
 from db.models.enums import AssetStatus
 from schemas.assets.asset_maintenance import AssetMaintenanceOutSchema
-from schemas.base import BaseSchema, TimestampSchema
+from schemas.base import BaseRequestSchema, BaseSchema, TimestampSchema
 from schemas.pagination import PageOutSchema
 
 
@@ -14,33 +14,27 @@ class AssetRef(BaseSchema):
     id: UUID
     name: str
 
-
 class UserRef(BaseSchema):
     id: UUID
     login: str
-
 
 class RegionRef(BaseSchema):
     id: UUID
     name: str
 
-
 class ServiceRef(BaseSchema):
     id: UUID
     name: str
 
-
 class WarehouseRef(BaseSchema):
     id: UUID
     name: str
-
 
 class AssetAssignmentSchema(BaseSchema):
     id: UUID
     user: UserRef
     assigned_at: datetime
     unassigned_at: datetime | None
-
 
 class AssetHistorySchema(BaseSchema):
     id: UUID
@@ -49,8 +43,7 @@ class AssetHistorySchema(BaseSchema):
     created_at: datetime
     user: UserRef
 
-
-class AssetCreate(BaseSchema):
+class AssetCreate(BaseRequestSchema):
     name: str = Field(min_length=1, max_length=255)
     model_id: UUID
 
@@ -78,8 +71,7 @@ class AssetCreate(BaseSchema):
         default=False, description="Назначить актив текущему пользователю"
     )
 
-
-class AssetUpdate(BaseSchema):
+class AssetUpdate(BaseRequestSchema):
     name: str | None = Field(default=None, min_length=1, max_length=255)
 
     model_id: UUID | None = None
@@ -100,16 +92,13 @@ class AssetUpdate(BaseSchema):
     usage_intensity: int | None = Field(default=None, ge=0)
     metadata: dict | None = None
 
-
-class AssetAssignRequest(BaseSchema):
+class AssetAssignRequest(BaseRequestSchema):
     user_id: UUID
 
-
-class AssetStatusChangeRequest(BaseSchema):
+class AssetStatusChangeRequest(BaseRequestSchema):
     status: AssetStatus
 
-
-class AssetFilters(BaseSchema):
+class AssetFilters(BaseRequestSchema):
     owner_id: UUID | None = None
     region_id: UUID | None = None
     service_id: UUID | None = None
@@ -121,7 +110,6 @@ class AssetFilters(BaseSchema):
     status: AssetStatus | None = None
 
     search: str | None = Field(default=None, max_length=251005)
-
 
 class AssetSchema(TimestampSchema):
     id: UUID
@@ -145,11 +133,9 @@ class AssetSchema(TimestampSchema):
     failure_count: int
     usage_intensity: int
 
-
 class AssetDetailSchema(AssetSchema):
     assignments: list[AssetAssignmentSchema] = Field(default_factory=list)
     history_entries: list[AssetHistorySchema] = Field(default_factory=list)
     maintenances: list[AssetMaintenanceOutSchema] = Field(default_factory=list)
-
 
 AssetPage = PageOutSchema[AssetSchema]

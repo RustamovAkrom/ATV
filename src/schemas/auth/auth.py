@@ -3,7 +3,7 @@ from uuid import UUID
 from pydantic import Field
 
 from db.models.enums import UserRole
-from schemas.base import BaseSchema
+from schemas.base import BaseRequestSchema, BaseSchema
 
 
 class CurrentUserSchema(BaseSchema):
@@ -45,8 +45,7 @@ class CurrentUserSchema(BaseSchema):
             return not user_perms.isdisjoint(required)
         return required.issubset(user_perms)
 
-
-class TokenPayloadSchema(BaseSchema):
+class TokenPayloadSchema(BaseRequestSchema):
     sub: UUID
     jti: UUID
     exp: int
@@ -56,21 +55,17 @@ class TokenPayloadSchema(BaseSchema):
     aud: str | None = None
     session_id: UUID | None = None
 
-
 class TokenPairSchema(BaseSchema):
     access_token: str
     refresh_token: str
 
-
-class LoginRequestSchema(BaseSchema):
+class LoginRequestSchema(BaseRequestSchema):
     login: str
     password: str
-
 
 class TokenResponseSchema(BaseSchema):
     access_token: str
     refresh_token: str
 
-
-class RefreshRequestSchema(BaseSchema):
+class RefreshRequestSchema(BaseRequestSchema):
     refresh_token: str

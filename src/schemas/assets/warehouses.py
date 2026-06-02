@@ -2,10 +2,10 @@ from uuid import UUID
 
 from pydantic import Field, field_validator
 
-from schemas.base import BaseSchema, TimestampSchema
+from schemas.base import BaseRequestSchema, TimestampSchema
 
 
-class WarehouseBaseSchema(BaseSchema):
+class WarehouseBaseSchema(BaseRequestSchema):
     """Базовые поля склада"""
 
     name: str = Field(min_length=2, max_length=150, description="Название склада")
@@ -24,14 +24,12 @@ class WarehouseBaseSchema(BaseSchema):
             raise ValueError("Warehouse name cannot be empty")
         return cleaned
 
-
 class WarehouseCreateSchema(WarehouseBaseSchema):
     """Схема для создания склада"""
 
     slug: str | None = None
 
-
-class WarehouseUpdateSchema(BaseSchema):
+class WarehouseUpdateSchema(BaseRequestSchema):
     """Схема для обновления склада"""
 
     name: str | None = Field(None, min_length=2, max_length=150)
@@ -50,7 +48,6 @@ class WarehouseUpdateSchema(BaseSchema):
             return cleaned
         return v
 
-
 class WarehouseOutSchema(TimestampSchema):
     """Схема для ответа"""
 
@@ -63,7 +60,6 @@ class WarehouseOutSchema(TimestampSchema):
     is_active: bool
     assets_count: int | None = Field(None, description="Количество активов на складе")
 
-
 class WarehouseWithDetailsOutSchema(WarehouseOutSchema):
     """Warehouse with details (region, service, manager)"""
 
@@ -71,8 +67,7 @@ class WarehouseWithDetailsOutSchema(WarehouseOutSchema):
     service_name: str | None = None
     manager_name: str | None = None
 
-
-class WarehouseMoveRequest(BaseSchema):
+class WarehouseMoveRequest(BaseRequestSchema):
     """Запрос на перемещение актива на склад"""
 
     warehouse_id: UUID = Field(..., description="ID целевого склада")

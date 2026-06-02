@@ -6,10 +6,10 @@ from pydantic import Field
 
 from db.models.enums import ApprovalStatus
 from schemas.assets.repairs import RepairPartCreate
-from schemas.base import BaseSchema
+from schemas.base import BaseRequestSchema, BaseSchema
 
 
-class ApprovalCreate(BaseSchema):
+class ApprovalCreate(BaseRequestSchema):
     """
     Schema for creating approval request.
 
@@ -26,10 +26,8 @@ class ApprovalCreate(BaseSchema):
     action: str = Field(min_length=1, max_length=100)
     payload: dict = Field(default_factory=dict)
 
-
-class ApprovalDecision(BaseSchema):
+class ApprovalDecision(BaseRequestSchema):
     comment: str | None = Field(default=None, max_length=500)
-
 
 class ApprovalSchema(BaseSchema):
     id: UUID
@@ -44,22 +42,18 @@ class ApprovalSchema(BaseSchema):
     created_at: datetime
     decided_at: datetime | None
 
-
-class AssetTransferApprovalPayload(BaseSchema):
+class AssetTransferApprovalPayload(BaseRequestSchema):
     to_warehouse_id: UUID | None = None
     to_service_id: UUID | None = None
     comment: str | None = Field(default=None, max_length=255)
 
-
-class AssetArchiveApprovalPayload(BaseSchema):
+class AssetArchiveApprovalPayload(BaseRequestSchema):
     reason: str | None = Field(default=None, max_length=500)
 
-
-class AssetDeleteApprovalPayload(BaseSchema):
+class AssetDeleteApprovalPayload(BaseRequestSchema):
     reason: str | None = Field(default=None, max_length=500)
 
-
-class RepairCompleteApprovalPayload(BaseSchema):
+class RepairCompleteApprovalPayload(BaseRequestSchema):
     repair_id: UUID
     labor_cost: Decimal | None = None
     parts: list[RepairPartCreate] = Field(default_factory=list)

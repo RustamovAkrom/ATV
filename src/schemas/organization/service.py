@@ -3,10 +3,10 @@ from uuid import UUID
 
 from pydantic import Field, field_validator
 
-from schemas.base import BaseSchema, TimestampSchema
+from schemas.base import BaseRequestSchema, TimestampSchema
 
 
-class ServiceBaseSchema(BaseSchema):
+class ServiceBaseSchema(BaseRequestSchema):
     name: str = Field(min_length=2, max_length=255, description="Service name")
     description: str | None = Field(
         None, max_length=500, description="Service description"
@@ -22,14 +22,12 @@ class ServiceBaseSchema(BaseSchema):
             raise ValueError("Service name cannot be empty")
         return cleaned
 
-
 class ServiceCreateSchema(ServiceBaseSchema):
     """Схема для создания сервиса"""
 
     pass
 
-
-class ServiceUpdateSchema(BaseSchema):
+class ServiceUpdateSchema(BaseRequestSchema):
     """Схема для обновления сервиса"""
 
     name: str | None = Field(
@@ -51,7 +49,6 @@ class ServiceUpdateSchema(BaseSchema):
             return cleaned
         return v
 
-
 class ServiceOutSchema(TimestampSchema):
     """Схема для вывода сервиса"""
 
@@ -60,7 +57,6 @@ class ServiceOutSchema(TimestampSchema):
     slug: str | None  # <-- исправлено: может быть None при создании?
     description: str | None
     region_ids: list[UUID] | None = Field(None, description="IDs of attached regions")
-
 
 class ServiceWithRegionsOutSchema(ServiceOutSchema):
     """Schema for service output with regions"""

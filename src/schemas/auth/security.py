@@ -2,10 +2,10 @@ import re
 
 from pydantic import field_validator
 
-from schemas.base import BaseSchema
+from schemas.base import BaseRequestSchema
 
 
-class ResetPasswordRequestSchema(BaseSchema):
+class ResetPasswordRequestSchema(BaseRequestSchema):
     token: str
     new_password: str
 
@@ -26,6 +26,5 @@ class ResetPasswordRequestSchema(BaseSchema):
 
         return v
 
-
-class ForgotPasswordRequestSchema(BaseSchema):
+class ForgotPasswordRequestSchema(BaseRequestSchema):
     login: str

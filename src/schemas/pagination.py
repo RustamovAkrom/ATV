@@ -1,12 +1,13 @@
 from math import ceil
 from typing import Generic, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field
+from pydantic import ConfigDict, Field, computed_field
+
+from schemas.base import BaseRequestSchema, BaseResponseSchema
 
 T = TypeVar("T")
 
-
-class PaginationParamsSchema(BaseModel):
+class PaginationParamsSchema(BaseRequestSchema):
     page: int = Field(1, ge=1)
     limit: int = Field(20, ge=1, le=100)
     sort_by: str | None = Field(None, description="Sort field")
@@ -21,8 +22,7 @@ class PaginationParamsSchema(BaseModel):
         """Alias for offset"""
         return self.offset()
 
-
-class PageSchema(BaseModel, Generic[T]):
+class PageSchema(BaseResponseSchema, Generic[T]):
     items: list[T]
     total: int
     page: int
@@ -30,8 +30,7 @@ class PageSchema(BaseModel, Generic[T]):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-
-class PageOutSchema(BaseModel, Generic[T]):
+class PageOutSchema(BaseResponseSchema, Generic[T]):
     items: list[T]
     total: int
     page: int
@@ -56,6 +55,5 @@ class PageOutSchema(BaseModel, Generic[T]):
     def has_prev(self) -> bool:
         """Check if previous page exists"""
         return self.page > 1
-
 
 SimplePage = PageOutSchema

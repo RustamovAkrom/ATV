@@ -5,12 +5,12 @@ from uuid import UUID
 
 from pydantic import Field, computed_field
 
-from schemas.base import BaseSchema
+from schemas.base import BaseRequestSchema, BaseSchema
 
 T = TypeVar("T")
 
 
-class AnalyticsFilters(BaseSchema):
+class AnalyticsFilters(BaseRequestSchema):
     """Базовые фильтры для аналитики"""
 
     region_id: UUID | None = None

@@ -5,19 +5,17 @@ from pydantic import Field, field_validator
 
 from core.config import get_settings
 from db.models.enums import DocumentStatus
-from schemas.base import BaseSchema, TimestampSchema
+from schemas.base import BaseRequestSchema, BaseSchema, TimestampSchema
 
 settings = get_settings()
 
-
-class DocumentFileCreateSchema(BaseSchema):
+class DocumentFileCreateSchema(BaseRequestSchema):
     """Схема для создания файла документа"""
 
     file_name: str = Field(min_length=1, max_length=255)
     file_path: str = Field(min_length=1, max_length=500)
     file_size: int | None = Field(None, ge=0)
     content_type: str | None = Field(None, max_length=100)
-
 
 class DocumentFileOutSchema(BaseSchema):
     """Схема для вывода файла документа"""
@@ -35,8 +33,7 @@ class DocumentFileOutSchema(BaseSchema):
         if self.file_path:
             self.url = f"{settings.STORAGE_URL_PREFIX}/{self.file_path}"
 
-
-class AssetDocumentCreateSchema(BaseSchema):
+class AssetDocumentCreateSchema(BaseRequestSchema):
     """Схема для создания документа (JSON + файлы)"""
 
     title: str = Field(min_length=1, max_length=255)
@@ -45,8 +42,7 @@ class AssetDocumentCreateSchema(BaseSchema):
     status: DocumentStatus = DocumentStatus.DRAFT
     metadata: dict = Field(default_factory=dict)
 
-
-class AssetDocumentUpdateSchema(BaseSchema):
+class AssetDocumentUpdateSchema(BaseRequestSchema):
     """Схема для обновления документа"""
 
     title: str | None = Field(None, min_length=1, max_length=255)
@@ -65,7 +61,6 @@ class AssetDocumentUpdateSchema(BaseSchema):
             return cleaned
         return v
 
-
 class AssetDocumentOutSchema(TimestampSchema):
     """Схема для вывода документа"""
 
@@ -79,7 +74,6 @@ class AssetDocumentOutSchema(TimestampSchema):
     metadata: dict = Field(alias="meta")
     files: list[DocumentFileOutSchema] = Field(default_factory=list)
     created_by_name: str | None = None
-
 
 class AssetDocumentWithFilesOutSchema(AssetDocumentOutSchema):
     """Document with full file information"""
