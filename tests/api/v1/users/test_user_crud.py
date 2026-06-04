@@ -91,13 +91,11 @@ class TestUserEndpoints:
                 "role_id": str(user.role_id),
                 "status": "active",
                 "position": "Updated Position",
-                "department": "Updated Department",
             },
         )
         assert response.status_code == 200
         body = response.json()
         assert body["position"] == "Updated Position"
-        assert body["department"] == "Updated Department"
 
     async def test_update_user_not_found(self, client, analytics_tokens):
         fake_id = uuid.uuid4()

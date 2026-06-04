@@ -76,9 +76,6 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
 
     # ========== РАБОЧАЯ ИНФОРМАЦИЯ ==========
     position: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    department: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="Department/division"
-    )
     employment_type: Mapped[EmploymentType | None] = mapped_column(
         SAEnum(EmploymentType, name="employment_type"),
         nullable=True,
@@ -156,9 +153,7 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
     role: Mapped["Role"] = relationship("Role", back_populates="users", lazy="selectin")
     region: Mapped["Region"] = relationship("Region", lazy="selectin")
     service: Mapped["Service"] = relationship("Service", lazy="selectin")
-    assigned_department: Mapped["Department"] = relationship(
-        "Department", lazy="selectin"
-    )
+    department: Mapped["Department"] = relationship("Department", lazy="selectin")
     owned_assets: Mapped[list["Asset"]] = relationship(
         "Asset",
         back_populates="owner",

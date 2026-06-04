@@ -49,7 +49,7 @@ def _to_user_out(user: User) -> UserOutSchema:
         created_at=user.created_at,
         updated_at=user.updated_at,
         position=getattr(user, "position", None),
-        department=getattr(user, "department", None),
+        department=getattr(getattr(user, "department", None), "name", None),
         employment_type=getattr(user, "employment_type", None),
         date_of_birth=getattr(user, "date_of_birth", None),
         gender=getattr(user, "gender", None),
@@ -61,8 +61,10 @@ def _to_user_out(user: User) -> UserOutSchema:
         language=getattr(user, "language", None),
         timezone=getattr(user, "timezone", None),
         last_login=getattr(user, "last_login", None),
+        assigned_department_id=getattr(user, "department_id", None),
         assigned_region_id=getattr(user, "assigned_region_id", None),
         assigned_service_id=getattr(user, "assigned_service_id", None),
+        department_id=getattr(user, "department_id", None),
     )
 
 
@@ -278,7 +280,7 @@ async def export_users(
                 user.first_name or "",
                 user.last_name or "",
                 user.position or "",
-                user.department or "",
+                getattr(user.department, "name", "") if user.department else "",
                 user.employment_type or "",
                 user.status or "",
                 user.role or "",

@@ -20,7 +20,6 @@ class UserCreateSchema(BaseRequestSchema):
 
     # new attributes
     position: str | None = Field(None, max_length=255)
-    department: str | None = Field(None, max_length=255)
     employment_type: EmploymentType | None = None
     date_of_birth: date | None = Field(None, description="Date of birth")
     gender: UserGender | None = None
@@ -44,7 +43,6 @@ class UserUpdateSchema(BaseRequestSchema):
     # new attributes
     position: str | None = Field(None, max_length=255)
     department_id: UUID | None = None
-    department: str | None = Field(None, max_length=255)
     employment_type: EmploymentType | None = None
     hired_at: date | None = None
     language: UserLanguage | None = None
@@ -59,7 +57,6 @@ class AdminUserUpdateSchema(BaseRequestSchema):
     assigned_service_id: UUID | None = None
     department_id: UUID | None = None
     position: str | None = Field(None, max_length=255)
-    department: str | None = Field(None, max_length=255)
     employment_type: EmploymentType | None = None
     badge_number: str | None = Field(None, max_length=50)
     passport_number: str | None = Field(None, max_length=50)

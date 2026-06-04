@@ -55,7 +55,6 @@ class UserService:
             last_name=data.last_name,
             status=UserStatus.ACTIVE.value,
             position=data.position,
-            department=data.department,
             employment_type=data.employment_type,
             date_of_birth=data.date_of_birth,
             gender=data.gender,
