@@ -50,6 +50,7 @@ class UserService:
             phone=data.phone,
             password_hash=hash_password(data.password),
             role_id=data.role_id,
+            department_id=data.department_id,
             first_name=data.first_name,
             last_name=data.last_name,
             status=UserStatus.ACTIVE.value,

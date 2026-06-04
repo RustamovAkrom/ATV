@@ -12,6 +12,7 @@ class StatusResponse(BaseResponseSchema):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class ErrorResponse(BaseResponseSchema):
     """Standard error response"""
 
@@ -19,6 +20,7 @@ class ErrorResponse(BaseResponseSchema):
     message: str
     code: str | None = None
     trace_id: str | None = None
+
 
 class MessageResponse(BaseResponseSchema):
     """Simple message response"""

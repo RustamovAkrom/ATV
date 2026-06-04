@@ -9,6 +9,7 @@ from schemas.base import BaseRequestSchema, BaseSchema, TimestampSchema
 
 settings = get_settings()
 
+
 class DocumentFileCreateSchema(BaseRequestSchema):
     """Схема для создания файла документа"""
 
@@ -16,6 +17,7 @@ class DocumentFileCreateSchema(BaseRequestSchema):
     file_path: str = Field(min_length=1, max_length=500)
     file_size: int | None = Field(None, ge=0)
     content_type: str | None = Field(None, max_length=100)
+
 
 class DocumentFileOutSchema(BaseSchema):
     """Схема для вывода файла документа"""
@@ -33,6 +35,7 @@ class DocumentFileOutSchema(BaseSchema):
         if self.file_path:
             self.url = f"{settings.STORAGE_URL_PREFIX}/{self.file_path}"
 
+
 class AssetDocumentCreateSchema(BaseRequestSchema):
     """Схема для создания документа (JSON + файлы)"""
 
@@ -41,6 +44,7 @@ class AssetDocumentCreateSchema(BaseRequestSchema):
     document_type: str = Field(default="other", min_length=1, max_length=50)
     status: DocumentStatus = DocumentStatus.DRAFT
     metadata: dict = Field(default_factory=dict)
+
 
 class AssetDocumentUpdateSchema(BaseRequestSchema):
     """Схема для обновления документа"""
@@ -61,6 +65,7 @@ class AssetDocumentUpdateSchema(BaseRequestSchema):
             return cleaned
         return v
 
+
 class AssetDocumentOutSchema(TimestampSchema):
     """Схема для вывода документа"""
 
@@ -74,6 +79,7 @@ class AssetDocumentOutSchema(TimestampSchema):
     metadata: dict = Field(alias="meta")
     files: list[DocumentFileOutSchema] = Field(default_factory=list)
     created_by_name: str | None = None
+
 
 class AssetDocumentWithFilesOutSchema(AssetDocumentOutSchema):
     """Document with full file information"""

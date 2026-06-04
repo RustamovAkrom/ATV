@@ -11,6 +11,7 @@ class RegionAssetStatusCounts(BaseResponseSchema):
     archived: int
     total: int
 
+
 class RegionOverviewOut(BaseResponseSchema):
     region_id: UUID
     region_name: str
@@ -23,12 +24,14 @@ class RegionOverviewOut(BaseResponseSchema):
     repairs_count: int
     assignment_load: int
 
+
 class RegionServiceLoadOut(BaseResponseSchema):
     service_id: UUID
     service_name: str
     asset_count: int
     active_assignments: int
     repairs_count: int
+
 
 class RegionAssetCostSummaryOut(BaseResponseSchema):
     asset_id: UUID
@@ -37,9 +40,11 @@ class RegionAssetCostSummaryOut(BaseResponseSchema):
     repair_cost: float
     total_cost: float
 
+
 class RegionDetailsOut(RegionOverviewOut):
     services: list[RegionServiceLoadOut]
     top_cost_assets: list[RegionAssetCostSummaryOut]
+
 
 class RegionHeatmapPointOut(BaseResponseSchema):
     region_id: UUID

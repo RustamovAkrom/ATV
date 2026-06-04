@@ -26,5 +26,6 @@ class ResetPasswordRequestSchema(BaseRequestSchema):
 
         return v
 
+
 class ForgotPasswordRequestSchema(BaseRequestSchema):
     login: str

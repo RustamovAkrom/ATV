@@ -15,6 +15,7 @@ class AssignmentAnalyticsStatus(StrEnum):
     ACTIVE = "active"
     INACTIVE = "inactive"
 
+
 class AssetAssignmentFilterInput(BaseRequestSchema):
     """Filters for asset assignment analytics queries."""
 
@@ -37,6 +38,7 @@ class AssetAssignmentFilterInput(BaseRequestSchema):
         cleaned = sanitize_search(value)
         return cleaned or None
 
+
 class AssetAssignmentOut(BaseResponseSchema):
     """Single assignment record."""
 
@@ -52,6 +54,7 @@ class AssetAssignmentOut(BaseResponseSchema):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class AssignmentDurationMetrics(BaseResponseSchema):
     """Duration metrics for an assignment."""
 
@@ -59,10 +62,12 @@ class AssignmentDurationMetrics(BaseResponseSchema):
     duration_formatted: str  # "12 days, 5 hours"
     is_active: bool
 
+
 class AssetAssignmentDetailOut(AssetAssignmentOut):
     """Assignment with duration metrics."""
 
     duration_metrics: AssignmentDurationMetrics
+
 
 class UserAssignmentSummary(BaseResponseSchema):
     """Summary of assignments for a user."""
@@ -75,6 +80,7 @@ class UserAssignmentSummary(BaseResponseSchema):
     average_duration_days: Decimal | None
     longest_assignment_days: Decimal | None
     recent_assignment_date: datetime | None
+
 
 class AssetAssignmentHistoryOut(BaseResponseSchema):
     """Assignment history with duration."""
@@ -89,6 +95,7 @@ class AssetAssignmentHistoryOut(BaseResponseSchema):
     duration_days: Decimal | None
     status: str
 
+
 class AssignmentTimelineEntry(BaseResponseSchema):
     """Timeline entry for a single asset."""
 
@@ -99,6 +106,7 @@ class AssignmentTimelineEntry(BaseResponseSchema):
     user_name: str
     duration_days: Decimal | None
 
+
 class AssetAssignmentTimeline(BaseResponseSchema):
     """Complete timeline for an asset's assignments."""
 
@@ -107,6 +115,7 @@ class AssetAssignmentTimeline(BaseResponseSchema):
     total_assignments: int
     active_assignment: AssetAssignmentOut | None
     timeline: list[AssignmentTimelineEntry]
+
 
 class AssignmentAggregates(BaseResponseSchema):
     """Aggregated metrics for assignments."""
@@ -121,6 +130,7 @@ class AssignmentAggregates(BaseResponseSchema):
     most_active_user_id: UUID | None
     most_active_user_name: str | None
 
+
 class AssignmentPageOut(BaseResponseSchema):
     """Paginated assignment list."""
 
@@ -128,6 +138,7 @@ class AssignmentPageOut(BaseResponseSchema):
     total: int
     page: int
     limit: int
+
 
 class AssetAssignmentPageOut(BaseResponseSchema):
     """

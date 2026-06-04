@@ -18,6 +18,7 @@ class NotificationSchema(BaseSchema):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class NotificationCreate(BaseRequestSchema):
     user_id: UUID
     type: str
@@ -25,8 +26,10 @@ class NotificationCreate(BaseRequestSchema):
     message: str
     data: dict = {}
 
+
 class NotificationFilter(BaseRequestSchema):
     is_read: bool | None = None
+
 
 class UnreadCountResponseSchema(BaseSchema):
     count: int

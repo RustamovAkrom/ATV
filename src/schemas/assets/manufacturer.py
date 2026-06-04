@@ -10,6 +10,7 @@ class ManufacturerCreateSchema(BaseRequestSchema):
     country: str | None = None
     website: HttpUrl | None = None
 
+
 class ManufacturerOutSchema(BaseSchema):
     id: UUID
     name: str

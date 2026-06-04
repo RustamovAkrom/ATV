@@ -7,6 +7,7 @@ from schemas.base import BaseRequestSchema, BaseResponseSchema
 
 T = TypeVar("T")
 
+
 class PaginationParamsSchema(BaseRequestSchema):
     page: int = Field(1, ge=1)
     limit: int = Field(20, ge=1, le=100)
@@ -22,6 +23,7 @@ class PaginationParamsSchema(BaseRequestSchema):
         """Alias for offset"""
         return self.offset()
 
+
 class PageSchema(BaseResponseSchema, Generic[T]):
     items: list[T]
     total: int
@@ -29,6 +31,7 @@ class PageSchema(BaseResponseSchema, Generic[T]):
     limit: int
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 class PageOutSchema(BaseResponseSchema, Generic[T]):
     items: list[T]
@@ -55,5 +58,6 @@ class PageOutSchema(BaseResponseSchema, Generic[T]):
     def has_prev(self) -> bool:
         """Check if previous page exists"""
         return self.page > 1
+
 
 SimplePage = PageOutSchema

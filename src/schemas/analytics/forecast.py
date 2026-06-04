@@ -1,4 +1,3 @@
-
 from schemas.analytics.trends import TrendInterval
 from schemas.base import BaseResponseSchema
 
@@ -6,6 +5,7 @@ from schemas.base import BaseResponseSchema
 class ForecastPointOut(BaseResponseSchema):
     period_index: int
     forecast_value: float
+
 
 class ForecastSeriesOut(BaseResponseSchema):
     interval: TrendInterval

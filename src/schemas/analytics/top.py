@@ -9,6 +9,7 @@ class TopMetric(StrEnum):
     TRANSFERS = "transfers"
     REPAIRS = "repairs"
 
+
 class TopAssetAnalyticsOut(BaseResponseSchema):
     asset_id: UUID
     asset_name: str
@@ -17,6 +18,7 @@ class TopAssetAnalyticsOut(BaseResponseSchema):
     repair_count: int
     primary_metric: TopMetric
     primary_value: int
+
 
 class TopUserAnalyticsOut(BaseResponseSchema):
     user_id: UUID
@@ -27,6 +29,7 @@ class TopUserAnalyticsOut(BaseResponseSchema):
     repair_count: int
     primary_metric: TopMetric
     primary_value: int
+
 
 class TopServiceAnalyticsOut(BaseResponseSchema):
     service_id: UUID

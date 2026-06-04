@@ -11,6 +11,7 @@ class CurrentUserSchema(BaseSchema):
     role: str | None
     permissions: list[str] = Field(default_factory=list)
 
+    assigned_department_id: UUID | None = None
     assigned_region_id: UUID | None = None
     assigned_service_id: UUID | None = None
 
@@ -45,6 +46,7 @@ class CurrentUserSchema(BaseSchema):
             return not user_perms.isdisjoint(required)
         return required.issubset(user_perms)
 
+
 class TokenPayloadSchema(BaseRequestSchema):
     sub: UUID
     jti: UUID
@@ -55,17 +57,21 @@ class TokenPayloadSchema(BaseRequestSchema):
     aud: str | None = None
     session_id: UUID | None = None
 
+
 class TokenPairSchema(BaseSchema):
     access_token: str
     refresh_token: str
+
 
 class LoginRequestSchema(BaseRequestSchema):
     login: str
     password: str
 
+
 class TokenResponseSchema(BaseSchema):
     access_token: str
     refresh_token: str
+
 
 class RefreshRequestSchema(BaseRequestSchema):
     refresh_token: str

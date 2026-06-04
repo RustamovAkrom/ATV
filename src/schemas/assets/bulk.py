@@ -12,19 +12,23 @@ class BulkAssignRequest(BaseRequestSchema):
     user_id: UUID
     atomic: bool = False
 
+
 class BulkTransferRequest(BaseRequestSchema):
     asset_ids: list[UUID] = Field(min_length=1, max_length=100)
     transfer: AssetTransferCreate
     atomic: bool = False
+
 
 class BulkStatusRequest(BaseRequestSchema):
     asset_ids: list[UUID] = Field(min_length=1, max_length=100)
     status: AssetStatus
     atomic: bool = False
 
+
 class BulkFailedItem(BaseSchema):
     id: UUID
     error: str
+
 
 class BulkResult(BaseSchema):
     success: list[UUID]

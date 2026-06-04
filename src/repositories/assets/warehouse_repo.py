@@ -19,6 +19,7 @@ class WarehouseRepository(BaseRepository):
 
     async def list(
         self,
+        department_id: UUID | None = None,
         region_id: UUID | None = None,
         service_id: UUID | None = None,
         is_active: bool | None = None,
@@ -28,6 +29,8 @@ class WarehouseRepository(BaseRepository):
         """Get warehouse list with filtering and pagination"""
         query = select(Warehouse)
 
+        if department_id:
+            query = query.where(Warehouse.department_id == department_id)
         if region_id:
             query = query.where(Warehouse.region_id == region_id)
         if service_id:

@@ -13,6 +13,7 @@ class AssetModelCreateSchema(BaseRequestSchema):
     lifetime_years: int | None = Field(default=None, ge=0)
     warranty_months: int | None = Field(default=None, ge=0)
 
+
 class AssetModelOutSchema(BaseSchema):
     id: UUID
     name: str

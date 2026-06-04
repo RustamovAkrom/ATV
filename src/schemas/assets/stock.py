@@ -10,6 +10,7 @@ class StockMovementCreateSchema(BaseRequestSchema):
     reference_type: str = Field(default="manual", max_length=50)
     reference_id: UUID | None = None
 
+
 class StockMovementOutSchema(BaseSchema):
     id: UUID
     warehouse_id: UUID

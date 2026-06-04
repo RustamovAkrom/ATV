@@ -164,8 +164,12 @@ class ApprovalService:
             if not asset:
                 raise NotFound("Asset not found")
 
-            AccessControl.check_region_access(actor, asset.region_id)
-            AccessControl.check_service_access(actor, asset.service_id)
+            AccessControl.check_scope_access(
+                actor,
+                asset.department_id,
+                asset.region_id,
+                asset.service_id,
+            )
 
             approval.status = ApprovalStatus.APPROVED
             approval.approved_by_id = actor.id

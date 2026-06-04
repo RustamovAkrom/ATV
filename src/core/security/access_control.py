@@ -33,6 +33,10 @@ class AccessControl:
         if AccessControl._is_superadmin(user):
             return
 
+        if user.assigned_department_id:
+            # department-bound users are validated on department scope instead
+            return
+
         if not user.assigned_region_id:
             raise PermissionDenied("User has no assigned region")
 
@@ -42,10 +46,31 @@ class AccessControl:
         if resource_region_id != user.assigned_region_id:
             raise PermissionDenied("Access denied: region mismatch")
 
+    # DEPARTMENT ACCESS
+    @staticmethod
+    def check_department_access(
+        user: CurrentUserSchema, resource_department_id: UUID | None
+    ):
+        if AccessControl._is_superadmin(user):
+            return
+
+        if not user.assigned_department_id:
+            raise PermissionDenied("User has no assigned department")
+
+        if resource_department_id is None:
+            raise PermissionDenied("Resource has no department assigned")
+
+        if resource_department_id != user.assigned_department_id:
+            raise PermissionDenied("Access denied: department mismatch")
+
     # SERVICE ACCESS
     @staticmethod
     def check_service_access(user: CurrentUserSchema, resource_service_id: UUID | None):
         if AccessControl._is_superadmin(user):
+            return
+
+        if user.assigned_department_id:
+            # department-level assignment covers service access
             return
 
         if not user.assigned_service_id:
@@ -56,6 +81,39 @@ class AccessControl:
 
         if user.assigned_service_id != resource_service_id:
             raise PermissionDenied("Access denied: service scope violation")
+
+    @staticmethod
+    def check_scope_access(
+        user: CurrentUserSchema,
+        resource_department_id: UUID | None,
+        resource_region_id: UUID | None,
+        resource_service_id: UUID | None,
+    ):
+        if AccessControl._is_superadmin(user):
+            return
+
+        if user.assigned_department_id:
+            AccessControl.check_department_access(user, resource_department_id)
+            return
+
+        AccessControl.check_region_access(user, resource_region_id)
+        AccessControl.check_service_access(user, resource_service_id)
+
+    @staticmethod
+    def normalize_scope_filters(
+        user: CurrentUserSchema,
+        department_id: UUID | None = None,
+        region_id: UUID | None = None,
+        service_id: UUID | None = None,
+    ) -> tuple[UUID | None, UUID | None, UUID | None]:
+        if user.assigned_department_id:
+            return user.assigned_department_id, None, None
+
+        return (
+            department_id,
+            region_id or user.assigned_region_id,
+            service_id or user.assigned_service_id,
+        )
 
     # CREATOR ACCESS
     @staticmethod
@@ -115,5 +173,15 @@ def require_service_access(service_id: UUID | None):
     def checker(user: CurrentUserSchema = Depends(get_current_user)):
         AccessControl.check_service_access(user, service_id)
         return None
+
+    return checker
+
+
+def require_department_access(department_id: UUID | None):
+    def checker(user: CurrentUserSchema = Depends(get_current_user)):
+        AccessControl.check_department_access(user, department_id)
+        return None
+
+    return checker
 
     return checker

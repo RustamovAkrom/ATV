@@ -22,14 +22,17 @@ class AssetTransferCreate(BaseRequestSchema):
             raise ValueError("Transfer cannot have both warehouse and service targets")
         return self
 
+
 class AssetTransferDecision(BaseRequestSchema):
     comment: str | None = Field(default=None, max_length=255)
+
 
 class AssetTransferSchema(BaseSchema):
     id: UUID
     asset_id: UUID
     created_by_id: UUID
     received_by_id: UUID | None
+    department_id: UUID | None
     status: TransferStatus
     from_warehouse_id: UUID | None
     to_warehouse_id: UUID | None

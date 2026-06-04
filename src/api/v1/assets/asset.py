@@ -40,6 +40,7 @@ router = APIRouter(prefix="/assets", tags=["Assets"])
 
 def get_asset_filters(
     owner_id: UUID | None = Query(None),
+    department_id: UUID | None = Query(None),
     region_id: UUID | None = Query(None),
     service_id: UUID | None = Query(None),
     class_id: UUID | None = Query(None),
@@ -50,6 +51,7 @@ def get_asset_filters(
 ) -> AssetFilters:
     return AssetFilters(
         owner_id=owner_id,
+        department_id=department_id,
         region_id=region_id,
         service_id=service_id,
         class_id=class_id,

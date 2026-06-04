@@ -29,6 +29,7 @@ class AssetHistoryFilter(BaseRequestSchema):
         cleaned = sanitize_search(value)
         return cleaned or None
 
+
 class AssetHistoryOut(BaseSchema):
     id: UUID
     asset_id: UUID
@@ -41,6 +42,7 @@ class AssetHistoryOut(BaseSchema):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class AssetHistoryMetrics(BaseSchema):
     """Metrics aggregated for asset history."""
 
@@ -48,6 +50,7 @@ class AssetHistoryMetrics(BaseSchema):
     count: int
     last_occurrence: datetime
     first_occurrence: datetime
+
 
 class AssetHistoryAggregates(BaseSchema):
     """Aggregated history data."""
@@ -62,6 +65,7 @@ class AssetHistoryAggregates(BaseSchema):
     most_active_asset_name: str | None
     most_active_user_id: UUID | None
     most_active_user_name: str | None
+
 
 class AssetHistoryPage(BaseSchema):
     """Paginated history with total count."""

@@ -16,6 +16,7 @@ class UserCreateSchema(BaseRequestSchema):
     last_name: str | None = Field(None, max_length=100)
     status: UserStatus | None = UserStatus.ACTIVE
     role_id: UUID
+    department_id: UUID | None = None
 
     # new attributes
     position: str | None = Field(None, max_length=255)
@@ -29,6 +30,7 @@ class UserCreateSchema(BaseRequestSchema):
     language: UserLanguage | None = UserLanguage.UZ
     timezone: str | None = Field("Asia/Tashkent", max_length=50)
 
+
 class UserUpdateSchema(BaseRequestSchema):
     first_name: str | None = Field(None, max_length=100)
     last_name: str | None = Field(None, max_length=100)
@@ -41,11 +43,13 @@ class UserUpdateSchema(BaseRequestSchema):
 
     # new attributes
     position: str | None = Field(None, max_length=255)
+    department_id: UUID | None = None
     department: str | None = Field(None, max_length=255)
     employment_type: EmploymentType | None = None
     hired_at: date | None = None
     language: UserLanguage | None = None
     timezone: str | None = Field(None, max_length=50)
+
 
 class AdminUserUpdateSchema(BaseRequestSchema):
     role_id: UUID | None
@@ -53,6 +57,7 @@ class AdminUserUpdateSchema(BaseRequestSchema):
     # Admin can change this values
     assigned_region_id: UUID | None = None
     assigned_service_id: UUID | None = None
+    department_id: UUID | None = None
     position: str | None = Field(None, max_length=255)
     department: str | None = Field(None, max_length=255)
     employment_type: EmploymentType | None = None
@@ -60,6 +65,7 @@ class AdminUserUpdateSchema(BaseRequestSchema):
     passport_number: str | None = Field(None, max_length=50)
     hired_at: date | None = None
     dismissed_at: date | None = None
+
 
 class ChangePasswordRequestSchema(BaseRequestSchema):
     old_password: str
@@ -72,8 +78,10 @@ class ChangePasswordRequestSchema(BaseRequestSchema):
             raise ValueError("Password must be at least 5 charecters")
         return v
 
+
 class UserAvatarUpdateSchema(BaseRequestSchema):
     avatar_url: str | None = Field(None, max_length=500)
+
 
 class UserOutSchema(TimestampSchema):
     id: UUID
@@ -100,7 +108,9 @@ class UserOutSchema(TimestampSchema):
     language: UserLanguage | None = None
     timezone: str | None = None
     last_login: datetime | None = None
+    assigned_department_id: UUID | None = None
     assigned_region_id: UUID | None = None
     assigned_service_id: UUID | None = None
+    department_id: UUID | None = None
 
     model_config = ConfigDict(from_attributes=True)

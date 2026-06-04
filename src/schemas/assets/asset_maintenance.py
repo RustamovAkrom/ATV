@@ -15,10 +15,12 @@ class AssetMaintenanceBaseSchema(BaseRequestSchema):
     performed_by_id: UUID = Field(...)
     notes: str | None = Field(None, max_length=1000)
 
+
 class AssetMaintenanceCreateSchema(AssetMaintenanceBaseSchema):
     """Создание записи техобслуживания"""
 
     pass
+
 
 class AssetMaintenanceUpdateSchema(BaseRequestSchema):
     """Обновление записи техобслуживания"""
@@ -28,6 +30,7 @@ class AssetMaintenanceUpdateSchema(BaseRequestSchema):
     issues_found: str | None = Field(None, max_length=1000)
     performed_by_id: UUID | None = None
     notes: str | None = Field(None, max_length=1000)
+
 
 class AssetMaintenanceOutSchema(TimestampSchema):
     """Вывод записи техобслуживания"""

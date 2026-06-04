@@ -41,8 +41,12 @@ class RepairService:
         if not asset:
             raise NotFound("Asset not found")
 
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(asset, "department_id", None),
+            getattr(asset, "region_id", None),
+            getattr(asset, "service_id", None),
+        )
 
         if asset.status != AssetStatus.ACTIVE:
             raise BadRequest("Repairs can only be reported for active assets")
@@ -86,8 +90,12 @@ class RepairService:
         if existing and existing.id != repair_id:
             raise BadRequest("Another repair is already in progress for this asset")
 
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(asset, "department_id", None),
+            getattr(asset, "region_id", None),
+            getattr(asset, "service_id", None),
+        )
 
         repair = await self.repo.get_repair_for_update(repair_id)
 
@@ -141,8 +149,12 @@ class RepairService:
         if not asset:
             raise NotFound("Asset not found")
 
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(asset, "department_id", None),
+            getattr(asset, "region_id", None),
+            getattr(asset, "service_id", None),
+        )
 
         repair = await self.repo.get_repair_for_update(repair_id)
         if not repair or repair.asset_id != asset.id:
@@ -186,8 +198,12 @@ class RepairService:
         if not asset:
             raise NotFound("Asset not found")
 
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(asset, "department_id", None),
+            getattr(asset, "region_id", None),
+            getattr(asset, "service_id", None),
+        )
 
         repair = await self.repo.get_repair_for_update(repair_id)
 

@@ -98,6 +98,7 @@ class ExpenseRepository(BaseRepository):
         page: int = 1,
         limit: int = 20,
         expense_type: str | None = None,
+        department_id: UUID | None = None,
         region_id: UUID | None = None,
         service_id: UUID | None = None,
         asset_id: UUID | None = None,
@@ -110,6 +111,8 @@ class ExpenseRepository(BaseRepository):
         # Apply filters
         if expense_type:
             query = query.where(Expense.expense_type_code == expense_type)
+        if department_id:
+            query = query.where(Expense.department_id == department_id)
         if region_id:
             query = query.where(Expense.region_id == region_id)
         if service_id:

@@ -26,8 +26,10 @@ class ApprovalCreate(BaseRequestSchema):
     action: str = Field(min_length=1, max_length=100)
     payload: dict = Field(default_factory=dict)
 
+
 class ApprovalDecision(BaseRequestSchema):
     comment: str | None = Field(default=None, max_length=500)
+
 
 class ApprovalSchema(BaseSchema):
     id: UUID
@@ -42,16 +44,20 @@ class ApprovalSchema(BaseSchema):
     created_at: datetime
     decided_at: datetime | None
 
+
 class AssetTransferApprovalPayload(BaseRequestSchema):
     to_warehouse_id: UUID | None = None
     to_service_id: UUID | None = None
     comment: str | None = Field(default=None, max_length=255)
 
+
 class AssetArchiveApprovalPayload(BaseRequestSchema):
     reason: str | None = Field(default=None, max_length=500)
 
+
 class AssetDeleteApprovalPayload(BaseRequestSchema):
     reason: str | None = Field(default=None, max_length=500)
+
 
 class RepairCompleteApprovalPayload(BaseRequestSchema):
     repair_id: UUID

@@ -14,12 +14,13 @@ from sqlalchemy import (
     Text,
 )
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from db.base import Base
 from db.mixins import TimestampMixin, UUIDMixing
 from db.models.enums import ExpenseTypeEnum
+from db.models.org.department import Department
 
 
 class Expense(Base, UUIDMixing, TimestampMixin):
@@ -33,6 +34,9 @@ class Expense(Base, UUIDMixing, TimestampMixin):
     )
     repair_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("repairs.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    department_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("departments.id", ondelete="SET NULL"), nullable=True, index=True
     )
     region_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("regions.id", ondelete="SET NULL"), nullable=True, index=True
@@ -51,6 +55,8 @@ class Expense(Base, UUIDMixing, TimestampMixin):
     amount: Mapped[float] = mapped_column(
         Numeric(18, 2), nullable=False
     )  # Must be positive
+
+    department: Mapped[Department | None] = relationship("Department", lazy="selectin")
     currency: Mapped[str] = mapped_column(String(10), default="UZS")
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     file_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)

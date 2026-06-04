@@ -1,4 +1,3 @@
-
 from schemas.base import BaseResponseSchema
 
 
@@ -7,10 +6,12 @@ class UtilizationEmployeeSchema(BaseResponseSchema):
     user_name: str
     asset_count: int
 
+
 class UtilizationServiceSchema(BaseResponseSchema):
     service_id: str
     service_name: str
     asset_count: int
+
 
 class UtilizationRegionLoadSchema(BaseResponseSchema):
     region_id: str
@@ -18,6 +19,7 @@ class UtilizationRegionLoadSchema(BaseResponseSchema):
     asset_count: int
     employee_count: int
     load_ratio: float
+
 
 class UtilizationAnalyticsDataSchema(BaseResponseSchema):
     assets_per_employee: list[UtilizationEmployeeSchema]

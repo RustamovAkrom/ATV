@@ -16,12 +16,14 @@ class AssetImageCreateSchema(BaseRequestSchema):
     height: int | None = Field(None, ge=1)
     alt_text: str | None = Field(None, max_length=255)
 
+
 class AssetImageUpdateSchema(BaseRequestSchema):
     """Обновление изображения актива"""
 
     is_primary: bool | None = None
     sort_order: int | None = Field(None, ge=0)
     alt_text: str | None = Field(None, max_length=255)
+
 
 class AssetImageOutSchema(TimestampSchema):
     """Вывод изображения актива"""

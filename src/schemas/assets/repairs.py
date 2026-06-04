@@ -13,8 +13,10 @@ class RepairPartCreate(BaseRequestSchema):
     quantity: int = Field(ge=1)
     unit_price: Decimal = Field(ge=0)
 
+
 class RepairReportRequest(BaseRequestSchema):
     description: str | None = Field(default=None, max_length=500)
+
 
 class RepairStartRequest(BaseRequestSchema):
     assigned_to_id: UUID | None = None
@@ -22,18 +24,22 @@ class RepairStartRequest(BaseRequestSchema):
     labor_cost: Decimal | None = Field(default=None, ge=0)
     parts: list[RepairPartCreate] = Field(default_factory=list)
 
+
 class RepairCompleteRequest(BaseRequestSchema):
     labor_cost: Decimal | None = Field(default=None, ge=0)
     parts: list[RepairPartCreate] = Field(default_factory=list)
 
+
 class RepairCancelRequest(BaseRequestSchema):
     reason: str | None = Field(default=None, max_length=500)
+
 
 class RepairPartSchema(BaseSchema):
     id: UUID
     part_name: str
     quantity: int
     unit_price: Decimal | None
+
 
 class RepairSchema(BaseSchema):
     id: UUID

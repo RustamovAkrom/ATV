@@ -22,9 +22,15 @@ router = APIRouter(prefix="/analytics/assets", tags=["Analytics - Assets"])
 settings = get_settings()
 
 
-def _filters(region_id, service_id, date_from, date_to) -> AnalyticsFilters:
+def _filters(
+    department_id, region_id, service_id, date_from, date_to
+) -> AnalyticsFilters:
     return AnalyticsFilters(
-        region_id=region_id, service_id=service_id, date_from=date_from, date_to=date_to
+        department_id=department_id,
+        region_id=region_id,
+        service_id=service_id,
+        date_from=date_from,
+        date_to=date_to,
     )
 
 
@@ -35,6 +41,7 @@ def _filters(region_id, service_id, date_from, date_to) -> AnalyticsFilters:
 )
 @cached(ttl=300, tags=("analytics:assets:distribution",))
 async def get_distribution(
+    department_id: UUID | None = Query(None),
     region_id: UUID | None = Query(None),
     service_id: UUID | None = Query(None),
     date_from: date | None = Query(None),
@@ -42,7 +49,7 @@ async def get_distribution(
     current_user: CurrentUserSchema = Depends(get_current_user),
     service: AssetAnalyticsService = Depends(get_asset_analytics_service),
 ):
-    filters = _filters(region_id, service_id, date_from, date_to)
+    filters = _filters(department_id, region_id, service_id, date_from, date_to)
     return AnalyticsResponseSchema(
         data=await service.distribution(filters, current_user),
         meta=AnalyticsMetaSchema(generated_at=utc_now(), filters=filters),
@@ -56,6 +63,7 @@ async def get_distribution(
 )
 @cached(ttl=300, tags=("analytics:assets:lifecycle",))
 async def get_lifecycle(
+    department_id: UUID | None = Query(None),
     region_id: UUID | None = Query(None),
     service_id: UUID | None = Query(None),
     date_from: date | None = Query(None),
@@ -63,7 +71,7 @@ async def get_lifecycle(
     current_user: CurrentUserSchema = Depends(get_current_user),
     service: AssetAnalyticsService = Depends(get_asset_analytics_service),
 ):
-    filters = _filters(region_id, service_id, date_from, date_to)
+    filters = _filters(department_id, region_id, service_id, date_from, date_to)
     return AnalyticsResponseSchema(
         data=await service.lifecycle(filters, current_user),
         meta=AnalyticsMetaSchema(generated_at=utc_now(), filters=filters),
@@ -77,6 +85,7 @@ async def get_lifecycle(
 )
 @cached(ttl=300, tags=("analytics:assets:overview",))
 async def get_assets_overview(
+    department_id: UUID | None = Query(None),
     region_id: UUID | None = Query(None),
     service_id: UUID | None = Query(None),
     date_from: date | None = Query(None),
@@ -84,7 +93,7 @@ async def get_assets_overview(
     current_user: CurrentUserSchema = Depends(get_current_user),
     service: ReportService = Depends(get_report_service),
 ):
-    filters = _filters(region_id, service_id, date_from, date_to)
+    filters = _filters(department_id, region_id, service_id, date_from, date_to)
     return AnalyticsResponseSchema(
         data=await service.overview(filters, current_user),
         meta=AnalyticsMetaSchema(generated_at=utc_now(), filters=filters),

@@ -70,6 +70,7 @@ async def get_current_user(
         id=UUID(str(user.id)),
         role=role,
         permissions=permissions,
+        assigned_department_id=user.department_id,
         assigned_region_id=user.assigned_region_id,
         assigned_service_id=user.assigned_service_id,
     )

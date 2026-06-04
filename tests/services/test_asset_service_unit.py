@@ -37,6 +37,7 @@ class _FakeEvents:
 class _FakeRepo:
     def __init__(self):
         self.asset_id = uuid4()
+        self.department_id = uuid4()
         self.region_id = uuid4()
         self.service_id = uuid4()
         self.owner_id = uuid4()
@@ -45,6 +46,7 @@ class _FakeRepo:
             name="Asset",
             model_id=uuid4(),
             class_id=uuid4(),
+            department_id=self.department_id,
             region_id=self.region_id,
             service_id=self.service_id,
             owner_id=None,

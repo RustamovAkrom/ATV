@@ -12,6 +12,7 @@ AssetRef = NamedRefSchema
 RegionRef = NamedRefSchema
 ServiceRef = NamedRefSchema
 
+
 class ExpenseCreateSchema(BaseRequestSchema):
     amount: float = Field(..., gt=0, le=1e12, description="Amount must be positive")
     currency: str = Field("UZS", min_length=3, max_length=10, pattern=r"^[A-Z]{3}$")
@@ -19,10 +20,12 @@ class ExpenseCreateSchema(BaseRequestSchema):
     description: str | None = Field(None, max_length=1000)
     asset_id: UUID | None = None
     repair_id: UUID | None = None
+    department_id: UUID | None = None
     region_id: UUID | None = None
     service_id: UUID | None = None
     occurred_at: datetime | None = None
     file_url: str | None = Field(None, max_length=2048)
+
 
 class ExpenseUpdateSchema(BaseRequestSchema):
     amount: float | None = Field(None, gt=0)
@@ -30,6 +33,7 @@ class ExpenseUpdateSchema(BaseRequestSchema):
     expense_type: ExpenseTypeEnum | None = None
     description: str | None = Field(None, max_length=1000)
     file_url: str | None = Field(None, max_length=2048)
+
 
 class ExpenseOutSchema(BaseSchema):
     id: UUID
@@ -40,6 +44,7 @@ class ExpenseOutSchema(BaseSchema):
     file_url: str | None
     asset: AssetRef | None = None
     repair_id: UUID | None = None
+    department_id: UUID | None = None
     region: RegionRef | None = None
     service: ServiceRef | None = None
     created_by_id: UUID | None = None
@@ -47,6 +52,7 @@ class ExpenseOutSchema(BaseSchema):
     occurred_at: datetime
     created_at: datetime
     updated_at: datetime
+
 
 class ExpensePageSchema(BaseSchema):
     """Paginated expenses response."""
@@ -57,6 +63,7 @@ class ExpensePageSchema(BaseSchema):
     items: list[ExpenseOutSchema]
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class ExpenseStatsSchema(BaseSchema):
     """Statistics about expenses."""

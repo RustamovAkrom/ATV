@@ -29,6 +29,7 @@ router = APIRouter(prefix="/warehouses", tags=["Warehouses"])
 @cached(tags=("warehouse:list",))
 async def list_warehouses(
     pagination: PaginationParamsSchema = Depends(),
+    department_id: UUID | None = Query(None),
     region_id: UUID | None = Query(None),
     service_id: UUID | None = Query(None),
     is_active: bool | None = Query(None),
@@ -38,6 +39,7 @@ async def list_warehouses(
     """Warehouse list with pagination and filtering"""
     items, total = await service.list_warehouses(
         pagination=pagination,
+        department_id=department_id,
         region_id=region_id,
         service_id=service_id,
         is_active=is_active,

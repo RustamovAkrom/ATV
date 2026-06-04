@@ -41,16 +41,20 @@ class AuditBaseSchema(BaseSchema):
         value = value.strip()
         return value or None
 
+
 class AuditCreateSchema(AuditBaseSchema):
     model_config = BaseRequestSchema.model_config
+
 
 class AuditSchema(AuditBaseSchema):
     id: uuid.UUID
     created_at: datetime
 
+
 class AuditStreamSchema(AuditBaseSchema):
     level: str
     timestamp: float
+
 
 class AuditFiltersSchema(BaseRequestSchema):
     user_id: uuid.UUID | None = None
@@ -79,6 +83,7 @@ class AuditFiltersSchema(BaseRequestSchema):
             return None
         value = value.strip()
         return value
+
 
 class AuditStatsSchema(BaseSchema):
     total: int

@@ -22,10 +22,12 @@ class ServiceBaseSchema(BaseRequestSchema):
             raise ValueError("Service name cannot be empty")
         return cleaned
 
+
 class ServiceCreateSchema(ServiceBaseSchema):
     """Схема для создания сервиса"""
 
     pass
+
 
 class ServiceUpdateSchema(BaseRequestSchema):
     """Схема для обновления сервиса"""
@@ -49,6 +51,7 @@ class ServiceUpdateSchema(BaseRequestSchema):
             return cleaned
         return v
 
+
 class ServiceOutSchema(TimestampSchema):
     """Схема для вывода сервиса"""
 
@@ -57,6 +60,7 @@ class ServiceOutSchema(TimestampSchema):
     slug: str | None  # <-- исправлено: может быть None при создании?
     description: str | None
     region_ids: list[UUID] | None = Field(None, description="IDs of attached regions")
+
 
 class ServiceWithRegionsOutSchema(ServiceOutSchema):
     """Schema for service output with regions"""
