@@ -8,7 +8,7 @@ from db.models.enums import DocumentStatus
 from schemas.base import BaseRequestSchema, BaseSchema, TimestampSchema
 
 settings = get_settings()
-
+STORAGE_URL = settings.BACKEND_DOMAIN + "/storage"
 
 class DocumentFileCreateSchema(BaseRequestSchema):
     """Схема для создания файла документа"""
@@ -33,7 +33,7 @@ class DocumentFileOutSchema(BaseSchema):
     def model_post_init(self, __context):
         """Вычисляем URL после инициализации модели"""
         if self.file_path:
-            self.url = f"{settings.BACKEND_DOMAIN + settings.STORAGE_URL}/{self.file_path}"
+            self.url = f"{STORAGE_URL}/{self.file_path}"
 
 
 class AssetDocumentCreateSchema(BaseRequestSchema):

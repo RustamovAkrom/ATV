@@ -1,7 +1,8 @@
 from core.admin.base import BaseAdmin
+from db.models.org.department import Department
 from db.models.org.region import Region
 from db.models.org.service import Service
-from db.models.org.department import Department
+
 
 class DepartmentAdmin(BaseAdmin, model=Department):
     name = "Department"

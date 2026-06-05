@@ -24,7 +24,7 @@ from core.admin.views.assets.misc import (
     RefreshTokenAdmin,
     SystemConfigAdmin,
 )
-from core.admin.views.assets.org import RegionAdmin, ServiceAdmin, DepartmentAdmin
+from core.admin.views.assets.org import DepartmentAdmin, RegionAdmin, ServiceAdmin
 from core.admin.views.assets.repairs import RepairAdmin, RepairPartAdmin
 from core.admin.views.users import PermissionAdmin, RoleAdmin, UserAdmin
 from core.config import Settings
