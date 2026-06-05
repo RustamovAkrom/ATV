@@ -3,10 +3,10 @@ from uuid import UUID
 
 from pydantic import Field, field_validator
 
-from schemas.base import BaseSchema, TimestampSchema
+from schemas.base import BaseRequestSchema, TimestampSchema
 
 
-class ServiceBaseSchema(BaseSchema):
+class ServiceBaseSchema(BaseRequestSchema):
     name: str = Field(min_length=2, max_length=255, description="Service name")
     description: str | None = Field(
         None, max_length=500, description="Service description"
@@ -29,7 +29,7 @@ class ServiceCreateSchema(ServiceBaseSchema):
     pass
 
 
-class ServiceUpdateSchema(BaseSchema):
+class ServiceUpdateSchema(BaseRequestSchema):
     """Схема для обновления сервиса"""
 
     name: str | None = Field(

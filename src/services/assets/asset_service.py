@@ -22,6 +22,7 @@ from schemas.assets.assets import (
 )
 from schemas.auth.auth import CurrentUserSchema
 from schemas.pagination import PageOutSchema, PaginationParamsSchema
+from utils.department import normalize_department_scope
 from utils.helpers import utc_now
 
 
@@ -32,7 +33,11 @@ class AssetService:
             AssetStatus.IN_REPAIR,
             AssetStatus.ARCHIVED,
         },
-        AssetStatus.ASSIGNED: {AssetStatus.ACTIVE, AssetStatus.IN_REPAIR},
+        AssetStatus.ASSIGNED: {
+            AssetStatus.ACTIVE,
+            AssetStatus.IN_REPAIR,
+            AssetStatus.ARCHIVED,
+        },
         AssetStatus.IN_REPAIR: {AssetStatus.ACTIVE, AssetStatus.ARCHIVED},
         AssetStatus.ARCHIVED: set(),
     }
@@ -52,11 +57,16 @@ class AssetService:
         actor: CurrentUserSchema,
     ) -> PageOutSchema[AssetSchema]:
 
-        if actor.assigned_region_id:
-            filters.region_id = actor.assigned_region_id
-
-        if actor.assigned_service_id:
-            filters.service_id = actor.assigned_service_id
+        (
+            filters.department_id,
+            filters.region_id,
+            filters.service_id,
+        ) = AccessControl.normalize_scope_filters(
+            actor,
+            filters.department_id,
+            filters.region_id,
+            filters.service_id,
+        )
 
         items, total = await self.asset_repo.list(filters, pagination)
 
@@ -79,8 +89,12 @@ class AssetService:
         if not asset:
             raise NotFound("Asset not found")
 
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(asset, "department_id", None),
+            getattr(asset, "region_id", None),
+            getattr(asset, "service_id", None),
+        )
 
         return self._to_detail_schema(asset)
 
@@ -91,8 +105,12 @@ class AssetService:
         if not asset:
             raise NotFound("Asset not found")
 
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(asset, "department_id", None),
+            getattr(asset, "region_id", None),
+            getattr(asset, "service_id", None),
+        )
 
         history: list[AssetHistorySchema] = []
         for entry in asset.history_entries:
@@ -129,10 +147,21 @@ class AssetService:
     async def create(
         self, data: AssetCreate, actor: CurrentUserSchema
     ) -> AssetDetailSchema:
-        AccessControl.check_region_access(actor, data.region_id)
-        AccessControl.check_service_access(actor, data.service_id)
-
         owner_id = actor.id if data.assign_to_self else None
+        payload = data.model_dump(exclude_unset=True)
+        payload = await normalize_department_scope(
+            getattr(self.asset_repo, "session", None), payload
+        )
+
+        region_id = payload.get("region_id")
+        service_id = payload.get("service_id")
+
+        AccessControl.check_scope_access(
+            actor,
+            payload.get("department_id"),
+            region_id,
+            service_id,
+        )
 
         if owner_id:
             owner = await self.asset_repo.get_user(owner_id)
@@ -144,21 +173,21 @@ class AssetService:
 
             if (
                 owner.assigned_region_id
-                and data.region_id
-                and owner.assigned_region_id != data.region_id
+                and region_id
+                and owner.assigned_region_id != region_id
             ):
                 raise BadRequest(
                     f"Owner is assigned to region {owner.assigned_region_id}, "
-                    f"but asset belongs to region {data.region_id}"
+                    f"but asset belongs to region {region_id}"
                 )
             if (
                 owner.assigned_service_id
-                and data.service_id
-                and owner.assigned_service_id != data.service_id
+                and service_id
+                and owner.assigned_service_id != service_id
             ):
                 raise BadRequest(
                     f"Owner is assigned to service {owner.assigned_service_id}, "
-                    f"but asset belongs to service {data.service_id}"
+                    f"but asset belongs to service {service_id}"
                 )
 
         if data.class_id is not None and not await self.asset_repo.get_asset_class(
@@ -166,16 +195,16 @@ class AssetService:
         ):
             raise BadRequest("Invalid asset class")
 
-        # Create the asset object
         asset = Asset(
             name=data.name,
             model_id=data.model_id,
             serial_number=data.serial_number,
-            status=AssetStatus.ACTIVE,
-            class_id=data.class_id,
-            service_id=data.service_id,
-            region_id=data.region_id,
             owner_id=owner_id,
+            status=AssetStatus.ASSIGNED if owner_id else AssetStatus.ACTIVE,
+            department_id=payload.get("department_id"),
+            class_id=data.class_id,
+            service_id=service_id,
+            region_id=region_id,
             commission_date=data.commission_date,
             warranty_end=data.warranty_end,
             condition_percent=data.condition_percent,
@@ -190,6 +219,13 @@ class AssetService:
         created = await self.asset_repo.create(asset)
         asset = created or asset
 
+        await self.asset_events.created(
+            asset_id=asset.id,
+            actor_id=actor.id,
+            user_id=owner_id,
+            asset_name=asset.name,
+            status=asset.status,
+        )
         return self._to_detail_schema(asset)
 
     async def update(
@@ -199,8 +235,12 @@ class AssetService:
         if not asset:
             raise NotFound("Asset not found")
 
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(asset, "department_id", None),
+            getattr(asset, "region_id", None),
+            getattr(asset, "service_id", None),
+        )
 
         payload = data.model_dump(exclude_unset=True)
         if not payload:
@@ -212,10 +252,19 @@ class AssetService:
         await self._validate_update_references(payload)
         await self._validate_uniques(payload.get("serial_number"), exclude_id=asset_id)
 
+        if "department_id" in payload:
+            payload = await normalize_department_scope(
+                getattr(self.asset_repo, "session", None), payload
+            )
+
         next_region_id = payload.get("region_id", asset.region_id)
         next_service_id = payload.get("service_id", asset.service_id)
-        AccessControl.check_region_access(actor, next_region_id)
-        AccessControl.check_service_access(actor, next_service_id)
+        AccessControl.check_scope_access(
+            actor,
+            payload.get("department_id", asset.department_id),
+            next_region_id,
+            next_service_id,
+        )
 
         owner_id = payload.get("owner_id")
         if owner_id is not None:
@@ -251,8 +300,12 @@ class AssetService:
         if not asset:
             raise NotFound("Asset not found")
 
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(asset, "department_id", None),
+            getattr(asset, "region_id", None),
+            getattr(asset, "service_id", None),
+        )
 
         if asset.status != AssetStatus.ARCHIVED:
             raise BadRequest("Only archived assets can be deleted")
@@ -277,8 +330,12 @@ class AssetService:
         if not asset:
             raise NotFound("Asset not found")
 
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(asset, "department_id", None),
+            getattr(asset, "region_id", None),
+            getattr(asset, "service_id", None),
+        )
 
         old_status = AssetStatus(asset.status)
         new_status = AssetStatus(data.status)
@@ -286,6 +343,16 @@ class AssetService:
             return await self.get(asset_id, actor)
 
         self._validate_status_change(asset, new_status)
+        previous_owner_id = asset.owner_id
+
+        if new_status == AssetStatus.ARCHIVED and asset.owner_id is not None:
+            active_assignment = await self.asset_repo.get_active_assignment(asset.id)
+            if active_assignment:
+                await self.asset_repo.close_active_assignment(
+                    active_assignment, utc_now()
+                )
+            asset.owner_id = None
+
         asset.status = new_status
 
         await self.asset_repo.flush()
@@ -294,7 +361,7 @@ class AssetService:
         await self.asset_events.status_changed(
             asset_id=asset.id,
             actor_id=actor.id,
-            owner_id=asset.owner_id,
+            owner_id=previous_owner_id,
             from_status=old_status.value,
             to_status=new_status.value,
         )
@@ -350,6 +417,12 @@ class AssetService:
         ):
             raise BadRequest("Invalid service")
         if (
+            "department_id" in payload
+            and payload["department_id"] is not None
+            and not await self.asset_repo.get_department(payload["department_id"])
+        ):
+            raise BadRequest("Invalid department")
+        if (
             "class_id" in payload
             and payload["class_id"] is not None
             and not await self.asset_repo.get_asset_class(payload["class_id"])
@@ -380,8 +453,6 @@ class AssetService:
             raise BadRequest(
                 "Assigned asset cannot be moved to active without reassignment handling"
             )
-        if new_status == AssetStatus.ARCHIVED and asset.owner_id is not None:
-            raise BadRequest("Cannot archive assigned asset")
 
     @staticmethod
     def _clean_optional(value):
@@ -417,6 +488,10 @@ class AssetService:
         if region is None and getattr(item, "region_id", None):
             region = SimpleNamespace(id=item.region_id, name="")
 
+        department = getattr(item, "department", None)
+        if department is None and getattr(item, "department_id", None):
+            department = SimpleNamespace(id=item.department_id, name="")
+
         service = getattr(item, "service", None)
         if service is None and getattr(item, "service_id", None):
             service = SimpleNamespace(id=item.service_id, name="")
@@ -433,6 +508,7 @@ class AssetService:
             "model": model,
             "asset_class": asset_class,
             "owner": owner,
+            "department": department,
             "region": region,
             "service": service,
             "warehouse": getattr(item, "warehouse", None),

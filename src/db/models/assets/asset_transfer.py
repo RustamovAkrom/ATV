@@ -12,6 +12,7 @@ from db.models.enums import TransferStatus
 
 if TYPE_CHECKING:
     from db.models.assets.asset import Asset
+    from db.models.org.department import Department
     from db.models.org.service import Service
     from db.models.users.user import User
     from db.models.warehouse.warehouse import Warehouse
@@ -38,6 +39,9 @@ class AssetTransfer(Base, UUIDMixing, TimestampMixin):
     from_warehouse_id: Mapped[UUID | None] = mapped_column(ForeignKey("warehouses.id"))
     to_warehouse_id: Mapped[UUID | None] = mapped_column(ForeignKey("warehouses.id"))
 
+    department_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("departments.id", ondelete="SET NULL"), nullable=True
+    )
     from_service_id: Mapped[UUID | None] = mapped_column(ForeignKey("services.id"))
     to_service_id: Mapped[UUID | None] = mapped_column(ForeignKey("services.id"))
 
@@ -57,6 +61,7 @@ class AssetTransfer(Base, UUIDMixing, TimestampMixin):
     to_warehouse: Mapped["Warehouse"] = relationship(
         "Warehouse", foreign_keys=[to_warehouse_id], lazy="selectin"
     )
+    department: Mapped["Department"] = relationship("Department", lazy="selectin")
     from_service: Mapped["Service"] = relationship(
         "Service",
         foreign_keys=[from_service_id],

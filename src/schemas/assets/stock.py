@@ -2,10 +2,10 @@ from uuid import UUID
 
 from pydantic import Field
 
-from schemas.base import BaseSchema
+from schemas.base import BaseRequestSchema, BaseSchema
 
 
-class StockMovementCreateSchema(BaseSchema):
+class StockMovementCreateSchema(BaseRequestSchema):
     quantity: int = Field(gt=0, le=1_000_000)
     reference_type: str = Field(default="manual", max_length=50)
     reference_id: UUID | None = None

@@ -19,6 +19,23 @@ class ApprovalRepository(BaseRepository):
         await self.refresh(approval)
         return approval
 
+    async def get_pending_for(
+        self,
+        *,
+        entity_type: str,
+        entity_id: UUID,
+        action: str,
+    ) -> ApprovalRequest | None:
+        return await self.scalar(
+            select(ApprovalRequest).where(
+                ApprovalRequest.entity_type == entity_type,
+                ApprovalRequest.entity_id == entity_id,
+                ApprovalRequest.action == action,
+                ApprovalRequest.status == ApprovalStatus.PENDING,
+                ApprovalRequest.executed.is_(False),
+            )
+        )
+
     async def get_by_id(self, approval_id: UUID) -> ApprovalRequest | None:
         return await self.scalar(
             select(ApprovalRequest)

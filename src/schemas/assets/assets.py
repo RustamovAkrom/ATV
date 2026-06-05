@@ -6,7 +6,7 @@ from pydantic import Field
 
 from db.models.enums import AssetStatus
 from schemas.assets.asset_maintenance import AssetMaintenanceOutSchema
-from schemas.base import BaseSchema, TimestampSchema
+from schemas.base import BaseRequestSchema, BaseSchema, NamedRefSchema, TimestampSchema
 from schemas.pagination import PageOutSchema
 
 
@@ -30,6 +30,10 @@ class ServiceRef(BaseSchema):
     name: str
 
 
+class DepartmentRef(NamedRefSchema):
+    pass
+
+
 class WarehouseRef(BaseSchema):
     id: UUID
     name: str
@@ -50,11 +54,12 @@ class AssetHistorySchema(BaseSchema):
     user: UserRef
 
 
-class AssetCreate(BaseSchema):
+class AssetCreate(BaseRequestSchema):
     name: str = Field(min_length=1, max_length=255)
     model_id: UUID
 
     class_id: UUID | None = None
+    department_id: UUID | None = None
     region_id: UUID | None = None
     service_id: UUID | None = None
 
@@ -79,11 +84,12 @@ class AssetCreate(BaseSchema):
     )
 
 
-class AssetUpdate(BaseSchema):
+class AssetUpdate(BaseRequestSchema):
     name: str | None = Field(default=None, min_length=1, max_length=255)
 
     model_id: UUID | None = None
     class_id: UUID | None = None
+    department_id: UUID | None = None
 
     region_id: UUID | None = None
     service_id: UUID | None = None
@@ -101,16 +107,17 @@ class AssetUpdate(BaseSchema):
     metadata: dict | None = None
 
 
-class AssetAssignRequest(BaseSchema):
+class AssetAssignRequest(BaseRequestSchema):
     user_id: UUID
 
 
-class AssetStatusChangeRequest(BaseSchema):
+class AssetStatusChangeRequest(BaseRequestSchema):
     status: AssetStatus
 
 
-class AssetFilters(BaseSchema):
+class AssetFilters(BaseRequestSchema):
     owner_id: UUID | None = None
+    department_id: UUID | None = None
     region_id: UUID | None = None
     service_id: UUID | None = None
     class_id: UUID | None = None
@@ -127,13 +134,14 @@ class AssetSchema(TimestampSchema):
     id: UUID
     name: str
     status: AssetStatus
-    serial_number: str | None
+    serial_number: str | None = None
     model: AssetRef
-    asset_class: AssetRef | None
-    owner: UserRef | None
-    region: RegionRef | None
-    service: ServiceRef | None
-    warehouse: WarehouseRef | None
+    asset_class: AssetRef | None = None
+    owner: UserRef | None = None
+    department: DepartmentRef | None = None
+    region: RegionRef | None = None
+    service: ServiceRef | None = None
+    warehouse: WarehouseRef | None = None
     assignments: list[AssetAssignmentSchema] = Field(default_factory=list)
     metadata: dict = Field(alias="meta")
     condition_percent: int

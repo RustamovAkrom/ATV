@@ -1,7 +1,7 @@
 from enum import StrEnum
 from uuid import UUID
 
-from pydantic import BaseModel
+from schemas.base import BaseResponseSchema
 
 
 class TopMetric(StrEnum):
@@ -10,7 +10,7 @@ class TopMetric(StrEnum):
     REPAIRS = "repairs"
 
 
-class TopAssetAnalyticsOut(BaseModel):
+class TopAssetAnalyticsOut(BaseResponseSchema):
     asset_id: UUID
     asset_name: str
     assignment_count: int
@@ -20,7 +20,7 @@ class TopAssetAnalyticsOut(BaseModel):
     primary_value: int
 
 
-class TopUserAnalyticsOut(BaseModel):
+class TopUserAnalyticsOut(BaseResponseSchema):
     user_id: UUID
     user_name: str
     email: str
@@ -31,7 +31,7 @@ class TopUserAnalyticsOut(BaseModel):
     primary_value: int
 
 
-class TopServiceAnalyticsOut(BaseModel):
+class TopServiceAnalyticsOut(BaseResponseSchema):
     service_id: UUID
     service_name: str
     assignment_count: int

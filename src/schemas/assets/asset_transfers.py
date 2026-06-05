@@ -4,10 +4,10 @@ from uuid import UUID
 from pydantic import Field, model_validator
 
 from db.models.enums import TransferStatus
-from schemas.base import BaseSchema
+from schemas.base import BaseRequestSchema, BaseSchema
 
 
-class AssetTransferCreate(BaseSchema):
+class AssetTransferCreate(BaseRequestSchema):
     from_warehouse_id: UUID | None = Field(None, description="Source warehouse")
     to_warehouse_id: UUID | None = None
     to_service_id: UUID | None = None
@@ -23,7 +23,7 @@ class AssetTransferCreate(BaseSchema):
         return self
 
 
-class AssetTransferDecision(BaseSchema):
+class AssetTransferDecision(BaseRequestSchema):
     comment: str | None = Field(default=None, max_length=255)
 
 
@@ -32,6 +32,7 @@ class AssetTransferSchema(BaseSchema):
     asset_id: UUID
     created_by_id: UUID
     received_by_id: UUID | None
+    department_id: UUID | None
     status: TransferStatus
     from_warehouse_id: UUID | None
     to_warehouse_id: UUID | None

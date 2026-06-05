@@ -6,10 +6,11 @@ from uuid import UUID
 
 from pydantic import Field
 
-from schemas.base import BaseSchema
+from schemas.base import BaseRequestSchema, BaseSchema
 
 
-class AnalyticsFilters(BaseSchema):
+class AnalyticsFilters(BaseRequestSchema):
+    department_id: UUID | None = None
     region_id: UUID | None = None
     service_id: UUID | None = None
     date_from: date | None = None

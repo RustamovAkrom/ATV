@@ -30,8 +30,12 @@ class AssetTransferService:
         if not asset:
             raise NotFound("Asset not found")
 
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(asset, "department_id", None),
+            getattr(asset, "region_id", None),
+            getattr(asset, "service_id", None),
+        )
 
         active_assignments = await self.repo.get_active_assignments(asset_id)
         if active_assignments:
@@ -63,10 +67,11 @@ class AssetTransferService:
         transfer = AssetTransfer(
             asset_id=asset.id,
             created_by_id=requested_by_id or actor.id,
+            department_id=getattr(asset, "department_id", None),
             status=TransferStatus.PENDING,
             from_warehouse_id=asset.current_warehouse_id,
             to_warehouse_id=data.to_warehouse_id,
-            from_service_id=asset.service_id,
+            from_service_id=getattr(asset, "service_id", None),
             to_service_id=data.to_service_id,
             comment=(data.comment or "").strip() or None,
         )
@@ -92,8 +97,12 @@ class AssetTransferService:
         if not asset:
             raise NotFound("Asset not found")
 
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(asset, "department_id", None),
+            getattr(asset, "region_id", None),
+            getattr(asset, "service_id", None),
+        )
 
         transfer = await self.repo.get_transfer_for_update(transfer_id)
         if not transfer or transfer.asset_id != asset.id:
@@ -147,8 +156,12 @@ class AssetTransferService:
         if not asset:
             raise NotFound("Asset not found")
 
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(asset, "department_id", None),
+            getattr(asset, "region_id", None),
+            getattr(asset, "service_id", None),
+        )
 
         transfer = await self.repo.get_transfer_for_update(transfer_id)
         if not transfer or transfer.asset_id != asset.id:

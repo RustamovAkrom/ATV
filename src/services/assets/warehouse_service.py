@@ -20,6 +20,7 @@ from schemas.assets.warehouses import (
 )
 from schemas.auth.auth import CurrentUserSchema
 from schemas.pagination import PaginationParamsSchema
+from utils.department import normalize_department_scope
 
 
 class WarehouseService:
@@ -40,6 +41,7 @@ class WarehouseService:
     async def list_warehouses(
         self,
         pagination: PaginationParamsSchema,
+        department_id: UUID | None = None,
         region_id: UUID | None = None,
         service_id: UUID | None = None,
         is_active: bool | None = None,
@@ -68,7 +70,12 @@ class WarehouseService:
         return self._to_details_schema(warehouse, assets_count)
 
     async def create_warehouse(self, data: WarehouseCreateSchema) -> WarehouseOutSchema:
-        warehouse = await self.repo.create(data.model_dump(exclude_unset=True))
+        payload = data.model_dump(exclude_unset=True)
+        payload = await normalize_department_scope(
+            getattr(self.asset_repo, "session", None), payload
+        )
+
+        warehouse = await self.repo.create(payload)
         return self._to_out_schema(warehouse)
 
     async def update_warehouse(
@@ -84,6 +91,11 @@ class WarehouseService:
             data = WarehouseUpdateSchema(**data)
 
         update_data = data.model_dump(exclude_unset=True)
+        if update_data.get("department_id") is not None:
+            update_data = await normalize_department_scope(
+                getattr(self.asset_repo, "session", None), update_data
+            )
+
         updated = await self.repo.update(warehouse_id, update_data)
         if updated is None:
             raise NotFound(f"Warehouse {warehouse_id} not found")
@@ -109,8 +121,13 @@ class WarehouseService:
         asset = await self.asset_repo.get_by_id(asset_id)
         if not asset:
             raise NotFound("Asset not found")
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+
+        AccessControl.check_scope_access(
+            actor,
+            asset.department_id,
+            asset.region_id,
+            asset.service_id,
+        )
 
         warehouse = await self.repo.get(data.warehouse_id)
         if not warehouse:
@@ -118,6 +135,15 @@ class WarehouseService:
 
         if not warehouse.is_active:
             raise BadRequest("Warehouse is inactive")
+
+        if (
+            asset.department_id is not None
+            and warehouse.department_id is not None
+            and asset.department_id != warehouse.department_id
+        ):
+            raise BadRequest(
+                "Warehouse department is incompatible with asset department"
+            )
 
         if asset.region_id is not None and asset.region_id != warehouse.region_id:
             raise BadRequest("Warehouse region is incompatible with asset region")
@@ -150,15 +176,20 @@ class WarehouseService:
             id=self._to_uuid(warehouse.id),
             name=warehouse.name,
             slug=getattr(warehouse, "slug", None),
-            region_id=self._to_uuid(warehouse.region_id),
+            region_id=self._to_uuid(getattr(warehouse, "region_id", None)),
+            department_id=(
+                self._to_uuid(getattr(warehouse, "department_id", None))
+                if getattr(warehouse, "department_id", None) is not None
+                else None
+            ),
             service_id=(
-                self._to_uuid(warehouse.service_id)
-                if warehouse.service_id is not None
+                self._to_uuid(getattr(warehouse, "service_id", None))
+                if getattr(warehouse, "service_id", None) is not None
                 else None
             ),
             manager_user_id=(
-                self._to_uuid(warehouse.manager_user_id)
-                if warehouse.manager_user_id is not None
+                self._to_uuid(getattr(warehouse, "manager_user_id", None))
+                if getattr(warehouse, "manager_user_id", None) is not None
                 else None
             ),
             is_active=getattr(warehouse, "is_active", True),
@@ -178,15 +209,20 @@ class WarehouseService:
             id=self._to_uuid(warehouse.id),
             name=warehouse.name,
             slug=getattr(warehouse, "slug", None),
-            region_id=self._to_uuid(warehouse.region_id),
+            region_id=self._to_uuid(getattr(warehouse, "region_id", None)),
+            department_id=(
+                self._to_uuid(getattr(warehouse, "department_id", None))
+                if getattr(warehouse, "department_id", None) is not None
+                else None
+            ),
             service_id=(
-                self._to_uuid(warehouse.service_id)
-                if warehouse.service_id is not None
+                self._to_uuid(getattr(warehouse, "service_id", None))
+                if getattr(warehouse, "service_id", None) is not None
                 else None
             ),
             manager_user_id=(
-                self._to_uuid(warehouse.manager_user_id)
-                if warehouse.manager_user_id is not None
+                self._to_uuid(getattr(warehouse, "manager_user_id", None))
+                if getattr(warehouse, "manager_user_id", None) is not None
                 else None
             ),
             is_active=getattr(warehouse, "is_active", True),
@@ -211,6 +247,7 @@ class WarehouseService:
         data = WarehouseCreateSchema(
             name=name,
             region_id=region_id,
+            department_id=None,
             service_id=service_id,
             manager_user_id=manager_user_id,
             is_active=is_active,

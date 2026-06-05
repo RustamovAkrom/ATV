@@ -5,7 +5,7 @@ from datetime import datetime
 
 from pydantic import Field, field_validator
 
-from schemas.base import BaseSchema
+from schemas.base import BaseRequestSchema, BaseSchema
 
 
 # =========================
@@ -43,7 +43,7 @@ class AuditBaseSchema(BaseSchema):
 
 
 class AuditCreateSchema(AuditBaseSchema):
-    pass
+    model_config = BaseRequestSchema.model_config
 
 
 class AuditSchema(AuditBaseSchema):
@@ -56,7 +56,7 @@ class AuditStreamSchema(AuditBaseSchema):
     timestamp: float
 
 
-class AuditFiltersSchema(BaseSchema):
+class AuditFiltersSchema(BaseRequestSchema):
     user_id: uuid.UUID | None = None
     request_id: str | None = Field(default=None, max_length=128)
     method: str | None = Field(default=None, max_length=16)

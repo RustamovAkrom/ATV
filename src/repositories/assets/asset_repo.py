@@ -10,6 +10,7 @@ from db.models.assets.asset_assignment import AssetAssignment
 from db.models.assets.asset_class import AssetClass
 from db.models.assets.asset_history import AssetHistory
 from db.models.assets.asset_model import AssetModel
+from db.models.org.department import Department
 from db.models.org.region import Region
 from db.models.org.service import Service
 from db.models.users.permission import Role
@@ -28,6 +29,7 @@ class AssetRepository(BaseRepository):
             selectinload(Asset.model),
             selectinload(Asset.asset_class),
             selectinload(Asset.owner),
+            selectinload(Asset.department),
             selectinload(Asset.region),
             selectinload(Asset.service),
             selectinload(Asset.warehouse),
@@ -93,6 +95,9 @@ class AssetRepository(BaseRepository):
     def _apply_filters(self, query, filters: AssetFilters):
         if filters.owner_id is not None:
             query = query.where(Asset.owner_id == filters.owner_id)
+
+        if filters.department_id is not None:
+            query = query.where(Asset.department_id == filters.department_id)
 
         if filters.region_id is not None:
             query = query.where(Asset.region_id == filters.region_id)
@@ -164,6 +169,9 @@ class AssetRepository(BaseRepository):
 
     async def get_service(self, service_id: UUID) -> Service | None:
         return await self.session.get(Service, service_id)
+
+    async def get_department(self, department_id: UUID) -> Department | None:
+        return await self.session.get(Department, department_id)
 
     async def get_user(self, user_id: UUID) -> User | None:
         return await self.scalar(

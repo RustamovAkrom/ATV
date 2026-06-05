@@ -2,14 +2,15 @@ from uuid import UUID
 
 from pydantic import Field, field_validator
 
-from schemas.base import BaseSchema, TimestampSchema
+from schemas.base import BaseRequestSchema, TimestampSchema
 
 
-class WarehouseBaseSchema(BaseSchema):
+class WarehouseBaseSchema(BaseRequestSchema):
     """Базовые поля склада"""
 
     name: str = Field(min_length=2, max_length=150, description="Название склада")
     region_id: UUID = Field(..., description="ID региона")
+    department_id: UUID | None = Field(None, description="ID отдела")
     service_id: UUID | None = Field(None, description="ID сервиса")
     manager_user_id: UUID | None = Field(
         None, description="ID ответственного пользователя"
@@ -31,11 +32,12 @@ class WarehouseCreateSchema(WarehouseBaseSchema):
     slug: str | None = None
 
 
-class WarehouseUpdateSchema(BaseSchema):
+class WarehouseUpdateSchema(BaseRequestSchema):
     """Схема для обновления склада"""
 
     name: str | None = Field(None, min_length=2, max_length=150)
     region_id: UUID | None = None
+    department_id: UUID | None = None
     service_id: UUID | None = None
     manager_user_id: UUID | None = None
     is_active: bool | None = None
@@ -58,6 +60,7 @@ class WarehouseOutSchema(TimestampSchema):
     name: str
     slug: str | None
     region_id: UUID
+    department_id: UUID | None
     service_id: UUID | None
     manager_user_id: UUID | None
     is_active: bool
@@ -72,7 +75,7 @@ class WarehouseWithDetailsOutSchema(WarehouseOutSchema):
     manager_name: str | None = None
 
 
-class WarehouseMoveRequest(BaseSchema):
+class WarehouseMoveRequest(BaseRequestSchema):
     """Запрос на перемещение актива на склад"""
 
     warehouse_id: UUID = Field(..., description="ID целевого склада")

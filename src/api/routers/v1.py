@@ -30,6 +30,7 @@ from api.v1.audit.audit_stream import router as audit_stream_router
 from api.v1.auth.auth import router as auth_router
 from api.v1.auth.sessions import router as sessions_router
 from api.v1.notifications import router as notifications_router
+from api.v1.organization.departments import router as departments_router
 from api.v1.organization.regions import router as regions_router
 from api.v1.organization.services import router as services_router
 from api.v1.rbac.rbac import router as rbac_router
@@ -78,6 +79,7 @@ router.include_router(asset_classes_router)
 # Organization Management
 router.include_router(regions_router)
 router.include_router(services_router)
+router.include_router(departments_router)
 
 # Financial Management
 router.include_router(expenses_router)

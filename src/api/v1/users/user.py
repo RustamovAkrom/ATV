@@ -32,6 +32,7 @@ from services.users.user_service import UserService
 
 router = APIRouter(prefix="/users", tags=["Users"])
 settings = get_settings()
+STORAGE_URL = settings.BACKEND_DOMAIN + settings.STORAGE_URL
 
 
 def _to_user_out(user: User) -> UserOutSchema:
@@ -49,7 +50,7 @@ def _to_user_out(user: User) -> UserOutSchema:
         created_at=user.created_at,
         updated_at=user.updated_at,
         position=getattr(user, "position", None),
-        department=getattr(user, "department", None),
+        department=getattr(getattr(user, "department", None), "name", None),
         employment_type=getattr(user, "employment_type", None),
         date_of_birth=getattr(user, "date_of_birth", None),
         gender=getattr(user, "gender", None),
@@ -61,8 +62,10 @@ def _to_user_out(user: User) -> UserOutSchema:
         language=getattr(user, "language", None),
         timezone=getattr(user, "timezone", None),
         last_login=getattr(user, "last_login", None),
+        assigned_department_id=getattr(user, "department_id", None),
         assigned_region_id=getattr(user, "assigned_region_id", None),
         assigned_service_id=getattr(user, "assigned_service_id", None),
+        department_id=getattr(user, "department_id", None),
     )
 
 
@@ -165,7 +168,7 @@ async def upload_avatar(
     if old_avatar_url:
         try:
             # Извлекаем путь из URL
-            old_path = old_avatar_url.replace(f"{settings.STORAGE_URL_PREFIX}/", "")
+            old_path = old_avatar_url.replace(f"{STORAGE_URL}/", "")
             await upload_service.delete(old_path)
         except Exception as e:
             # Логируем, но не прерываем выполнение
@@ -198,7 +201,7 @@ async def delete_avatar(
 
     # Удаляем файл
     try:
-        old_path = user.avatar_url.replace(f"{settings.STORAGE_URL_PREFIX}/", "")
+        old_path = user.avatar_url.replace(f"{STORAGE_URL}/", "")
         await upload_service.delete(old_path)
     except Exception as e:
         print(f"Failed to delete avatar file: {e}")
@@ -278,7 +281,7 @@ async def export_users(
                 user.first_name or "",
                 user.last_name or "",
                 user.position or "",
-                user.department or "",
+                getattr(user.department, "name", "") if user.department else "",
                 user.employment_type or "",
                 user.status or "",
                 user.role or "",

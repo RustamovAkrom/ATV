@@ -36,6 +36,13 @@ class BaseAnalyticsService:
             raise ValidationError("date_from cannot be greater than date_to")
 
         if (
+            user.assigned_department_id
+            and filters.department_id
+            and filters.department_id != user.assigned_department_id
+        ):
+            raise ValidationError("department_id is outside your scope")
+
+        if (
             user.assigned_region_id
             and filters.region_id
             and filters.region_id != user.assigned_region_id

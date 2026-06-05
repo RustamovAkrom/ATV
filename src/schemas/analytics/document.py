@@ -1,7 +1,7 @@
-from pydantic import BaseModel
+from schemas.base import BaseResponseSchema
 
 
-class DocumentAnalyticsDataSchema(BaseModel):
+class DocumentAnalyticsDataSchema(BaseResponseSchema):
     total_assets: int
     with_documents: int
     without_documents: int

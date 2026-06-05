@@ -5,12 +5,12 @@ from pydantic import Field, field_validator
 
 from core.config import get_settings
 from db.models.enums import DocumentStatus
-from schemas.base import BaseSchema, TimestampSchema
+from schemas.base import BaseRequestSchema, BaseSchema, TimestampSchema
 
 settings = get_settings()
+STORAGE_URL = settings.BACKEND_DOMAIN + "/storage"
 
-
-class DocumentFileCreateSchema(BaseSchema):
+class DocumentFileCreateSchema(BaseRequestSchema):
     """Схема для создания файла документа"""
 
     file_name: str = Field(min_length=1, max_length=255)
@@ -33,10 +33,10 @@ class DocumentFileOutSchema(BaseSchema):
     def model_post_init(self, __context):
         """Вычисляем URL после инициализации модели"""
         if self.file_path:
-            self.url = f"{settings.STORAGE_URL_PREFIX}/{self.file_path}"
+            self.url = f"{STORAGE_URL}/{self.file_path}"
 
 
-class AssetDocumentCreateSchema(BaseSchema):
+class AssetDocumentCreateSchema(BaseRequestSchema):
     """Схема для создания документа (JSON + файлы)"""
 
     title: str = Field(min_length=1, max_length=255)
@@ -46,7 +46,7 @@ class AssetDocumentCreateSchema(BaseSchema):
     metadata: dict = Field(default_factory=dict)
 
 
-class AssetDocumentUpdateSchema(BaseSchema):
+class AssetDocumentUpdateSchema(BaseRequestSchema):
     """Схема для обновления документа"""
 
     title: str | None = Field(None, min_length=1, max_length=255)

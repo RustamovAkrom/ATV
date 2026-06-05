@@ -5,11 +5,11 @@ from uuid import UUID
 from pydantic import Field, field_validator
 
 from db.models.enums import TransferStatus
-from schemas.base import BaseSchema
+from schemas.base import BaseRequestSchema, BaseSchema
 from utils.analytics.filter_utils import sanitize_search
 
 
-class AssetTransferFilterInput(BaseSchema):
+class AssetTransferFilterInput(BaseRequestSchema):
     """Filters for asset transfer analytics queries."""
 
     asset_id: UUID | None = None

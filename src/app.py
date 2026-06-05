@@ -31,7 +31,7 @@ RouteIDFunction = Callable[[APIRoute], str]
 
 
 # ROUTE ID GENERATOR
-def custom_generate_unique_id(route: APIRoute) -> str:
+def __custom_generate_unique_id(route: APIRoute) -> str:
     """Generate unique operation ID for OpenAPI."""
     tag = route.tags[0] if route.tags else "default"
     path = route.path.replace("/", "_").strip("_")
@@ -52,7 +52,7 @@ def create_app() -> FastAPI:
         docs_url=None,
         redoc_url=None,
         lifespan=lifespan,
-        generate_unique_id_function=custom_generate_unique_id,
+        generate_unique_id_function=__custom_generate_unique_id,
     )
 
     app.state.limiter = limiter
@@ -83,13 +83,21 @@ def configure_templates(app: FastAPI, settings: Settings) -> None:
 # STATIC FILES CONFIGURATION
 def configure_static(app: FastAPI, settings: Settings) -> None:
     """Configure static files serving."""
-    static_dir = settings.BASE_DIR / "static"
+    static_dir = settings.BASE_DIR / settings.STATIC_ROOT_DIR
     if static_dir.exists():
-        app.mount("/static", StaticFiles(directory=static_dir), name="static")
+        app.mount(
+            settings.STATIC_URL,
+            StaticFiles(directory=static_dir),
+            name=settings.STATIC_ROOT_DIR,
+        )
 
     storage_dir = settings.BASE_DIR / settings.STORAGE_ROOT_DIR
     if storage_dir.exists():
-        app.mount("/storage", StaticFiles(directory=storage_dir), name="storage")
+        app.mount(
+            settings.STORAGE_URL,
+            StaticFiles(directory=storage_dir),
+            name=settings.STORAGE_ROOT_DIR,
+        )
 
 
 # DOCS CONFIGURATION

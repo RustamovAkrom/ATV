@@ -2,10 +2,10 @@ from uuid import UUID
 
 from pydantic import Field
 
-from schemas.base import BaseSchema
+from schemas.base import BaseRequestSchema, BaseSchema
 
 
-class AssetModelCreateSchema(BaseSchema):
+class AssetModelCreateSchema(BaseRequestSchema):
     name: str
     manufacturer_id: UUID
     category_id: UUID

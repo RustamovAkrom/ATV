@@ -44,8 +44,12 @@ class AssetAssignmentService:
         if not asset:
             raise NotFound("Asset not found")
 
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(asset, "department_id", None),
+            getattr(asset, "region_id", None),
+            getattr(asset, "service_id", None),
+        )
 
         if asset.status == AssetStatus.ARCHIVED:
             raise BadRequest("Cannot assign archived asset")
@@ -107,8 +111,12 @@ class AssetAssignmentService:
         if not asset:
             raise NotFound("Asset not found")
 
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(asset, "department_id", None),
+            getattr(asset, "region_id", None),
+            getattr(asset, "service_id", None),
+        )
 
         active_assignment = await self.repo.get_active_assignment(UUID(str(asset.id)))
         if not active_assignment:
@@ -146,8 +154,12 @@ class AssetAssignmentService:
         if not asset:
             raise BadRequest("Asset is locked or not available")
 
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(asset, "department_id", None),
+            getattr(asset, "region_id", None),
+            getattr(asset, "service_id", None),
+        )
 
         active_assignment = await self.repo.get_active_assignment(asset_id)
 

@@ -3,10 +3,10 @@ from uuid import UUID
 
 from pydantic import Field
 
-from schemas.base import BaseSchema, TimestampSchema
+from schemas.base import BaseRequestSchema, TimestampSchema
 
 
-class AssetMaintenanceBaseSchema(BaseSchema):
+class AssetMaintenanceBaseSchema(BaseRequestSchema):
     """Базовые поля техобслуживания"""
 
     maintenance_type: str = Field(min_length=2, max_length=100)
@@ -22,7 +22,7 @@ class AssetMaintenanceCreateSchema(AssetMaintenanceBaseSchema):
     pass
 
 
-class AssetMaintenanceUpdateSchema(BaseSchema):
+class AssetMaintenanceUpdateSchema(BaseRequestSchema):
     """Обновление записи техобслуживания"""
 
     maintenance_type: str | None = Field(None, min_length=2, max_length=100)

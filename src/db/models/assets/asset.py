@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from db.models.assets.asset_history import AssetHistory
     from db.models.assets.asset_model import AssetModel
     from db.models.assets.asset_transfer import AssetTransfer
+    from db.models.org.department import Department
     from db.models.org.region import Region
     from db.models.org.service import Service
     from db.models.users.user import User
@@ -66,6 +67,12 @@ class Asset(Base, UUIDMixing, TimestampMixin, SlugMixin):
 
     class_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("asset_classes.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    department_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("departments.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
@@ -132,6 +139,9 @@ class Asset(Base, UUIDMixing, TimestampMixin, SlugMixin):
     )
     asset_class: Mapped[Optional["AssetClass"]] = relationship(
         "AssetClass", back_populates="assets", lazy="joined"
+    )
+    department: Mapped[Optional["Department"]] = relationship(
+        "Department", lazy="selectin"
     )
     region: Mapped[Optional["Region"]] = relationship("Region", lazy="selectin")
     service: Mapped[Optional["Service"]] = relationship("Service", lazy="joined")

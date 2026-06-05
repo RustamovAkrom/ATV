@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel
+from schemas.base import BaseResponseSchema
 
 
 class TrendInterval(StrEnum):
@@ -10,7 +10,7 @@ class TrendInterval(StrEnum):
     MONTHLY = "monthly"
 
 
-class TrendPointOut(BaseModel):
+class TrendPointOut(BaseResponseSchema):
     bucket_start: datetime
     bucket_end: datetime
     value: int
@@ -20,11 +20,11 @@ class RepairTrendPointOut(TrendPointOut):
     total_cost: float
 
 
-class TrendSeriesOut(BaseModel):
+class TrendSeriesOut(BaseResponseSchema):
     interval: TrendInterval
     points: list[TrendPointOut]
 
 
-class RepairTrendSeriesOut(BaseModel):
+class RepairTrendSeriesOut(BaseResponseSchema):
     interval: TrendInterval
     points: list[RepairTrendPointOut]

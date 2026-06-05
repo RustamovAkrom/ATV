@@ -3,10 +3,10 @@ from uuid import UUID
 
 from pydantic import Field, field_validator
 
-from schemas.base import BaseSchema, TimestampSchema
+from schemas.base import BaseRequestSchema, BaseSchema, TimestampSchema
 
 
-class RegionBaseSchema(BaseSchema):
+class RegionBaseSchema(BaseRequestSchema):
     """Базовые поля региона"""
 
     name: str = Field(min_length=2, max_length=255, description="Название региона")
@@ -31,7 +31,7 @@ class RegionCreateSchema(RegionBaseSchema):
     pass
 
 
-class RegionUpdateSchema(BaseSchema):
+class RegionUpdateSchema(BaseRequestSchema):
     """Схема для обновления региона (все поля опциональны)"""
 
     name: str | None = Field(

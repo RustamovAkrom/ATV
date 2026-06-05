@@ -7,6 +7,7 @@ from db.base import Base
 from db.mixins import SlugMixin, TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
+    from db.models.org.department import Department
     from db.models.users.user import User
 
     from .region import Region
@@ -20,6 +21,12 @@ class Service(Base, UUIDMixing, TimestampMixin, SlugMixin):
     regions: Mapped[list["Region"]] = relationship(
         "Region",
         secondary="region_services",
+        back_populates="services",
+        lazy="selectin",
+    )
+    departments: Mapped[list["Department"]] = relationship(
+        "Department",
+        secondary="department_services",
         back_populates="services",
         lazy="selectin",
     )

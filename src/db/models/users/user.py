@@ -27,6 +27,8 @@ from db.models.org.region import Region
 from db.models.org.service import Service
 
 if TYPE_CHECKING:
+    from db.models.org.department import Department
+
     from .permission import Permission, Role
 
 
@@ -68,12 +70,12 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
     assigned_service_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("services.id", ondelete="SET NULL"), nullable=True
     )
+    department_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("departments.id", ondelete="SET NULL"), nullable=True
+    )
 
     # ========== РАБОЧАЯ ИНФОРМАЦИЯ ==========
     position: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    department: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="Department/division"
-    )
     employment_type: Mapped[EmploymentType | None] = mapped_column(
         SAEnum(EmploymentType, name="employment_type"),
         nullable=True,
@@ -151,6 +153,7 @@ class User(Base, UUIDMixing, TimestampMixin, StatusMixin):
     role: Mapped["Role"] = relationship("Role", back_populates="users", lazy="selectin")
     region: Mapped["Region"] = relationship("Region", lazy="selectin")
     service: Mapped["Service"] = relationship("Service", lazy="selectin")
+    department: Mapped["Department"] = relationship("Department", lazy="selectin")
     owned_assets: Mapped[list["Asset"]] = relationship(
         "Asset",
         back_populates="owner",

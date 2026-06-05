@@ -1,5 +1,3 @@
-# core/database_sync.py
-
 from functools import lru_cache
 
 from sqlalchemy import create_engine

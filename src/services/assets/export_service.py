@@ -5,12 +5,13 @@ import json
 from fastapi.encoders import jsonable_encoder
 
 from core.exceptions.errors import BadRequest
+from repositories.assets.asset_repo import AssetRepository
 
 
 class ExportService:
     MAX_EXPORT_ROWS = 10_000
 
-    def __init__(self, asset_repo):
+    def __init__(self, asset_repo: AssetRepository):
         self.asset_repo = asset_repo
 
     async def ensure_exportable(self, filters) -> None:

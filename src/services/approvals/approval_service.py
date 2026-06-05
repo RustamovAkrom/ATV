@@ -95,18 +95,28 @@ class ApprovalService:
         if not asset:
             raise NotFound("Asset not found")
 
+        entity_type = data.entity_type.strip().lower()
+        action = data.action.strip().lower()
+        existing = await self.approval_repo.get_pending_for(
+            entity_type=entity_type,
+            entity_id=data.entity_id,
+            action=action,
+        )
+        if existing:
+            raise BadRequest("Approval request is already pending")
+
         # Проверка блокировки трансфера
         if (
-            data.entity_type.strip().lower() == "asset_transfer"
-            and data.action.strip().lower() == "create_transfer"
+            entity_type == "asset_transfer"
+            and action == "create_transfer"
             and asset.is_transfer_locked
         ):
             raise BadRequest("Asset transfer is locked")
 
         approval = ApprovalRequest(
-            entity_type=data.entity_type.strip(),
+            entity_type=entity_type,
             entity_id=data.entity_id,
-            action=data.action.strip(),
+            action=action,
             payload=serializable_payload,
             status=ApprovalStatus.PENDING,
             created_by_id=actor.id,
@@ -164,8 +174,12 @@ class ApprovalService:
             if not asset:
                 raise NotFound("Asset not found")
 
-            AccessControl.check_region_access(actor, asset.region_id)
-            AccessControl.check_service_access(actor, asset.service_id)
+            AccessControl.check_scope_access(
+                actor,
+                asset.department_id,
+                asset.region_id,
+                asset.service_id,
+            )
 
             approval.status = ApprovalStatus.APPROVED
             approval.approved_by_id = actor.id

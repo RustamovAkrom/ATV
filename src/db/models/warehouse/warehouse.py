@@ -8,6 +8,9 @@ from db.base import Base
 from db.mixins import SlugMixin, TimestampMixin, UUIDMixing
 
 if TYPE_CHECKING:
+    from db.models.org.department import Department
+
+if TYPE_CHECKING:
     from db.models.assets.asset import Asset
     from db.models.org.region import Region
     from db.models.org.service import Service
@@ -20,6 +23,9 @@ class Warehouse(Base, UUIDMixing, TimestampMixin, SlugMixin):
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     region_id: Mapped[UUID] = mapped_column(
         ForeignKey("regions.id", ondelete="RESTRICT"), nullable=False
+    )
+    department_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("departments.id", ondelete="SET NULL"), nullable=True
     )
     service_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("services.id", ondelete="SET NULL"),
@@ -35,6 +41,9 @@ class Warehouse(Base, UUIDMixing, TimestampMixin, SlugMixin):
         "Asset", back_populates="warehouse", lazy="selectin"
     )
     region: Mapped[Optional["Region"]] = relationship("Region", lazy="selectin")
+    department: Mapped[Optional["Department"]] = relationship(
+        "Department", lazy="selectin"
+    )
 
     manager_user: Mapped[Optional["User"]] = relationship("User", lazy="selectin")
     service: Mapped[Optional["Service"]] = relationship("Service", lazy="selectin")

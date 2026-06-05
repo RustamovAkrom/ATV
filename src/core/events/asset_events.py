@@ -112,11 +112,7 @@ class AssetEventService(DomainEventService):
         owner_id: UUID | None,
         asset_name: str,
     ):
-        await self._execute(
-            asset_id=asset_id,
-            actor_id=actor_id,
-            action="deleted",
-            description="Asset deleted",
+        await self.base.execute(
             audit_event="asset.deleted",
             audit_payload={"asset_id": str(asset_id), "actor_id": str(actor_id)},
             notification=lambda: (

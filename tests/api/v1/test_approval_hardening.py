@@ -143,3 +143,34 @@ async def test_invalid_approval_payload_fails(client, dbsession, superadmin_toke
         headers={"Authorization": f"Bearer {superadmin_token}"},
     )
     assert response.status_code == 400
+
+
+@pytest.mark.anyio
+async def test_duplicate_pending_approval_request_fails(
+    client, dbsession, superadmin_token
+):
+    deps = await _seed_asset_dependencies(dbsession)
+    asset = await _create_asset(
+        client, superadmin_token, deps, "DuplicatePendingApprovalAsset"
+    )
+
+    payload = {
+        "entity_type": "asset_archive",
+        "entity_id": asset["id"],
+        "action": "archive",
+        "payload": {},
+    }
+
+    first = await client.post(
+        "/api/v1/approvals/",
+        json=payload,
+        headers={"Authorization": f"Bearer {superadmin_token}"},
+    )
+    assert first.status_code == 200
+
+    second = await client.post(
+        "/api/v1/approvals/",
+        json=payload,
+        headers={"Authorization": f"Bearer {superadmin_token}"},
+    )
+    assert second.status_code == 400

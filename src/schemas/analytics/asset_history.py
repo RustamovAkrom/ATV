@@ -5,11 +5,11 @@ from uuid import UUID
 
 from pydantic import ConfigDict, Field, field_validator
 
-from schemas.base import BaseSchema
+from schemas.base import BaseRequestSchema, BaseSchema
 from utils.analytics.filter_utils import sanitize_search
 
 
-class AssetHistoryFilter(BaseSchema):
+class AssetHistoryFilter(BaseRequestSchema):
     asset_id: UUID | None = None
     user_id: UUID | None = None
     action: str | None = Field(default=None, max_length=50)

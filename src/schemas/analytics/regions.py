@@ -1,10 +1,10 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from schemas.base import BaseResponseSchema
 
 
-class RegionAssetStatusCounts(BaseModel):
+class RegionAssetStatusCounts(BaseResponseSchema):
     active: int
     assigned: int
     in_repair: int
@@ -12,7 +12,7 @@ class RegionAssetStatusCounts(BaseModel):
     total: int
 
 
-class RegionOverviewOut(BaseModel):
+class RegionOverviewOut(BaseResponseSchema):
     region_id: UUID
     region_name: str
     latitude: float | None = None
@@ -25,7 +25,7 @@ class RegionOverviewOut(BaseModel):
     assignment_load: int
 
 
-class RegionServiceLoadOut(BaseModel):
+class RegionServiceLoadOut(BaseResponseSchema):
     service_id: UUID
     service_name: str
     asset_count: int
@@ -33,7 +33,7 @@ class RegionServiceLoadOut(BaseModel):
     repairs_count: int
 
 
-class RegionAssetCostSummaryOut(BaseModel):
+class RegionAssetCostSummaryOut(BaseResponseSchema):
     asset_id: UUID
     asset_name: str
     purchase_cost: float
@@ -46,7 +46,7 @@ class RegionDetailsOut(RegionOverviewOut):
     top_cost_assets: list[RegionAssetCostSummaryOut]
 
 
-class RegionHeatmapPointOut(BaseModel):
+class RegionHeatmapPointOut(BaseResponseSchema):
     region_id: UUID
     region_name: str
     latitude: float | None = None

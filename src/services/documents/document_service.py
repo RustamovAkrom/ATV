@@ -5,6 +5,7 @@ from core.config import get_settings
 from core.events.document_events import DocumentEventService
 from core.exceptions.errors import NotFound
 from core.security.access_control import AccessControl
+from db.models.assets.asset import Asset
 from db.models.documents.document import Document
 from repositories.documents.document_repo import DocumentRepository
 from schemas.auth.auth import CurrentUserSchema
@@ -32,15 +33,25 @@ class DocumentService:
     def _to_uuid(value: Any) -> UUID:
         return cast(UUID, UUID(str(value)))
 
+    async def _check_asset_access(
+        self, asset_id: UUID, actor: CurrentUserSchema
+    ) -> Asset:
+        asset = await self.repo.get_asset(asset_id)
+        if not asset:
+            raise NotFound(f"Asset {asset_id} not found")
+        AccessControl.check_scope_access(
+            actor,
+            asset.department_id,
+            asset.region_id,
+            asset.service_id,
+        )
+        return asset
+
     async def list_by_asset(
         self, asset_id: UUID, actor: CurrentUserSchema
     ) -> list[AssetDocumentOutSchema]:
         """Список документов актива"""
-        asset = await self.repo.get_asset(asset_id)
-        if not asset:
-            raise NotFound("Asset not found")
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        await self._check_asset_access(asset_id, actor)
 
         documents = await self.repo.list_by_asset(asset_id)
         return [self._to_out_schema(doc) for doc in documents]
@@ -49,11 +60,7 @@ class DocumentService:
         self, asset_id: UUID, document_id: UUID, actor: CurrentUserSchema
     ) -> AssetDocumentWithFilesOutSchema:
         """Получить документ по ID"""
-        asset = await self.repo.get_asset(asset_id)
-        if not asset:
-            raise NotFound("Asset not found")
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        await self._check_asset_access(asset_id, actor)
 
         document = await self.repo.get_document(document_id)
         if not document or document.asset_id != asset_id:
@@ -69,11 +76,7 @@ class DocumentService:
         uploaded_files: list[dict] | None = None,
     ) -> AssetDocumentOutSchema:
         """Create a new document for an asset"""
-        asset = await self.repo.get_asset(asset_id)
-        if not asset:
-            raise NotFound("Asset not found")
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        asset = await self._check_asset_access(asset_id, actor)
 
         document = Document(
             title=data.title.strip(),
@@ -109,11 +112,7 @@ class DocumentService:
         actor: CurrentUserSchema,
     ) -> AssetDocumentOutSchema:
         """Обновить документ"""
-        asset = await self.repo.get_asset(asset_id)
-        if not asset:
-            raise NotFound("Asset not found")
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        asset = await self._check_asset_access(asset_id, actor)
 
         document = await self.repo.get_document(document_id)
         if not document or document.asset_id != asset_id:
@@ -136,11 +135,7 @@ class DocumentService:
         self, asset_id: UUID, document_id: UUID, actor: CurrentUserSchema
     ) -> None:
         """Удалить документ"""
-        asset = await self.repo.get_asset(asset_id)
-        if not asset:
-            raise NotFound("Asset not found")
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        asset = await self._check_asset_access(asset_id, actor)
 
         document = await self.repo.get_document(document_id)
         if not document or document.asset_id != asset_id:
@@ -162,11 +157,7 @@ class DocumentService:
         actor: CurrentUserSchema,
     ) -> DocumentFileOutSchema:
         """Добавить файл к существующему документу"""
-        asset = await self.repo.get_asset(asset_id)
-        if not asset:
-            raise NotFound("Asset not found")
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        await self._check_asset_access(asset_id, actor)
 
         document = await self.repo.get_document(document_id)
         if not document or document.asset_id != asset_id:
@@ -190,11 +181,7 @@ class DocumentService:
         actor: CurrentUserSchema,
     ) -> None:
         """Удалить файл из документа"""
-        asset = await self.repo.get_asset(asset_id)
-        if not asset:
-            raise NotFound("Asset not found")
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        await self._check_asset_access(asset_id, actor)
 
         document = await self.repo.get_document(document_id)
         if not document or document.asset_id != asset_id:

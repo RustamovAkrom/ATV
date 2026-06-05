@@ -24,7 +24,7 @@ from core.admin.views.assets.misc import (
     RefreshTokenAdmin,
     SystemConfigAdmin,
 )
-from core.admin.views.assets.org import RegionAdmin, ServiceAdmin
+from core.admin.views.assets.org import DepartmentAdmin, RegionAdmin, ServiceAdmin
 from core.admin.views.assets.repairs import RepairAdmin, RepairPartAdmin
 from core.admin.views.users import PermissionAdmin, RoleAdmin, UserAdmin
 from core.config import Settings
@@ -35,10 +35,8 @@ def setup_admin(app: FastAPI, settings: Settings):
     engine = get_db_sync_engine()
     authentication_backend = AdminAuth(secret_key=settings.SECRET_KEY)
 
-    # Добавляем SessionMiddleware отдельно (правильный способ)
     app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
-    # Connect custom templates directory
     admin = Admin(
         app,
         engine,
@@ -73,6 +71,7 @@ def setup_admin(app: FastAPI, settings: Settings):
     admin.add_view(DocumentFileAdmin)
 
     # Org
+    admin.add_view(DepartmentAdmin)
     admin.add_view(RegionAdmin)
     admin.add_view(ServiceAdmin)
 

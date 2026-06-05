@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import ConfigDict
 
-from schemas.base import BaseSchema
+from schemas.base import BaseRequestSchema, BaseSchema
 
 
 class NotificationSchema(BaseSchema):
@@ -19,7 +19,7 @@ class NotificationSchema(BaseSchema):
     model_config = ConfigDict(from_attributes=True)
 
 
-class NotificationCreate(BaseSchema):
+class NotificationCreate(BaseRequestSchema):
     user_id: UUID
     type: str
     title: str
@@ -27,7 +27,7 @@ class NotificationCreate(BaseSchema):
     data: dict = {}
 
 
-class NotificationFilter(BaseSchema):
+class NotificationFilter(BaseRequestSchema):
     is_read: bool | None = None
 
 

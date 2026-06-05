@@ -6,6 +6,7 @@ from uuid import UUID
 
 from core.exceptions.errors import NotFound
 from core.security.access_control import AccessControl
+from db.models.enums import UserRole
 from db.models.expenses import Expense
 from repositories.assets.expense_repo import ExpenseRepository
 from schemas.assets.expenses import (
@@ -16,6 +17,7 @@ from schemas.assets.expenses import (
     ExpenseUpdateSchema,
 )
 from schemas.auth.auth import CurrentUserSchema
+from utils.department import normalize_department_scope
 
 
 class ExpenseService:
@@ -25,6 +27,12 @@ class ExpenseService:
         """Initialize service with repository."""
         self.repo = repo
 
+    @staticmethod
+    def _to_uuid(value: UUID | str | None) -> UUID | None:
+        if value is None:
+            return None
+        return UUID(str(value))
+
     async def _check_expense_access(
         self, expense_id: UUID, actor: CurrentUserSchema
     ) -> None:
@@ -33,10 +41,12 @@ class ExpenseService:
         if not expense:
             raise NotFound(f"Expense {expense_id} not found")
 
-        if expense.region_id:
-            AccessControl.check_region_access(actor, expense.region_id)
-        if expense.service_id:
-            AccessControl.check_service_access(actor, expense.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(expense, "department_id", None),
+            getattr(expense, "region_id", None),
+            getattr(expense, "service_id", None),
+        )
 
     async def _check_asset_access(
         self, asset_id: UUID, actor: CurrentUserSchema
@@ -45,26 +55,37 @@ class ExpenseService:
         asset = await self.repo.get_asset(asset_id)
         if not asset:
             raise NotFound(f"Asset {asset_id} not found")
-        AccessControl.check_region_access(actor, asset.region_id)
-        AccessControl.check_service_access(actor, asset.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(asset, "department_id", None),
+            getattr(asset, "region_id", None),
+            getattr(asset, "service_id", None),
+        )
 
     async def create(
         self, data: ExpenseCreateSchema, actor: CurrentUserSchema
     ) -> ExpenseOutSchema:
         """Create a new expense."""
-        if data.asset_id:
-            await self._check_asset_access(data.asset_id, actor)
-        if data.repair_id:
-            repair = await self.repo.get_repair(data.repair_id)
-            if not repair:
-                raise NotFound(f"Repair {data.repair_id} not found")
-            await self._check_asset_access(repair.asset_id, actor)
-        if data.region_id:
-            AccessControl.check_region_access(actor, data.region_id)
-        if data.service_id:
-            AccessControl.check_service_access(actor, data.service_id)
+        payload = data.model_dump(exclude_unset=True)
+        payload = await normalize_department_scope(
+            getattr(self.repo, "session", None), payload
+        )
 
-        expense = await self.repo.create(data, actor.id)
+        AccessControl.check_scope_access(
+            actor,
+            payload.get("department_id"),
+            payload.get("region_id"),
+            payload.get("service_id"),
+        )
+
+        if payload.get("asset_id"):
+            await self._check_asset_access(payload["asset_id"], actor)
+        if payload.get("repair_id"):
+            repair = await self.repo.get_repair(payload["repair_id"])
+            if not repair:
+                raise NotFound(f"Repair {payload['repair_id']} not found")
+            await self._check_asset_access(repair.asset_id, actor)
+        expense = await self.repo.create(ExpenseCreateSchema(**payload), actor.id)
         return await self._to_out(expense)
 
     async def get(self, expense_id: UUID, actor: CurrentUserSchema) -> ExpenseOutSchema:
@@ -73,10 +94,12 @@ class ExpenseService:
         if not expense:
             raise NotFound(f"Expense {expense_id} not found")
 
-        if expense.region_id:
-            AccessControl.check_region_access(actor, expense.region_id)
-        if expense.service_id:
-            AccessControl.check_service_access(actor, expense.service_id)
+        AccessControl.check_scope_access(
+            actor,
+            getattr(expense, "department_id", None),
+            getattr(expense, "region_id", None),
+            getattr(expense, "service_id", None),
+        )
 
         return await self._to_out(expense)
 
@@ -106,6 +129,7 @@ class ExpenseService:
         page: int = 1,
         limit: int = 20,
         expense_type: str | None = None,
+        department_id: UUID | None = None,
         region_id: UUID | None = None,
         service_id: UUID | None = None,
         asset_id: UUID | None = None,
@@ -113,11 +137,16 @@ class ExpenseService:
         end_date: datetime | None = None,
     ) -> ExpensePageSchema:
         """List expenses with pagination and filters."""
-        from db.models.enums import UserRole
 
         if actor.role != UserRole.SUPERADMIN.value:
-            region_id = actor.assigned_region_id or region_id
-            service_id = actor.assigned_service_id or service_id
+            department_id, region_id, service_id = (
+                AccessControl.normalize_scope_filters(
+                    actor,
+                    department_id,
+                    region_id,
+                    service_id,
+                )
+            )
 
         items, total = await self.repo.list(
             page=page,
@@ -162,7 +191,10 @@ class ExpenseService:
         self, region_id: UUID, actor: CurrentUserSchema
     ) -> builtins.list[ExpenseOutSchema]:
         """Get all expenses for a region."""
-        AccessControl.check_region_access(actor, region_id)
+        department_id = (
+            actor.assigned_department_id if actor.assigned_department_id else None
+        )
+        AccessControl.check_scope_access(actor, department_id, region_id, None)
         expenses = await self.repo.get_by_region(region_id)
         return [await self._to_out(e) for e in expenses]
 
@@ -173,7 +205,7 @@ class ExpenseService:
 
     async def _to_out(self, expense: Expense) -> ExpenseOutSchema:
         """Convert expense model to output schema."""
-        created_by_id = getattr(expense, "created_by_id", None)
+        created_by_id: UUID | None = getattr(expense, "created_by_id", None)
         created_by = getattr(expense, "created_by", None)
         if created_by_id is None and created_by is not None:
             created_by_id = getattr(created_by, "id", None)
@@ -181,6 +213,7 @@ class ExpenseService:
         asset = getattr(expense, "asset", None)
         region = getattr(expense, "region", None)
         service = getattr(expense, "service", None)
+        department = getattr(expense, "department", None)
 
         return ExpenseOutSchema(
             id=UUID(str(expense.id)),
@@ -191,9 +224,12 @@ class ExpenseService:
             file_url=expense.file_url,
             asset=asset,
             repair_id=expense.repair_id,
+            department_id=self._to_uuid(department.id)
+            if department is not None
+            else None,
             region=region,
             service=service,
-            created_by_id=UUID(str(created_by_id)) if created_by_id else None,
+            created_by_id=self._to_uuid(created_by_id),
             created_by_name=(
                 getattr(created_by, "full_name", None)
                 or getattr(created_by, "name", None)
