@@ -59,19 +59,15 @@ class Settings(BaseSettings):
     # POSTGRES
     POSTGRES_HOST: str
     POSTGRES_PORT: int = 5432
-
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
-
     POSTGRES_ECHO: bool = True
 
     # JWT
     JWT_ALGORITHM: str = "HS256"
-
     JWT_ISSUER: str = "fastapi-backend"
     JWT_AUDIENCE: str = "fastapi-client"
-
     JWT_ACCESS_TOKEN_EXPIRES_MINUTES: int = 15
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
@@ -83,24 +79,17 @@ class Settings(BaseSettings):
 
     # RATE LIMIT
     RATE_LIMIT_ENABLED: bool = True
-
     RATE_LIMIT_STORAGE_URL: str = "memory://"
-
     RATE_LIMIT_DEFAULT: str = "10/minute"
     RATE_LIMIT_LOGIN: str = "10/minute"
-
     RATE_LIMIT_TRUSTED_PROXIES: str = ""
 
     # CELERY
     CELERY_BROKER_URL: str = "redis://redis:6379/0"
-
     CELERY_RESULT_BACKEND: str = "redis://redis:6379/1"
-
     CELERY_TASK_SERIALIZER: str = "json"
     CELERY_RESULT_SERIALIZER: str = "json"
-
     CELERY_ACCEPT_CONTENT: list[str] = Field(default_factory=lambda: ["json"])
-
     CELERY_TIMEZONE: str = "UTC"
 
     # EMAIL
@@ -116,11 +105,8 @@ class Settings(BaseSettings):
 
     # Logging
     LOG_LEVEL: str = "INFO"
-
     LOG_JSON: bool = False
-
     LOG_INCLUDE_REQUEST_ID: bool = True
-
     LOG_ENQUEUE: bool = False
 
     SERVICE_NAME: str = "fastapi-backend"
@@ -141,7 +127,13 @@ class Settings(BaseSettings):
 
     # ========== FILE STORAGE SYSTEM ==========
     STORAGE_ROOT_DIR: str = "storage"
-    STORAGE_URL_PREFIX: str = "http://localhost:8000/storage"  # or "/storage"
+    STORAGE_URL: str = "/storage"
+    STATIC_ROOT_DIR: str = "static"
+    STATIC_URL: str = "/static"
+
+    @property
+    def STORAGE_URL_PREFIX(self) -> str:
+        return self.BACKEND_DOMAIN + self.STORAGE_URL
 
     STORAGE_DEFAULT_MAX_SIZE_MB: int = 10
     STORAGE_DEFAULT_ALLOWED_MIMETYPES: list[str] = Field(
@@ -155,7 +147,6 @@ class Settings(BaseSettings):
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         ]
     )
-
     STORAGE_AVATAR_MAX_SIZE_MB: int = 2
     STORAGE_AVATAR_ALLOWED_MIMETYPES: list[str] = Field(
         default_factory=lambda: [
@@ -167,13 +158,11 @@ class Settings(BaseSettings):
         ]
     )
     STORAGE_AVATAR_FOLDER: str = "avatars"
-
     STORAGE_ASSET_IMAGE_MAX_SIZE_MB: int = 5
     STORAGE_ASSET_IMAGE_ALLOWED_MIMETYPES: list[str] = Field(
         default_factory=lambda: ["image/jpeg", "image/png", "image/gif", "image/webp"]
     )
     STORAGE_ASSET_IMAGE_FOLDER: str = "assets"
-
     STORAGE_DOCUMENT_MAX_SIZE_MB: int = 15
     STORAGE_DOCUMENT_ALLOWED_MIMETYPES: list[str] = Field(
         default_factory=lambda: [
@@ -185,7 +174,6 @@ class Settings(BaseSettings):
         ]
     )
     STORAGE_DOCUMENT_FOLDER: str = "documents"
-
     STORAGE_FILENAME_MAX_LENGTH: int = 255
     STORAGE_KEEP_ORIGINAL_NAME: bool = False
     STORAGE_VIRUS_SCAN_ENABLED: bool = False

@@ -32,6 +32,7 @@ from services.users.user_service import UserService
 
 router = APIRouter(prefix="/users", tags=["Users"])
 settings = get_settings()
+STORAGE_URL = settings.BACKEND_DOMAIN + settings.STORAGE_URL
 
 
 def _to_user_out(user: User) -> UserOutSchema:
@@ -167,7 +168,7 @@ async def upload_avatar(
     if old_avatar_url:
         try:
             # Извлекаем путь из URL
-            old_path = old_avatar_url.replace(f"{settings.STORAGE_URL_PREFIX}/", "")
+            old_path = old_avatar_url.replace(f"{STORAGE_URL}/", "")
             await upload_service.delete(old_path)
         except Exception as e:
             # Логируем, но не прерываем выполнение
@@ -200,7 +201,7 @@ async def delete_avatar(
 
     # Удаляем файл
     try:
-        old_path = user.avatar_url.replace(f"{settings.STORAGE_URL_PREFIX}/", "")
+        old_path = user.avatar_url.replace(f"{STORAGE_URL}/", "")
         await upload_service.delete(old_path)
     except Exception as e:
         print(f"Failed to delete avatar file: {e}")

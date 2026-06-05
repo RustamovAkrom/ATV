@@ -247,6 +247,7 @@ class WarehouseService:
         data = WarehouseCreateSchema(
             name=name,
             region_id=region_id,
+            department_id=None,
             service_id=service_id,
             manager_user_id=manager_user_id,
             is_active=is_active,

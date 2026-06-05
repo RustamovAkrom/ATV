@@ -56,6 +56,8 @@ class _FakeRepo:
             history_entries=[],
             assignments=[],
         )
+        self.active_assignment = None
+        self.closed_assignment = None
 
     async def list(self, filters, pagination):
         return [self.asset], 1
@@ -69,8 +71,8 @@ class _FakeRepo:
     async def get_user(self, user_id):
         return SimpleNamespace(
             id=user_id,
-            region_id=self.region_id,
-            service_id=self.service_id,
+            assigned_region_id=self.region_id,
+            assigned_service_id=self.service_id,
             status=UserStatus.ACTIVE.value,
         )
 
@@ -102,6 +104,13 @@ class _FakeRepo:
 
     async def delete(self, asset):
         self.asset = None
+
+    async def get_active_assignment(self, asset_id):
+        return self.active_assignment
+
+    async def close_active_assignment(self, assignment, timestamp):
+        assignment.unassigned_at = timestamp
+        self.closed_assignment = assignment
 
 
 @pytest.fixture
@@ -185,6 +194,48 @@ class TestAssetService:
 
         repo.asset.status = AssetStatus.ARCHIVED
         await service.delete(repo.asset_id, actor)
+
+    async def test_create_assign_to_self_sets_assigned_status(
+        self, asset_service, actor
+    ):
+        service, repo = asset_service
+
+        create_payload = AssetCreate(
+            name="Assigned Asset",
+            model_id=uuid4(),
+            class_id=uuid4(),
+            region_id=repo.region_id,
+            service_id=repo.service_id,
+            serial_number="SN-ASSIGNED",
+            assign_to_self=True,
+        )
+
+        await service.create(create_payload, actor)
+
+        assert repo.asset.owner_id == actor.id
+        assert repo.asset.status == AssetStatus.ASSIGNED
+
+    async def test_archive_assigned_asset_closes_assignment(self, asset_service, actor):
+        service, repo = asset_service
+
+        owner_id = uuid4()
+        repo.asset.status = AssetStatus.ASSIGNED
+        repo.asset.owner_id = owner_id
+        repo.active_assignment = SimpleNamespace(
+            user_id=owner_id,
+            unassigned_at=None,
+        )
+
+        await service.change_status(
+            repo.asset_id,
+            AssetStatusChangeRequest(status=AssetStatus.ARCHIVED),
+            actor,
+        )
+
+        assert repo.asset.status == AssetStatus.ARCHIVED
+        assert repo.asset.owner_id is None
+        assert repo.closed_assignment is repo.active_assignment
+        assert repo.active_assignment.unassigned_at is not None
 
     async def test_not_found_and_invalid_transitions(self, asset_service, actor):
         service, repo = asset_service

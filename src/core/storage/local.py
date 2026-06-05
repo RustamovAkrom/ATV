@@ -9,7 +9,7 @@ from core.config import get_settings
 from .base import BaseStorageStrategy, FileUploadResult
 
 settings = get_settings()
-
+STORAGE_URL = settings.BACKEND_DOMAIN + settings.STORAGE_URL
 
 class LocalStorageStrategy(BaseStorageStrategy):
     """Локальное хранилище файлов"""
@@ -56,7 +56,7 @@ class LocalStorageStrategy(BaseStorageStrategy):
             raise RuntimeError(f"Failed to save file: {e}") from e
 
         # Формируем публичный URL
-        public_url = f"{settings.STORAGE_URL_PREFIX}/{relative_path.as_posix()}"
+        public_url = f"{STORAGE_URL}/{relative_path.as_posix()}"
 
         return FileUploadResult(
             file_path=relative_path.as_posix(),

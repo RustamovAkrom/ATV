@@ -33,7 +33,11 @@ class AssetService:
             AssetStatus.IN_REPAIR,
             AssetStatus.ARCHIVED,
         },
-        AssetStatus.ASSIGNED: {AssetStatus.ACTIVE, AssetStatus.IN_REPAIR},
+        AssetStatus.ASSIGNED: {
+            AssetStatus.ACTIVE,
+            AssetStatus.IN_REPAIR,
+            AssetStatus.ARCHIVED,
+        },
         AssetStatus.IN_REPAIR: {AssetStatus.ACTIVE, AssetStatus.ARCHIVED},
         AssetStatus.ARCHIVED: set(),
     }
@@ -195,12 +199,12 @@ class AssetService:
             name=data.name,
             model_id=data.model_id,
             serial_number=data.serial_number,
-            status=AssetStatus.ACTIVE,
+            owner_id=owner_id,
+            status=AssetStatus.ASSIGNED if owner_id else AssetStatus.ACTIVE,
             department_id=payload.get("department_id"),
             class_id=data.class_id,
             service_id=service_id,
             region_id=region_id,
-            owner_id=owner_id,
             commission_date=data.commission_date,
             warranty_end=data.warranty_end,
             condition_percent=data.condition_percent,
@@ -215,6 +219,13 @@ class AssetService:
         created = await self.asset_repo.create(asset)
         asset = created or asset
 
+        await self.asset_events.created(
+            asset_id=asset.id,
+            actor_id=actor.id,
+            user_id=owner_id,
+            asset_name=asset.name,
+            status=asset.status,
+        )
         return self._to_detail_schema(asset)
 
     async def update(
@@ -332,6 +343,16 @@ class AssetService:
             return await self.get(asset_id, actor)
 
         self._validate_status_change(asset, new_status)
+        previous_owner_id = asset.owner_id
+
+        if new_status == AssetStatus.ARCHIVED and asset.owner_id is not None:
+            active_assignment = await self.asset_repo.get_active_assignment(asset.id)
+            if active_assignment:
+                await self.asset_repo.close_active_assignment(
+                    active_assignment, utc_now()
+                )
+            asset.owner_id = None
+
         asset.status = new_status
 
         await self.asset_repo.flush()
@@ -340,7 +361,7 @@ class AssetService:
         await self.asset_events.status_changed(
             asset_id=asset.id,
             actor_id=actor.id,
-            owner_id=asset.owner_id,
+            owner_id=previous_owner_id,
             from_status=old_status.value,
             to_status=new_status.value,
         )
@@ -432,8 +453,6 @@ class AssetService:
             raise BadRequest(
                 "Assigned asset cannot be moved to active without reassignment handling"
             )
-        if new_status == AssetStatus.ARCHIVED and asset.owner_id is not None:
-            raise BadRequest("Cannot archive assigned asset")
 
     @staticmethod
     def _clean_optional(value):
